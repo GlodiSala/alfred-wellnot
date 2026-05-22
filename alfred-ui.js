@@ -148,12 +148,12 @@ function initAlfredUI() {
     #alfred-body-main { transform-origin: 190px 191px; }
 
     #alfred-eye-l {
-      transform-origin: 142px 78px;
-      transition: transform 0.08s ease-out;
+    transform-origin: 125.46px 62.65px;
+    transition: transform 0.08s ease-out;
     }
     #alfred-eye-r {
-      transform-origin: 238px 78px;
-      transition: transform 0.08s ease-out;
+    transform-origin: 221.6px 62.65px;
+    transition: transform 0.08s ease-out;
     }
 
     #alfred-state-lbl {
@@ -369,15 +369,14 @@ function initAlfredUI() {
             <path fill="#ffffff" d="M247.81,79.21c.43-7.09.27-20.44-5.95-27.81-3-3.57-7.26-5.31-13-5.33h-1.52c-10.92,0-109.28,0-109.28,0-6.25,0-10.77,1.83-13.92,5.59-6.32,7.52-6.33,21.23-5.95,27.55h149.62ZM92.6,41.98c6.11-7.28,14.65-10.97,25.37-10.97h110.92c10.32.03,18.57,3.64,24.52,10.72,13.65,16.25,8.82,45.08,8.61,46.3l-1.07,6.25H85.14l-1.1-6.21c-.22-1.19-5.25-29.67,8.56-46.09Z"/>
 
             <!-- Oeil gauche -->
-            <g id="alfred-eye-l" style="transform-origin:125px 63px;">
+            <g id="alfred-eye-l" style="transform-origin:125.46px 62.65px;">
             <path fill="#14b0bd" d="M141.26,62.65c0,8.71-7.09,15.8-15.8,15.8s-15.79-7.09-15.79-15.8,7.09-15.79,15.79-15.79,15.8,7.09,15.8,15.79Z"/>
             </g>
 
             <!-- Oeil droit -->
-            <g id="alfred-eye-r" style="transform-origin:222px 63px;">
+            <g id="alfred-eye-r" style="transform-origin:221.6px 62.65px;">
             <path fill="#14b0bd" d="M237.4,62.65c0,8.71-7.09,15.8-15.8,15.8s-15.8-7.09-15.8-15.8,7.09-15.79,15.8-15.79,15.8,7.09,15.8,15.79Z"/>
             </g>
-
             <!-- Bouche -->
             <path id="alfred-mouth" fill="#14b0bd"
             d="M195.9,117.07c-1.03.66-10.41,6.44-23.05,6.44-7.7,0-14.99-2.17-21.66-6.44-3.49-2.25-4.51-6.91-2.28-10.41,2.25-3.5,6.91-4.51,10.41-2.27,14,8.99,27.9.36,28.47-.02,3.53-2.23,8.18-1.16,10.38,2.33,2.23,3.48,1.21,8.14-2.28,10.37Z"/>
