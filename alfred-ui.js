@@ -45,13 +45,8 @@ function initAlfredUI() {
       width: 0px;
       min-width: 0px;
       height: 100vh;
-      background: linear-gradient(
-        180deg,
-        #054561 0%,
-        #0e7b84 25%,
-        #14b0bd 55%,
-        #ebe0c4 100%
-      );
+      background: linear-gradient(180deg, #054561 0%, #14b0bd 50%, #ebe0c4 100%);
+
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -99,10 +94,10 @@ function initAlfredUI() {
 
     /* === AVATAR WRAPPER === */
     #alfred-avatar-wrap {
-        background: white;
+        background: #ffffff;
         border-radius: 50%;
-        padding: 10px;
-        box-shadow: 0 4px 20px rgba(20,176,189,0.2);
+        padding: 12px;
+        box-shadow: 0 4px 20px rgba(20,176,189,0.15);
     }
 
     /* === SVG === */
