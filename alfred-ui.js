@@ -1,4 +1,4 @@
-// === ALFRED UI — Split-screen + vrai SVG + animations fluides ===
+// === ALFRED UI — Split-screen + SVG blanc sur dégradé ===
 
 let curState = 'idle';
 let sleepTimer = null;
@@ -6,11 +6,11 @@ let eyeTargetX = 0, eyeTargetY = 0;
 let eyeCurX = 0, eyeCurY = 0;
 let rafEyes = null;
 
-// === PATHS BOUCHE ===
+// === PATHS BOUCHE — coordonnées SVG 4 (viewBox 346.81 351.58) ===
 const MOUTH = {
   smile: "M195.9,117.07c-1.03.66-10.41,6.44-23.05,6.44-7.7,0-14.99-2.17-21.66-6.44-3.49-2.25-4.51-6.91-2.28-10.41,2.25-3.5,6.91-4.51,10.41-2.27,14,8.99,27.9.36,28.47-.02,3.53-2.23,8.18-1.16,10.38,2.33,2.23,3.48,1.21,8.14-2.28,10.37Z",
   flat:  "M151,117 Q173,119 196,117",
-  think: "M153,117 Q173,113 195,117",
+  think: "M153,115 Q173,111 195,115",
   open:  (amp) => `M151,107 Q173,${107 + amp * 28} 196,107 Q173,${107 + amp * 12} 151,107`
 };
 
@@ -75,21 +75,20 @@ function initAlfredUI() {
       font-size: 9px;
       font-weight: 700;
       letter-spacing: 2.5px;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
       text-align: center;
       white-space: nowrap;
       opacity: 0;
       transition: opacity 0.4s ease 0.3s;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
-
     #alfred-left-panel.visible #alfred-logo { opacity: 1; }
 
-    /* ZZZ — position absolue hors du cercle */
+    /* ZZZ — hors du SVG */
     #alfred-zzz {
       position: absolute;
-      top: 60px;
-      right: 30px;
+      top: 50px;
+      right: 25px;
       pointer-events: none;
       opacity: 0;
       transition: opacity 0.4s ease;
@@ -99,30 +98,26 @@ function initAlfredUI() {
     .alfred-z {
       position: absolute;
       font-weight: 800;
-      color: rgba(255,255,255,0.7);
+      color: rgba(255,255,255,0.8);
       opacity: 0;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
-    /* Cercle blanc autour d'Alfred */
+    /* Wrapper SVG — pas de cercle blanc */
     #alfred-avatar-wrap {
       position: relative;
-      width: 170px;
-      height: 170px;
+      width: 180px;
+      height: 180px;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      background: #ffffff;
-      border-radius: 50%;
-      padding: 12px;
-      box-shadow: 0 4px 24px rgba(5,69,97,0.2);
     }
 
-    /* Dots think — dans le cercle */
+    /* Dots think */
     #alfred-dots {
       position: absolute;
-      top: 6px;
+      top: 4px;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
@@ -136,32 +131,31 @@ function initAlfredUI() {
       width: 6px;
       height: 6px;
       border-radius: 50%;
-      background: #14b0bd;
+      background: rgba(255,255,255,0.8);
     }
 
     #alfred-svg {
-      width: 148px;
-      height: 148px;
+      width: 170px;
+      height: 170px;
       overflow: visible;
+      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
     }
 
-    #alfred-body-main { transform-origin: 190px 191px; }
+    /* transform-origin corps centré sur viewBox 346.81 x 351.58 */
+    #alfred-body-main {
+      transform-origin: 173px 175px;
+    }
 
-    #alfred-eye-l {
-    transform-origin: 125.46px 62.65px;
-    transition: transform 0.08s ease-out;
-    }
-    #alfred-eye-r {
-    transform-origin: 221.6px 62.65px;
-    transition: transform 0.08s ease-out;
-    }
+    /* Yeux — transform-origin géré inline dans le SVG */
+    #alfred-eye-l { transition: transform 0.06s ease-out; }
+    #alfred-eye-r { transition: transform 0.06s ease-out; }
 
     #alfred-state-lbl {
       color: rgba(255,255,255,0.4);
       font-size: 8px;
       letter-spacing: 1.5px;
       text-transform: uppercase;
-      margin-top: 6px;
+      margin-top: 4px;
       text-align: center;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
@@ -285,8 +279,8 @@ function initAlfredUI() {
     /* === ANIMATIONS === */
     @keyframes alfred-breathe {
       0%, 100% { transform: scaleY(1) scaleX(1); }
-      33%       { transform: scaleY(1.008) scaleX(0.998); }
-      66%       { transform: scaleY(0.994) scaleX(1.002); }
+      33%       { transform: scaleY(1.01) scaleX(0.998); }
+      66%       { transform: scaleY(0.993) scaleX(1.002); }
     }
     @keyframes alfred-think {
       0%, 100% { opacity: 0.6; transform: scale(0.98); }
@@ -297,9 +291,9 @@ function initAlfredUI() {
       100% { transform: translateX(0.5px)  rotate(0.15deg); }
     }
     @keyframes alfred-sleep {
-      0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
-      25%       { transform: translateY(2px) rotate(-0.3deg) scale(0.998); }
-      75%       { transform: translateY(3px) rotate(0.2deg) scale(0.997); }
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      25%       { transform: translateY(2px) rotate(-0.4deg); }
+      75%       { transform: translateY(3px) rotate(0.3deg); }
     }
     @keyframes alfred-dot-pop {
       0%, 100% { opacity: 0; transform: translateY(0) scale(0.5); }
@@ -321,8 +315,8 @@ function initAlfredUI() {
     }
     @keyframes alfred-eye-think {
       0%, 100% { transform: translateX(0); }
-      25%       { transform: translateX(7px); }
-      75%       { transform: translateX(-7px); }
+      25%       { transform: translateX(6px); }
+      75%       { transform: translateX(-6px); }
     }
   `;
   document.head.appendChild(style);
@@ -335,14 +329,13 @@ function initAlfredUI() {
   left.innerHTML = `
     <div id="alfred-logo">ALFRED · WELLNOT</div>
 
-    <!-- ZZZ hors du cercle blanc -->
+    <!-- ZZZ hors SVG -->
     <div id="alfred-zzz">
       <span class="alfred-z" style="font-size:11px;right:0;top:32px;">z</span>
       <span class="alfred-z" style="font-size:14px;right:8px;top:16px;">z</span>
       <span class="alfred-z" style="font-size:18px;right:16px;top:0;">Z</span>
     </div>
 
-    <!-- Cercle blanc avec Alfred -->
     <div id="alfred-avatar-wrap">
 
       <!-- Dots think -->
@@ -352,36 +345,49 @@ function initAlfredUI() {
         <div class="alfred-dot" id="alfred-dot3"></div>
       </div>
 
-      <!-- SVG Alfred complet -->
-        <svg id="alfred-svg" viewBox="0 0 346.81 351.58"
-            xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">
+      <!-- SVG 4 — tout blanc, viewBox 346.81 351.58 -->
+      <svg id="alfred-svg" viewBox="0 0 346.81 351.58"
+           xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">
 
+        <!-- CORPS — blanc avec contour blanc léger -->
         <g id="alfred-body-main">
-            <!-- Corps simplifié -->
-            <path fill="#14b0bd" d="M63.1,118.92c0,.35.27,30.14,13.37,43.08,4,3.95,8.75,5.72,14.36,5.66h168.09c6.64,0,11.72-2.06,15.56-6.3,11.54-12.77,9.05-42.02,9.05-42.02h0c0-2.31-.39-56.9-34.8-91.35C230.16,9.42,204.77,0,173.25,0h-.7c-23.99.11-44.49,5.59-60.94,16.29l-.5.24c-5.37,3.52-10.35,7.63-14.81,12.21-34.02,34.89-33.21,89.63-33.2,90.18Z"/>
-            <path fill="#14b0bd" d="M193.23,185.18l-11.17-.02v89.21c12.67,4.09,21.05,15.3,21.05,28.38,0,16.75-13.62,30.37-30.36,30.37s-30.37-13.62-30.37-30.37c0-13.08,8.39-24.28,21.05-28.37v-89.24h-11.15c-3.65,13.56-16.06,51.45-45.6,74.47v78.59c21.21,8.89,43.65,13.39,66.72,13.39s44.57-4.32,65.41-12.85v-79.13c-29.52-23.01-41.93-60.87-45.58-74.42Z"/>
-            <path fill="#14b0bd" d="M91.09,185.33h-.55c-10.36,0-19.28-3.62-26.5-10.78-18.08-17.89-18.6-55.45-18.6-55.45,0,0-.56-39.38,18.25-74.9C23.61,77.1,0,126.38,0,178.18c0,62.53,33.65,120,88.06,150.88v-79.01l3.99-2.78c24.24-16.91,36.17-47.26,40.79-62.14-16.64.01-31.42.07-41.75.2Z"/>
-            <path fill="#14b0bd" d="M281.19,42.53c19.25,34.7,19.86,76.35,19.86,76.35,0,0,2.92,36.01-13.58,54.3-7.27,8.06-16.9,12.15-28.63,12.15-8.85,0-20.21-.04-32.97-.07l-13.17-.03c4.63,14.87,16.58,45.18,40.76,62.04l3.99,2.78v79.68c55.22-30.72,89.37-88.45,89.37-151.55,0-52.87-24.34-102.77-65.62-135.64Z"/>
+          <path fill="rgba(255,255,255,0.9)"
+            d="M63.1,118.92c0,.35.27,30.14,13.37,43.08,4,3.95,8.75,5.72,14.36,5.66h168.09c6.64,0,11.72-2.06,15.56-6.3,11.54-12.77,9.05-42.02,9.05-42.02h0c0-2.31-.39-56.9-34.8-91.35C230.16,9.42,204.77,0,173.25,0h-.7c-23.99.11-44.49,5.59-60.94,16.29l-.5.24c-5.37,3.52-10.35,7.63-14.81,12.21-34.02,34.89-33.21,89.63-33.2,90.18Z"/>
+          <path fill="rgba(255,255,255,0.9)"
+            d="M193.23,185.18l-11.17-.02v89.21c12.67,4.09,21.05,15.3,21.05,28.38,0,16.75-13.62,30.37-30.36,30.37s-30.37-13.62-30.37-30.37c0-13.08,8.39-24.28,21.05-28.37v-89.24h-11.15c-3.65,13.56-16.06,51.45-45.6,74.47v78.59c21.21,8.89,43.65,13.39,66.72,13.39s44.57-4.32,65.41-12.85v-79.13c-29.52-23.01-41.93-60.87-45.58-74.42Z"/>
+          <path fill="rgba(255,255,255,0.9)"
+            d="M91.09,185.33h-.55c-10.36,0-19.28-3.62-26.5-10.78-18.08-17.89-18.6-55.45-18.6-55.45,0,0-.56-39.38,18.25-74.9C23.61,77.1,0,126.38,0,178.18c0,62.53,33.65,120,88.06,150.88v-79.01l3.99-2.78c24.24-16.91,36.17-47.26,40.79-62.14-16.64.01-31.42.07-41.75.2Z"/>
+          <path fill="rgba(255,255,255,0.9)"
+            d="M281.19,42.53c19.25,34.7,19.86,76.35,19.86,76.35,0,0,2.92,36.01-13.58,54.3-7.27,8.06-16.9,12.15-28.63,12.15-8.85,0-20.21-.04-32.97-.07l-13.17-.03c4.63,14.87,16.58,45.18,40.76,62.04l3.99,2.78v79.68c55.22-30.72,89.37-88.45,89.37-151.55,0-52.87-24.34-102.77-65.62-135.64Z"/>
         </g>
 
+        <!-- VISAGE — blanc pur -->
         <g>
-            <!-- Bandeau blanc casque -->
-            <path fill="#ffffff" d="M247.81,79.21c.43-7.09.27-20.44-5.95-27.81-3-3.57-7.26-5.31-13-5.33h-1.52c-10.92,0-109.28,0-109.28,0-6.25,0-10.77,1.83-13.92,5.59-6.32,7.52-6.33,21.23-5.95,27.55h149.62ZM92.6,41.98c6.11-7.28,14.65-10.97,25.37-10.97h110.92c10.32.03,18.57,3.64,24.52,10.72,13.65,16.25,8.82,45.08,8.61,46.3l-1.07,6.25H85.14l-1.1-6.21c-.22-1.19-5.25-29.67,8.56-46.09Z"/>
+          <!-- Bandeau casque -->
+          <path fill="rgba(255,255,255,0.9)"
+            d="M247.81,79.21c.43-7.09.27-20.44-5.95-27.81-3-3.57-7.26-5.31-13-5.33h-1.52c-10.92,0-109.28,0-109.28,0-6.25,0-10.77,1.83-13.92,5.59-6.32,7.52-6.33,21.23-5.95,27.55h149.62ZM92.6,41.98c6.11-7.28,14.65-10.97,25.37-10.97h110.92c10.32.03,18.57,3.64,24.52,10.72,13.65,16.25,8.82,45.08,8.61,46.3l-1.07,6.25H85.14l-1.1-6.21c-.22-1.19-5.25-29.67,8.56-46.09Z"/>
 
-            <!-- Oeil gauche -->
-            <g id="alfred-eye-l" style="transform-origin:125.46px 62.65px;">
-            <path fill="#0d2e38" d="M141.26,62.65c0,8.71-7.09,15.8-15.8,15.8s-15.79-7.09-15.79-15.8,7.09-15.79,15.79-15.79,15.8,7.09,15.8,15.79Z"/>
-            </g>
+          <!-- Oeil gauche — bleu foncé pour contraste -->
+          <g id="alfred-eye-l" style="transform-origin:125.46px 62.65px;">
+            <path fill="#054561"
+              d="M141.26,62.65c0,8.71-7.09,15.8-15.8,15.8s-15.79-7.09-15.79-15.8,7.09-15.79,15.79-15.79,15.8,7.09,15.8,15.79Z"/>
+            <!-- Reflet -->
+            <circle fill="rgba(255,255,255,0.4)" cx="120" cy="57" r="4"/>
+          </g>
 
-            <!-- Oeil droit -->
-            <g id="alfred-eye-r" style="transform-origin:221.6px 62.65px;">
-            <path fill="#0d2e38" d="M237.4,62.65c0,8.71-7.09,15.8-15.8,15.8s-15.8-7.09-15.8-15.8,7.09-15.79,15.8-15.79,15.8,7.09,15.8,15.79Z"/>
-            </g>
-            <!-- Bouche -->
-            <path id="alfred-mouth" fill="#0d2e38"
+          <!-- Oeil droit — bleu foncé pour contraste -->
+          <g id="alfred-eye-r" style="transform-origin:221.6px 62.65px;">
+            <path fill="#054561"
+              d="M237.4,62.65c0,8.71-7.09,15.8-15.8,15.8s-15.8-7.09-15.8-15.8,7.09-15.79,15.8-15.79,15.8,7.09,15.8,15.79Z"/>
+            <!-- Reflet -->
+            <circle fill="rgba(255,255,255,0.4)" cx="216" cy="57" r="4"/>
+          </g>
+
+          <!-- Bouche -->
+          <path id="alfred-mouth" fill="#054561"
             d="M195.9,117.07c-1.03.66-10.41,6.44-23.05,6.44-7.7,0-14.99-2.17-21.66-6.44-3.49-2.25-4.51-6.91-2.28-10.41,2.25-3.5,6.91-4.51,10.41-2.27,14,8.99,27.9.36,28.47-.02,3.53-2.23,8.18-1.16,10.38,2.33,2.23,3.48,1.21,8.14-2.28,10.37Z"/>
         </g>
-        </svg>
+      </svg>
     </div>
 
     <div id="alfred-state-lbl">EN ATTENTE</div>
@@ -531,8 +537,6 @@ function startBlinking() {
         eyeR.style.animation = 'alfred-blink 0.18s ease-in-out 0.05s';
         setTimeout(() => {
           if (curState === 'idle') {
-            eyeL.style.animation = 'alfred-breathe 4s ease-in-out infinite';
-            eyeR.style.animation = 'alfred-breathe 4s ease-in-out infinite';
             eyeL.style.animation = 'none';
             eyeR.style.animation = 'none';
           }
@@ -551,9 +555,9 @@ function trackMouse() {
     if (!svg) return;
     const rect = svg.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height * 0.25;
-    eyeTargetX = Math.max(-9, Math.min(9, (e.clientX - cx) / 32));
-    eyeTargetY = Math.max(-5, Math.min(5, (e.clientY - cy) / 48));
+    const cy = rect.top + rect.height * 0.22;
+    eyeTargetX = Math.max(-8, Math.min(8, (e.clientX - cx) / 30));
+    eyeTargetY = Math.max(-4, Math.min(4, (e.clientY - cy) / 45));
     resetSleepTimer();
   });
 }
@@ -561,8 +565,8 @@ function trackMouse() {
 function startEyeLerp() {
   function lerp() {
     if (curState === 'idle') {
-      eyeCurX += (eyeTargetX - eyeCurX) * 0.07;
-      eyeCurY += (eyeTargetY - eyeCurY) * 0.07;
+      eyeCurX += (eyeTargetX - eyeCurX) * 0.12;
+      eyeCurY += (eyeTargetY - eyeCurY) * 0.12;
       const eyeL = document.getElementById('alfred-eye-l');
       const eyeR = document.getElementById('alfred-eye-r');
       if (eyeL) eyeL.style.transform = `translate(${eyeCurX}px, ${eyeCurY}px)`;
