@@ -48,8 +48,8 @@ function initAlfredUI() {
       background: linear-gradient(
         180deg,
         #054561 0%,
-        #0e7b84 35%,
-        #14b0bd 65%,
+        #0e7b84 25%,
+        #14b0bd 55%,
         #ebe0c4 100%
       );
       display: flex;
@@ -99,13 +99,10 @@ function initAlfredUI() {
 
     /* === AVATAR WRAPPER === */
     #alfred-avatar-wrap {
-      position: relative;
-      width: 160px;
-      height: 170px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
+        background: white;
+        border-radius: 50%;
+        padding: 10px;
+        box-shadow: 0 4px 20px rgba(20,176,189,0.2);
     }
 
     /* === SVG === */
@@ -397,15 +394,11 @@ function initAlfredUI() {
           <!-- Oeil gauche -->
           <g id="alfred-eye-l" style="transform-origin:142px 78px;">
             <path fill="#14b0bd" d="M155.55,78.17c0,7.54-6.05,13.58-13.58,13.58s-13.58-6.13-13.58-13.58,6.05-13.58,13.58-13.58,13.58,6.13,13.58,13.58"/>
-            <!-- Pupille blanche -->
-            <circle fill="rgba(255,255,255,0.6)" cx="146" cy="73" r="4"/>
           </g>
 
           <!-- Oeil droit -->
           <g id="alfred-eye-r" style="transform-origin:238px 78px;">
             <path fill="#14b0bd" d="M251.68,78.17c0,7.54-6.05,13.58-13.58,13.58s-13.58-6.13-13.58-13.58,6.05-13.58,13.58-13.58,13.58,6.13,13.58,13.58"/>
-            <!-- Pupille blanche -->
-            <circle fill="rgba(255,255,255,0.6)" cx="242" cy="73" r="4"/>
           </g>
 
           <!-- Bouche -->
