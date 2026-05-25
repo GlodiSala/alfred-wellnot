@@ -1,12 +1,13 @@
 // === ALFRED BRAIN ===
 
-let currentLangue  = 'fr';
-let isListening    = false;
-let recognition    = null;
-let currentAudio   = null;
-let talkAnimId     = null;
-let secoursIdx     = 0;
+let currentLangue = 'fr';
+let isListening   = false;
+let recognition   = null;
+let currentAudio  = null;
+let talkAnimId    = null;
+let secoursIdx    = 0;
 
+// ── Détection langue ──────────────────────────────────────
 function detectLangue(text) {
   const lower = text.toLowerCase();
   const hits  = ALFRED_CONFIG.TRIGGERS_NL.filter(w => lower.includes(w)).length;
@@ -19,6 +20,7 @@ function switchLangue(l) {
   if (lbl) lbl.textContent = l === 'nl' ? '🇧🇪 NL' : '🇧🇪 FR';
 }
 
+// ── Naturalisation TTS ────────────────────────────────────
 function naturaliserTexte(text) {
   return text
     .replace(/24h\/24/gi,    'vingt-quatre heures sur vingt-quatre')
@@ -38,6 +40,7 @@ function naturaliserTexte(text) {
     .trim();
 }
 
+// ── Contexte écran ────────────────────────────────────────
 function getContexteEcran() {
   const ecranActif = document.querySelector('.screen.active');
   if (!ecranActif) return '';
@@ -46,6 +49,7 @@ function getContexteEcran() {
   return '\n\nÉCRAN VISIBLE : ' + texteVisible + ' — Cite les données réelles. 2 phrases max.';
 }
 
+// ── Gemini ────────────────────────────────────────────────
 async function askAlfred(text, retries = 2) {
   setAlfredState('think');
   showTranscript('« ' + text + ' »');
@@ -56,8 +60,8 @@ async function askAlfred(text, retries = 2) {
   if (langLbl) langLbl.textContent = langue === 'nl' ? '🇧🇪 NL' : '🇧🇪 FR';
 
   const langInstruction = langue === 'nl'
-    ? 'RÈGLE ABSOLUE : tu réponds UNIQUEMENT en néerlandais belge. MAXIMUM 2 phrases courtes. Jamais plus.\n\n'
-    : 'RÈGLE ABSOLUE : tu réponds UNIQUEMENT en français. MAXIMUM 2 phrases courtes. Jamais plus.\n\n';
+    ? 'RÈGLE ABSOLUE : réponds UNIQUEMENT en néerlandais belge. MAXIMUM 2 phrases.\n\n'
+    : 'RÈGLE ABSOLUE : réponds UNIQUEMENT en français. MAXIMUM 2 phrases.\n\n';
 
   const fullPrompt = langInstruction
     + ALFRED_CONFIG.SYSTEM_PROMPT
@@ -68,7 +72,9 @@ async function askAlfred(text, retries = 2) {
     const res = await fetch(ALFRED_CONFIG.API_GEMINI, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ prompt: fullPrompt })
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: fullPrompt }] }]
+      })
     });
 
     if (res.status === 503 && retries > 0) {
@@ -76,10 +82,8 @@ async function askAlfred(text, retries = 2) {
       return askAlfred(text, retries - 1);
     }
 
-    const data  = await res.json();
-    const raw   = data?.candidates?.[0]?.content?.parts?.[0]?.text
-               || data?.text
-               || null;
+    const data = await res.json();
+    const raw  = data?.candidates?.[0]?.content?.parts?.[0]?.text || null;
 
     if (!raw) {
       const fb = langue === 'nl'
@@ -90,10 +94,36 @@ async function askAlfred(text, retries = 2) {
       return;
     }
 
+    // Tronquer à 2 phrases max
     const phrases    = raw.match(/[^.!?]+[.!?]+/g) || [raw];
     const replyClean = phrases.slice(0, 2).join(' ').trim();
 
+    // Traduction dans l'autre langue
+    const autreLangue      = langue === 'fr' ? 'nl' : 'fr';
+    const traductionPrompt = `Traduis en ${autreLangue === 'nl' ? 'néerlandais belge' : 'français'}, même ton, même sens. Uniquement la traduction, rien d'autre : "${replyClean}"`;
+
+    let traduction = '';
+    try {
+      const resTrad  = await fetch(ALFRED_CONFIG.API_GEMINI, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: traductionPrompt }] }]
+        })
+      });
+      const dataTrad = await resTrad.json();
+      traduction     = dataTrad?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+    } catch(e) { traduction = ''; }
+
+    // Bulle : réponse + traduction en dessous
     showBubble(replyClean);
+    if (traduction) {
+      setTimeout(() => {
+        const b = document.getElementById('alfred-bubble');
+        if (b) b.textContent = replyClean + '\n\n↳ ' + traduction;
+      }, replyClean.split(' ').length * 75 + 200);
+    }
+
     addToHistory('alfred', replyClean);
     if (typeof detectAndChangeScreen === 'function') detectAndChangeScreen(text);
     await speakGoogleTTS(replyClean, langue);
@@ -108,6 +138,7 @@ async function askAlfred(text, retries = 2) {
   }
 }
 
+// ── Animation bouche ──────────────────────────────────────
 function startMouthAnim() {
   stopMouthAnim();
   let t = 0;
@@ -136,6 +167,7 @@ function showMouthTalk(show) {
   if (ms) ms.style.display = show ? 'none'  : 'block';
 }
 
+// ── Google TTS synchronisé ────────────────────────────────
 async function speakGoogleTTS(text, langue) {
   setAlfredState('talk');
   showMouthTalk(true);
@@ -147,14 +179,14 @@ async function speakGoogleTTS(text, langue) {
 
   try {
     const res = await fetch(ALFRED_CONFIG.API_TTS, {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({
-      input:       { text: clean },
-      voice:       { languageCode: langCode, name: voiceName, ssmlGender: 'MALE' },
-      audioConfig: { audioEncoding: 'MP3', speakingRate: 0.92, pitch: -1.5 }
-    })
-  });
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        input:       { text: clean },
+        voice:       { languageCode: langCode, name: voiceName, ssmlGender: 'MALE' },
+        audioConfig: { audioEncoding: 'MP3', speakingRate: 0.92, pitch: -1.5 }
+      })
+    });
 
     const data = await res.json();
     if (!data.audioContent) throw new Error('no audio');
@@ -203,6 +235,7 @@ async function speakGoogleTTS(text, langue) {
   }
 }
 
+// ── Fallback Web Speech ───────────────────────────────────
 function fallbackSpeak(text, langCode) {
   const u  = new SpeechSynthesisUtterance(text);
   u.lang   = langCode;
@@ -213,7 +246,10 @@ function fallbackSpeak(text, langCode) {
     t2 += 0.2;
     const ry = Math.max(0, Math.sin(t2) * 10);
     const m  = document.getElementById('alfred-mouth-talk');
-    if (m) { m.setAttribute('ry', ry.toFixed(1)); m.setAttribute('cy', (128 + ry*0.4).toFixed(1)); }
+    if (m) {
+      m.setAttribute('ry', ry.toFixed(1));
+      m.setAttribute('cy', (128 + ry * 0.4).toFixed(1));
+    }
   }, 80);
   u.onend = () => {
     clearInterval(iv);
@@ -226,6 +262,7 @@ function fallbackSpeak(text, langCode) {
   speechSynthesis.speak(u);
 }
 
+// ── Micro ─────────────────────────────────────────────────
 function startListening() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { showTranscript('Chrome requis'); return; }
@@ -237,7 +274,7 @@ function startListening() {
 
   recognition = new SR();
   recognition.lang = currentLangue === 'nl' ? 'nl-BE' : 'fr-FR';
-  recognition.continuous = false;
+  recognition.continuous     = false;
   recognition.interimResults = true;
 
   recognition.onstart = () => {
@@ -275,6 +312,7 @@ function startListening() {
   recognition.start();
 }
 
+// ── Répliques de secours ──────────────────────────────────
 function jouerSecours() {
   const list = currentLangue === 'nl'
     ? ALFRED_CONFIG.REPLIQUES_NL
@@ -290,6 +328,7 @@ function jouerSecours() {
   secoursIdx++;
 }
 
+// ── Clavier ───────────────────────────────────────────────
 document.addEventListener('keydown', e => {
   if (e.key === 'ArrowRight') { e.preventDefault(); jouerSecours(); }
   if (e.key === 'ArrowLeft')  {
