@@ -105,16 +105,17 @@ function initAlfredUI() {
 
     /* Wrapper SVG — pas de cercle blanc */
     #alfred-avatar-wrap {
-        position: relative;
-        width: 180px;
-        height: 180px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        background: transparent;
-        }
-
+      position: relative;
+      width: 180px;
+      height: 180px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background: transparent !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+    }
     /* Dots think */
     #alfred-dots {
       position: absolute;
