@@ -147,16 +147,14 @@ async function speakGoogleTTS(text, langue) {
 
   try {
     const res = await fetch(ALFRED_CONFIG.API_TTS, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({
-        text:         clean,
-        languageCode: langCode,
-        voiceName:    voiceName,
-        speakingRate: 0.92,
-        pitch:        -1.5
-      })
-    });
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({
+      input:       { text: clean },
+      voice:       { languageCode: langCode, name: voiceName, ssmlGender: 'MALE' },
+      audioConfig: { audioEncoding: 'MP3', speakingRate: 0.92, pitch: -1.5 }
+    })
+  });
 
     const data = await res.json();
     if (!data.audioContent) throw new Error('no audio');
