@@ -49,6 +49,28 @@ function getContexteEcran() {
   return '\n\nÉCRAN VISIBLE : ' + texteVisible + ' — Cite les données réelles. 2 phrases max.';
 }
 
+// ── Bulle — mot par mot, léger retard sur la voix ─────────
+function showBubble(text) {
+  const b = document.getElementById('alfred-bubble');
+  if (!b) return;
+  b.classList.remove('show');
+  b.textContent = '';
+  void b.offsetWidth;
+  b.classList.add('show');
+
+  const words = text.split(' ');
+  let i = 0;
+  const iv = setInterval(() => {
+    if (i < words.length) {
+      b.textContent += (i === 0 ? '' : ' ') + words[i];
+      b.scrollTop = b.scrollHeight;
+      i++;
+    } else {
+      clearInterval(iv);
+    }
+  }, 180);
+}
+
 // ── Gemini ────────────────────────────────────────────────
 async function askAlfred(text, retries = 2) {
   setAlfredState('think');
@@ -98,32 +120,8 @@ async function askAlfred(text, retries = 2) {
     const phrases    = raw.match(/[^.!?]+[.!?]+/g) || [raw];
     const replyClean = phrases.slice(0, 2).join(' ').trim();
 
-    // Traduction dans l'autre langue
-    const autreLangue      = langue === 'fr' ? 'nl' : 'fr';
-    const traductionPrompt = `Traduis en ${autreLangue === 'nl' ? 'néerlandais belge' : 'français'}, même ton, même sens. Uniquement la traduction, rien d'autre : "${replyClean}"`;
-
-    let traduction = '';
-    try {
-      const resTrad  = await fetch(ALFRED_CONFIG.API_GEMINI, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: traductionPrompt }] }]
-        })
-      });
-      const dataTrad = await resTrad.json();
-      traduction     = dataTrad?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
-    } catch(e) { traduction = ''; }
-
-    // Bulle : réponse + traduction en dessous
+    // Bulle mot par mot + voix
     showBubble(replyClean);
-    if (traduction) {
-      setTimeout(() => {
-        const b = document.getElementById('alfred-bubble');
-        if (b) b.textContent = replyClean + '\n\n↳ ' + traduction;
-      }, replyClean.split(' ').length * 75 + 200);
-    }
-
     addToHistory('alfred', replyClean);
     if (typeof detectAndChangeScreen === 'function') detectAndChangeScreen(text);
     await speakGoogleTTS(replyClean, langue);
@@ -273,7 +271,7 @@ function startListening() {
   showMouthTalk(false);
 
   recognition = new SR();
-  recognition.lang = currentLangue === 'nl' ? 'nl-BE' : 'fr-FR';
+  recognition.lang           = currentLangue === 'nl' ? 'nl-BE' : 'fr-FR';
   recognition.continuous     = false;
   recognition.interimResults = true;
 
