@@ -159,9 +159,9 @@ async function traiterQuestion(question) {
 
   // 6. Traduction en parallèle de la voix
   const versLangue = langue === 'fr' ? 'nl' : 'fr';
-  traduire(reponse, versLangue).then(trad => {
-    showBubble(trad || reponse);
-  });
+traduire(reponse, versLangue).then(trad => {
+  showBubble(trad || reponse);
+});
 
   // 7. Fait parler Alfred
   await speak(naturaliserTexte(reponse), langue);
