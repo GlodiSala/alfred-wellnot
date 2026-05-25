@@ -1,6 +1,5 @@
 // === ALFRED UI ===
 
-let curState   = 'idle';
 let sleepTimer = null;
 let eyeTargetX = 0, eyeTargetY = 0;
 let eyeCurX    = 0, eyeCurY    = 0;

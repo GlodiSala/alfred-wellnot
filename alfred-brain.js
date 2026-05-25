@@ -1,17 +1,27 @@
 // === ALFRED BRAIN ===
+// Dépend de : alfred-config.js, alfred-ui.js, alfred-voice.js, alfred-dom.js
 
-let currentLangue = 'fr';
 let isListening   = false;
 let recognition   = null;
-let currentAudio  = null;
-let talkAnimId    = null;
 let secoursIdx    = 0;
 
 // ── Détection langue ──────────────────────────────────────
+// Détection simple basée sur la langue courante
+// On change uniquement si on détecte clairement l'autre langue
 function detectLangue(text) {
   const lower = text.toLowerCase();
-  const hits  = ALFRED_CONFIG.TRIGGERS_NL.filter(w => lower.includes(w)).length;
-  return hits >= 2 ? 'nl' : 'fr';
+  // Si on est en FR et on détecte du NL clair
+  if (currentLangue === 'fr') {
+    const hitsNL = ALFRED_CONFIG.TRIGGERS_NL.filter(w => lower.includes(w)).length;
+    return hitsNL >= 2 ? 'nl' : 'fr';
+  }
+  // Si on est en NL et on détecte du FR clair
+  if (currentLangue === 'nl') {
+    const triggersFR = ['bonjour','merci','comment','pouvez','votre','quel','quelle','est-ce','vous'];
+    const hitsFR = triggersFR.filter(w => lower.includes(w)).length;
+    return hitsFR >= 2 ? 'fr' : 'nl';
+  }
+  return currentLangue;
 }
 
 function switchLangue(l) {
@@ -46,10 +56,11 @@ function getContexteEcran() {
   if (!ecranActif) return '';
   const texteVisible = ecranActif.innerText
     .replace(/\s+/g, ' ').trim().substring(0, 400);
-  return '\n\nÉCRAN VISIBLE : ' + texteVisible + ' — Cite les données réelles. 2 phrases max.';
+  return '\n\nÉCRAN VISIBLE : ' + texteVisible
+    + ' — Cite les données réelles visibles. 2 phrases max.';
 }
 
-// ── Bulle — mot par mot, léger retard sur la voix ─────────
+// ── Bulle mot par mot (léger retard sur la voix) ─────────
 function showBubble(text) {
   const b = document.getElementById('alfred-bubble');
   if (!b) return;
@@ -57,7 +68,6 @@ function showBubble(text) {
   b.textContent = '';
   void b.offsetWidth;
   b.classList.add('show');
-
   const words = text.split(' ');
   let i = 0;
   const iv = setInterval(() => {
@@ -69,6 +79,52 @@ function showBubble(text) {
       clearInterval(iv);
     }
   }, 180);
+}
+
+// ── Détection écran à changer ─────────────────────────────
+function detectAndChangeScreen(text) {
+  const lower = text.toLowerCase();
+
+  // Mapping mots-clés → écrans
+  const mapping = [
+    {
+      ecran: 'dashboard',
+      mots: ['tableau','bord','dashboard','accueil','alertes','dossiers','vue','ensemble','overzicht','taken']
+    },
+    {
+      ecran: 'parties',
+      mots: ['partie','partis','vendeur','acquéreur','acquere','registre','national','noms','personnes',
+             'rijksregister','partijen','koper','verkoper','naam','personen']
+    },
+    {
+      ecran: 'documents',
+      mots: ['document','manquant','pièce','peb','certif','manque','incomplet','upload','analyse',
+             'documenten','ontbreekt','uploaden','analyseer']
+    },
+    {
+      ecran: 'redaction',
+      mots: ['compromis','rédige','rédaction','acte','blanche','check','génère','ontwerp','opstellen',
+             'akte','blanco','redigeer']
+    },
+    {
+      ecran: 'chatbot',
+      mots: ['chatbot','client','nuit','message','avance','nachts','vordert','klant','bericht',
+             'avonds','vraag','antwoord']
+    },
+  ];
+
+  for (const { ecran, mots } of mapping) {
+    if (mots.some(m => lower.includes(m))) {
+      // Change l'onglet visible
+      const btn = document.querySelector(`#screen-nav button[onclick*="${ecran}"]`)
+               || Array.from(document.querySelectorAll('#screen-nav button'))
+                    .find(b => b.textContent.toLowerCase().includes(ecran));
+      if (btn && !btn.classList.contains('active')) {
+        btn.click();
+      }
+      return;
+    }
+  }
 }
 
 // ── Gemini ────────────────────────────────────────────────
@@ -110,9 +166,9 @@ async function askAlfred(text, retries = 2) {
     if (!raw) {
       const fb = langue === 'nl'
         ? 'Ik sta klaar voor uw volgende vraag.'
-        : 'Je suis là. Posez votre prochaine question.';
+        : 'Posez votre prochaine question.';
       showBubble(fb);
-      await speakGoogleTTS(fb, langue);
+      await speak(naturaliserTexte(fb), langue);
       return;
     }
 
@@ -120,11 +176,15 @@ async function askAlfred(text, retries = 2) {
     const phrases    = raw.match(/[^.!?]+[.!?]+/g) || [raw];
     const replyClean = phrases.slice(0, 2).join(' ').trim();
 
-    // Bulle mot par mot + voix
+    // Bulle + changement écran sur question ET réponse
     showBubble(replyClean);
+    detectAndChangeScreen(text);
+    detectAndChangeScreen(replyClean);
+
     addToHistory('alfred', replyClean);
-    if (typeof detectAndChangeScreen === 'function') detectAndChangeScreen(text);
-    await speakGoogleTTS(replyClean, langue);
+
+    // Parle via alfred-voice.js
+    await speak(naturaliserTexte(replyClean), langue);
 
   } catch(e) {
     console.error('askAlfred:', e);
@@ -136,139 +196,13 @@ async function askAlfred(text, retries = 2) {
   }
 }
 
-// ── Animation bouche ──────────────────────────────────────
-function startMouthAnim() {
-  stopMouthAnim();
-  let t = 0;
-  function frame() {
-    const m = document.getElementById('alfred-mouth-talk');
-    if (!m) return;
-    t += 0.18;
-    const ry = Math.max(0, Math.sin(t) * 11);
-    m.setAttribute('ry', ry.toFixed(1));
-    m.setAttribute('cy', (128 + Math.max(0, Math.sin(t) * 4)).toFixed(1));
-    talkAnimId = requestAnimationFrame(frame);
-  }
-  talkAnimId = requestAnimationFrame(frame);
-}
-
-function stopMouthAnim() {
-  if (talkAnimId) { cancelAnimationFrame(talkAnimId); talkAnimId = null; }
-  const m = document.getElementById('alfred-mouth-talk');
-  if (m) { m.setAttribute('ry', '0'); m.setAttribute('cy', '128'); }
-}
-
-function showMouthTalk(show) {
-  const mt = document.getElementById('alfred-mouth-talk');
-  const ms = document.getElementById('alfred-mouth');
-  if (mt) mt.style.display = show ? 'block' : 'none';
-  if (ms) ms.style.display = show ? 'none'  : 'block';
-}
-
-// ── Google TTS synchronisé ────────────────────────────────
-async function speakGoogleTTS(text, langue) {
-  setAlfredState('talk');
-  showMouthTalk(true);
-  startMouthAnim();
-
-  const langCode  = langue === 'nl' ? 'nl-BE' : 'fr-FR';
-  const voiceName = langue === 'nl' ? 'nl-BE-Wavenet-A' : 'fr-FR-Wavenet-D';
-  const clean     = naturaliserTexte(text);
-
-  try {
-    const res = await fetch(ALFRED_CONFIG.API_TTS, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        input:       { text: clean },
-        voice:       { languageCode: langCode, name: voiceName, ssmlGender: 'MALE' },
-        audioConfig: { audioEncoding: 'MP3', speakingRate: 0.92, pitch: -1.5 }
-      })
-    });
-
-    const data = await res.json();
-    if (!data.audioContent) throw new Error('no audio');
-
-    const audio = new Audio('data:audio/mp3;base64,' + data.audioContent);
-    currentAudio = audio;
-
-    const ctx      = new (window.AudioContext || window.webkitAudioContext)();
-    const src      = ctx.createMediaElementSource(audio);
-    const analyser = ctx.createAnalyser();
-    analyser.fftSize = 256;
-    src.connect(analyser);
-    analyser.connect(ctx.destination);
-    const buf = new Uint8Array(analyser.frequencyBinCount);
-
-    cancelAnimationFrame(talkAnimId);
-    function syncFrame() {
-      if (!currentAudio || currentAudio.paused) return;
-      analyser.getByteFrequencyData(buf);
-      const avg = buf.slice(0, 60).reduce((a, b) => a + b, 0) / 60;
-      const amp = Math.min(avg / 55, 1);
-      const m   = document.getElementById('alfred-mouth-talk');
-      if (m) {
-        m.setAttribute('ry', (amp * 12).toFixed(1));
-        m.setAttribute('cy', (128 + amp * 4).toFixed(1));
-      }
-      updateVolBar(amp);
-      talkAnimId = requestAnimationFrame(syncFrame);
-    }
-    talkAnimId = requestAnimationFrame(syncFrame);
-
-    audio.onended = () => {
-      stopMouthAnim();
-      showMouthTalk(false);
-      updateVolBar(0);
-      currentAudio = null;
-      setAlfredState('idle');
-      resetSleepTimer();
-    };
-
-    await audio.play();
-
-  } catch(e) {
-    console.error('TTS:', e);
-    fallbackSpeak(clean, langCode);
-  }
-}
-
-// ── Fallback Web Speech ───────────────────────────────────
-function fallbackSpeak(text, langCode) {
-  const u  = new SpeechSynthesisUtterance(text);
-  u.lang   = langCode;
-  u.rate   = 0.92;
-  u.pitch  = 0.9;
-  let t2   = 0;
-  const iv = setInterval(() => {
-    t2 += 0.2;
-    const ry = Math.max(0, Math.sin(t2) * 10);
-    const m  = document.getElementById('alfred-mouth-talk');
-    if (m) {
-      m.setAttribute('ry', ry.toFixed(1));
-      m.setAttribute('cy', (128 + ry * 0.4).toFixed(1));
-    }
-  }, 80);
-  u.onend = () => {
-    clearInterval(iv);
-    stopMouthAnim();
-    showMouthTalk(false);
-    setAlfredState('idle');
-    resetSleepTimer();
-  };
-  speechSynthesis.cancel();
-  speechSynthesis.speak(u);
-}
-
 // ── Micro ─────────────────────────────────────────────────
 function startListening() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { showTranscript('Chrome requis'); return; }
 
-  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
-  speechSynthesis.cancel();
-  stopMouthAnim();
-  showMouthTalk(false);
+  // Stop audio en cours
+  if (typeof stopAudio === 'function') stopAudio();
 
   recognition = new SR();
   recognition.lang           = currentLangue === 'nl' ? 'nl-BE' : 'fr-FR';
@@ -311,36 +245,97 @@ function startListening() {
 }
 
 // ── Répliques de secours ──────────────────────────────────
-function jouerSecours() {
+async function jouerSecours() {
   const list = currentLangue === 'nl'
     ? ALFRED_CONFIG.REPLIQUES_NL
     : ALFRED_CONFIG.REPLIQUES_FR;
   if (!list || !list.length) return;
+
   secoursIdx = secoursIdx % list.length;
   const r = list[secoursIdx];
+
   showBubble(r.texte);
   addToHistory('alfred', r.texte);
-  if (typeof detectAndChangeScreen === 'function') detectAndChangeScreen(r.texte);
-  speakGoogleTTS(r.texte, currentLangue);
+
+  // Change l'écran selon la réplique
+  detectAndChangeScreen(r.texte);
+  detectAndChangeScreen(r.label);
+
+  // Action DOM si disponible
+  if (typeof executerActionDOM === 'function') {
+    await executerActionDOM(r.label);
+  }
+
+  await speak(naturaliserTexte(r.texte), currentLangue);
+
   updateSecoursLabel(r.label, r.acte, secoursIdx + 1, list.length);
   secoursIdx++;
 }
 
 // ── Clavier ───────────────────────────────────────────────
 document.addEventListener('keydown', e => {
-  if (e.key === 'ArrowRight') { e.preventDefault(); jouerSecours(); }
-  if (e.key === 'ArrowLeft')  {
+  if (e.key === 'ArrowRight') {
+    e.preventDefault();
+    jouerSecours();
+  }
+  if (e.key === 'ArrowLeft') {
     e.preventDefault();
     secoursIdx = Math.max(0, secoursIdx - 2);
     jouerSecours();
   }
-  if (e.key === ' ' && !isListening) { e.preventDefault(); startListening(); }
-  if (e.key === ' ' &&  isListening) { e.preventDefault(); recognition?.stop(); }
+  if (e.key === ' ' && !isListening) {
+    e.preventDefault();
+    startListening();
+  }
+  if (e.key === ' ' && isListening) {
+    e.preventDefault();
+    recognition?.stop();
+  }
   if (e.key === 'Escape') {
-    speechSynthesis.cancel();
-    if (currentAudio) { currentAudio.pause(); currentAudio = null; }
-    stopMouthAnim();
-    showMouthTalk(false);
+    if (typeof stopAudio === 'function') stopAudio();
     setAlfredState('idle');
   }
 });
+
+// ── Helpers UI ────────────────────────────────────────────
+function showTranscript(t) {
+  const el = document.getElementById('alfred-transcript');
+  if (el) el.textContent = t || '';
+}
+
+function updateVolBar(amp) {
+  const b = document.getElementById('alfred-vol-bar');
+  if (b) b.style.width = (amp * 100) + '%';
+}
+
+function updateMicBtn(on) {
+  const b = document.getElementById('alfred-mic-btn');
+  if (!b) return;
+  b.textContent = on ? '⏹ Stop' : '🎤 Parler';
+  b.classList.toggle('listening', on);
+}
+
+function toggleMic() {
+  if (isListening) recognition?.stop();
+  else startListening();
+}
+
+function toggleLangue() {
+  switchLangue(currentLangue === 'fr' ? 'nl' : 'fr');
+}
+
+function addToHistory(who, text) {
+  console.log(
+    `%c[${who.toUpperCase()}]%c ${text.substring(0, 100)}`,
+    `color:${who === 'alfred' ? '#14b0bd' : '#888'};font-weight:bold`,
+    'color:inherit'
+  );
+}
+
+function updateSecoursLabel(label, acte, idx, total) {
+  const el = document.getElementById('alfred-secours');
+  if (el) {
+    el.textContent = `A${acte} · ${label} · ${idx}/${total}`;
+    setTimeout(() => { if (el) el.textContent = '← →'; }, 4000);
+  }
+}

@@ -3,12 +3,13 @@
 
   const BASE = 'https://glodisala.github.io/alfred-wellnot/';
 
+  // ORDRE CRITIQUE : config → ui → voice → dom → brain
   const scripts = [
     'alfred-config.js',
-    'alfred-voice.js',
-    'alfred-brain.js',
-    'alfred-dom.js',
     'alfred-ui.js',
+    'alfred-voice.js',
+    'alfred-dom.js',
+    'alfred-brain.js',
   ];
 
   let idx = 0;
@@ -17,7 +18,7 @@
     const s = document.createElement('script');
     s.src = BASE + scripts[idx] + '?v=' + Date.now();
     s.onload = () => { idx++; loadNext(); };
-    s.onerror = (e) => console.error('Erreur:', scripts[idx], e);
+    s.onerror = (e) => console.error('Erreur chargement:', scripts[idx], e);
     document.head.appendChild(s);
   }
   loadNext();
