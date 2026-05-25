@@ -1,79 +1,39 @@
 // === ALFRED UI — Split-screen + SVG animé ===
 
-let curState = 'idle';
-let sleepTimer = null;
-let eyeTargetX = 0, eyeTargetY = 0;
-let eyeCurX = 0, eyeCurY = 0;
-let rafEyes = null;
-let talkInterval = null;
-let talkAmp = 0;
+let curState     = 'idle';
+let sleepTimer   = null;
+let eyeTargetX   = 0, eyeTargetY = 0;
+let eyeCurX      = 0, eyeCurY    = 0;
+let rafEyes      = null;
 
-// ─── MOUTH paths ───────────────────────────────────────────
+// ── Mouth paths (idle / think / listen / sleep) ─────────────
 const MOUTH = {
-  smile: "M195.9,117.07c-1.03.66-10.41,6.44-23.05,6.44-7.7,0-14.99-2.17-21.66-6.44-3.49-2.25-4.51-6.91-2.28-10.41,2.25-3.5,6.91-4.51,10.41-2.27,14,8.99,27.9.36,28.47-.02,3.53-2.23,8.18-1.16,10.38,2.33,2.23,3.48,1.21,8.14-2.28,10.37Z",
-  flat:  "M163,117 Q189,119 216,117",
-  think: "M163,115 Q189,111 216,115",
+  smile: "M189.28,136.79c-6.31,0-13.32-1.49-20.51-6.13-2.45-1.58-3.24-4.91-1.58-7.36,1.58-2.45,4.91-3.15,7.36-1.58,15.07,9.64,30.23.35,30.85,0,2.45-1.58,5.78-.79,7.36,1.66s.88,5.78-1.58,7.36c-.61.35-9.73,6.13-21.91,6.13",
+  flat:  "M163,130 Q189,132 216,130",
+  think: "M163,128 Q189,124 216,128",
 };
 
-// ─── SVG Alfred complet avec SMIL intégré ──────────────────
-function buildAlfredSVG() {
+// ── Lid helper : arc vers le BAS + 3 cils vers le bas ───────
+function lidPath(cx, cy, r) {
   return `
-  <!-- CORPS -->
-  <g id="alfred-body-main">
-    <path fill="#14b0bd" d="M63.1,118.92c0,.35.27,30.14,13.37,43.08,4,3.95,8.75,5.72,14.36,5.66h168.09c6.64,0,11.72-2.06,15.56-6.3,11.54-12.77,9.05-42.02,9.05-42.02h0c0-2.31-.39-56.9-34.8-91.35C230.16,9.42,204.77,0,173.25,0h-.7c-23.99.11-44.49,5.59-60.94,16.29l-.5.24c-5.37,3.52-10.35,7.63-14.81,12.21-34.02,34.89-33.21,89.63-33.2,90.18Z"/>
-    <path fill="#14b0bd" d="M193.23,185.18l-11.17-.02v89.21c12.67,4.09,21.05,15.3,21.05,28.38,0,16.75-13.62,30.37-30.36,30.37s-30.37-13.62-30.37-30.37c0-13.08,8.39-24.28,21.05-28.37v-89.24h-11.15c-3.65,13.56-16.06,51.45-45.6,74.47v78.59c21.21,8.89,43.65,13.39,66.72,13.39s44.57-4.32,65.41-12.85v-79.13c-29.52-23.01-41.93-60.87-45.58-74.42Z"/>
-    <path fill="#14b0bd" d="M91.09,185.33h-.55c-10.36,0-19.28-3.62-26.5-10.78-18.08-17.89-18.6-55.45-18.6-55.45,0,0-.56-39.38,18.25-74.9C23.61,77.1,0,126.38,0,178.18c0,62.53,33.65,120,88.06,150.88v-79.01l3.99-2.78c24.24-16.91,36.17-47.26,40.79-62.14-16.64.01-31.42.07-41.75.2Z"/>
-    <path fill="#14b0bd" d="M281.19,42.53c19.25,34.7,19.86,76.35,19.86,76.35,0,0,2.92,36.01-13.58,54.3-7.27,8.06-16.9,12.15-28.63,12.15-8.85,0-20.21-.04-32.97-.07l-13.17-.03c4.63,14.87,16.58,45.18,40.76,62.04l3.99,2.78v79.68c55.22-30.72,89.37-88.45,89.37-151.55,0-52.87-24.34-102.77-65.62-135.64Z"/>
-  </g>
-
-  <!-- CASQUE -->
-  <path fill="#fff" d="M247.81,79.21c.43-7.09.27-20.44-5.95-27.81-3-3.57-7.26-5.31-13-5.33h-1.52c-10.92,0-109.28,0-109.28,0-6.25,0-10.77,1.83-13.92,5.59-6.32,7.52-6.33,21.23-5.95,27.55h149.62ZM92.6,41.98c6.11-7.28,14.65-10.97,25.37-10.97h110.92c10.32.03,18.57,3.64,24.52,10.72,13.65,16.25,8.82,45.08,8.61,46.3l-1.07,6.25H85.14l-1.1-6.21c-.22-1.19-5.25-29.67,8.56-46.09Z"/>
-
-  <!-- YEUX -->
-  <g id="alfred-eye-l" style="transform-origin:125.46px 62.65px;">
-    <circle fill="#fff" cx="125.46" cy="62.65" r="13"/>
-  </g>
-  <g id="alfred-eye-r" style="transform-origin:221.6px 62.65px;">
-    <circle fill="#fff" cx="221.6" cy="62.65" r="13"/>
-  </g>
-
-  <!-- PAUPIÈRES SLEEP (arc vers le bas + cils) -->
-  <g id="alfred-lids" style="display:none;">
-    <!-- œil gauche -->
-    <path stroke="#fff" stroke-width="5" stroke-linecap="round" fill="none"
-      d="M112,63 Q125,72 139,63"/>
-    <line x1="117" y1="65" x2="113" y2="74" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-    <line x1="125" y1="68" x2="125" y2="78" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-    <line x1="133" y1="65" x2="137" y2="74" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-    <!-- œil droit -->
-    <path stroke="#fff" stroke-width="5" stroke-linecap="round" fill="none"
-      d="M208,63 Q222,72 236,63"/>
-    <line x1="213" y1="65" x2="209" y2="74" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-    <line x1="222" y1="68" x2="222" y2="78" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-    <line x1="231" y1="65" x2="235" y2="74" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-  </g>
-
-  <!-- BOUCHE sourire (idle/think/sleep) -->
-  <path id="alfred-mouth" fill="#fff"
-    d="M195.9,117.07c-1.03.66-10.41,6.44-23.05,6.44-7.7,0-14.99-2.17-21.66-6.44-3.49-2.25-4.51-6.91-2.28-10.41,2.25-3.5,6.91-4.51,10.41-2.27,14,8.99,27.9.36,28.47-.02,3.53-2.23,8.18-1.16,10.38,2.33,2.23,3.48,1.21,8.14-2.28,10.37Z"/>
-
-  <!-- BOUCHE TALK : ellipse SMIL -->
-  <ellipse id="alfred-mouth-talk" cx="173" cy="122" rx="22" ry="0"
-    fill="#fff" style="display:none;">
-    <animate attributeName="ry" values="0;13;2;11;0" dur="0.55s" repeatCount="indefinite"/>
-    <animate attributeName="cy" values="122;127;122;126;122" dur="0.55s" repeatCount="indefinite"/>
-  </ellipse>
+    <path stroke="#14b0bd" stroke-width="4" stroke-linecap="round" fill="none"
+      d="M${cx-r} ${cy} Q${cx} ${cy+r*0.8} ${cx+r} ${cy}"/>
+    <line x1="${cx-7}"  y1="${cy+4}"           x2="${cx-10}" y2="${cy+12}"          stroke="#14b0bd" stroke-width="2" stroke-linecap="round"/>
+    <line x1="${cx}"    y1="${cy+r*0.75}"       x2="${cx}"   y2="${cy+r*0.75+9}"    stroke="#14b0bd" stroke-width="2" stroke-linecap="round"/>
+    <line x1="${cx+7}"  y1="${cy+4}"            x2="${cx+10}" y2="${cy+12}"         stroke="#14b0bd" stroke-width="2" stroke-linecap="round"/>
   `;
 }
 
-// ─── INIT UI ───────────────────────────────────────────────
+// ── Injection HTML du panneau gauche ────────────────────────
 function initAlfredUI() {
   if (document.getElementById('alfred-left-panel')) return;
 
+  // ── STYLES ────────────────────────────────────────────────
   const style = document.createElement('style');
   style.id = 'alfred-styles';
   style.textContent = `
     body.alfred-active { margin:0; padding:0; overflow:hidden; }
+
     #alfred-wrapper {
       display:flex; height:100vh; width:100vw;
       position:fixed; top:0; left:0; z-index:99998; pointer-events:none;
@@ -83,12 +43,11 @@ function initAlfredUI() {
       background:linear-gradient(180deg,#054561 0%,#14b0bd 50%,#ebe0c4 100%);
       display:flex; flex-direction:column; align-items:center;
       padding:20px 0 16px;
-      box-shadow:4px 0 32px rgba(5,69,97,0.35);
-      overflow:hidden; pointer-events:all; position:relative;
+      box-shadow:4px 0 32px rgba(5,69,97,.35);
+      overflow:hidden; pointer-events:all; position:relative; flex-shrink:0;
       transition:width .6s cubic-bezier(.32,.72,0,1),
                  min-width .6s cubic-bezier(.32,.72,0,1),
                  padding .6s cubic-bezier(.32,.72,0,1);
-      flex-shrink:0;
     }
     #alfred-left-panel.visible { width:270px; min-width:270px; padding:20px 16px 16px; }
 
@@ -105,10 +64,7 @@ function initAlfredUI() {
       pointer-events:none; opacity:0; transition:opacity .4s ease; z-index:10;
     }
     #alfred-zzz.show { opacity:1; }
-    .alfred-z {
-      position:absolute; font-weight:800;
-      color:rgba(255,255,255,.8); opacity:0; font-family:sans-serif;
-    }
+    .alfred-z { position:absolute; font-weight:800; color:rgba(255,255,255,.8); opacity:0; font-family:sans-serif; }
 
     #alfred-avatar-wrap {
       position:relative; width:180px; height:180px;
@@ -123,10 +79,7 @@ function initAlfredUI() {
     #alfred-dots.show { opacity:1; }
     .alfred-dot { width:6px; height:6px; border-radius:50%; background:#14b0bd; }
 
-    #alfred-svg { width:150px; height:150px; overflow:visible; }
-    #alfred-body-main { transform-origin:173px 175px; }
-    #alfred-eye-l { transform-origin:125.46px 62.65px; transition:transform .06s ease-out; }
-    #alfred-eye-r { transform-origin:221.6px 62.65px;  transition:transform .06s ease-out; }
+    #alfred-svg { width:155px; height:155px; overflow:visible; }
 
     #alfred-state-lbl {
       color:rgba(255,255,255,.4); font-size:8px; letter-spacing:1.5px;
@@ -183,24 +136,82 @@ function initAlfredUI() {
     #alfred-secours:hover { color:rgba(255,255,255,.45); }
     #alfred-site-content { flex:1; height:100vh; overflow:auto; pointer-events:all; min-width:0; }
 
-    @keyframes alfred-breathe  { 0%,100%{transform:scale(1);}        50%{transform:scale(1.01);} }
-    @keyframes alfred-think    { 0%,100%{opacity:.6;}                 50%{opacity:1;} }
-    @keyframes alfred-talk     { 0%{transform:translateX(-.5px);}     100%{transform:translateX(.5px);} }
-    @keyframes alfred-sleep    { 0%,100%{transform:translateY(0);}    50%{transform:translateY(3px) rotate(.3deg);} }
-    @keyframes alfred-dot-pop  { 0%,100%{opacity:0;transform:scale(.5);} 50%{opacity:1;transform:translateY(-3px) scale(1.1);} }
-    @keyframes alfred-float-z  { 0%{opacity:0;transform:translate(0,0) rotate(-8deg);} 20%{opacity:.8;} 100%{opacity:0;transform:translate(14px,-30px) rotate(14deg);} }
-    @keyframes alfred-blink    { 0%,100%{transform:scaleY(1);}        50%{transform:scaleY(.06);} }
-    @keyframes alfred-pulse-mic{ 0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.25);} 50%{box-shadow:0 0 0 8px rgba(255,255,255,.04);} }
-    @keyframes alfred-eye-think{ 0%,100%{transform:translateX(0);}    25%{transform:translateX(6px);}  75%{transform:translateX(-6px);} }
-    @keyframes alfred-sway     { 0%,100%{transform:rotate(-2deg);}    50%{transform:rotate(2deg);} }
+    /* ── Animations keyframes ── */
+    @keyframes alfred-breathe   { 0%,100%{transform:scale(1);}         50%{transform:scale(1.01);} }
+    @keyframes alfred-sway      { 0%,100%{transform:rotate(-2deg);}    50%{transform:rotate(2deg);} }
+    @keyframes alfred-talk-vib  { 0%{transform:translateX(-.5px);}     100%{transform:translateX(.5px);} }
+    @keyframes alfred-sleep     { 0%,100%{transform:translateY(0);}    50%{transform:translateY(3px) rotate(.3deg);} }
+    @keyframes alfred-dot-pop   { 0%,100%{opacity:0;transform:scale(.5);} 50%{opacity:1;transform:translateY(-3px) scale(1.1);} }
+    @keyframes alfred-float-z   { 0%{opacity:0;transform:translate(0,0) rotate(-8deg);} 20%{opacity:.8;} 100%{opacity:0;transform:translate(14px,-30px) rotate(14deg);} }
+    @keyframes alfred-blink     { 0%,100%{transform:scaleY(1);}        50%{transform:scaleY(.06);} }
+    @keyframes alfred-pulse-mic { 0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.25);} 50%{box-shadow:0 0 0 8px rgba(255,255,255,.04);} }
+    @keyframes alfred-eye-lr    { 0%,100%{transform:translateX(0);}    25%{transform:translateX(7px);}  75%{transform:translateX(-7px);} }
+    @keyframes alfred-flash-alert { 0%,100%{fill:#14b0bd;} 50%{fill:#e05a00;} }
   `;
   document.head.appendChild(style);
 
+  // ── WRAPPER ───────────────────────────────────────────────
   const wrapper = document.createElement('div');
   wrapper.id = 'alfred-wrapper';
 
+  // ── PANNEAU GAUCHE ────────────────────────────────────────
   const left = document.createElement('div');
   left.id = 'alfred-left-panel';
+
+  // SVG Alfred — fond blanc + paths teal originaux
+  const svgHTML = `
+    <svg id="alfred-svg" viewBox="0 0 379.79 383.47"
+         xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">
+
+      <!-- Fond blanc circulaire -->
+      <circle cx="189.9" cy="193.66" r="189.9" fill="white"/>
+
+      <!-- Corps teal — path original complet -->
+      <g id="alfred-body-main">
+        <path class="alfred-body-fill" fill="#14b0bd" d="M246.68,12.44C230.03,4.47,211.1,0,189.28,0h-.53c-22.96.09-42.76,5.17-59.94,14.02C53.98,39.52,0,110.33,0,193.66c0,104.72,85.18,189.81,189.9,189.81s189.9-85.18,189.9-189.81c0-84.91-56-156.95-133.02-181.13l-.09-.09ZM126.63,30.06h.26c16.83-10.95,37.68-16.56,62.13-16.65h.7c32.16,0,58.01,9.64,77.03,28.66,35.32,35.32,35.49,92.1,35.49,92.89v.44s2.8,29.36-9.64,43.03c-4.29,4.73-9.9,7.01-17.18,7.01H107.44c-6.22.18-11.57-1.93-15.95-6.31-13.76-13.58-14.02-44.25-14.02-44.6,0-.53-.7-56.35,33.83-91.75,4.73-4.82,9.81-9.03,15.42-12.71h-.09ZM109.71,264.56l-3.07,2.1v81.58c-54.94-29.71-92.45-87.81-92.45-154.58,0-58.71,29.09-110.68,73.43-142.58-24.19,37.42-23.66,81.32-23.57,83.51,0,1.49.09,36.28,17.96,53.89,6.84,6.75,15.25,10.17,24.97,10.17h.53c10.95-.18,26.9-.18,44.69-.18-4.12,14.2-16.12,47.76-42.5,66.16v-.09ZM257.46,355.7c-20.86,8.76-43.64,13.58-67.56,13.58s-47.76-5.08-68.88-14.11v-81.15c30.85-23.49,42.94-63.09,46.09-75.63h15.07v93.06c-12.01,3.24-21.03,13.67-21.03,26.73,0,15.6,12.62,28.22,28.22,28.22s28.22-12.62,28.22-28.22c0-13.06-9.03-23.49-21.03-26.73v-93.06h15.07c3.15,12.53,15.25,52.05,46.09,75.54v81.67l-.26.09ZM271.74,348.86v-82.2l-3.07-2.1c-26.29-18.31-38.29-51.79-42.5-66.07h49.07c11.04,0,20.16-3.86,26.99-11.39,15.86-17.53,13.32-49.42,12.97-52.84,0-5.52-.96-48.64-25.5-84.91,45.66,31.72,75.63,84.48,75.63,144.15,0,67.3-38.03,125.75-93.77,155.19l.18.18Z"/>
+      </g>
+
+      <!-- Casque — path original -->
+      <path fill="#14b0bd" d="M275.51,107.61H103.4l-.79-4.38c-.18-1.14-5-28.83,8.06-44.34,5.7-6.75,13.67-10.17,23.66-10.17h110.94c9.64,0,17.35,3.42,22.87,9.9,12.97,15.42,8.33,43.38,8.15,44.52l-.79,4.47h0ZM112.61,96.92h153.71c.61-7.54.88-22.87-6.31-31.37-3.42-4.12-8.24-6.05-14.63-6.13-.88,0-110.85,0-110.77,0h-.09c-6.84,0-11.92,2.1-15.51,6.4-6.75,8.06-7.1,22.61-6.31,31.2"/>
+
+      <!-- Yeux — paths originaux, animables -->
+      <g id="alfred-eye-l" style="transform-origin:141.97px 78.17px;">
+        <path fill="#14b0bd" d="M155.55,78.17c0,7.54-6.05,13.58-13.58,13.58s-13.58-6.13-13.58-13.58,6.05-13.58,13.58-13.58,13.58,6.13,13.58,13.58"/>
+      </g>
+      <g id="alfred-eye-r" style="transform-origin:238.10px 78.17px;">
+        <path fill="#14b0bd" d="M251.68,78.17c0,7.54-6.05,13.58-13.58,13.58s-13.58-6.13-13.58-13.58,6.05-13.58,13.58-13.58,13.58,6.13,13.58,13.58"/>
+      </g>
+
+      <!-- Paupières sleep : arc vers le bas + cils vers le bas -->
+      <g id="alfred-lids" style="display:none;">
+        <!-- oeil gauche -->
+        <path stroke="#14b0bd" stroke-width="5" stroke-linecap="round" fill="none"
+          d="M128.39,78.17 Q141.97,88.05 155.55,78.17"/>
+        <line x1="134" y1="80" x2="131" y2="89" stroke="#14b0bd" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="142" y1="83" x2="142" y2="92" stroke="#14b0bd" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="150" y1="80" x2="153" y2="89" stroke="#14b0bd" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- oeil droit -->
+        <path stroke="#14b0bd" stroke-width="5" stroke-linecap="round" fill="none"
+          d="M224.52,78.17 Q238.10,88.05 251.68,78.17"/>
+        <line x1="230" y1="80" x2="227" y2="89" stroke="#14b0bd" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="238" y1="83" x2="238" y2="92" stroke="#14b0bd" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="246" y1="80" x2="249" y2="89" stroke="#14b0bd" stroke-width="2.5" stroke-linecap="round"/>
+      </g>
+
+      <!-- Bouche sourire — path original -->
+      <path id="alfred-mouth" fill="#14b0bd"
+        d="M189.28,136.79c-6.31,0-13.32-1.49-20.51-6.13-2.45-1.58-3.24-4.91-1.58-7.36,1.58-2.45,4.91-3.15,7.36-1.58,15.07,9.64,30.23.35,30.85,0,2.45-1.58,5.78-.79,7.36,1.66s.88,5.78-1.58,7.36c-.61.35-9.73,6.13-21.91,6.13"/>
+
+      <!-- Bouche talk : ellipse SMIL -->
+      <ellipse id="alfred-mouth-talk" fill="#14b0bd" cx="189" cy="128" rx="20" ry="0"
+        style="display:none;">
+        <animate attributeName="ry" values="0;12;2;10;0" dur="0.5s" repeatCount="indefinite"/>
+        <animate attributeName="cy" values="128;133;128;132;128" dur="0.5s" repeatCount="indefinite"/>
+      </ellipse>
+
+    </svg>
+  `;
+
   left.innerHTML = `
     <div id="alfred-logo">ALFRED · WELLNOT</div>
     <div id="alfred-zzz">
@@ -214,39 +225,7 @@ function initAlfredUI() {
         <div class="alfred-dot" id="alfred-dot2"></div>
         <div class="alfred-dot" id="alfred-dot3"></div>
       </div>
-      <svg id="alfred-svg" viewBox="0 0 346.81 351.58"
-           xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">
-        <g id="alfred-body-main">
-          <path fill="#14b0bd" d="M63.1,118.92c0,.35.27,30.14,13.37,43.08,4,3.95,8.75,5.72,14.36,5.66h168.09c6.64,0,11.72-2.06,15.56-6.3,11.54-12.77,9.05-42.02,9.05-42.02h0c0-2.31-.39-56.9-34.8-91.35C230.16,9.42,204.77,0,173.25,0h-.7c-23.99.11-44.49,5.59-60.94,16.29l-.5.24c-5.37,3.52-10.35,7.63-14.81,12.21-34.02,34.89-33.21,89.63-33.2,90.18Z"/>
-          <path fill="#14b0bd" d="M193.23,185.18l-11.17-.02v89.21c12.67,4.09,21.05,15.3,21.05,28.38,0,16.75-13.62,30.37-30.36,30.37s-30.37-13.62-30.37-30.37c0-13.08,8.39-24.28,21.05-28.37v-89.24h-11.15c-3.65,13.56-16.06,51.45-45.6,74.47v78.59c21.21,8.89,43.65,13.39,66.72,13.39s44.57-4.32,65.41-12.85v-79.13c-29.52-23.01-41.93-60.87-45.58-74.42Z"/>
-          <path fill="#14b0bd" d="M91.09,185.33h-.55c-10.36,0-19.28-3.62-26.5-10.78-18.08-17.89-18.6-55.45-18.6-55.45,0,0-.56-39.38,18.25-74.9C23.61,77.1,0,126.38,0,178.18c0,62.53,33.65,120,88.06,150.88v-79.01l3.99-2.78c24.24-16.91,36.17-47.26,40.79-62.14-16.64.01-31.42.07-41.75.2Z"/>
-          <path fill="#14b0bd" d="M281.19,42.53c19.25,34.7,19.86,76.35,19.86,76.35,0,0,2.92,36.01-13.58,54.3-7.27,8.06-16.9,12.15-28.63,12.15-8.85,0-20.21-.04-32.97-.07l-13.17-.03c4.63,14.87,16.58,45.18,40.76,62.04l3.99,2.78v79.68c55.22-30.72,89.37-88.45,89.37-151.55,0-52.87-24.34-102.77-65.62-135.64Z"/>
-        </g>
-        <path fill="#fff" d="M247.81,79.21c.43-7.09.27-20.44-5.95-27.81-3-3.57-7.26-5.31-13-5.33h-1.52c-10.92,0-109.28,0-109.28,0-6.25,0-10.77,1.83-13.92,5.59-6.32,7.52-6.33,21.23-5.95,27.55h149.62ZM92.6,41.98c6.11-7.28,14.65-10.97,25.37-10.97h110.92c10.32.03,18.57,3.64,24.52,10.72,13.65,16.25,8.82,45.08,8.61,46.3l-1.07,6.25H85.14l-1.1-6.21c-.22-1.19-5.25-29.67,8.56-46.09Z"/>
-        <g id="alfred-eye-l" style="transform-origin:125.46px 62.65px;">
-          <circle fill="#fff" cx="125.46" cy="62.65" r="13"/>
-        </g>
-        <g id="alfred-eye-r" style="transform-origin:221.6px 62.65px;">
-          <circle fill="#fff" cx="221.6" cy="62.65" r="13"/>
-        </g>
-        <g id="alfred-lids" style="display:none;">
-          <path stroke="#fff" stroke-width="5" stroke-linecap="round" fill="none" d="M112,63 Q125,72 139,63"/>
-          <line x1="117" y1="65" x2="113" y2="74" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-          <line x1="125" y1="68" x2="125" y2="78" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-          <line x1="133" y1="65" x2="137" y2="74" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-          <path stroke="#fff" stroke-width="5" stroke-linecap="round" fill="none" d="M208,63 Q222,72 236,63"/>
-          <line x1="213" y1="65" x2="209" y2="74" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-          <line x1="222" y1="68" x2="222" y2="78" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-          <line x1="231" y1="65" x2="235" y2="74" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-        </g>
-        <path id="alfred-mouth" fill="#fff"
-          d="M195.9,117.07c-1.03.66-10.41,6.44-23.05,6.44-7.7,0-14.99-2.17-21.66-6.44-3.49-2.25-4.51-6.91-2.28-10.41,2.25-3.5,6.91-4.51,10.41-2.27,14,8.99,27.9.36,28.47-.02,3.53-2.23,8.18-1.16,10.38,2.33,2.23,3.48,1.21,8.14-2.28,10.37Z"/>
-        <ellipse id="alfred-mouth-talk" cx="173" cy="122" rx="22" ry="0"
-          fill="#fff" style="display:none;">
-          <animate attributeName="ry" values="0;13;2;11;0" dur="0.55s" repeatCount="indefinite"/>
-          <animate attributeName="cy" values="122;127;122;126;122" dur="0.55s" repeatCount="indefinite"/>
-        </ellipse>
-      </svg>
+      ${svgHTML}
     </div>
     <div id="alfred-state-lbl">EN ATTENTE</div>
     <div id="alfred-bubble"></div>
@@ -254,10 +233,11 @@ function initAlfredUI() {
     <div id="alfred-transcript"></div>
     <div id="alfred-vol-wrap"><div id="alfred-vol-bar"></div></div>
     <button id="alfred-mic-btn" onclick="toggleMic()">🎤 Parler</button>
-    <div id="alfred-langue-lbl" onclick="toggleLangue()" title="F=français N=néerlandais">🇧🇪 FR</div>
+    <div id="alfred-langue-lbl" onclick="toggleLangue()">🇧🇪 FR</div>
     <div id="alfred-secours">← →</div>
   `;
 
+  // ── CONTENU SITE ──────────────────────────────────────────
   const siteContent = document.createElement('div');
   siteContent.id = 'alfred-site-content';
   while (document.body.firstChild) siteContent.appendChild(document.body.firstChild);
@@ -285,30 +265,28 @@ function initAlfredUI() {
   }, 700);
 }
 
-// ─── ÉTAT ──────────────────────────────────────────────────
+// ── ÉTAT ────────────────────────────────────────────────────
 function setAlfredState(state) {
   curState = state;
-  const body     = document.getElementById('alfred-body-main');
-  const eyeL     = document.getElementById('alfred-eye-l');
-  const eyeR     = document.getElementById('alfred-eye-r');
-  const dots     = document.getElementById('alfred-dots');
-  const zzz      = document.getElementById('alfred-zzz');
-  const lbl      = document.getElementById('alfred-state-lbl');
-  const mouth    = document.getElementById('alfred-mouth');
-  const mouthTalk= document.getElementById('alfred-mouth-talk');
-  const lids     = document.getElementById('alfred-lids');
+  const body      = document.getElementById('alfred-body-main');
+  const eyeL      = document.getElementById('alfred-eye-l');
+  const eyeR      = document.getElementById('alfred-eye-r');
+  const dots      = document.getElementById('alfred-dots');
+  const zzz       = document.getElementById('alfred-zzz');
+  const lbl       = document.getElementById('alfred-state-lbl');
+  const mouth     = document.getElementById('alfred-mouth');
+  const mouthTalk = document.getElementById('alfred-mouth-talk');
+  const lids      = document.getElementById('alfred-lids');
 
-  // reset tout
+  // reset
   if (body)  { body.style.animation = 'none'; void body.offsetWidth; }
-  if (eyeL)  { eyeL.style.animation = 'none'; eyeL.style.transform = ''; eyeL.style.transition = 'transform .06s ease-out'; }
-  if (eyeR)  { eyeR.style.animation = 'none'; eyeR.style.transform = ''; eyeR.style.transition = 'transform .06s ease-out'; }
+  if (eyeL)  { eyeL.style.animation = 'none'; eyeL.style.transform = ''; eyeL.style.opacity = '1'; }
+  if (eyeR)  { eyeR.style.animation = 'none'; eyeR.style.transform = ''; eyeR.style.opacity = '1'; }
   if (dots)  dots.classList.remove('show');
   if (zzz)   zzz.classList.remove('show');
   if (mouth)     { mouth.style.display = 'block'; mouth.setAttribute('d', MOUTH.smile); }
   if (mouthTalk) mouthTalk.style.display = 'none';
   if (lids)      lids.style.display = 'none';
-  if (eyeL)  eyeL.style.opacity = '1';
-  if (eyeR)  eyeR.style.opacity = '1';
 
   const labels = { idle:'EN ATTENTE', think:'RÉFLEXION...', talk:'EN TRAIN DE PARLER', listen:'ÉCOUTE...', sleep:'VEILLE' };
   if (lbl) lbl.textContent = labels[state] || '';
@@ -330,13 +308,12 @@ function setAlfredState(state) {
           if (d) d.style.animation = `alfred-dot-pop 1.1s ease-in-out ${i*.22}s infinite`;
         });
       }
-      if (eyeL) eyeL.style.animation = 'alfred-eye-think 2s ease-in-out infinite';
-      if (eyeR) eyeR.style.animation = 'alfred-eye-think 2s ease-in-out infinite';
+      if (eyeL) eyeL.style.animation = 'alfred-eye-lr 2s ease-in-out infinite';
+      if (eyeR) eyeR.style.animation = 'alfred-eye-lr 2s ease-in-out infinite';
       break;
 
     case 'talk':
-      if (body) body.style.animation = 'alfred-talk 0.12s ease-in-out infinite alternate';
-      // bouche : sourire masqué, ellipse SMIL active
+      if (body) body.style.animation = 'alfred-talk-vib .12s ease-in-out infinite alternate';
       if (mouth)     mouth.style.display = 'none';
       if (mouthTalk) mouthTalk.style.display = 'block';
       if (eyeL) eyeL.style.animation = 'alfred-blink 3s ease-in-out infinite';
@@ -344,16 +321,15 @@ function setAlfredState(state) {
       break;
 
     case 'listen':
-      if (body) body.style.animation = 'alfred-think 0.9s ease-in-out infinite';
+      if (body) body.style.animation = 'alfred-breathe .9s ease-in-out infinite';
       if (mouth) mouth.setAttribute('d', MOUTH.flat);
       break;
 
     case 'sleep':
       if (body) body.style.animation = 'alfred-sleep 5s ease-in-out infinite';
-      // yeux : disparaissent, paupières apparaissent
       if (eyeL) { eyeL.style.transition = 'opacity .4s ease'; eyeL.style.opacity = '0'; }
       if (eyeR) { eyeR.style.transition = 'opacity .4s ease'; eyeR.style.opacity = '0'; }
-      if (lids) setTimeout(() => { lids.style.display = 'block'; }, 400);
+      setTimeout(() => { if (lids) lids.style.display = 'block'; }, 400);
       if (mouth) mouth.setAttribute('d', MOUTH.flat);
       if (zzz) {
         zzz.classList.add('show');
@@ -365,7 +341,7 @@ function setAlfredState(state) {
   }
 }
 
-// ─── CLIGNEMENT ────────────────────────────────────────────
+// ── CLIGNEMENT ALÉATOIRE ────────────────────────────────────
 function startBlinking() {
   function blink() {
     if (curState === 'idle') {
@@ -384,20 +360,20 @@ function startBlinking() {
   setTimeout(blink, 2000);
 }
 
-// ─── SUIVI SOURIS ──────────────────────────────────────────
+// ── SUIVI SOURIS ────────────────────────────────────────────
 function trackMouse() {
   document.addEventListener('mousemove', e => {
     if (curState !== 'idle') return;
     const svg = document.getElementById('alfred-svg');
     if (!svg) return;
     const rect = svg.getBoundingClientRect();
-    eyeTargetX = Math.max(-8, Math.min(8, (e.clientX - (rect.left + rect.width/2)) / 30));
+    eyeTargetX = Math.max(-8, Math.min(8, (e.clientX - (rect.left + rect.width/2))  / 30));
     eyeTargetY = Math.max(-4, Math.min(4, (e.clientY - (rect.top  + rect.height*.22)) / 45));
     resetSleepTimer();
   });
 }
 
-// ─── LERP YEUX ─────────────────────────────────────────────
+// ── LERP YEUX ───────────────────────────────────────────────
 function startEyeLerp() {
   function lerp() {
     if (curState === 'idle') {
@@ -413,7 +389,7 @@ function startEyeLerp() {
   rafEyes = requestAnimationFrame(lerp);
 }
 
-// ─── SLEEP TIMER ───────────────────────────────────────────
+// ── SLEEP TIMER ─────────────────────────────────────────────
 function resetSleepTimer() {
   clearTimeout(sleepTimer);
   if (curState === 'sleep') setAlfredState('idle');
@@ -422,7 +398,7 @@ function resetSleepTimer() {
   }, (typeof ALFRED_CONFIG !== 'undefined' ? ALFRED_CONFIG.SLEEP_APRES || 30 : 30) * 1000);
 }
 
-// ─── BULLE ─────────────────────────────────────────────────
+// ── BULLE ───────────────────────────────────────────────────
 function showBubble(text) {
   const b = document.getElementById('alfred-bubble');
   if (!b) return;
@@ -434,24 +410,15 @@ function showBubble(text) {
   }, 80);
 }
 
-// ─── HELPERS UI ────────────────────────────────────────────
-function showTranslation(text) {
-  const el = document.getElementById('alfred-translation');
-  if (el) el.textContent = text ? `↳ ${text}` : '';
-}
-function showTranscript(text) {
-  const el = document.getElementById('alfred-transcript');
-  if (el) el.textContent = text || '';
-}
+// ── HELPERS ─────────────────────────────────────────────────
+function showTranslation(text) { const el = document.getElementById('alfred-translation'); if (el) el.textContent = text ? `↳ ${text}` : ''; }
+function showTranscript(text)  { const el = document.getElementById('alfred-transcript');  if (el) el.textContent = text || ''; }
+function updateVolBar(amp)     { const bar = document.getElementById('alfred-vol-bar');    if (bar) bar.style.width = (amp*100)+'%'; }
 function updateMicBtn(listening) {
   const btn = document.getElementById('alfred-mic-btn');
   if (!btn) return;
   btn.textContent = listening ? '⏹ Stop' : '🎤 Parler';
   btn.classList.toggle('listening', listening);
-}
-function updateVolBar(amp) {
-  const bar = document.getElementById('alfred-vol-bar');
-  if (bar) bar.style.width = (amp * 100) + '%';
 }
 function toggleMic() {
   if (typeof isListening !== 'undefined' && isListening) recognition?.stop();
@@ -464,7 +431,7 @@ function toggleLangue() {
 }
 function updateSecoursLabel(label, acte, idx, total) {
   const el = document.getElementById('alfred-secours');
-  if (el) { el.textContent = `A${acte} · ${label} · ${idx}/${total}`; setTimeout(() => { if(el) el.textContent = '← →'; }, 4000); }
+  if (el) { el.textContent = `A${acte} · ${label} · ${idx}/${total}`; setTimeout(() => { if(el) el.textContent='← →'; }, 4000); }
 }
 function addToHistory(who, text) {
   console.log(`%c[${who.toUpperCase()}]%c ${text.substring(0,100)}`,
