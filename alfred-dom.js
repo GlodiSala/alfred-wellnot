@@ -1,6 +1,6 @@
 // === ALFRED DOM — Navigation + Curseur ===
+// Sélecteurs basés sur le DOM réel de app.alfred.be
 
-// ── Curseur teal ──────────────────────────────────────────
 function creerCurseur() {
   if (document.getElementById('alfred-cursor')) return;
   const c = document.createElement('div');
@@ -26,7 +26,6 @@ function curseurVers(el, callback) {
   const x = rect.left + rect.width  / 2;
   const y = rect.top  + rect.height / 2;
 
-  // Part du panneau Alfred
   const alfred = document.getElementById('alfred-svg');
   if (alfred) {
     const ar = alfred.getBoundingClientRect();
@@ -37,6 +36,8 @@ function curseurVers(el, callback) {
 
   c.style.opacity = '1';
 
+  const safeHide = setTimeout(() => { c.style.opacity = '0'; }, 2000);
+
   setTimeout(() => {
     c.style.transition = `left .5s cubic-bezier(.25,.46,.45,.94),
                           top  .5s cubic-bezier(.25,.46,.45,.94),
@@ -45,10 +46,10 @@ function curseurVers(el, callback) {
     c.style.top  = y + 'px';
 
     setTimeout(() => {
-      // Effet clic
       c.style.transform = 'translate(-50%,-50%) scale(0.6)';
       setTimeout(() => {
         c.style.transform = 'translate(-50%,-50%) scale(1)';
+        clearTimeout(safeHide);
         if (callback) callback();
         setTimeout(() => { c.style.opacity = '0'; }, 500);
       }, 150);
@@ -58,22 +59,28 @@ function curseurVers(el, callback) {
 
 function attendre(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-// ── Trouver un élément de navigation par texte ────────────
 function trouverNav(textes) {
   const candidats = Array.from(document.querySelectorAll(
-    'a, button, [role="menuitem"], li, .p-menuitem-link, nav *, .sidebar *, .menu *'
-  ));
+    'a, button, [role="menuitem"], [role="tab"], li, span, div'
+  )).filter(el => {
+    const r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0;
+  });
+
   for (const texte of textes) {
-    const el = candidats.find(b =>
-      b.textContent.trim().toLowerCase().includes(texte.toLowerCase()) &&
-      b.getBoundingClientRect().width > 0
+    const lower = texte.toLowerCase();
+    const exact = candidats.find(b =>
+      b.textContent.trim().toLowerCase() === lower
     );
-    if (el) return el;
+    if (exact) return exact;
+    const partial = candidats.find(b =>
+      b.textContent.trim().toLowerCase().includes(lower)
+    );
+    if (partial) return partial;
   }
   return null;
 }
 
-// ── Navigation avec curseur ───────────────────────────────
 async function naviguerVers(textes) {
   const el = trouverNav(textes);
   if (!el) {
@@ -88,46 +95,41 @@ async function naviguerVers(textes) {
   });
 }
 
-// ── SÉQUENCES DÉMO ────────────────────────────────────────
-
-// Acte 2 — Séquence 1 : Montrer les dossiers
 async function seq_montrerDossiers() {
-  await naviguerVers(['DOSSIERS', 'Dossiers', 'dossier']);
-  await attendre(1000);
+  await naviguerVers(['Dossiers']);
+  await attendre(800);
 }
 
-// Acte 2 — Séquence 2 : Montrer la création de dossier
 async function seq_montrerCreation() {
-  // Va sur Dossiers d'abord
-  await naviguerVers(['DOSSIERS', 'Dossiers']);
+  await naviguerVers(['Dossiers']);
   await attendre(800);
-  // Clique sur Nouveau / Créer
-  await naviguerVers(['Nouveau', 'Créer', 'Nieuw', 'New', '+']);
+  await naviguerVers(['Créer un dossier']);
   await attendre(800);
 }
 
-// Acte 2 — Séquence 3 : Montrer les personnes
 async function seq_montrerPersonnes() {
-  await naviguerVers(['PERSONNES', 'Personnes', 'Personen', 'Parties']);
-  await attendre(1000);
-}
-
-// Acte 2 — Séquence 4 : Montrer les contacts/notaires
-async function seq_montrerNotaires() {
-  await naviguerVers(['NOTAIRES', 'Notaires', 'Notarissen', 'Contacts']);
-  await attendre(1000);
-}
-
-// Acte 2 — Séquence 5 : Montrer un dossier existant
-async function seq_montrerDossierExistant() {
-  await naviguerVers(['DOSSIERS', 'Dossiers']);
+  await naviguerVers(['Personnes']);
   await attendre(800);
-  // Clique sur le premier dossier de la liste
+}
+
+async function seq_montrerNotaires() {
+  await naviguerVers(['Notaires']);
+  await attendre(800);
+}
+
+async function seq_montrerContacts() {
+  await naviguerVers(['Contacts']);
+  await attendre(800);
+}
+
+async function seq_montrerDossierExistant() {
+  await naviguerVers(['Dossiers']);
+  await attendre(1000);
   const lignes = Array.from(document.querySelectorAll(
-    'tr, .p-datatable-row, .dossier-row, [class*="row"], [class*="item"]'
+    'tr, [class*="row"], [class*="item"], tbody tr'
   )).filter(el =>
     el.getBoundingClientRect().width > 0 &&
-    el.textContent.trim().length > 0
+    el.textContent.trim().length > 5
   );
   if (lignes[0]) {
     curseurVers(lignes[0], () => lignes[0].click());
@@ -135,44 +137,38 @@ async function seq_montrerDossierExistant() {
   }
 }
 
-// Acte 2 — Séquence 6 : Montrer les documents d'un dossier
 async function seq_montrerDocuments() {
-  // Cherche onglet Documents dans un dossier ouvert
   const ok = await naviguerVers(['Documents', 'Documenten', 'Pièces']);
   if (!ok) {
-    // Sinon va sur un dossier d'abord
     await seq_montrerDossierExistant();
     await attendre(800);
     await naviguerVers(['Documents', 'Documenten']);
   }
 }
 
-// Acte 2 — Séquence 7 : Montrer la rédaction
 async function seq_montrerRedaction() {
-  const ok = await naviguerVers(['Rédaction', 'Acte', 'Compromis', 'Akte', 'Ontwerp']);
+  const ok = await naviguerVers(['Compromis', 'Acte de vente', 'Rédaction', 'Akte', 'Ontwerp']);
   if (!ok) {
     await seq_montrerDossierExistant();
     await attendre(800);
-    await naviguerVers(['Rédaction', 'Acte', 'Compromis']);
+    await naviguerVers(['Compromis', 'Acte de vente', 'Rédaction']);
   }
 }
 
-// Acte 2 — Séquence 8 : Montrer le chatbot
 async function seq_montrerChatbot() {
   await naviguerVers(['Chat', 'Message', 'Bericht', 'Chatbot']);
 }
 
-// ── Mapping label → séquence ──────────────────────────────
 const DOM_ACTIONS = {
-  'Dossier':       seq_montrerCreation,
-  'Parties':       seq_montrerPersonnes,
-  'Partijen':      seq_montrerPersonnes,
-  'Documents':     seq_montrerDocuments,
-  'Documenten':    seq_montrerDocuments,
-  'Rédaction':     seq_montrerRedaction,
-  'Redactie':      seq_montrerRedaction,
-  'Chatbot':       seq_montrerChatbot,
+  'Dossier':          seq_montrerCreation,
   'Dossier aanmaken': seq_montrerCreation,
+  'Parties':          seq_montrerPersonnes,
+  'Partijen':         seq_montrerPersonnes,
+  'Documents':        seq_montrerDocuments,
+  'Documenten':       seq_montrerDocuments,
+  'Rédaction':        seq_montrerRedaction,
+  'Redactie':         seq_montrerRedaction,
+  'Chatbot':          seq_montrerChatbot,
 };
 
 async function executerActionDOM(label) {
@@ -183,22 +179,21 @@ async function executerActionDOM(label) {
   }
 }
 
-// ── Changer écran avec curseur ────────────────────────────
-// Appelé depuis alfred-brain.js
 async function changerEcranAvecCurseur(categorie) {
   const mapping = {
-    dashboard:  ['HOME', 'Accueil', 'Tableau'],
-    parties:    ['PERSONNES', 'Personnes', 'Partijen'],
+    dashboard:  ['Home'],
+    dossiers:   ['Dossiers'],
+    parties:    ['Personnes'],
+    notaires:   ['Notaires'],
+    contacts:   ['Contacts'],
     documents:  ['Documents', 'Documenten'],
-    redaction:  ['Rédaction', 'Acte', 'Akte'],
+    redaction:  ['Compromis', 'Acte de vente', 'Rédaction'],
     chatbot:    ['Chat', 'Message'],
-    dossiers:   ['DOSSIERS', 'Dossiers'],
   };
 
   const textes = mapping[categorie];
   if (textes) await naviguerVers(textes);
 }
 
-// ── Init ──────────────────────────────────────────────────
 creerCurseur();
 console.log('[Alfred DOM] Prêt — curseur créé');

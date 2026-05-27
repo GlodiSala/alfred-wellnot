@@ -138,8 +138,8 @@ async function askAlfred(text, retries = 2) {
   if (langLbl) langLbl.textContent = langue === 'nl' ? '🇧🇪 NL' : '🇧🇪 FR';
 
   const langInstruction = langue === 'nl'
-    ? 'RÈGLE ABSOLUE : réponds UNIQUEMENT en néerlandais belge. MAXIMUM 4 phrases. Commence directement sans préfixe.\n\n'
-    : 'RÈGLE ABSOLUE : réponds UNIQUEMENT en français. MAXIMUM 4 phrases. Commence directement sans préfixe.\n\n';
+    ? 'RÈGLE ABSOLUE : réponds UNIQUEMENT en néerlandais belge. MAXIMUM 8 phrases. Commence directement sans préfixe.\n\n'
+    : 'RÈGLE ABSOLUE : réponds UNIQUEMENT en français. MAXIMUM 8 phrases. Commence directement sans préfixe.\n\n';
 
   const fullPrompt = langInstruction
     + ALFRED_CONFIG.SYSTEM_PROMPT
@@ -186,7 +186,7 @@ async function askAlfred(text, retries = 2) {
 
     // Max 4 phrases
     const phrases  = replyClean.match(/[^.!?]+[.!?]+/g) || [replyClean];
-    replyClean = phrases.slice(0, 4).join(' ').trim();
+    replyClean = phrases.slice(0, 8).join(' ').trim();
 
     // Changement écran sur question ET réponse
     detectAndChangeScreen(text);
