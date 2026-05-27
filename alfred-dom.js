@@ -1,243 +1,204 @@
-// === ALFRED DOM — Actions sur le vrai app.alfred.be ===
+// === ALFRED DOM — Navigation + Curseur ===
 
-// === UTILITAIRES ANGULAR ===
-
-// Remplir un input Angular correctement
-function remplirInput(input, valeur) {
-  if (!input) return false;
-  const setter = Object.getOwnPropertyDescriptor(
-    window.HTMLInputElement.prototype, 'value'
-  ).set;
-  setter.call(input, valeur);
-  input.dispatchEvent(new Event('input', { bubbles: true }));
-  input.dispatchEvent(new Event('change', { bubbles: true }));
-  input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
-  return true;
+// ── Curseur teal ──────────────────────────────────────────
+function creerCurseur() {
+  if (document.getElementById('alfred-cursor')) return;
+  const c = document.createElement('div');
+  c.id = 'alfred-cursor';
+  c.style.cssText = `
+    position:fixed; width:16px; height:16px;
+    background:#14b0bd; border-radius:50%;
+    pointer-events:none; z-index:999999; opacity:0;
+    box-shadow:0 0 10px rgba(20,176,189,0.8);
+    transform:translate(-50%,-50%);
+    transition:left .5s cubic-bezier(.25,.46,.45,.94),
+               top  .5s cubic-bezier(.25,.46,.45,.94),
+               opacity .2s ease;
+  `;
+  document.body.appendChild(c);
 }
 
-// Cliquer un bouton par texte
-function cliquerBouton(texte) {
-  const btns = Array.from(document.querySelectorAll('button'));
-  const btn = btns.find(b => b.textContent.trim().includes(texte));
-  if (btn) {
-    btn.click();
-    return true;
+function curseurVers(el, callback) {
+  const c = document.getElementById('alfred-cursor');
+  if (!c || !el) { if (callback) callback(); return; }
+
+  const rect = el.getBoundingClientRect();
+  const x = rect.left + rect.width  / 2;
+  const y = rect.top  + rect.height / 2;
+
+  // Part du panneau Alfred
+  const alfred = document.getElementById('alfred-svg');
+  if (alfred) {
+    const ar = alfred.getBoundingClientRect();
+    c.style.transition = 'none';
+    c.style.left = (ar.left + ar.width  / 2) + 'px';
+    c.style.top  = (ar.top  + ar.height / 2) + 'px';
   }
-  return false;
-}
 
-// Naviguer vers une page
-function naviguer(path) {
-  window.location.href = path;
-}
+  c.style.opacity = '1';
 
-// Attendre qu'un élément apparaisse
-function attendreElement(selector, timeout = 5000) {
-  return new Promise((resolve, reject) => {
-    const el = document.querySelector(selector);
-    if (el) return resolve(el);
-
-    const observer = new MutationObserver(() => {
-      const el = document.querySelector(selector);
-      if (el) {
-        observer.disconnect();
-        resolve(el);
-      }
-    });
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
+  setTimeout(() => {
+    c.style.transition = `left .5s cubic-bezier(.25,.46,.45,.94),
+                          top  .5s cubic-bezier(.25,.46,.45,.94),
+                          opacity .2s ease`;
+    c.style.left = x + 'px';
+    c.style.top  = y + 'px';
 
     setTimeout(() => {
-      observer.disconnect();
-      reject(new Error(`Timeout: ${selector} introuvable`));
-    }, timeout);
+      // Effet clic
+      c.style.transform = 'translate(-50%,-50%) scale(0.6)';
+      setTimeout(() => {
+        c.style.transform = 'translate(-50%,-50%) scale(1)';
+        if (callback) callback();
+        setTimeout(() => { c.style.opacity = '0'; }, 500);
+      }, 150);
+    }, 520);
+  }, 60);
+}
+
+function attendre(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── Trouver un élément de navigation par texte ────────────
+function trouverNav(textes) {
+  const candidats = Array.from(document.querySelectorAll(
+    'a, button, [role="menuitem"], li, .p-menuitem-link, nav *, .sidebar *, .menu *'
+  ));
+  for (const texte of textes) {
+    const el = candidats.find(b =>
+      b.textContent.trim().toLowerCase().includes(texte.toLowerCase()) &&
+      b.getBoundingClientRect().width > 0
+    );
+    if (el) return el;
+  }
+  return null;
+}
+
+// ── Navigation avec curseur ───────────────────────────────
+async function naviguerVers(textes) {
+  const el = trouverNav(textes);
+  if (!el) {
+    console.warn('[Alfred DOM] Élément non trouvé:', textes);
+    return false;
+  }
+  return new Promise(resolve => {
+    curseurVers(el, () => {
+      el.click();
+      resolve(true);
+    });
   });
 }
 
-// Attendre un délai
-function attendre(ms) {
-  return new Promise(r => setTimeout(r, ms));
+// ── SÉQUENCES DÉMO ────────────────────────────────────────
+
+// Acte 2 — Séquence 1 : Montrer les dossiers
+async function seq_montrerDossiers() {
+  await naviguerVers(['DOSSIERS', 'Dossiers', 'dossier']);
+  await attendre(1000);
 }
 
-// === SÉQUENCES ACTE 2 ===
-
-// SÉQUENCE 1 — Créer un dossier
-async function seq_creerDossier() {
-  showBubble(currentLangue === 'nl'
-    ? "De eerste stap is het dossier aanmaken."
-    : "La première étape, c'est créer le dossier.");
-
-  await speak(naturaliserTexte(
-    currentLangue === 'nl'
-      ? "De eerste stap is het dossier aanmaken. Klik op Dossiers."
-      : "La première étape c'est créer le dossier. On clique sur Dossiers."
-  ), currentLangue);
-
-  // Navigue vers création dossier
-  await attendre(500);
-  naviguer('/app/folders/new');
+// Acte 2 — Séquence 2 : Montrer la création de dossier
+async function seq_montrerCreation() {
+  // Va sur Dossiers d'abord
+  await naviguerVers(['DOSSIERS', 'Dossiers']);
+  await attendre(800);
+  // Clique sur Nouveau / Créer
+  await naviguerVers(['Nouveau', 'Créer', 'Nieuw', 'New', '+']);
+  await attendre(800);
 }
 
-// SÉQUENCE 2 — Remplir infos générales
-async function seq_remplirInfos() {
-  try {
-    // Attend que le formulaire soit chargé
-    await attendreElement('input.p-component');
+// Acte 2 — Séquence 3 : Montrer les personnes
+async function seq_montrerPersonnes() {
+  await naviguerVers(['PERSONNES', 'Personnes', 'Personen', 'Parties']);
+  await attendre(1000);
+}
+
+// Acte 2 — Séquence 4 : Montrer les contacts/notaires
+async function seq_montrerNotaires() {
+  await naviguerVers(['NOTAIRES', 'Notaires', 'Notarissen', 'Contacts']);
+  await attendre(1000);
+}
+
+// Acte 2 — Séquence 5 : Montrer un dossier existant
+async function seq_montrerDossierExistant() {
+  await naviguerVers(['DOSSIERS', 'Dossiers']);
+  await attendre(800);
+  // Clique sur le premier dossier de la liste
+  const lignes = Array.from(document.querySelectorAll(
+    'tr, .p-datatable-row, .dossier-row, [class*="row"], [class*="item"]'
+  )).filter(el =>
+    el.getBoundingClientRect().width > 0 &&
+    el.textContent.trim().length > 0
+  );
+  if (lignes[0]) {
+    curseurVers(lignes[0], () => lignes[0].click());
+    await attendre(1000);
+  }
+}
+
+// Acte 2 — Séquence 6 : Montrer les documents d'un dossier
+async function seq_montrerDocuments() {
+  // Cherche onglet Documents dans un dossier ouvert
+  const ok = await naviguerVers(['Documents', 'Documenten', 'Pièces']);
+  if (!ok) {
+    // Sinon va sur un dossier d'abord
+    await seq_montrerDossierExistant();
     await attendre(800);
-
-    showBubble(currentLangue === 'nl'
-      ? "Ik maak het dossier aan..."
-      : "Je crée le dossier...");
-
-    // Remplit le numéro de dossier
-    const inputNum = document.querySelector('input.p-component');
-    if (inputNum) {
-      remplirInput(inputNum, 'DEMO-2026');
-      await attendre(300);
-    }
-
-    // Clique Suivant
-    await attendre(500);
-    cliquerBouton('Suivant');
-
-    await speak(naturaliserTexte(
-      currentLangue === 'nl'
-        ? "Dossier aangemaakt. Nu de partijen toevoegen."
-        : "Dossier créé. Maintenant les parties."
-    ), currentLangue);
-
-  } catch(e) {
-    console.error('seq_remplirInfos erreur:', e);
+    await naviguerVers(['Documents', 'Documenten']);
   }
 }
 
-// SÉQUENCE 3 — Ajouter les parties (Personnes)
-async function seq_ajouterParties() {
-  try {
-    await attendreElement('button.p-step-header');
+// Acte 2 — Séquence 7 : Montrer la rédaction
+async function seq_montrerRedaction() {
+  const ok = await naviguerVers(['Rédaction', 'Acte', 'Compromis', 'Akte', 'Ontwerp']);
+  if (!ok) {
+    await seq_montrerDossierExistant();
     await attendre(800);
-
-    showBubble(currentLangue === 'nl'
-      ? "Ik voeg de partijen toe via het rijksregister."
-      : "J'identifie les parties via le registre national.");
-
-    await speak(naturaliserTexte(
-      currentLangue === 'nl'
-        ? "U geeft me het rijksregisternummer — en ik extraheer onmiddellijk alle informatie. Naam, adres, burgerlijke staat, huwelijksvermogensstelsel. In enkele seconden."
-        : "Vous me donnez le numéro de registre national — et j'extrais instantanément toutes les informations. Nom, prénom, adresse, régime matrimonial. En quelques secondes."
-    ), currentLangue);
-
-    // Clique sur étape 2 Personnes
-    await attendre(500);
-    const steps = document.querySelectorAll('button.p-step-header');
-    if (steps[1]) steps[1].click();
-
-  } catch(e) {
-    console.error('seq_ajouterParties erreur:', e);
+    await naviguerVers(['Rédaction', 'Acte', 'Compromis']);
   }
 }
 
-// SÉQUENCE 4 — Documents
-async function seq_documents() {
-  try {
-    showBubble(currentLangue === 'nl'
-      ? "Ik analyseer de documenten..."
-      : "J'analyse les documents...");
-
-    await speak(naturaliserTexte(
-      currentLangue === 'nl'
-        ? "Documenten die ik niet zelf ophaal worden geüpload. Ik analyseer ze zelfstandig en categoriseer ze. Als er iets ontbreekt — ik identificeer wie ik moet schrijven en stel de mail op."
-        : "Les documents que je ne collecte pas moi-même sont uploadés. Je les analyse seul, je les catégorise. Et si quelque chose manque — j'identifie à qui écrire et je rédige le mail."
-    ), currentLangue);
-
-    // Navigue vers documents d'un dossier existant
-    await attendre(500);
-    const steps = document.querySelectorAll('button.p-step-header');
-    if (steps[3]) steps[3].click();
-
-  } catch(e) {
-    console.error('seq_documents erreur:', e);
-  }
+// Acte 2 — Séquence 8 : Montrer le chatbot
+async function seq_montrerChatbot() {
+  await naviguerVers(['Chat', 'Message', 'Bericht', 'Chatbot']);
 }
 
-// SÉQUENCE 5 — Rédaction
-async function seq_redaction() {
-  try {
-    showBubble(currentLangue === 'nl'
-      ? "Ik genereer het akteontwerp..."
-      : "Je génère le projet d'acte...");
-
-    await speak(naturaliserTexte(
-      currentLangue === 'nl'
-        ? "Op basis van alles wat ik heb verzameld, genereer ik het ontwerp van de verkoopbelofte. U begint niet met een blanco pagina — u begint met een solide ontwerp gecontroleerd door Check-R."
-        : "Sur base de tout ce que j'ai collecté, je génère le projet de compromis. Vous ne partez pas d'une page blanche — vous partez d'un projet solide vérifié par Check-R. Vous relisez, vous ajustez, vous validez."
-    ), currentLangue);
-
-  } catch(e) {
-    console.error('seq_redaction erreur:', e);
-  }
-}
-
-// SÉQUENCE 6 — Chatbot
-async function seq_chatbot() {
-  try {
-    showBubble(currentLangue === 'nl'
-      ? "Het dossier vordert zelfs 's nachts..."
-      : "Le dossier avance même la nuit...");
-
-    await speak(naturaliserTexte(
-      currentLangue === 'nl'
-        ? "Op elk moment, voor elk dossier, stel me een vraag — ik antwoord onmiddellijk. En het dossier vordert zelfs wanneer niemand er zich mee bezighoudt. Een document ontvangen om elf uur 's avonds op zondag — ik verwerk het onmiddellijk."
-        : "À n'importe quel moment, sur n'importe quel dossier, posez-moi une question — je réponds instantanément. Et le dossier avance même quand personne ne s'en occupe. Un document reçu à vingt-trois heures un dimanche — je l'intègre immédiatement."
-    ), currentLangue);
-
-  } catch(e) {
-    console.error('seq_chatbot erreur:', e);
-  }
-}
-
-// === MAPPING RÉPLIQUES → ACTIONS DOM ===
-// Quand Alfred joue une réplique du script, il fait aussi l'action sur le site
+// ── Mapping label → séquence ──────────────────────────────
 const DOM_ACTIONS = {
-  'Dossier':    seq_creerDossier,
-  'Dossier aanmaken': seq_creerDossier,
-  'Parties':    seq_ajouterParties,
-  'Partijen':   seq_ajouterParties,
-  'Documents':  seq_documents,
-  'Documenten': seq_documents,
-  'Rédaction':  seq_redaction,
-  'Redactie':   seq_redaction,
-  'Chatbot':    seq_chatbot,
+  'Dossier':       seq_montrerCreation,
+  'Parties':       seq_montrerPersonnes,
+  'Partijen':      seq_montrerPersonnes,
+  'Documents':     seq_montrerDocuments,
+  'Documenten':    seq_montrerDocuments,
+  'Rédaction':     seq_montrerRedaction,
+  'Redactie':      seq_montrerRedaction,
+  'Chatbot':       seq_montrerChatbot,
+  'Dossier aanmaken': seq_montrerCreation,
 };
 
-// Appelé depuis alfred-brain.js quand une réplique est jouée
 async function executerActionDOM(label) {
   const action = DOM_ACTIONS[label];
   if (action) {
-    await attendre(1000); // Laisse Alfred finir de parler
+    await attendre(600);
     await action();
   }
 }
 
-// === SURVEILLANCE URL — Alfred commente les changements de page ===
-let lastURL = window.location.pathname;
+// ── Changer écran avec curseur ────────────────────────────
+// Appelé depuis alfred-brain.js
+async function changerEcranAvecCurseur(categorie) {
+  const mapping = {
+    dashboard:  ['HOME', 'Accueil', 'Tableau'],
+    parties:    ['PERSONNES', 'Personnes', 'Partijen'],
+    documents:  ['Documents', 'Documenten'],
+    redaction:  ['Rédaction', 'Acte', 'Akte'],
+    chatbot:    ['Chat', 'Message'],
+    dossiers:   ['DOSSIERS', 'Dossiers'],
+  };
 
-setInterval(async () => {
-  const currentURL = window.location.pathname;
-  if (currentURL !== lastURL) {
-    lastURL = currentURL;
-    
-    // Met à jour l'indicateur discret
-    const secours = document.getElementById('alfred-secours');
-    if (secours) {
-      const page = currentURL.replace('/app/', '').split('/')[0];
-      secours.textContent = `📍 ${page}`;
-      setTimeout(() => {
-        secours.textContent = '← → flèches';
-      }, 3000);
-    }
-  }
-}, 500);
+  const textes = mapping[categorie];
+  if (textes) await naviguerVers(textes);
+}
+
+// ── Init ──────────────────────────────────────────────────
+creerCurseur();
+console.log('[Alfred DOM] Prêt — curseur créé');

@@ -84,49 +84,24 @@ function showBubble(text) {
 // ── Détection écran à changer ─────────────────────────────
 function detectAndChangeScreen(text) {
   const lower = text.toLowerCase();
-
-  // Mapping mots-clés → écrans
   const mapping = [
-    {
-      ecran: 'dashboard',
-      mots: ['tableau','bord','dashboard','accueil','alertes','dossiers','vue','ensemble','overzicht','taken']
-    },
-    {
-      ecran: 'parties',
-      mots: ['partie','partis','vendeur','acquéreur','acquere','registre','national','noms','personnes',
-             'rijksregister','partijen','koper','verkoper','naam','personen']
-    },
-    {
-      ecran: 'documents',
-      mots: ['document','manquant','pièce','peb','certif','manque','incomplet','upload','analyse',
-             'documenten','ontbreekt','uploaden','analyseer']
-    },
-    {
-      ecran: 'redaction',
-      mots: ['compromis','rédige','rédaction','acte','blanche','check','génère','ontwerp','opstellen',
-             'akte','blanco','redigeer']
-    },
-    {
-      ecran: 'chatbot',
-      mots: ['chatbot','client','nuit','message','avance','nachts','vordert','klant','bericht',
-             'avonds','vraag','antwoord']
-    },
+    { cat: 'dossiers',  mots: ['dossier','aanmaken','créer','création','creer'] },
+    { cat: 'parties',   mots: ['partie','vendeur','acquéreur','registre','personne','rijksregister','partijen','koper','personen'] },
+    { cat: 'documents', mots: ['document','manquant','pièce','peb','upload','documenten','ontbreekt'] },
+    { cat: 'redaction', mots: ['compromis','rédaction','acte','blanche','check','ontwerp','akte'] },
+    { cat: 'chatbot',   mots: ['chatbot','nuit','avance','message','vordert','avonds'] },
+    { cat: 'dashboard', mots: ['tableau','bord','accueil','home','overzicht','alertes'] },
   ];
 
-  for (const { ecran, mots } of mapping) {
+  for (const { cat, mots } of mapping) {
     if (mots.some(m => lower.includes(m))) {
-      // Change l'onglet visible
-      const btn = document.querySelector(`#screen-nav button[onclick*="${ecran}"]`)
-               || Array.from(document.querySelectorAll('#screen-nav button'))
-                    .find(b => b.textContent.toLowerCase().includes(ecran));
-      if (btn && !btn.classList.contains('active')) {
-        btn.click();
+      if (typeof changerEcranAvecCurseur === 'function') {
+        changerEcranAvecCurseur(cat);
       }
       return;
     }
   }
 }
-
 // ── Gemini ────────────────────────────────────────────────
 async function askAlfred(text, retries = 2) {
   setAlfredState('think');
@@ -171,10 +146,18 @@ async function askAlfred(text, retries = 2) {
       await speak(naturaliserTexte(fb), langue);
       return;
     }
+    // Par :
+    // Nettoie les artefacts du prompt
+    let replyClean = raw
+      .replace(/^MODE SCRIPT\s*:/i, '')
+      .replace(/^MODE LIBRE\s*:/i, '')
+      .replace(/^MODE FIXE[^:]*:/i, '')
+      .replace(/^"/,'').replace(/"$/,'')
+      .trim();
 
-    // Tronquer à 2 phrases max
-    const phrases    = raw.match(/[^.!?]+[.!?]+/g) || [raw];
-    const replyClean = phrases.slice(0, 2).join(' ').trim();
+    // Limite à 4 phrases max (les répliques du script sont longues)
+    const phrases = replyClean.match(/[^.!?]+[.!?]+/g) || [replyClean];
+    replyClean = phrases.slice(0, 4).join(' ').trim();
 
     // Bulle + changement écran sur question ET réponse
     showBubble(replyClean);
