@@ -1,5 +1,4 @@
 // === ALFRED DOM — Navigation + Curseur ===
-// Sélecteurs basés sur le DOM réel de app.alfred.be
 
 function creerCurseur() {
   if (document.getElementById('alfred-cursor')) return;
@@ -35,8 +34,7 @@ function curseurVers(el, callback) {
   }
 
   c.style.opacity = '1';
-
-  const safeHide = setTimeout(() => { c.style.opacity = '0'; }, 2000);
+  const safeHide = setTimeout(() => { c.style.opacity = '0'; }, 2500);
 
   setTimeout(() => {
     c.style.transition = `left .5s cubic-bezier(.25,.46,.45,.94),
@@ -60,23 +58,23 @@ function curseurVers(el, callback) {
 function attendre(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function trouverNav(textes) {
-  const candidats = Array.from(document.querySelectorAll(
-    'a, button, [role="menuitem"], [role="tab"], li, span, div'
-  )).filter(el => {
-    const r = el.getBoundingClientRect();
-    return r.width > 0 && r.height > 0;
-  });
-
+  const navLinks = Array.from(document.querySelectorAll('a.nav-link, a.nav-link.uppercase'));
   for (const texte of textes) {
     const lower = texte.toLowerCase();
-    const exact = candidats.find(b =>
-      b.textContent.trim().toLowerCase() === lower
+    const found = navLinks.find(el =>
+      el.textContent.trim().toLowerCase() === lower &&
+      el.getBoundingClientRect().width > 0
     );
-    if (exact) return exact;
-    const partial = candidats.find(b =>
-      b.textContent.trim().toLowerCase().includes(lower)
+    if (found) return found;
+  }
+  const autres = Array.from(document.querySelectorAll('a, button'))
+    .filter(el => el.getBoundingClientRect().width > 0);
+  for (const texte of textes) {
+    const lower = texte.toLowerCase();
+    const found = autres.find(el =>
+      el.textContent.trim().toLowerCase().includes(lower)
     );
-    if (partial) return partial;
+    if (found) return found;
   }
   return null;
 }
@@ -95,74 +93,85 @@ async function naviguerVers(textes) {
   });
 }
 
+// ── SÉQUENCES ACTE 2 ──────────────────────────────────────
+
+// Séquence 1 — Dashboard dossiers
 async function seq_montrerDossiers() {
   await naviguerVers(['Dossiers']);
-  await attendre(800);
+  await attendre(1000);
 }
 
+// Séquence 2 — Créer un dossier (étape 1)
 async function seq_montrerCreation() {
   await naviguerVers(['Dossiers']);
-  await attendre(800);
-  // Sélecteur direct sur action-card
+  await attendre(1000);
   const btn = Array.from(document.querySelectorAll('a.action-card'))
-    .find(el => el.textContent.includes('Créer un dossier') && el.getBoundingClientRect().width > 0);
+    .find(el => el.textContent.includes('Créer un dossier') 
+      && el.getBoundingClientRect().width > 0);
   if (btn) {
     curseurVers(btn, () => btn.click());
-    await attendre(800);
+    await attendre(1200);
   }
 }
+
+// Séquence 3 — Étape Personnes (clic Suivant)
 async function seq_montrerPersonnes() {
-  await naviguerVers(['Personnes']);
-  await attendre(800);
-}
-
-async function seq_montrerNotaires() {
-  await naviguerVers(['Notaires']);
-  await attendre(800);
-}
-
-async function seq_montrerContacts() {
-  await naviguerVers(['Contacts']);
-  await attendre(800);
-}
-
-async function seq_montrerDossierExistant() {
-  await naviguerVers(['Dossiers']);
-  await attendre(1000);
-  const lignes = Array.from(document.querySelectorAll(
-    'tr, [class*="row"], [class*="item"], tbody tr'
-  )).filter(el =>
-    el.getBoundingClientRect().width > 0 &&
-    el.textContent.trim().length > 5
-  );
-  if (lignes[0]) {
-    curseurVers(lignes[0], () => lignes[0].click());
+  const suivant = Array.from(document.querySelectorAll('button'))
+    .find(el => el.textContent.trim() === 'Suivant' 
+      && el.getBoundingClientRect().width > 0);
+  if (suivant) {
+    curseurVers(suivant, () => suivant.click());
+    await attendre(1000);
+  } else {
+    const onglet = Array.from(document.querySelectorAll('button, a'))
+      .find(el => el.textContent.trim() === '2Personnes' 
+        && el.getBoundingClientRect().width > 0);
+    if (onglet) curseurVers(onglet, () => onglet.click());
     await attendre(1000);
   }
 }
 
+// Séquence 4 — Étape Documents (étape 4 du formulaire)
 async function seq_montrerDocuments() {
-  const ok = await naviguerVers(['Documents', 'Documenten', 'Pièces']);
-  if (!ok) {
-    await seq_montrerDossierExistant();
-    await attendre(800);
-    await naviguerVers(['Documents', 'Documenten']);
+  const onglet = Array.from(document.querySelectorAll('button, a'))
+    .find(el => el.textContent.trim() === '4Documents' 
+      && el.getBoundingClientRect().width > 0);
+  if (onglet) {
+    curseurVers(onglet, () => onglet.click());
+    await attendre(1000);
   }
 }
 
+// Séquence 5 — Rédaction : ouvre premier dossier puis Compromis
 async function seq_montrerRedaction() {
-  const ok = await naviguerVers(['Compromis', 'Acte de vente', 'Rédaction', 'Akte', 'Ontwerp']);
-  if (!ok) {
-    await seq_montrerDossierExistant();
-    await attendre(800);
-    await naviguerVers(['Compromis', 'Acte de vente', 'Rédaction']);
+  await naviguerVers(['Dossiers']);
+  await attendre(1000);
+  const lignes = Array.from(document.querySelectorAll('tr'))
+    .filter(el => 
+      el.getBoundingClientRect().width > 0 && 
+      el.textContent.trim().length > 10 &&
+      !el.textContent.includes('Catégorie')
+    );
+  if (lignes[0]) {
+    curseurVers(lignes[0], () => lignes[0].click());
+    await attendre(1200);
   }
+  await attendre(500);
+  const onglet = Array.from(document.querySelectorAll('button, a'))
+    .find(el =>
+      (el.textContent.includes('Compromis') || 
+       el.textContent.includes('Acte de vente'))
+      && el.getBoundingClientRect().width > 0
+    );
+  if (onglet) curseurVers(onglet, () => onglet.click());
 }
 
+// Séquence 6 — Chatbot
 async function seq_montrerChatbot() {
-  await naviguerVers(['Chat', 'Message', 'Bericht', 'Chatbot']);
+  await naviguerVers(['Chat', 'Message', 'Chatbot']);
 }
 
+// ── Mapping label → séquence ──────────────────────────────
 const DOM_ACTIONS = {
   'Dossier':          seq_montrerCreation,
   'Dossier aanmaken': seq_montrerCreation,
@@ -178,7 +187,7 @@ const DOM_ACTIONS = {
 async function executerActionDOM(label) {
   const action = DOM_ACTIONS[label];
   if (action) {
-    await attendre(600);
+    await attendre(400);
     await action();
   }
 }
@@ -191,10 +200,9 @@ async function changerEcranAvecCurseur(categorie) {
     notaires:   ['Notaires'],
     contacts:   ['Contacts'],
     documents:  ['Documents', 'Documenten'],
-    redaction:  ['Compromis', 'Acte de vente', 'Rédaction'],
+    redaction:  ['Compromis', 'Acte de vente'],
     chatbot:    ['Chat', 'Message'],
   };
-
   const textes = mapping[categorie];
   if (textes) await naviguerVers(textes);
 }

@@ -48,13 +48,6 @@ function naturaliserTexte(text) {
 
 // ── Contexte écran ────────────────────────────────────────
 function getContexteEcran() {
-  // Cherche l'écran actif dans l'interface démo OU le contenu visible du vrai site
-  const ecranDemo = document.querySelector('.screen.active');
-  if (ecranDemo) {
-    const texte = ecranDemo.innerText.replace(/\s+/g, ' ').trim().substring(0, 400);
-    return '\n\nÉCRAN VISIBLE : ' + texte + ' — Cite les données réelles. 2 phrases max.';
-  }
-  // Sur le vrai site Alfred
   const main = document.querySelector('main, .main-content, app-root, [class*="content"]');
   if (main) {
     const texte = main.innerText.replace(/\s+/g, ' ').trim().substring(0, 400);
@@ -63,7 +56,7 @@ function getContexteEcran() {
   return '';
 }
 
-// ── Bulle — mot par mot, léger retard sur la voix ─────────
+// ── Bulle mot par mot ─────────────────────────────────────
 function showBubble(text) {
   const b = document.getElementById('alfred-bubble');
   if (!b) return;
@@ -81,50 +74,46 @@ function showBubble(text) {
     } else {
       clearInterval(iv);
     }
-  }, 180);
+  }, 120);
 }
 
-// ── Traduction pour la bulle ──────────────────────────────
+// ── Traduction bulle ──────────────────────────────────────
 async function traduire(text, versLangue) {
   const prompt = versLangue === 'nl'
-    ? `Traduis en néerlandais belge (flamand), même ton, même sens, même longueur. Uniquement la traduction, rien d'autre : "${text}"`
-    : `Traduis en français, même ton, même sens, même longueur. Uniquement la traduction, rien d'autre : "${text}"`;
-
+    ? `Traduis en néerlandais belge, même ton, même longueur. Uniquement la traduction : "${text}"`
+    : `Traduis en français, même ton, même longueur. Uniquement la traduction : "${text}"`;
   try {
     const res = await fetch(ALFRED_CONFIG.API_GEMINI, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
-      })
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
     });
     const data = await res.json();
     return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
-  } catch(e) {
-    return '';
-  }
+  } catch(e) { return ''; }
 }
 
-// ── Détection écran à changer ─────────────────────────────
-function detectAndChangeScreen(text) {
+// ── Détection intention pour navigation ──────────────────
+function detecterIntentionActe2(text) {
   const lower = text.toLowerCase();
-  const mapping = [
-    { cat: 'dossiers',  mots: ['dossier','aanmaken','créer','création','creer','folder','map'] },
-    { cat: 'parties',   mots: ['partie','vendeur','acquéreur','registre','personne','rijksregister','partijen','koper','personen','naam'] },
-    { cat: 'documents', mots: ['document','manquant','pièce','peb','upload','documenten','ontbreekt','catégoris'] },
-    { cat: 'redaction', mots: ['compromis','rédaction','acte','blanche','check','ontwerp','akte','rédige','génère'] },
-    { cat: 'chatbot',   mots: ['chatbot','nuit','avance','message','vordert','avonds','bericht'] },
-    { cat: 'dashboard', mots: ['tableau','bord','accueil','home','overzicht','alertes'] },
+  const intentions = [
+    { label: 'Dossier',   mots: ['dossier','créer','création','vente immobilière','zéro','partir','creer','folder','aanmaken'] },
+    { label: 'Parties',   mots: ['partie','vendeur','acquéreur','registre','personne','suivant','rijksregister','koper','naam'] },
+    { label: 'Documents', mots: ['document','manquant','pièce','peb','upload','catégoris','ontbreekt'] },
+    { label: 'Rédaction', mots: ['compromis','rédaction','acte','blanche','check','ontwerp','akte','rédige','génère'] },
+    { label: 'Chatbot',   mots: ['chatbot','nuit','avance','message','vordert','bericht'] },
   ];
-
-  for (const { cat, mots } of mapping) {
-    if (mots.some(m => lower.includes(m))) {
-      if (typeof changerEcranAvecCurseur === 'function') {
-        changerEcranAvecCurseur(cat);
-      }
-      return;
-    }
+  for (const { label, mots } of intentions) {
+    if (mots.some(m => lower.includes(m))) return label;
   }
+  return null;
+}
+
+// ── Détection transition vers Acte 2 ─────────────────────
+function detecterTransitionActe2(text) {
+  const lower = text.toLowerCase();
+  const mots = ['montrer','montrez','live','voir','en direct','démonstration','demontrer','demonstrer','regardez','regarder'];
+  return mots.some(m => lower.includes(m));
 }
 
 // ── Gemini ────────────────────────────────────────────────
@@ -136,6 +125,12 @@ async function askAlfred(text, retries = 2) {
   currentLangue = langue;
   const langLbl = document.getElementById('alfred-langue-lbl');
   if (langLbl) langLbl.textContent = langue === 'nl' ? '🇧🇪 NL' : '🇧🇪 FR';
+
+  // Détection transition Acte 1 → 2 via micro
+  if (currentActe === 1 && detecterTransitionActe2(text)) {
+    currentActe = 2;
+    console.log('[Alfred] Acte 2 activé via micro');
+  }
 
   const langInstruction = langue === 'nl'
     ? 'RÈGLE ABSOLUE : réponds UNIQUEMENT en néerlandais belge. MAXIMUM 8 phrases. Commence directement sans préfixe.\n\n'
@@ -150,9 +145,7 @@ async function askAlfred(text, retries = 2) {
     const res = await fetch(ALFRED_CONFIG.API_GEMINI, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: fullPrompt }] }]
-      })
+      body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] })
     });
 
     if (res.status === 503 && retries > 0) {
@@ -164,18 +157,13 @@ async function askAlfred(text, retries = 2) {
     const raw  = data?.candidates?.[0]?.content?.parts?.[0]?.text || null;
 
     if (!raw) {
-      const fb = langue === 'nl'
-        ? 'Ik sta klaar voor uw volgende vraag.'
-        : 'Posez votre prochaine question.';
-      // Bulle = traduction
-      const autreLangue = langue === 'nl' ? 'fr' : 'nl';
-      const trad = await traduire(fb, autreLangue);
+      const fb = langue === 'nl' ? 'Ik sta klaar voor uw volgende vraag.' : 'Posez votre prochaine question.';
+      const trad = await traduire(fb, langue === 'nl' ? 'fr' : 'nl');
       showBubble(trad || fb);
       await speak(naturaliserTexte(fb), langue);
       return;
     }
 
-    // Nettoyage artefacts
     let replyClean = raw
       .replace(/^MODE SCRIPT\s*:/i, '')
       .replace(/^MODE LIBRE\s*:/i,  '')
@@ -184,26 +172,22 @@ async function askAlfred(text, retries = 2) {
       .replace(/[»""\u201C\u201D]$/, '')
       .trim();
 
-    // Max 4 phrases
-    const phrases  = replyClean.match(/[^.!?]+[.!?]+/g) || [replyClean];
+    const phrases = replyClean.match(/[^.!?]+[.!?]+/g) || [replyClean];
     replyClean = phrases.slice(0, 8).join(' ').trim();
-
-    // Changement écran sur question ET réponse
-    detectAndChangeScreen(text);
-    detectAndChangeScreen(replyClean);
 
     addToHistory('alfred', replyClean);
 
-    // Traduction pour la bulle + voix en parallèle
+    // Navigation Acte 2 — via micro si intention détectée
+    if (currentActe >= 2) {
+      const intention = detecterIntentionActe2(text);
+      if (intention && typeof executerActionDOM === 'function') {
+        await executerActionDOM(intention);
+      }
+    }
+
     const autreLangue = langue === 'nl' ? 'fr' : 'nl';
-    const [trad] = await Promise.all([
-      traduire(replyClean, autreLangue)
-    ]);
-
-    // Bulle = traduction uniquement
+    const trad = await traduire(replyClean, autreLangue);
     showBubble(trad || replyClean);
-
-    // Parle dans la langue de la question
     await speak(naturaliserTexte(replyClean), langue);
 
   } catch(e) {
@@ -220,7 +204,6 @@ async function askAlfred(text, retries = 2) {
 function startListening() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { showTranscript('Chrome requis'); return; }
-
   if (typeof stopAudio === 'function') stopAudio();
 
   recognition = new SR();
@@ -273,7 +256,6 @@ async function jouerSecours() {
   secoursIdx = secoursIdx % list.length;
   const r = list[secoursIdx];
 
-  // Traduction = liste opposée, même acte + même label
   const listeTrad = currentLangue === 'nl'
     ? ALFRED_CONFIG.REPLIQUES_FR
     : ALFRED_CONFIG.REPLIQUES_NL;
@@ -281,21 +263,22 @@ async function jouerSecours() {
   const rTrad = listeTrad.find(t => t.acte === r.acte && t.label === r.label)
              || listeTrad[Math.min(secoursIdx, listeTrad.length - 1)];
 
-  // Bulle = traduction (pas besoin d'appel API, déjà dans la config)
   showBubble(rTrad ? rTrad.texte : r.texte);
-
   addToHistory('alfred', r.texte);
 
-  // Changement écran
-  detectAndChangeScreen(r.texte);
-  detectAndChangeScreen(r.label);
-
-  // Action DOM
-  if (typeof executerActionDOM === 'function') {
-    await executerActionDOM(r.label);
+  // Bascule automatique Acte 1 → 2
+  if (r.acte === 2 && currentActe === 1) {
+    currentActe = 2;
+    console.log('[Alfred] Acte 2 activé via →');
   }
 
-  // Parle dans la langue courante
+  // Navigation DOM seulement en Acte 2
+  if (currentActe >= 2) {
+    if (typeof executerActionDOM === 'function') {
+      await executerActionDOM(r.label);
+    }
+  }
+
   await speak(naturaliserTexte(r.texte), currentLangue);
 
   updateSecoursLabel(r.label, r.acte, secoursIdx + 1, list.length);

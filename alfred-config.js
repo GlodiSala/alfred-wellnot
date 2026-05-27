@@ -218,3 +218,4 @@ var currentLangue = 'fr';
 var currentAudio  = null;
 var talkTick      = null;
 var curState      = 'idle';
+var currentActe   = 1;
