@@ -1,21 +1,17 @@
 // === ALFRED BRAIN ===
 // Dépend de : alfred-config.js, alfred-ui.js, alfred-voice.js, alfred-dom.js
 
-let isListening   = false;
-let recognition   = null;
-let secoursIdx    = 0;
+let isListening = false;
+let recognition = null;
+let secoursIdx  = 0;
 
 // ── Détection langue ──────────────────────────────────────
-// Détection simple basée sur la langue courante
-// On change uniquement si on détecte clairement l'autre langue
 function detectLangue(text) {
   const lower = text.toLowerCase();
-  // Si on est en FR et on détecte du NL clair
   if (currentLangue === 'fr') {
     const hitsNL = ALFRED_CONFIG.TRIGGERS_NL.filter(w => lower.includes(w)).length;
     return hitsNL >= 2 ? 'nl' : 'fr';
   }
-  // Si on est en NL et on détecte du FR clair
   if (currentLangue === 'nl') {
     const triggersFR = ['bonjour','merci','comment','pouvez','votre','quel','quelle','est-ce','vous'];
     const hitsFR = triggersFR.filter(w => lower.includes(w)).length;
@@ -52,15 +48,22 @@ function naturaliserTexte(text) {
 
 // ── Contexte écran ────────────────────────────────────────
 function getContexteEcran() {
-  const ecranActif = document.querySelector('.screen.active');
-  if (!ecranActif) return '';
-  const texteVisible = ecranActif.innerText
-    .replace(/\s+/g, ' ').trim().substring(0, 400);
-  return '\n\nÉCRAN VISIBLE : ' + texteVisible
-    + ' — Cite les données réelles visibles. 2 phrases max.';
+  // Cherche l'écran actif dans l'interface démo OU le contenu visible du vrai site
+  const ecranDemo = document.querySelector('.screen.active');
+  if (ecranDemo) {
+    const texte = ecranDemo.innerText.replace(/\s+/g, ' ').trim().substring(0, 400);
+    return '\n\nÉCRAN VISIBLE : ' + texte + ' — Cite les données réelles. 2 phrases max.';
+  }
+  // Sur le vrai site Alfred
+  const main = document.querySelector('main, .main-content, app-root, [class*="content"]');
+  if (main) {
+    const texte = main.innerText.replace(/\s+/g, ' ').trim().substring(0, 400);
+    return '\n\nÉCRAN VISIBLE : ' + texte + ' — Cite les données réelles. 2 phrases max.';
+  }
+  return '';
 }
 
-// ── Bulle mot par mot (léger retard sur la voix) ─────────
+// ── Bulle — mot par mot, léger retard sur la voix ─────────
 function showBubble(text) {
   const b = document.getElementById('alfred-bubble');
   if (!b) return;
@@ -81,15 +84,36 @@ function showBubble(text) {
   }, 180);
 }
 
+// ── Traduction pour la bulle ──────────────────────────────
+async function traduire(text, versLangue) {
+  const prompt = versLangue === 'nl'
+    ? `Traduis en néerlandais belge (flamand), même ton, même sens, même longueur. Uniquement la traduction, rien d'autre : "${text}"`
+    : `Traduis en français, même ton, même sens, même longueur. Uniquement la traduction, rien d'autre : "${text}"`;
+
+  try {
+    const res = await fetch(ALFRED_CONFIG.API_GEMINI, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }]
+      })
+    });
+    const data = await res.json();
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+  } catch(e) {
+    return '';
+  }
+}
+
 // ── Détection écran à changer ─────────────────────────────
 function detectAndChangeScreen(text) {
   const lower = text.toLowerCase();
   const mapping = [
-    { cat: 'dossiers',  mots: ['dossier','aanmaken','créer','création','creer'] },
-    { cat: 'parties',   mots: ['partie','vendeur','acquéreur','registre','personne','rijksregister','partijen','koper','personen'] },
-    { cat: 'documents', mots: ['document','manquant','pièce','peb','upload','documenten','ontbreekt'] },
-    { cat: 'redaction', mots: ['compromis','rédaction','acte','blanche','check','ontwerp','akte'] },
-    { cat: 'chatbot',   mots: ['chatbot','nuit','avance','message','vordert','avonds'] },
+    { cat: 'dossiers',  mots: ['dossier','aanmaken','créer','création','creer','folder','map'] },
+    { cat: 'parties',   mots: ['partie','vendeur','acquéreur','registre','personne','rijksregister','partijen','koper','personen','naam'] },
+    { cat: 'documents', mots: ['document','manquant','pièce','peb','upload','documenten','ontbreekt','catégoris'] },
+    { cat: 'redaction', mots: ['compromis','rédaction','acte','blanche','check','ontwerp','akte','rédige','génère'] },
+    { cat: 'chatbot',   mots: ['chatbot','nuit','avance','message','vordert','avonds','bericht'] },
     { cat: 'dashboard', mots: ['tableau','bord','accueil','home','overzicht','alertes'] },
   ];
 
@@ -102,6 +126,7 @@ function detectAndChangeScreen(text) {
     }
   }
 }
+
 // ── Gemini ────────────────────────────────────────────────
 async function askAlfred(text, retries = 2) {
   setAlfredState('think');
@@ -113,8 +138,8 @@ async function askAlfred(text, retries = 2) {
   if (langLbl) langLbl.textContent = langue === 'nl' ? '🇧🇪 NL' : '🇧🇪 FR';
 
   const langInstruction = langue === 'nl'
-    ? 'RÈGLE ABSOLUE : réponds UNIQUEMENT en néerlandais belge. MAXIMUM 2 phrases.\n\n'
-    : 'RÈGLE ABSOLUE : réponds UNIQUEMENT en français. MAXIMUM 2 phrases.\n\n';
+    ? 'RÈGLE ABSOLUE : réponds UNIQUEMENT en néerlandais belge. MAXIMUM 4 phrases. Commence directement sans préfixe.\n\n'
+    : 'RÈGLE ABSOLUE : réponds UNIQUEMENT en français. MAXIMUM 4 phrases. Commence directement sans préfixe.\n\n';
 
   const fullPrompt = langInstruction
     + ALFRED_CONFIG.SYSTEM_PROMPT
@@ -142,31 +167,43 @@ async function askAlfred(text, retries = 2) {
       const fb = langue === 'nl'
         ? 'Ik sta klaar voor uw volgende vraag.'
         : 'Posez votre prochaine question.';
-      showBubble(fb);
+      // Bulle = traduction
+      const autreLangue = langue === 'nl' ? 'fr' : 'nl';
+      const trad = await traduire(fb, autreLangue);
+      showBubble(trad || fb);
       await speak(naturaliserTexte(fb), langue);
       return;
     }
-    // Par :
-    // Nettoie les artefacts du prompt
+
+    // Nettoyage artefacts
     let replyClean = raw
       .replace(/^MODE SCRIPT\s*:/i, '')
-      .replace(/^MODE LIBRE\s*:/i, '')
+      .replace(/^MODE LIBRE\s*:/i,  '')
       .replace(/^MODE FIXE[^:]*:/i, '')
-      .replace(/^"/,'').replace(/"$/,'')
+      .replace(/^[«""\u201C\u201D]/,  '')
+      .replace(/[»""\u201C\u201D]$/, '')
       .trim();
 
-    // Limite à 4 phrases max (les répliques du script sont longues)
-    const phrases = replyClean.match(/[^.!?]+[.!?]+/g) || [replyClean];
+    // Max 4 phrases
+    const phrases  = replyClean.match(/[^.!?]+[.!?]+/g) || [replyClean];
     replyClean = phrases.slice(0, 4).join(' ').trim();
 
-    // Bulle + changement écran sur question ET réponse
-    showBubble(replyClean);
+    // Changement écran sur question ET réponse
     detectAndChangeScreen(text);
     detectAndChangeScreen(replyClean);
 
     addToHistory('alfred', replyClean);
 
-    // Parle via alfred-voice.js
+    // Traduction pour la bulle + voix en parallèle
+    const autreLangue = langue === 'nl' ? 'fr' : 'nl';
+    const [trad] = await Promise.all([
+      traduire(replyClean, autreLangue)
+    ]);
+
+    // Bulle = traduction uniquement
+    showBubble(trad || replyClean);
+
+    // Parle dans la langue de la question
     await speak(naturaliserTexte(replyClean), langue);
 
   } catch(e) {
@@ -184,7 +221,6 @@ function startListening() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { showTranscript('Chrome requis'); return; }
 
-  // Stop audio en cours
   if (typeof stopAudio === 'function') stopAudio();
 
   recognition = new SR();
@@ -237,18 +273,29 @@ async function jouerSecours() {
   secoursIdx = secoursIdx % list.length;
   const r = list[secoursIdx];
 
-  showBubble(r.texte);
+  // Traduction = liste opposée, même acte + même label
+  const listeTrad = currentLangue === 'nl'
+    ? ALFRED_CONFIG.REPLIQUES_FR
+    : ALFRED_CONFIG.REPLIQUES_NL;
+
+  const rTrad = listeTrad.find(t => t.acte === r.acte && t.label === r.label)
+             || listeTrad[Math.min(secoursIdx, listeTrad.length - 1)];
+
+  // Bulle = traduction (pas besoin d'appel API, déjà dans la config)
+  showBubble(rTrad ? rTrad.texte : r.texte);
+
   addToHistory('alfred', r.texte);
 
-  // Change l'écran selon la réplique
+  // Changement écran
   detectAndChangeScreen(r.texte);
   detectAndChangeScreen(r.label);
 
-  // Action DOM si disponible
+  // Action DOM
   if (typeof executerActionDOM === 'function') {
     await executerActionDOM(r.label);
   }
 
+  // Parle dans la langue courante
   await speak(naturaliserTexte(r.texte), currentLangue);
 
   updateSecoursLabel(r.label, r.acte, secoursIdx + 1, list.length);
