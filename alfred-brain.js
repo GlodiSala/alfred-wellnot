@@ -308,6 +308,11 @@ document.addEventListener('keydown', e => {
     if (typeof stopAudio === 'function') stopAudio();
     setAlfredState('idle');
   }
+  if (e.key === 'l' || e.key === 'L') {
+    e.preventDefault();
+    toggleLangue();
+    console.log('[Alfred] Langue basculée:', currentLangue);
+  }
 });
 
 // ── Helpers UI ────────────────────────────────────────────
