@@ -255,7 +255,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     'documenten', 'rijksregister', 'veilig', 'vervangen', 'beveiliging'
   ],
 
-  SLEEP_APRES: 30,
+  SLEEP_APRES: 10,
 };
 
 var currentLangue = 'fr';
