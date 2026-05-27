@@ -103,10 +103,14 @@ async function seq_montrerDossiers() {
 async function seq_montrerCreation() {
   await naviguerVers(['Dossiers']);
   await attendre(800);
-  await naviguerVers(['Créer un dossier']);
-  await attendre(800);
+  // Sélecteur direct sur action-card
+  const btn = Array.from(document.querySelectorAll('a.action-card'))
+    .find(el => el.textContent.includes('Créer un dossier') && el.getBoundingClientRect().width > 0);
+  if (btn) {
+    curseurVers(btn, () => btn.click());
+    await attendre(800);
+  }
 }
-
 async function seq_montrerPersonnes() {
   await naviguerVers(['Personnes']);
   await attendre(800);
