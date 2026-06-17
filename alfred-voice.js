@@ -46,7 +46,7 @@ async function speak(text, langue) {
   langue = langue || currentLangue || 'fr';
 
   setAlfredState('talk');
-  animateMouth(0.3); // Bouche légèrement ouverte pendant le chargement
+  animateMouth(0.3);
 
   const voix = VOIX_CONFIG[langue] || VOIX_CONFIG.fr;
 
@@ -67,7 +67,13 @@ async function speak(text, langue) {
     const audio = new Audio('data:audio/mp3;base64,' + data.audioContent);
     currentAudio = audio;
 
-    // Analyseur volume → bouche
+    // Synchroniser sous-titres dès qu'on connaît la durée
+    audio.onloadedmetadata = () => {
+      if (typeof syncSousTitres === 'function') {
+        syncSousTitres(audio.duration);
+      }
+    };
+
     const ctx      = new (window.AudioContext || window.webkitAudioContext)();
     const src      = ctx.createMediaElementSource(audio);
     const analyser = ctx.createAnalyser();

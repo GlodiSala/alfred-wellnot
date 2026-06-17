@@ -6,24 +6,28 @@ let eyeCurX    = 0, eyeCurY    = 0;
 let rafEyes    = null;
 
 const ALFRED_SVG = `
-<div id="alfred-avatar-outer" style="position:relative;width:200px;height:210px;display:flex;align-items:center;justify-content:center;">
+<div id="alfred-avatar-outer" style="position:relative;width:220px;height:230px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
 
-  <div id="alfred-shadow-ground" style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:150px;height:20px;background:radial-gradient(ellipse,rgba(5,69,97,.5) 0%,transparent 70%);border-radius:50%;pointer-events:none;"></div>
+  <div id="alfred-shadow-ground" style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:160px;height:22px;background:radial-gradient(ellipse,rgba(5,69,97,.5) 0%,transparent 70%);border-radius:50%;pointer-events:none;"></div>
 
-  <div id="alfred-avatar-wrap" style="position:relative;width:175px;height:175px;">
+  <div id="alfred-zzz" style="position:absolute;top:10px;right:10px;pointer-events:none;opacity:0;transition:opacity .4s;z-index:10;">
+    <span class="alfred-z" style="font-size:12px;position:absolute;right:0;top:36px;color:rgba(5,69,97,.75);">z</span>
+    <span class="alfred-z" style="font-size:16px;position:absolute;right:10px;top:18px;color:rgba(5,69,97,.75);">z</span>
+    <span class="alfred-z" style="font-size:20px;position:absolute;right:20px;top:0;color:rgba(5,69,97,.75);">Z</span>
+  </div>
+
+  <div id="alfred-avatar-wrap" style="position:relative;width:195px;height:195px;overflow:visible;">
 
     <svg id="alfred-extrusion" viewBox="0 0 379.79 383.47" xmlns="http://www.w3.org/2000/svg"
-         style="position:absolute;top:7px;left:7px;width:155px;height:155px;overflow:visible;pointer-events:none;opacity:1;transition:opacity .4s ease;">
+         style="position:absolute;top:8px;left:8px;width:175px;height:175px;overflow:visible;pointer-events:none;opacity:1;transition:opacity .4s ease;">
       <circle cx="189.9" cy="191.74" r="191" fill="#0a6b7a"/>
       <path fill="#0a6b7a" d="M246.68,12.44C230.03,4.47,211.1,0,189.28,0h-.53c-22.96.09-42.76,5.17-59.94,14.02C53.98,39.52,0,110.33,0,193.66c0,104.72,85.18,189.81,189.9,189.81s189.9-85.18,189.9-189.81c0-84.91-56-156.95-133.02-181.13l-.09-.09ZM126.63,30.06h.26c16.83-10.95,37.68-16.56,62.13-16.65h.7c32.16,0,58.01,9.64,77.03,28.66,35.32,35.32,35.49,92.1,35.49,92.89v.44s2.8,29.36-9.64,43.03c-4.29,4.73-9.9,7.01-17.18,7.01H107.44c-6.22.18-11.57-1.93-15.95-6.31-13.76-13.58-14.02-44.25-14.02-44.6,0-.53-.7-56.35,33.83-91.75,4.73-4.82,9.81-9.03,15.42-12.71h-.09ZM109.71,264.56l-3.07,2.1v81.58c-54.94-29.71-92.45-87.81-92.45-154.58,0-58.71,29.09-110.68,73.43-142.58-24.19,37.42-23.66,81.32-23.57,83.51,0,1.49.09,36.28,17.96,53.89,6.84,6.75,15.25,10.17,24.97,10.17h.53c10.95-.18,26.9-.18,44.69-.18-4.12,14.2-16.12,47.76-42.5,66.16v-.09ZM257.46,355.7c-20.86,8.76-43.64,13.58-67.56,13.58s-47.76-5.08-68.88-14.11v-81.15c30.85-23.49,42.94-63.09,46.09-75.63h15.07v93.06c-12.01,3.24-21.03,13.67-21.03,26.73,0,15.6,12.62,28.22,28.22,28.22s28.22-12.62,28.22-28.22c0-13.06-9.03-23.49-21.03-26.73v-93.06h15.07c3.15,12.53,15.25,52.05,46.09,75.54v81.67l-.26.09ZM271.74,348.86v-82.2l-3.07-2.1c-26.29-18.31-38.29-51.79-42.5-66.07h49.07c11.04,0,20.16-3.86,26.99-11.39,15.86-17.53,13.32-49.42,12.97-52.84,0-5.52-.96-48.64-25.5-84.91,45.66,31.72,75.63,84.48,75.63,144.15,0,67.3-38.03,125.75-93.77,155.19l.18.18Z"/>
     </svg>
 
     <svg id="alfred-svg" viewBox="0 0 379.79 383.47" xmlns="http://www.w3.org/2000/svg"
-         style="position:absolute;top:0;left:0;overflow:visible;width:155px;height:155px;">
-
+         style="position:absolute;top:0;left:0;overflow:visible;width:175px;height:175px;">
       <circle cx="189.9" cy="191.74" r="191" fill="white"/>
       <ellipse cx="130" cy="55" rx="55" ry="35" fill="rgba(255,255,255,0.15)" style="pointer-events:none;"/>
-
       <g id="alfred-body-main" style="transform-origin:189.9px 191.74px;">
         <path fill="#14b0bd" d="M246.68,12.44C230.03,4.47,211.1,0,189.28,0h-.53c-22.96.09-42.76,5.17-59.94,14.02C53.98,39.52,0,110.33,0,193.66c0,104.72,85.18,189.81,189.9,189.81s189.9-85.18,189.9-189.81c0-84.91-56-156.95-133.02-181.13l-.09-.09ZM126.63,30.06h.26c16.83-10.95,37.68-16.56,62.13-16.65h.7c32.16,0,58.01,9.64,77.03,28.66,35.32,35.32,35.49,92.1,35.49,92.89v.44s2.8,29.36-9.64,43.03c-4.29,4.73-9.9,7.01-17.18,7.01H107.44c-6.22.18-11.57-1.93-15.95-6.31-13.76-13.58-14.02-44.25-14.02-44.6,0-.53-.7-56.35,33.83-91.75,4.73-4.82,9.81-9.03,15.42-12.71h-.09ZM109.71,264.56l-3.07,2.1v81.58c-54.94-29.71-92.45-87.81-92.45-154.58,0-58.71,29.09-110.68,73.43-142.58-24.19,37.42-23.66,81.32-23.57,83.51,0,1.49.09,36.28,17.96,53.89,6.84,6.75,15.25,10.17,24.97,10.17h.53c10.95-.18,26.9-.18,44.69-.18-4.12,14.2-16.12,47.76-42.5,66.16v-.09ZM257.46,355.7c-20.86,8.76-43.64,13.58-67.56,13.58s-47.76-5.08-68.88-14.11v-81.15c30.85-23.49,42.94-63.09,46.09-75.63h15.07v93.06c-12.01,3.24-21.03,13.67-21.03,26.73,0,15.6,12.62,28.22,28.22,28.22s28.22-12.62,28.22-28.22c0-13.06-9.03-23.49-21.03-26.73v-93.06h15.07c3.15,12.53,15.25,52.05,46.09,75.54v81.67l-.26.09ZM271.74,348.86v-82.2l-3.07-2.1c-26.29-18.31-38.29-51.79-42.5-66.07h49.07c11.04,0,20.16-3.86,26.99-11.39,15.86-17.53,13.32-49.42,12.97-52.84,0-5.52-.96-48.64-25.5-84.91,45.66,31.72,75.63,84.48,75.63,144.15,0,67.3-38.03,125.75-93.77,155.19l.18.18Z"/>
         <path fill="#14b0bd" d="M275.51,107.61H103.4l-.79-4.38c-.18-1.14-5-28.83,8.06-44.34,5.7-6.75,13.67-10.17,23.66-10.17h110.94c9.64,0,17.35,3.42,22.87,9.9,12.97,15.42,8.33,43.38,8.15,44.52l-.79,4.47h0ZM112.61,96.92h153.71c.61-7.54.88-22.87-6.31-31.37-3.42-4.12-8.24-6.05-14.63-6.13-.88,0-110.85,0-110.77,0h-.09c-6.84,0-11.92,2.1-15.51,6.4-6.75,8.06-7.1,22.61-6.31,31.2"/>
@@ -46,8 +50,7 @@ const ALFRED_SVG = `
         <path id="alfred-mouth" fill="#14b0bd" d="M189.28,136.79c-6.31,0-13.32-1.49-20.51-6.13-2.45-1.58-3.24-4.91-1.58-7.36,1.58-2.45,4.91-3.15,7.36-1.58,15.07,9.64,30.23.35,30.85,0,2.45-1.58,5.78-.79,7.36,1.66s.88,5.78-1.58,7.36c-.61.35-9.73,6.13-21.91,6.13"/>
         <ellipse id="alfred-mouth-talk" fill="#14b0bd" cx="189" cy="128" rx="20" ry="0" style="display:none;"/>
       </g>
-
-      <ellipse cx="130" cy="55" rx="55" ry="35" fill="rgba(255,255,255,0.15)" style="pointer-events:none;"/>
+      <ellipse cx="130" cy="55" rx="55" ry="35" fill="rgba(255,255,255,0.12)" style="pointer-events:none;"/>
     </svg>
 
     <div id="alfred-dots" style="position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;gap:5px;opacity:0;transition:opacity .3s;z-index:3;">
@@ -55,11 +58,7 @@ const ALFRED_SVG = `
       <div class="alfred-dot" id="alfred-dot2"></div>
       <div class="alfred-dot" id="alfred-dot3"></div>
     </div>
-    <div id="alfred-zzz" style="position:absolute;top:50px;right:25px;pointer-events:none;opacity:0;transition:opacity .4s;z-index:10;">
-      <span class="alfred-z" style="font-size:11px;right:0;top:32px;color:rgba(5,69,97,.7);">z</span>
-      <span class="alfred-z" style="font-size:14px;right:8px;top:16px;color:rgba(5,69,97,.7);">z</span>
-      <span class="alfred-z" style="font-size:18px;right:16px;top:0;color:rgba(5,69,97,.7);">Z</span>
-    </div>
+
   </div>
 </div>`;
 
@@ -81,19 +80,18 @@ function creerSousTitres() {
   document.body.appendChild(sub);
 }
 
-let subtitleInterval = null;
+let subtitleText = '';
 
 function afficherSousTitres(text) {
   const sub = document.getElementById('alfred-subtitles');
   if (!sub || !text) return;
   clearInterval(subtitleInterval);
+  subtitleText = text;
   sub.style.opacity = '1';
-
-  // Découper en phrases
   const phrases = text.match(/[^.!?]+[.!?]+/g) || [text];
+  sub.textContent = phrases[0].trim();
+  // Par défaut 3.5s si on n'a pas encore la durée audio
   let i = 0;
-  sub.textContent = phrases[0] || '';
-
   subtitleInterval = setInterval(() => {
     i++;
     if (i < phrases.length) {
@@ -101,7 +99,27 @@ function afficherSousTitres(text) {
     } else {
       clearInterval(subtitleInterval);
     }
-  }, 3500); // change de phrase toutes les 3.5s
+  }, 3500);
+}
+
+function syncSousTitres(dureeAudio) {
+  const sub = document.getElementById('alfred-subtitles');
+  if (!sub || !subtitleText) return;
+  clearInterval(subtitleInterval);
+  const phrases = subtitleText.match(/[^.!?]+[.!?]+/g) || [subtitleText];
+  if (phrases.length <= 1) return;
+  // Diviser la durée audio par le nombre de phrases
+  const delaiParPhrase = (dureeAudio * 1000) / phrases.length;
+  let i = 0;
+  sub.textContent = phrases[0].trim();
+  subtitleInterval = setInterval(() => {
+    i++;
+    if (i < phrases.length) {
+      sub.textContent = phrases[i].trim();
+    } else {
+      clearInterval(subtitleInterval);
+    }
+  }, delaiParPhrase);
 }
 
 function cacherSousTitres() {
@@ -113,7 +131,7 @@ function cacherSousTitres() {
   }
 }
 
-// ── Panneau répliques (double-clic sur Alfred) ────────────
+// ── Panneau répliques ─────────────────────────────────────
 function creerPanneauRepliques() {
   if (document.getElementById('alfred-repliques-panel')) return;
   const panel = document.createElement('div');
@@ -199,36 +217,62 @@ function initAlfredUI() {
     #alfred-left-panel {
       width:0; min-width:0; height:100vh;
       background:linear-gradient(180deg,#054561 0%,#14b0bd 50%,#ebe0c4 100%);
-      display:flex; flex-direction:column; align-items:center; padding:20px 0 16px;
+      display:flex; flex-direction:column; align-items:center;
+      justify-content:center;
+      padding:20px 0 16px;
       box-shadow:4px 0 32px rgba(5,69,97,.35);
       overflow:hidden; pointer-events:all; position:relative; flex-shrink:0;
       transition:width .6s cubic-bezier(.32,.72,0,1), min-width .6s cubic-bezier(.32,.72,0,1), padding .6s cubic-bezier(.32,.72,0,1);
     }
     #alfred-left-panel.visible { width:270px; min-width:270px; padding:20px 16px 16px; }
-    #alfred-logo { color:rgba(255,255,255,.7); font-size:9px; font-weight:700; letter-spacing:2.5px; margin-bottom:10px; text-align:center; white-space:nowrap; opacity:0; transition:opacity .4s ease .3s; font-family:-apple-system,sans-serif; }
+    #alfred-logo {
+      color:rgba(255,255,255,.7); font-size:9px; font-weight:700;
+      letter-spacing:2.5px; margin-bottom:20px; text-align:center;
+      white-space:nowrap; opacity:0; transition:opacity .4s ease .3s;
+      font-family:-apple-system,sans-serif;
+    }
     #alfred-left-panel.visible #alfred-logo { opacity:1; }
     .alfred-dot { width:6px; height:6px; border-radius:50%; background:#14b0bd; }
     .alfred-z { position:absolute; font-weight:800; opacity:0; font-family:sans-serif; }
-    #alfred-state-lbl { color:rgba(255,255,255,.4); font-size:8px; letter-spacing:1.5px; text-transform:uppercase; margin-top:6px; text-align:center; font-family:sans-serif; }
-    #alfred-transcript { font-size:10px; color:rgba(255,255,255,.5); font-style:italic; text-align:center; margin-top:12px; min-height:13px; width:100%; font-family:sans-serif; padding:0 4px; box-sizing:border-box; }
-    #alfred-vol-wrap { width:100%; height:2px; background:rgba(255,255,255,.1); border-radius:1px; margin-top:10px; overflow:hidden; }
+    #alfred-state-lbl {
+      color:rgba(255,255,255,.4); font-size:8px; letter-spacing:1.5px;
+      text-transform:uppercase; margin-top:12px; text-align:center; font-family:sans-serif;
+    }
+    #alfred-transcript {
+      font-size:10px; color:rgba(255,255,255,.5); font-style:italic;
+      text-align:center; margin-top:8px; min-height:13px; width:100%;
+      font-family:sans-serif; padding:0 4px; box-sizing:border-box;
+    }
+    #alfred-vol-wrap { width:100%; height:2px; background:rgba(255,255,255,.1); border-radius:1px; margin-top:16px; overflow:hidden; }
     #alfred-vol-bar { height:100%; width:0%; background:rgba(255,255,255,.6); border-radius:1px; transition:width .04s linear; }
-    #alfred-mic-btn { margin-top:12px; background:rgba(255,255,255,.15); color:rgba(255,255,255,.9); border:1px solid rgba(255,255,255,.3); border-radius:20px; padding:8px 16px; font-size:11px; font-weight:600; cursor:pointer; width:100%; transition:background .2s,transform .15s; font-family:sans-serif; }
+    #alfred-mic-btn {
+      margin-top:16px; background:rgba(255,255,255,.15); color:rgba(255,255,255,.9);
+      border:1px solid rgba(255,255,255,.3); border-radius:20px; padding:10px 16px;
+      font-size:12px; font-weight:600; cursor:pointer; width:100%;
+      transition:background .2s,transform .15s; font-family:sans-serif;
+    }
     #alfred-mic-btn:hover { background:rgba(255,255,255,.25); transform:translateY(-1px); }
     #alfred-mic-btn.listening { background:rgba(255,255,255,.9); color:#054561; animation:alfred-pulse-mic 1.2s ease-in-out infinite; }
-    #alfred-langue-lbl { font-size:9px; color:rgba(255,255,255,.3); margin-top:8px; cursor:pointer; transition:color .2s; font-family:sans-serif; user-select:none; }
+    #alfred-langue-lbl {
+      font-size:9px; color:rgba(255,255,255,.3); margin-top:10px;
+      cursor:pointer; transition:color .2s; font-family:sans-serif; user-select:none;
+    }
     #alfred-langue-lbl:hover { color:rgba(255,255,255,.7); }
-    #alfred-secours { position:absolute; bottom:8px; left:0; right:0; text-align:center; font-size:7px; color:rgba(255,255,255,.1); transition:color .3s; font-family:sans-serif; cursor:default; }
+    #alfred-secours {
+      position:absolute; bottom:10px; left:0; right:0; text-align:center;
+      font-size:7px; color:rgba(255,255,255,.1); transition:color .3s;
+      font-family:sans-serif; cursor:default;
+    }
     #alfred-secours:hover { color:rgba(255,255,255,.45); }
     #alfred-site-content { flex:1; height:100vh; overflow:auto; pointer-events:all; min-width:0; }
 
     @keyframes alfred-breathe {
       0%,100% { transform:translateY(0) scale(1); }
-      50%      { transform:translateY(-5px) scale(1.016); }
+      50%      { transform:translateY(-6px) scale(1.018); }
     }
     @keyframes alfred-shadow-breathe {
-      0%,100% { width:150px; height:20px; opacity:1; }
-      50%      { width:120px; height:13px; opacity:.55; }
+      0%,100% { width:160px; height:22px; opacity:1; }
+      50%      { width:130px; height:14px; opacity:.5; }
     }
     @keyframes alfred-sway {
       0%,100% { transform:rotate(-2.5deg); }
@@ -243,8 +287,8 @@ function initAlfredUI() {
       50%      { transform:translateY(6px) rotate(.4deg); }
     }
     @keyframes alfred-shadow-sleep {
-      0%,100% { width:150px; opacity:.35; }
-      50%      { width:165px; opacity:.18; }
+      0%,100% { width:160px; opacity:.35; }
+      50%      { width:175px; opacity:.18; }
     }
     @keyframes alfred-eye-lr   { 0%,100%{transform:translateX(-8px);} 50%{transform:translateX(8px);} }
     @keyframes alfred-blink    { 0%,100%{transform:scaleY(1);} 50%{transform:scaleY(.06);} }
@@ -298,26 +342,25 @@ function initAlfredUI() {
 // ── États Alfred ──────────────────────────────────────────
 function setAlfredState(state) {
   curState = state;
-  const wrap    = document.getElementById('alfred-avatar-wrap');
-  const shadow  = document.getElementById('alfred-shadow-ground');
-  const ext     = document.getElementById('alfred-extrusion');
-  const body    = document.getElementById('alfred-body-main');
-  const eyeL    = document.getElementById('alfred-eye-l');
-  const eyeR    = document.getElementById('alfred-eye-r');
-  const dots    = document.getElementById('alfred-dots');
-  const zzz     = document.getElementById('alfred-zzz');
-  const lbl     = document.getElementById('alfred-state-lbl');
-  const lids    = document.getElementById('alfred-lids');
-  const mouth   = document.getElementById('alfred-mouth');
-  const mouthT  = document.getElementById('alfred-mouth-talk');
+  const wrap   = document.getElementById('alfred-avatar-wrap');
+  const shadow = document.getElementById('alfred-shadow-ground');
+  const ext    = document.getElementById('alfred-extrusion');
+  const body   = document.getElementById('alfred-body-main');
+  const eyeL   = document.getElementById('alfred-eye-l');
+  const eyeR   = document.getElementById('alfred-eye-r');
+  const dots   = document.getElementById('alfred-dots');
+  const zzz    = document.getElementById('alfred-zzz');
+  const lbl    = document.getElementById('alfred-state-lbl');
+  const lids   = document.getElementById('alfred-lids');
+  const mouth  = document.getElementById('alfred-mouth');
+  const mouthT = document.getElementById('alfred-mouth-talk');
 
-  // Reset
   if (wrap)   { wrap.style.animation='none'; void wrap.offsetWidth; }
-  if (shadow) { shadow.style.animation='none'; shadow.style.width='150px'; shadow.style.opacity='1'; }
+  if (shadow) { shadow.style.animation='none'; shadow.style.width='160px'; shadow.style.opacity='1'; }
   if (ext)    { ext.style.opacity='1'; }
   if (body)   { body.style.animation='none'; void body.offsetWidth; body.style.transformOrigin='189.9px 191.74px'; }
-  if (eyeL)   { eyeL.style.animation='none'; eyeL.style.transform=''; eyeL.style.opacity='1'; }
-  if (eyeR)   { eyeR.style.animation='none'; eyeR.style.transform=''; eyeR.style.opacity='1'; }
+  if (eyeL)   { eyeL.style.animation='none'; eyeL.style.transform=''; eyeL.style.opacity='1'; eyeL.style.transition=''; }
+  if (eyeR)   { eyeR.style.animation='none'; eyeR.style.transform=''; eyeR.style.opacity='1'; eyeR.style.transition=''; }
   if (dots)   dots.style.opacity='0';
   if (zzz)    zzz.style.opacity='0';
   if (lids)   lids.style.display='none';
@@ -335,10 +378,10 @@ function setAlfredState(state) {
       break;
 
     case 'think':
-      if (body)  { body.style.transformOrigin='189.9px 320px'; body.style.animation='alfred-sway 1.4s ease-in-out infinite'; }
-      if (eyeL)  eyeL.style.animation = 'alfred-eye-lr 1.4s ease-in-out infinite';
-      if (eyeR)  eyeR.style.animation = 'alfred-eye-lr 1.4s ease-in-out infinite';
-      if (dots)  {
+      if (body) { body.style.transformOrigin='189.9px 320px'; body.style.animation='alfred-sway 1.4s ease-in-out infinite'; }
+      if (eyeL) eyeL.style.animation = 'alfred-eye-lr 1.4s ease-in-out infinite';
+      if (eyeR) eyeR.style.animation = 'alfred-eye-lr 1.4s ease-in-out infinite';
+      if (dots) {
         dots.style.opacity='1';
         ['alfred-dot1','alfred-dot2','alfred-dot3'].forEach((id,i) => {
           const d = document.getElementById(id);
@@ -348,14 +391,14 @@ function setAlfredState(state) {
       break;
 
     case 'talk':
-      if (wrap) wrap.style.animation = 'alfred-talk-vib .12s ease-in-out infinite alternate';
+      if (wrap)   wrap.style.animation = 'alfred-talk-vib .12s ease-in-out infinite alternate';
       if (mouth)  mouth.style.display  = 'none';
       if (mouthT) mouthT.style.display = 'block';
       clearInterval(talkTick);
       talkTick = setInterval(() => {
         if (!mouthT) return;
         const open = Math.random() > 0.4;
-        mouthT.setAttribute('ry', open ? (3 + Math.random()*9).toFixed(1) : '1');
+        mouthT.setAttribute('ry', open ? (3+Math.random()*9).toFixed(1) : '1');
         mouthT.setAttribute('cy', open ? '130' : '128');
       }, 120);
       break;
@@ -437,7 +480,7 @@ function resetSleepTimer() {
   }, (ALFRED_CONFIG?.SLEEP_APRES || 30) * 1000);
 }
 
-// ── Helpers UI ────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────
 function showBubble(text)    { afficherSousTitres(text); }
 function showTranscript(t)   { const el=document.getElementById('alfred-transcript'); if(el) el.textContent=t||''; }
 function updateVolBar(amp)   { const b=document.getElementById('alfred-vol-bar'); if(b) b.style.width=(amp*100)+'%'; }
