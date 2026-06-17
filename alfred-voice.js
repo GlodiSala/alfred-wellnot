@@ -40,12 +40,45 @@ function resetMouth() {
   if (ms) ms.style.display = 'block';
 }
 
+// ── Afficher sous-titres avec sync audio ──────────────────
+function afficherSousTitresSync(sousTitre, audio) {
+  const sub = document.getElementById('alfred-subtitles');
+  if (!sub || !sousTitre) return null;
+
+  const phrases = sousTitre.match(/[^.!?]+[.!?]+/g) || [sousTitre];
+
+  // Afficher première phrase immédiatement
+  sub.style.opacity = '1';
+  sub.textContent = phrases[0].trim();
+
+  if (phrases.length <= 1) return null;
+
+  // Attendre la durée audio pour synchroniser
+  let phraseTimer = null;
+  audio.onloadedmetadata = () => {
+    const delai = (audio.duration * 1000) / phrases.length;
+    let i = 0;
+    phraseTimer = setInterval(() => {
+      i++;
+      if (i < phrases.length) {
+        sub.textContent = phrases[i].trim();
+      } else {
+        clearInterval(phraseTimer);
+      }
+    }, delai);
+  };
+
+  return phraseTimer;
+}
+
 // ── Parler ────────────────────────────────────────────────
 async function speak(text, langue, sousTitre) {
   if (!text || text === '...') return;
   langue = langue || currentLangue || 'fr';
+
   setAlfredState('talk');
   animateMouth(0.3);
+
   const voix = VOIX_CONFIG[langue] || VOIX_CONFIG.fr;
 
   try {
@@ -65,35 +98,10 @@ async function speak(text, langue, sousTitre) {
     const audio = new Audio('data:audio/mp3;base64,' + data.audioContent);
     currentAudio = audio;
 
-    // Dès qu'on connaît la durée — synchroniser les sous-titres
-    audio.onloadedmetadata = () => {
-      const textAAfficher = sousTitre || text;
-      const phrases = textAAfficher.match(/[^.!?]+[.!?]+/g) || [textAAfficher];
-      const sub = document.getElementById('alfred-subtitles');
-      if (!sub) return;
+    // Sous-titres synchronisés sur la durée audio
+    let phraseTimer = afficherSousTitresSync(sousTitre || text, audio);
 
-      clearInterval(subtitleInterval);
-      sub.style.opacity = '1';
-
-      if (phrases.length === 1) {
-        sub.textContent = phrases[0].trim();
-        return;
-      }
-
-      // Délai par phrase = durée totale / nombre de phrases
-      const delai = (audio.duration * 1000) / phrases.length;
-      let i = 0;
-      sub.textContent = phrases[0].trim();
-      subtitleInterval = setInterval(() => {
-        i++;
-        if (i < phrases.length) {
-          sub.textContent = phrases[i].trim();
-        } else {
-          clearInterval(subtitleInterval);
-        }
-      }, delai);
-    };
-
+    // Analyseur volume → bouche
     const ctx      = new (window.AudioContext || window.webkitAudioContext)();
     const src      = ctx.createMediaElementSource(audio);
     const analyser = ctx.createAnalyser();
@@ -106,12 +114,13 @@ async function speak(text, langue, sousTitre) {
     talkTick = setInterval(() => {
       if (curState !== 'talk') { clearInterval(talkTick); return; }
       analyser.getByteFrequencyData(buf);
-      const amp = Math.min(buf.slice(0,80).reduce((a,b)=>a+b,0)/80/60,1);
+      const amp = Math.min(buf.slice(0, 80).reduce((a, b) => a + b, 0) / 80 / 60, 1);
       updateVolBar(amp);
       animateMouth(amp);
     }, 35);
 
     audio.onended = () => {
+      clearInterval(phraseTimer);
       clearInterval(talkTick);
       updateVolBar(0);
       resetMouth();
@@ -119,7 +128,7 @@ async function speak(text, langue, sousTitre) {
       currentAudio = null;
       resetSleepTimer();
       cacherSousTitres();
-      ctx.close().catch(()=>{});
+      ctx.close().catch(() => {});
     };
 
     await audio.play();
@@ -135,26 +144,48 @@ function fallbackSpeak(text, langue, sousTitre) {
   langue = langue || 'fr';
   setAlfredState('talk');
 
-  // Afficher sous-titres immédiatement à intervalle fixe
+  const sub = document.getElementById('alfred-subtitles');
   const textAAfficher = sousTitre || text;
-  afficherSousTitres(textAAfficher);
+  const phrases = textAAfficher.match(/[^.!?]+[.!?]+/g) || [textAAfficher];
 
-  const u  = new SpeechSynthesisUtterance(text);
-  u.lang   = langue === 'nl' ? 'nl-BE' : 'fr-FR';
-  u.rate   = 0.92;
-  u.pitch  = 0.88;
+  // Afficher première phrase immédiatement
+  if (sub) {
+    sub.style.opacity = '1';
+    sub.textContent = phrases[0].trim();
+  }
+
+  const u    = new SpeechSynthesisUtterance(text);
+  u.lang     = langue === 'nl' ? 'nl-BE' : 'fr-FR';
+  u.rate     = 0.92;
+  u.pitch    = 0.88;
 
   let open = false;
+  let phraseTimer = null;
+  let i = 0;
+
   clearInterval(talkTick);
   talkTick = setInterval(() => {
     open = !open;
-    const amp = open ? (0.4 + Math.random()*0.6) : 0.05;
+    const amp = open ? (0.4 + Math.random() * 0.6) : 0.05;
     updateVolBar(amp);
     animateMouth(amp);
   }, 130);
 
+  // Changer de phrase toutes les 3.5s en fallback (pas de durée audio connue)
+  if (phrases.length > 1) {
+    phraseTimer = setInterval(() => {
+      i++;
+      if (i < phrases.length && sub) {
+        sub.textContent = phrases[i].trim();
+      } else {
+        clearInterval(phraseTimer);
+      }
+    }, 3500);
+  }
+
   u.onend = () => {
     clearInterval(talkTick);
+    clearInterval(phraseTimer);
     updateVolBar(0);
     resetMouth();
     setAlfredState('idle');
