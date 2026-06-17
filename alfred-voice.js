@@ -41,13 +41,11 @@ function resetMouth() {
 }
 
 // ── Parler ────────────────────────────────────────────────
-async function speak(text, langue) {
+async function speak(text, langue, sousTitre) {
   if (!text || text === '...') return;
   langue = langue || currentLangue || 'fr';
-
   setAlfredState('talk');
   animateMouth(0.3);
-
   const voix = VOIX_CONFIG[langue] || VOIX_CONFIG.fr;
 
   try {
@@ -67,11 +65,33 @@ async function speak(text, langue) {
     const audio = new Audio('data:audio/mp3;base64,' + data.audioContent);
     currentAudio = audio;
 
-    // Synchroniser sous-titres dès qu'on connaît la durée
+    // Dès qu'on connaît la durée — synchroniser les sous-titres
     audio.onloadedmetadata = () => {
-      if (typeof syncSousTitres === 'function') {
-        syncSousTitres(audio.duration);
+      const textAAfficher = sousTitre || text;
+      const phrases = textAAfficher.match(/[^.!?]+[.!?]+/g) || [textAAfficher];
+      const sub = document.getElementById('alfred-subtitles');
+      if (!sub) return;
+
+      clearInterval(subtitleInterval);
+      sub.style.opacity = '1';
+
+      if (phrases.length === 1) {
+        sub.textContent = phrases[0].trim();
+        return;
       }
+
+      // Délai par phrase = durée totale / nombre de phrases
+      const delai = (audio.duration * 1000) / phrases.length;
+      let i = 0;
+      sub.textContent = phrases[0].trim();
+      subtitleInterval = setInterval(() => {
+        i++;
+        if (i < phrases.length) {
+          sub.textContent = phrases[i].trim();
+        } else {
+          clearInterval(subtitleInterval);
+        }
+      }, delai);
     };
 
     const ctx      = new (window.AudioContext || window.webkitAudioContext)();
@@ -86,7 +106,7 @@ async function speak(text, langue) {
     talkTick = setInterval(() => {
       if (curState !== 'talk') { clearInterval(talkTick); return; }
       analyser.getByteFrequencyData(buf);
-      const amp = Math.min(buf.slice(0, 80).reduce((a, b) => a + b, 0) / 80 / 60, 1);
+      const amp = Math.min(buf.slice(0,80).reduce((a,b)=>a+b,0)/80/60,1);
       updateVolBar(amp);
       animateMouth(amp);
     }, 35);
@@ -99,21 +119,25 @@ async function speak(text, langue) {
       currentAudio = null;
       resetSleepTimer();
       cacherSousTitres();
-      ctx.close().catch(() => {});
+      ctx.close().catch(()=>{});
     };
 
     await audio.play();
 
   } catch(e) {
     console.warn('TTS erreur — fallback:', e);
-    fallbackSpeak(text, langue);
+    fallbackSpeak(text, langue, sousTitre);
   }
 }
 
 // ── Fallback Web Speech ───────────────────────────────────
-function fallbackSpeak(text, langue) {
+function fallbackSpeak(text, langue, sousTitre) {
   langue = langue || 'fr';
   setAlfredState('talk');
+
+  // Afficher sous-titres immédiatement à intervalle fixe
+  const textAAfficher = sousTitre || text;
+  afficherSousTitres(textAAfficher);
 
   const u  = new SpeechSynthesisUtterance(text);
   u.lang   = langue === 'nl' ? 'nl-BE' : 'fr-FR';
@@ -124,7 +148,7 @@ function fallbackSpeak(text, langue) {
   clearInterval(talkTick);
   talkTick = setInterval(() => {
     open = !open;
-    const amp = open ? (0.4 + Math.random() * 0.6) : 0.05;
+    const amp = open ? (0.4 + Math.random()*0.6) : 0.05;
     updateVolBar(amp);
     animateMouth(amp);
   }, 130);

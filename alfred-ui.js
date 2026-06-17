@@ -80,6 +80,7 @@ function creerSousTitres() {
   document.body.appendChild(sub);
 }
 
+let subtitleInterval = null;
 let subtitleText = '';
 
 function afficherSousTitres(text) {
@@ -87,19 +88,8 @@ function afficherSousTitres(text) {
   if (!sub || !text) return;
   clearInterval(subtitleInterval);
   subtitleText = text;
+  sub.textContent = text;
   sub.style.opacity = '1';
-  const phrases = text.match(/[^.!?]+[.!?]+/g) || [text];
-  sub.textContent = phrases[0].trim();
-  // Par défaut 3.5s si on n'a pas encore la durée audio
-  let i = 0;
-  subtitleInterval = setInterval(() => {
-    i++;
-    if (i < phrases.length) {
-      sub.textContent = phrases[i].trim();
-    } else {
-      clearInterval(subtitleInterval);
-    }
-  }, 3500);
 }
 
 function syncSousTitres(dureeAudio) {
@@ -108,8 +98,7 @@ function syncSousTitres(dureeAudio) {
   clearInterval(subtitleInterval);
   const phrases = subtitleText.match(/[^.!?]+[.!?]+/g) || [subtitleText];
   if (phrases.length <= 1) return;
-  // Diviser la durée audio par le nombre de phrases
-  const delaiParPhrase = (dureeAudio * 1000) / phrases.length;
+  const delai = (dureeAudio * 1000) / phrases.length;
   let i = 0;
   sub.textContent = phrases[0].trim();
   subtitleInterval = setInterval(() => {
@@ -119,11 +108,12 @@ function syncSousTitres(dureeAudio) {
     } else {
       clearInterval(subtitleInterval);
     }
-  }, delaiParPhrase);
+  }, delai);
 }
 
 function cacherSousTitres() {
   clearInterval(subtitleInterval);
+  subtitleText = '';
   const sub = document.getElementById('alfred-subtitles');
   if (sub) {
     sub.style.opacity = '0';

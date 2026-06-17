@@ -140,11 +140,8 @@ async function askAlfred(text, retries = 2) {
         ? 'Ik sta klaar voor uw volgende vraag.'
         : 'Posez votre prochaine question.';
       const autreLangue = langue === 'nl' ? 'fr' : 'nl';
-      const [trad] = await Promise.all([
-        traduire(fb, autreLangue),
-        speak(naturaliserTexte(fb), langue)
-      ]);
-      afficherSousTitres(trad || fb);
+      const trad = await traduire(fb, autreLangue);
+      await speak(naturaliserTexte(fb), langue, trad || fb);
       return;
     }
 
@@ -169,11 +166,8 @@ async function askAlfred(text, retries = 2) {
     }
 
     const autreLangue = langue === 'nl' ? 'fr' : 'nl';
-    const [trad] = await Promise.all([
-      traduire(replyClean, autreLangue),
-      speak(naturaliserTexte(replyClean), langue)
-    ]);
-    afficherSousTitres(trad || replyClean);
+    const trad = await traduire(replyClean, autreLangue);
+    await speak(naturaliserTexte(replyClean), langue, trad || replyClean);
 
   } catch(e) {
     console.error('askAlfred:', e);
@@ -256,10 +250,8 @@ async function jouerSecours() {
   }
 
   // Sous-titres immédiatement
-  afficherSousTitres(rTrad ? rTrad.texte : r.texte);
-
-  // Voix + navigation DOM en parallèle
-  const promises = [speak(naturaliserTexte(r.texte), currentLangue)];
+  const sousTitre = rTrad ? rTrad.texte : r.texte;
+  const promises = [speak(naturaliserTexte(r.texte), currentLangue, sousTitre)];
   if (currentActe >= 2 && typeof executerActionDOM === 'function') {
     promises.push(executerActionDOM(r.label));
   }
