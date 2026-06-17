@@ -83,7 +83,7 @@ function afficherSousTitres(text) {
     } else {
       clearInterval(subtitleInterval);
     }
-  }, 220);
+  }, 500);
 }
 
 function cacherSousTitres() {
