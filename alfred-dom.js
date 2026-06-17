@@ -1,5 +1,6 @@
 // === ALFRED DOM — Navigation + Curseur ===
 
+// ── Curseur teal ──────────────────────────────────────────
 function creerCurseur() {
   if (document.getElementById('alfred-cursor')) return;
   const c = document.createElement('div');
@@ -34,7 +35,6 @@ function curseurVers(el, callback) {
   }
 
   c.style.opacity = '1';
-  const safeHide = setTimeout(() => { c.style.opacity = '0'; }, 2500);
 
   setTimeout(() => {
     c.style.transition = `left .5s cubic-bezier(.25,.46,.45,.94),
@@ -47,7 +47,6 @@ function curseurVers(el, callback) {
       c.style.transform = 'translate(-50%,-50%) scale(0.6)';
       setTimeout(() => {
         c.style.transform = 'translate(-50%,-50%) scale(1)';
-        clearTimeout(safeHide);
         if (callback) callback();
         setTimeout(() => { c.style.opacity = '0'; }, 500);
       }, 150);
@@ -57,208 +56,167 @@ function curseurVers(el, callback) {
 
 function attendre(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-// ── Nav principale ────────────────────────────────────────
+// ── Effet de frappe sur un input ──────────────────────────
+async function taper(input, texte, delaiParLettre = 90) {
+  input.value = '';
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+  await attendre(200);
+
+  for (const lettre of texte) {
+    input.value += lettre;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await attendre(delaiParLettre + Math.random() * 40);
+  }
+}
+
+// ── Trouver un onglet par texte exact ─────────────────────
+function trouverOnglet(texte) {
+  return Array.from(document.querySelectorAll('a, button, [role="tab"]'))
+    .find(el => el.textContent.trim() === texte && el.getBoundingClientRect().width > 0);
+}
+
+// ── Trouver un élément de navigation par texte ────────────
 function trouverNav(textes) {
-  const navLinks = Array.from(document.querySelectorAll('a.nav-link'));
+  const candidats = Array.from(document.querySelectorAll(
+    'a, button, [role="menuitem"], li, .p-menuitem-link, nav *, .sidebar *, .menu *'
+  ));
   for (const texte of textes) {
-    const found = navLinks.find(el =>
-      el.textContent.trim().toLowerCase() === texte.toLowerCase() &&
-      el.getBoundingClientRect().width > 0
+    const el = candidats.find(b =>
+      b.textContent.trim().toLowerCase().includes(texte.toLowerCase()) &&
+      b.getBoundingClientRect().width > 0
     );
-    if (found) return found;
+    if (el) return el;
   }
   return null;
 }
 
+// ── Navigation avec curseur ───────────────────────────────
 async function naviguerVers(textes) {
   const el = trouverNav(textes);
   if (!el) {
-    console.warn('[Alfred DOM] Nav non trouvée:', textes);
+    console.warn('[Alfred DOM] Élément non trouvé:', textes);
     return false;
   }
   return new Promise(resolve => {
-    curseurVers(el, () => { el.click(); resolve(true); });
+    curseurVers(el, () => {
+      el.click();
+      resolve(true);
+    });
   });
 }
 
-// ── Boutons et onglets ────────────────────────────────────
-function trouverBouton(textes) {
-  const tous = Array.from(document.querySelectorAll('button, p-tab'))
-    .filter(el => el.getBoundingClientRect().width > 0);
-  for (const texte of textes) {
-    const found = tous.find(el => el.textContent.trim() === texte);
-    if (found) return found;
-  }
-  return null;
-}
-
-async function cliquerBouton(textes) {
-  const el = trouverBouton(textes);
+// ── Naviguer vers un onglet du dossier ────────────────────
+async function naviguerOnglet(texte) {
+  const el = trouverOnglet(texte);
   if (!el) {
-    console.warn('[Alfred DOM] Bouton non trouvé:', textes);
+    console.warn('[Alfred DOM] Onglet non trouvé:', texte);
     return false;
   }
   return new Promise(resolve => {
-    curseurVers(el, () => { el.click(); resolve(true); });
+    curseurVers(el, () => {
+      el.click();
+      resolve(true);
+    });
   });
 }
 
-// ── Premier dossier existant ──────────────────────────────
-function trouverPremierDossier() {
-  return Array.from(document.querySelectorAll('tr'))
-    .find(el =>
-      el.getBoundingClientRect().width > 0 &&
-      el.textContent.trim().length > 10 &&
-      !el.textContent.includes('Catégorie')
-    );
-}
+// ── SÉQUENCES DÉMO ────────────────────────────────────────
 
-async function ouvrirPremierDossier() {
-  await naviguerVers(['Dossiers']);
-  await attendre(1500);
-  const ligne = trouverPremierDossier();
-  if (ligne) {
-    curseurVers(ligne, () => ligne.click());
-    await attendre(1500);
+// Réplique 11 — Dashboard + ouvrir dossier R426
+async function seq_ouvrirDossier() {
+  // 1. Curseur vers DOSSIERS dans le menu
+  await naviguerVers(['DOSSIERS', 'Dossiers']);
+  await attendre(800);
+
+  // 2. Curseur vers le champ recherche + effet frappe
+  const input = document.querySelector('input[placeholder="Rechercher"]');
+  if (input) {
+    curseurVers(input, async () => {
+      await attendre(300);
+      await taper(input, 'R426');
+    });
   }
-}
+  await attendre(1800);
 
-// ══════════════════════════════════════════════════════════
-// SÉQUENCES — suivent exactement le script
-// ══════════════════════════════════════════════════════════
-
-// [Écran — dashboard Alfred]
-// Alfred parle du tableau de bord
-async function seq_dashboard() {
-  await naviguerVers(['Dossiers']);
-  await attendre(1200);
-}
-
-// [Clic sur "Créer un dossier" — formulaire étape 1]
-// Alfred parle du formulaire
-async function seq_creerDossier() {
-  const btn = trouverBouton(['Créer un dossier']);
-  if (btn) {
-    curseurVers(btn, () => btn.click());
-    await attendre(1500);
-  } else {
-    // Si pas visible, aller d'abord sur Dossiers
-    await naviguerVers(['Dossiers']);
-    await attendre(1500);
-    await cliquerBouton(['Créer un dossier']);
-    await attendre(1500);
-  }
-}
-
-// [Clic sur "Suivant" — étape 2 Personnes]
-// Alfred parle du registre national
-async function seq_etapePersonnes() {
-  await cliquerBouton(['Suivant']);
-  await attendre(1200);
-}
-
-// [Écran — les deux parties et le notaire affichés]
-// Alfred parle de la matrice cadastrale → étape 3 Biens
-async function seq_etapeBiens() {
-  await cliquerBouton(['Suivant']);
-  await attendre(1200);
-}
-
-// [Tout est déjà dans le dossier]
-// → étape 4 Documents pour montrer le dossier complet
-async function seq_etapeDocumentsFormulaire() {
-  await cliquerBouton(['Suivant']);
-  await attendre(1200);
-}
-
-// [Écran — liste des documents]
-// Séquence 2 — ouvre dossier existant, onglet Documents
-async function seq_ongletDocuments() {
-  await ouvrirPremierDossier();
-  await cliquerBouton(['Documents']);
-  await attendre(1000);
-}
-
-// [Clic sur "Ajouter un acte" — interface rédaction]
-// Séquence 3 — clique Rédiger dans le dossier
-async function seq_redaction() {
-  // Reste dans le même dossier, clique Rédiger
-  const ok = await cliquerBouton(['Rédiger']);
-  if (!ok) {
-    // Si pas visible, ouvre un dossier d'abord
-    await ouvrirPremierDossier();
-    await cliquerBouton(['Rédiger']);
+  // 3. Curseur vers la ligne R426 + clic
+  const lignes = Array.from(document.querySelectorAll('tr'))
+    .filter(el => el.textContent.trim().length > 0);
+  if (lignes[1]) {
+    curseurVers(lignes[1], () => lignes[1].click());
   }
   await attendre(1000);
 }
 
-// [Écran — interface avec chatbot ouvert]
-// Séquence 4 — onglet Notifications
-async function seq_chatbot() {
-  const ok = await cliquerBouton(['Notifications']);
-  if (!ok) {
-    await ouvrirPremierDossier();
-    await cliquerBouton(['Notifications']);
-  }
-  await attendre(1000);
+// Réplique 13 — Onglet Parties
+async function seq_montrerParties() {
+  await naviguerOnglet('Parties');
+  await attendre(800);
 }
 
-// [Écran — onglet Événements avec mail envoyé]
-// Reste sur Notifications
-async function seq_evenements() {
-  await cliquerBouton(['Notifications']);
-  await attendre(1000);
+// Réplique 15 — Onglet Biens (matrice cadastrale)
+async function seq_montrerBiens() {
+  await naviguerOnglet('Biens');
+  await attendre(800);
+}
+
+// Réplique 17 — Onglet Documents
+async function seq_montrerDocuments() {
+  await naviguerOnglet('Documents');
+  await attendre(800);
+}
+
+// Réplique 20 — Onglet Compromis (rédaction)
+async function seq_montrerCompromis() {
+  await naviguerOnglet('Compromis');
+  await attendre(800);
+}
+
+// Réplique 21/22 — Onglet Notifications (chatbot)
+async function seq_montrerNotifications() {
+  await naviguerOnglet('Notifications');
+  await attendre(800);
 }
 
 // ── Mapping label → séquence ──────────────────────────────
 const DOM_ACTIONS = {
-  // Acte 2 — Séquence 1
-  'Dashboard':  seq_dashboard,
-  'Formulaire': seq_creerDossier,
-  'Parties':    seq_etapePersonnes,
-  'Notaires':   null,
-  'Cadastre':   seq_etapeBiens,
-  'Complet':    seq_etapeDocumentsFormulaire,
-
-  // Acte 2 — Séquence 2
-  'Documents':  seq_ongletDocuments,
-  'Documenten': seq_ongletDocuments,
-  'Analysé':    null,
-  'Pendant':    null,
-
-  // Acte 2 — Séquence 3
-  'Rédaction2': seq_redaction,
-
-  // Acte 2 — Séquence 4
-  'Chatbot':    seq_chatbot,
-  'Événements': seq_evenements,
-  'Exactement': null,
-
-  // Acte 3
-  'Sécurité':   null,
-  'Stand':      null,
-  'Closing':    null,
+  'Dashboard':   seq_ouvrirDossier,
+  'Dossier':     seq_ouvrirDossier,
+  'Parties':     seq_montrerParties,
+  'Partijen':    seq_montrerParties,
+  'Biens':       seq_montrerBiens,
+  'Documents':   seq_montrerDocuments,
+  'Documenten':  seq_montrerDocuments,
+  'Rédaction':   seq_montrerCompromis,
+  'Rédaction2':  seq_montrerCompromis,
+  'Redactie':    seq_montrerCompromis,
+  'Chatbot':     seq_montrerNotifications,
+  'Événements':  seq_montrerNotifications,
+  'Notifications': seq_montrerNotifications,
 };
 
 async function executerActionDOM(label) {
   const action = DOM_ACTIONS[label];
   if (action) {
-    await attendre(300);
+    await attendre(600);
     await action();
   }
 }
 
+// ── Changer écran avec curseur (appelé depuis alfred-brain.js) ──
 async function changerEcranAvecCurseur(categorie) {
   const mapping = {
-    dashboard: ['Home'],
-    dossiers:  ['Dossiers'],
-    parties:   ['Personnes'],
-    notaires:  ['Notaires'],
-    contacts:  ['Contacts'],
+    dashboard:  () => seq_ouvrirDossier(),
+    dossiers:   () => seq_ouvrirDossier(),
+    parties:    () => seq_montrerParties(),
+    biens:      () => seq_montrerBiens(),
+    documents:  () => seq_montrerDocuments(),
+    redaction:  () => seq_montrerCompromis(),
+    chatbot:    () => seq_montrerNotifications(),
   };
-  const textes = mapping[categorie];
-  if (textes) await naviguerVers(textes);
+  const action = mapping[categorie];
+  if (action) await action();
 }
 
+// ── Init ──────────────────────────────────────────────────
 creerCurseur();
 console.log('[Alfred DOM] Prêt — curseur créé');

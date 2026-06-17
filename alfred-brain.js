@@ -97,11 +97,12 @@ async function traduire(text, versLangue) {
 function detecterIntentionActe2(text) {
   const lower = text.toLowerCase();
   const intentions = [
-    { label: 'Dossier',   mots: ['dossier','créer','création','vente immobilière','zéro','partir','creer','folder','aanmaken'] },
-    { label: 'Parties',   mots: ['partie','vendeur','acquéreur','registre','personne','suivant','rijksregister','koper','naam'] },
-    { label: 'Documents', mots: ['document','manquant','pièce','peb','upload','catégoris','ontbreekt'] },
-    { label: 'Rédaction', mots: ['compromis','rédaction','acte','blanche','check','ontwerp','akte','rédige','génère'] },
-    { label: 'Chatbot',   mots: ['chatbot','nuit','avance','message','vordert','bericht'] },
+    { label: 'Dashboard',  mots: ['dossier','créer','création','vente immobilière','zéro','partir','creer','folder','aanmaken','tableau de bord','R426'] },
+    { label: 'Parties',    mots: ['partie','vendeur','acquéreur','registre','personne','suivant','rijksregister','koper','naam','partijen'] },
+    { label: 'Biens',      mots: ['bien','cadastre','matrice','onroerend','kadaster','matrix','goed','immobilier'] },
+    { label: 'Documents',  mots: ['document','manquant','pièce','peb','upload','catégoris','ontbreekt','documenten'] },
+    { label: 'Rédaction',  mots: ['compromis','rédaction','acte','blanche','check','ontwerp','akte','rédige','génère'] },
+    { label: 'Chatbot',    mots: ['chatbot','nuit','avance','message','vordert','bericht','notification'] },
   ];
   for (const { label, mots } of intentions) {
     if (mots.some(m => lower.includes(m))) return label;

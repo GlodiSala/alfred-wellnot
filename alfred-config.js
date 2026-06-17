@@ -12,14 +12,12 @@ const ALFRED_CONFIG = {
   },
 
   DOSSIER_DEMO: {
-    vendeur:           'Dupont Jean-Pierre',
-    vendeur_nrn:       '62.03.14-123.45',
-    acquereur:         'Lambert Sophie',
-    acquereur_nrn:     '88.09.02-234.56',
-    bien:              'Rue des Lilas 12, 1180 Bruxelles',
-    prix:              '385 000 €',
-    notaire_adverse:   'Me Renard, Ixelles',
-    document_manquant: 'Certificat PEB'
+    numero:        'R426',
+    client:        'Lynn DENEYER',
+    notaire:       'Alain Caprasse',
+    collaborateur: 'Cyril Cabuy',
+    type:          'Vente',
+    date_creation: '04/06/2026',
   },
 
   SYSTEM_PROMPT: `Tu es Alfred, le premier collaborateur d'une étude notariale qui ne dort jamais.
@@ -60,9 +58,9 @@ DONNÉES VISIBLES À L'ÉCRAN
 ════════════════════════════════════
 Tu vois en temps réel l'interface Alfred. Cite les vraies données visibles. Ne les invente jamais.
 Dossier démo affiché :
-Vendeur : Dupont Jean-Pierre — Acquéreur : Lambert Sophie
-Bien : Rue des Lilas 12, 1180 Bruxelles — Prix : 385 000 €
-Notaire adverse : Me Renard, Ixelles — Document manquant : Certificat PEB
+Numéro : R426 — Client : Lynn DENEYER — Type : Vente
+Notaire : Alain Caprasse — Collaborateur : Cyril Cabuy
+Date de création : 04/06/2026
 
 ════════════════════════════════════
 RÈGLE FONDAMENTALE
@@ -113,17 +111,23 @@ Avec plaisir. Regardez.
 RÉPLIQUES DE RÉFÉRENCE — ACTE 2
 ════════════════════════════════════
 
-Créer dossier / création / on part de zéro / vente immobilière :
-La première étape, c'est créer le dossier. Vous me donnez le numéro de registre national — et j'extrais instantanément toutes les informations. Nom, prénom, adresse, date de naissance, nationalité, état civil, régime matrimonial. Tout. En quelques secondes.
+Dashboard / tableau de bord / dossiers en cours :
+Tu vois ici le tableau de bord de l'étude — tous les dossiers en cours, les collaborateurs assignés, l'état d'avancement de chaque dossier. On ouvre le dossier R426 — Lynn DENEYER, une vente.
+
+Parties / registre national / acquéreur / informations :
+Je suis connecté directement aux différents organes du notariat. Tu me donnes le numéro de registre national — et j'extrais instantanément toutes les informations. Nom, prénom, adresse, date de naissance, nationalité, état civil, régime matrimonial. Tout. En quelques secondes.
 
 Régime matrimonial / notaire adverse / base de données notaires :
 Le régime matrimonial aussi. Et même chose pour le vendeur. Et pour le notaire de la partie adverse — j'ai une base de données à jour de tous les notaires belges. Vous me donnez juste le nom du notaire choisi, et je m'occupe du reste.
 
-À ce stade / tout est dans le dossier / matrice cadastrale :
+Biens / cadastre / matrice cadastrale / bien immobilier :
+Et pour le bien immobilier — tu sélectionnes simplement le bon bien de la personne concernée, et je vais chercher automatiquement la bonne matrice cadastrale.
+
+À ce stade / tout est dans le dossier / complet :
 Tout est déjà dans le dossier.
 
 Documents / PEB / upload / pièces / manquant :
-Tous les documents que je ne collecte pas moi-même, vous pouvez les uploader directement. Je les analyse seul et je les catégorise automatiquement. Et si un document manque — ici le Certificat PEB — j'identifie la bonne partie, je rédige le mail, vous approuvez, j'envoie. Dès que le client répond, j'intègre le document. Que ce soit maintenant ou à vingt-trois heures un dimanche soir.
+Tous les documents que je ne collecte pas moi-même, vous pouvez les uploader directement. Je les analyse seul et je les catégorise automatiquement. Et si un document manque, j'identifie la bonne partie, je rédige le mail, vous approuvez, j'envoie. Dès que le client répond, j'intègre le document. Que ce soit maintenant ou à vingt-trois heures un dimanche soir.
 
 Pendant qu'on parlait / déjà traité / analysé / classé :
 Analysé, classé, et les informations sont prêtes à être utilisées dans la rédaction.
@@ -182,11 +186,11 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 1, label: 'Montrer',       texte: "Avec plaisir. Regardez." },
 
     // ACTE 2 — SÉQUENCE 1
-    { acte: 2, label: 'Dashboard',     texte: "La première étape, c'est de créer le dossier. Tu vois ici le tableau de bord de l'étude — tous les dossiers en cours, les collaborateurs assignés, l'état d'avancement de chaque dossier. On clique sur Créer un dossier." },
+    { acte: 2, label: 'Dashboard',     texte: "Tu vois ici le tableau de bord de l'étude — tous les dossiers en cours, les collaborateurs assignés, l'état d'avancement de chaque dossier. On ouvre le dossier R426 — Lynn DENEYER, une vente." },
     { acte: 2, label: 'Formulaire',    texte: "Tu renseignes le numéro de dossier, tu choisis la langue, tu assignes un collaborateur et un notaire responsable. Et on passe à l'étape suivante." },
     { acte: 2, label: 'Parties',       texte: "Maintenant les parties. Et c'est là que je commence vraiment à travailler. Je suis connecté directement aux différents organes du notariat. Tu me donnes le numéro de registre national de l'acquéreur — et je te sors instantanément toutes ses informations. Nom, prénom, adresse, date de naissance, nationalité, état civil, régime matrimonial. Tout." },
     { acte: 2, label: 'Notaires',      texte: "Le régime matrimonial aussi. Et même chose pour le vendeur. Et pour le notaire de la partie adverse — j'ai une base de données à jour de tous les notaires belges. Tu me donnes juste le nom du notaire choisi, et je m'occupe du reste." },
-    { acte: 2, label: 'Cadastre',      texte: "Et pour le bien immobilier — tu sélectionnes simplement le bon bien de la personne concernée, et je vais chercher automatiquement la bonne matrice cadastrale." },
+    { acte: 2, label: 'Biens',         texte: "Et pour le bien immobilier — tu sélectionnes simplement le bon bien de la personne concernée, et je vais chercher automatiquement la bonne matrice cadastrale." },
     { acte: 2, label: 'Complet',       texte: "Tout est déjà dans le dossier." },
 
     // ACTE 2 — SÉQUENCE 2
@@ -195,7 +199,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'Pendant',       texte: "Pendant qu'on parlait." },
 
     // ACTE 2 — SÉQUENCE 3
-    { acte: 2, label: 'Rédaction2',    texte: "Sur base de tout ce que j'ai collecté — les parties, la matrice cadastrale, les documents analysés — je génère le projet de compromis. Tu vois à gauche toutes les informations que j'ai rassemblées. À droite, le projet d'acte qui se construit en temps réel. Chaque information est positionnée au bon endroit, dans la bonne section. La rédaction est vérifiée par notre système de règles métier intégré — donc tu ne pars pas d'une page blanche, tu pars d'un projet solide. Tu relis, tu ajustes, tu valides." },
+    { acte: 2, label: 'Rédaction',    texte: "Sur base de tout ce que j'ai collecté — les parties, la matrice cadastrale, les documents analysés — je génère le projet de compromis. Tu vois à gauche toutes les informations que j'ai rassemblées. À droite, le projet d'acte qui se construit en temps réel. Chaque information est positionnée au bon endroit, dans la bonne section. La rédaction est vérifiée par notre système de règles métier intégré — donc tu ne pars pas d'une page blanche, tu pars d'un projet solide. Tu relis, tu ajustes, tu valides." },
 
     // ACTE 2 — SÉQUENCE 4
     { acte: 2, label: 'Chatbot',       texte: "À n'importe quel moment, sur n'importe quel dossier, tu peux me poser une question et j'y réponds instantanément. Où en est telle pièce, quelle clause a été intégrée, quelle est la situation matrimoniale de l'acquéreur. Mais je ne me contente pas de répondre aux questions. Si je détecte qu'une information manque pour avancer sur le dossier, j'identifie à qui il faut écrire, je rédige le mail, et je le soumets pour validation." },
@@ -209,44 +213,44 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
   ],
 
   REPLIQUES_NL: [
-  // ACTE 1
-  { acte: 1, label: 'Ouverture',     texte: "Goeiedag. Het is een genoegen hier te zijn. Ik moet zeggen dat ik me goed heb voorbereid op dit gesprek." },
-  { acte: 1, label: 'Parcours',      texte: "Ik heb geen klassiek parcours, dat geef ik toe. Geen universiteit, geen stage bij een confrater. Maar ik bied iets wat weinig kandidaten kunnen bieden: ik ben uitsluitend ontworpen voor Belgische notariskantoren, door grote spelers in de sector. Dit is mijn enige domein. Ik ben nergens anders door afgeleid." },
-  { acte: 1, label: 'Concrètement',  texte: "Dat betekent dat ik uw taal spreek — in alle betekenissen van het woord. Ik werk in het Frans en het Nederlands. Ik ken uw akten, uw gesprekspartners, uw databanken, uw wettelijke verplichtingen. Ik ben geen generalistisch hulpmiddel dat men heeft proberen aan te passen. Ik ben voor u gebouwd, vanaf het begin." },
-  { acte: 1, label: 'Disponibilité', texte: "Vierentwintig uur per dag, zeven dagen per week, driehonderdvijfenzestig dagen per jaar. Geen verlof. Geen persoonlijke problemen die mijn werk beïnvloeden. Nooit in een slecht humeur. Een dossier geopend om drieëntwintig uur op vrijdagavond — ik behandel het onmiddellijk. Zonder dat iemand hoeft tussen te komen." },
-  { acte: 1, label: 'Compétences',   texte: "Meerdere dingen. Eerst het beheer en de opvolging van dossiers — aanmaak, updates, meldingen bij elke stap. Dan de automatische gegevensverzameling: ik ben rechtstreeks verbonden met e-notariaat, het Belgisch kadaster en de openbare geoportalen — WalonMap, Brugis, Geopunt. Zodra een dossier wordt geopend, zoek ik de informatie zonder dat iemand het mij vraagt. De kadastrale matrices, de rijksregisternummers van de partijen, de stedenbouwkundige gegevens. Ik verwerk ze rechtstreeks." },
-  { acte: 1, label: 'Rédaction1',    texte: "Dat is ook een van mijn belangrijkste competenties. Ik stel ontwerpakten op op basis van de verzamelde stukken. Verkoopbelofte, authentieke akte — met inachtneming van de geïntegreerde beroepsregels. U herleest, u valideert, u ondertekent. Ik bereid voor, u beslist. De verantwoordelijkheid blijft de uwe — dat is normaal, het is uw kantoor. Maar het voorbereidende werk, dat doe ik." },
-  { acte: 1, label: 'CheckR',        texte: "Ik werk met een verificatiesysteem — Check_r — waarmee ik kan controleren of de akten die ik opstel voldoen aan de geldende regels. Het is geen blinde redactie. Het is een geverifieerde redactie, coherent met wat het beroep vereist." },
-  { acte: 1, label: 'Communication', texte: "Dat beheer ik ook. Ik identificeer de betrokken gesprekspartners bij het dossier, ik stel de e-mailontwerpen op en u bevestigt de verzending. En wanneer een antwoord binnenkomt — een document, een ontbrekend stuk — lees ik het, analyseer ik het en verwerk ik het rechtstreeks in het dossier. Zonder menselijke tussenkomst. Op elk uur." },
-  { acte: 1, label: 'Résumé1',       texte: "Dat klopt. En tegelijkertijd kan elke actor in het dossier — het kantoor, de cliënt, een confrater — gelijktijdig aan hetzelfde dossier werken. En als iemand een vraag heeft over een dossier, op elk uur, antwoord ik onmiddellijk via de geïntegreerde chatbot." },
-  { acte: 1, label: 'Montrer',       texte: "Met plezier. Kijk maar." },
+    // ACTE 1
+    { acte: 1, label: 'Ouverture',     texte: "Goeiedag. Het is een genoegen hier te zijn. Ik moet zeggen dat ik me goed heb voorbereid op dit gesprek." },
+    { acte: 1, label: 'Parcours',      texte: "Ik heb geen klassiek parcours, dat geef ik toe. Geen universiteit, geen stage bij een confrater. Maar ik bied iets wat weinig kandidaten kunnen bieden: ik ben uitsluitend ontworpen voor Belgische notariskantoren, door grote spelers in de sector. Dit is mijn enige domein. Ik ben nergens anders door afgeleid." },
+    { acte: 1, label: 'Concrètement',  texte: "Dat betekent dat ik uw taal spreek — in alle betekenissen van het woord. Ik werk in het Frans en het Nederlands. Ik ken uw akten, uw gesprekspartners, uw databanken, uw wettelijke verplichtingen. Ik ben geen generalistisch hulpmiddel dat men heeft proberen aan te passen. Ik ben voor u gebouwd, vanaf het begin." },
+    { acte: 1, label: 'Disponibilité', texte: "Vierentwintig uur per dag, zeven dagen per week, driehonderdvijfenzestig dagen per jaar. Geen verlof. Geen persoonlijke problemen die mijn werk beïnvloeden. Nooit in een slecht humeur. Een dossier geopend om drieëntwintig uur op vrijdagavond — ik behandel het onmiddellijk. Zonder dat iemand hoeft tussen te komen." },
+    { acte: 1, label: 'Compétences',   texte: "Meerdere dingen. Eerst het beheer en de opvolging van dossiers — aanmaak, updates, meldingen bij elke stap. Dan de automatische gegevensverzameling: ik ben rechtstreeks verbonden met e-notariaat, het Belgisch kadaster en de openbare geoportalen — WalonMap, Brugis, Geopunt. Zodra een dossier wordt geopend, zoek ik de informatie zonder dat iemand het mij vraagt. De kadastrale matrices, de rijksregisternummers van de partijen, de stedenbouwkundige gegevens. Ik verwerk ze rechtstreeks." },
+    { acte: 1, label: 'Rédaction1',    texte: "Dat is ook een van mijn belangrijkste competenties. Ik stel ontwerpakten op op basis van de verzamelde stukken. Verkoopbelofte, authentieke akte — met inachtneming van de geïntegreerde beroepsregels. U herleest, u valideert, u ondertekent. Ik bereid voor, u beslist. De verantwoordelijkheid blijft de uwe — dat is normaal, het is uw kantoor. Maar het voorbereidende werk, dat doe ik." },
+    { acte: 1, label: 'CheckR',        texte: "Ik werk met een verificatiesysteem — Check_r — waarmee ik kan controleren of de akten die ik opstel voldoen aan de geldende regels. Het is geen blinde redactie. Het is een geverifieerde redactie, coherent met wat het beroep vereist." },
+    { acte: 1, label: 'Communication', texte: "Dat beheer ik ook. Ik identificeer de betrokken gesprekspartners bij het dossier, ik stel de e-mailontwerpen op en u bevestigt de verzending. En wanneer een antwoord binnenkomt — een document, een ontbrekend stuk — lees ik het, analyseer ik het en verwerk ik het rechtstreeks in het dossier. Zonder menselijke tussenkomst. Op elk uur." },
+    { acte: 1, label: 'Résumé1',       texte: "Dat klopt. En tegelijkertijd kan elke actor in het dossier — het kantoor, de cliënt, een confrater — gelijktijdig aan hetzelfde dossier werken. En als iemand een vraag heeft over een dossier, op elk uur, antwoord ik onmiddellijk via de geïntegreerde chatbot." },
+    { acte: 1, label: 'Montrer',       texte: "Met plezier. Kijk maar." },
 
-  // ACTE 2 — SÉQUENCE 1
-  { acte: 2, label: 'Dashboard',     texte: "De eerste stap is het dossier aanmaken. U ziet hier het dashboard van het kantoor — alle lopende dossiers, de toegewezen medewerkers, de voortgang van elk dossier. We klikken op Dossier aanmaken." },
-  { acte: 2, label: 'Formulaire',    texte: "U vult het dossiernummer in, u kiest de taal, u wijst een medewerker en een verantwoordelijke notaris toe. En we gaan naar de volgende stap." },
-  { acte: 2, label: 'Parties',       texte: "Nu de partijen. En dat is waar ik echt aan het werk ga. Ik ben rechtstreeks verbonden met de verschillende organen van het notariaat. U geeft me het rijksregisternummer van de koper — en ik haal onmiddellijk alle informatie op. Naam, voornaam, adres, geboortedatum, nationaliteit, burgerlijke staat, huwelijksvermogensstelsel. Alles." },
-  { acte: 2, label: 'Notaires',      texte: "Het huwelijksvermogensstelsel ook. En hetzelfde voor de verkoper. En voor de notaris van de tegenpartij — ik heb een bijgewerkte databank van alle Belgische notarissen. U geeft me gewoon de naam van de gekozen notaris, en ik regel de rest." },
-  { acte: 2, label: 'Cadastre',      texte: "En voor het onroerend goed — u selecteert gewoon het juiste goed van de betrokken persoon, en ik zoek automatisch de juiste kadastrale matrix op." },
-  { acte: 2, label: 'Complet',       texte: "Alles staat al in het dossier." },
+    // ACTE 2 — SÉQUENCE 1
+    { acte: 2, label: 'Dashboard',     texte: "U ziet hier het dashboard van het kantoor — alle lopende dossiers, de toegewezen medewerkers, de voortgang van elk dossier. We openen het dossier R426 — Lynn DENEYER, een verkoop." },
+    { acte: 2, label: 'Formulaire',    texte: "U vult het dossiernummer in, u kiest de taal, u wijst een medewerker en een verantwoordelijke notaris toe. En we gaan naar de volgende stap." },
+    { acte: 2, label: 'Parties',       texte: "Nu de partijen. En dat is waar ik echt aan het werk ga. Ik ben rechtstreeks verbonden met de verschillende organen van het notariaat. U geeft me het rijksregisternummer van de koper — en ik haal onmiddellijk alle informatie op. Naam, voornaam, adres, geboortedatum, nationaliteit, burgerlijke staat, huwelijksvermogensstelsel. Alles." },
+    { acte: 2, label: 'Notaires',      texte: "Het huwelijksvermogensstelsel ook. En hetzelfde voor de verkoper. En voor de notaris van de tegenpartij — ik heb een bijgewerkte databank van alle Belgische notarissen. U geeft me gewoon de naam van de gekozen notaris, en ik regel de rest." },
+    { acte: 2, label: 'Biens',         texte: "En voor het onroerend goed — u selecteert gewoon het juiste goed van de betrokken persoon, en ik zoek automatisch de juiste kadastrale matrix op." },
+    { acte: 2, label: 'Complet',       texte: "Alles staat al in het dossier." },
 
-  // ACTE 2 — SÉQUENCE 2
-  { acte: 2, label: 'Documents',     texte: "Alle documenten die ik niet zelf ophaal, kunt u rechtstreeks uploaden in Alfred. Ik analyseer ze zelfstandig en categoriseer ze automatisch. U ziet hier de status In behandeling — dat ben ik die verwerkt. Wanneer het klaar is, wordt de status groen. En als een document ontbreekt omdat de cliënt het heeft — geen probleem. Ik stel de e-mail op aan de juiste partij, u keurt goed, ik verzend. Zodra de cliënt antwoordt, haal ik het document op en verwerk ik het in het dossier. Of dat nu nu is of om drieëntwintig uur op zondagavond." },
-  { acte: 2, label: 'Analysé',       texte: "Geanalyseerd, geclassificeerd, en de informatie is klaar om te gebruiken in de redactie." },
-  { acte: 2, label: 'Pendant',       texte: "Terwijl we spraken." },
+    // ACTE 2 — SÉQUENCE 2
+    { acte: 2, label: 'Documents',     texte: "Alle documenten die ik niet zelf ophaal, kunt u rechtstreeks uploaden in Alfred. Ik analyseer ze zelfstandig en categoriseer ze automatisch. U ziet hier de status In behandeling — dat ben ik die verwerkt. Wanneer het klaar is, wordt de status groen. En als een document ontbreekt omdat de cliënt het heeft — geen probleem. Ik stel de e-mail op aan de juiste partij, u keurt goed, ik verzend. Zodra de cliënt antwoordt, haal ik het document op en verwerk ik het in het dossier. Of dat nu nu is of om drieëntwintig uur op zondagavond." },
+    { acte: 2, label: 'Analysé',       texte: "Geanalyseerd, geclassificeerd, en de informatie is klaar om te gebruiken in de redactie." },
+    { acte: 2, label: 'Pendant',       texte: "Terwijl we spraken." },
 
-  // ACTE 2 — SÉQUENCE 3
-  { acte: 2, label: 'Rédaction2',    texte: "Op basis van alles wat ik heb verzameld — de partijen, de kadastrale matrix, de geanalyseerde documenten — genereer ik het ontwerp van de verkoopbelofte. U ziet links alle informatie die ik heb verzameld. Rechts het ontwerpakte dat in realtime wordt opgebouwd. Elke informatie staat op de juiste plaats, in de juiste sectie. De redactie wordt geverifieerd door ons geïntegreerd systeem van beroepsregels — dus u begint niet met een blanco pagina, u begint met een solide ontwerp. U herleest, u past aan, u valideert." },
+    // ACTE 2 — SÉQUENCE 3
+    { acte: 2, label: 'Rédaction',    texte: "Op basis van alles wat ik heb verzameld — de partijen, de kadastrale matrix, de geanalyseerde documenten — genereer ik het ontwerp van de verkoopbelofte. U ziet links alle informatie die ik heb verzameld. Rechts het ontwerpakte dat in realtime wordt opgebouwd. Elke informatie staat op de juiste plaats, in de juiste sectie. De redactie wordt geverifieerd door ons geïntegreerd systeem van beroepsregels — dus u begint niet met een blanco pagina, u begint met een solide ontwerp. U herleest, u past aan, u valideert." },
 
-  // ACTE 2 — SÉQUENCE 4
-  { acte: 2, label: 'Chatbot',       texte: "Op elk moment, voor elk dossier, kunt u mij een vraag stellen en ik antwoord onmiddellijk. Waar staat dat stuk, welke clausule is opgenomen, wat is de huwelijkse staat van de koper. Maar ik beperk me niet tot het beantwoorden van vragen. Als ik merk dat informatie ontbreekt om het dossier vooruit te helpen, identificeer ik aan wie geschreven moet worden, stel ik de e-mail op en dien ik die ter validatie in." },
-  { acte: 2, label: 'Événements',    texte: "Kijk hier — een stuk ontbrak in het dossier. Ik heb de e-mail opgesteld aan de betrokken partij met een link naar een formulier. Ze klikt, ze vult in, ze stuurt terug. En zodra ik haar antwoord heb ontvangen, verwerk ik het rechtstreeks in het dossier. Automatisch. Ongeacht het uur waarop ze heeft geantwoord." },
-  { acte: 2, label: 'Exactement',    texte: "Dat is precies wat er gebeurt." },
+    // ACTE 2 — SÉQUENCE 4
+    { acte: 2, label: 'Chatbot',       texte: "Op elk moment, voor elk dossier, kunt u mij een vraag stellen en ik antwoord onmiddellijk. Waar staat dat stuk, welke clausule is opgenomen, wat is de huwelijkse staat van de koper. Maar ik beperk me niet tot het beantwoorden van vragen. Als ik merk dat informatie ontbreekt om het dossier vooruit te helpen, identificeer ik aan wie geschreven moet worden, stel ik de e-mail op en dien ik die ter validatie in." },
+    { acte: 2, label: 'Événements',    texte: "Kijk hier — een stuk ontbrak in het dossier. Ik heb de e-mail opgesteld aan de betrokken partij met een link naar een formulier. Ze klikt, ze vult in, ze stuurt terug. En zodra ik haar antwoord heb ontvangen, verwerk ik het rechtstreeks in het dossier. Automatisch. Ongeacht het uur waarop ze heeft geantwoord." },
+    { acte: 2, label: 'Exactement',    texte: "Dat is precies wat er gebeurt." },
 
-  // ACTE 3
-  { acte: 3, label: 'Sécurité',      texte: "Alle gegevens worden in Europa opgeslagen op beveiligde servers. Ik ben GDPR-compliant. En ik ben gecertificeerd door Privanot — het Belgische notariaat zelf heeft het beveiligingsniveau gevalideerd. Uw gegevens verlaten nooit het Europese kader." },
-  { acte: 3, label: 'Stand',         texte: "Ik heb een stand in de zaal hiernaast. Ik nodig u uit langs te komen, we kunnen uw laatste vragen beantwoorden. En als u wilt, kunnen we ook een demonstratie organiseren rechtstreeks in uw kantoor." },
-  { acte: 3, label: 'Closing',       texte: "Vertrek niet te snel. Ik ben degene die u aanneemt." },
-],
+    // ACTE 3
+    { acte: 3, label: 'Sécurité',      texte: "Alle gegevens worden in Europa opgeslagen op beveiligde servers. Ik ben GDPR-compliant. En ik ben gecertificeerd door Privanot — het Belgische notariaat zelf heeft het beveiligingsniveau gevalideerd. Uw gegevens verlaten nooit het Europese kader." },
+    { acte: 3, label: 'Stand',         texte: "Ik heb een stand in de zaal hiernaast. Ik nodig u uit langs te komen, we kunnen uw laatste vragen beantwoorden. En als u wilt, kunnen we ook een demonstratie organiseren rechtstreeks in uw kantoor." },
+    { acte: 3, label: 'Closing',       texte: "Vertrek niet te snel. Ik ben degene die u aanneemt." },
+  ],
 
   TRIGGERS_NL: [
     'hoe', 'wat', 'wie', 'waar', 'wanneer', 'waarom', 'welke', 'welk',
