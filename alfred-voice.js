@@ -92,6 +92,7 @@ async function speak(text, langue) {
       setAlfredState('idle');
       currentAudio = null;
       resetSleepTimer();
+      cacherSousTitres();
       ctx.close().catch(() => {});
     };
 
@@ -128,6 +129,7 @@ function fallbackSpeak(text, langue) {
     resetMouth();
     setAlfredState('idle');
     resetSleepTimer();
+    cacherSousTitres();
   };
 
   speechSynthesis.cancel();
@@ -142,4 +144,5 @@ function stopAudio() {
   updateVolBar(0);
   resetMouth();
   setAlfredState('idle');
+  cacherSousTitres();
 }

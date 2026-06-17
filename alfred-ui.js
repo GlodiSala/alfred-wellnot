@@ -46,6 +46,144 @@ const ALFRED_SVG = `
 
 </svg>`;
 
+// ── Sous-titres ───────────────────────────────────────────
+function creerSousTitres() {
+  if (document.getElementById('alfred-subtitles')) return;
+  const sub = document.createElement('div');
+  sub.id = 'alfred-subtitles';
+  sub.style.cssText = `
+    position:fixed; bottom:32px; left:50%; transform:translateX(-50%);
+    max-width:70%; background:rgba(0,0,0,0.72); color:#fff;
+    font-size:20px; font-weight:500; line-height:1.5;
+    padding:12px 28px; border-radius:10px;
+    text-align:center; z-index:999997;
+    opacity:0; transition:opacity .3s ease;
+    pointer-events:none; font-family:sans-serif;
+    letter-spacing:0.01em;
+  `;
+  document.body.appendChild(sub);
+}
+
+let subtitleInterval = null;
+
+function afficherSousTitres(text) {
+  const sub = document.getElementById('alfred-subtitles');
+  if (!sub || !text) return;
+
+  clearInterval(subtitleInterval);
+  sub.textContent = '';
+  sub.style.opacity = '1';
+
+  const words = text.split(' ');
+  let i = 0;
+  subtitleInterval = setInterval(() => {
+    if (i < words.length) {
+      sub.textContent += (i === 0 ? '' : ' ') + words[i];
+      i++;
+    } else {
+      clearInterval(subtitleInterval);
+    }
+  }, 220);
+}
+
+function cacherSousTitres() {
+  clearInterval(subtitleInterval);
+  const sub = document.getElementById('alfred-subtitles');
+  if (sub) {
+    sub.style.opacity = '0';
+    setTimeout(() => { sub.textContent = ''; }, 300);
+  }
+}
+
+// ── Panneau répliques (double-clic sur Alfred) ────────────
+function creerPanneauRepliques() {
+  if (document.getElementById('alfred-repliques-panel')) return;
+
+  const panel = document.createElement('div');
+  panel.id = 'alfred-repliques-panel';
+  panel.style.cssText = `
+    display:none; position:fixed;
+    top:50%; left:270px; transform:translateY(-50%);
+    background:rgba(5,69,97,0.97); border-radius:14px;
+    padding:16px; z-index:999999; min-width:440px;
+    box-shadow:0 8px 40px rgba(0,0,0,0.5);
+    font-family:sans-serif;
+  `;
+
+  panel.innerHTML = `
+    <div style="color:rgba(255,255,255,.35);font-size:8px;letter-spacing:2.5px;margin-bottom:12px;text-align:center;">SCRIPT · ALFRED</div>
+    <div style="display:flex;gap:20px;align-items:flex-start;">
+      <div id="alfred-col-1" style="flex:1;"></div>
+      <div id="alfred-col-2" style="flex:1.2;"></div>
+      <div id="alfred-col-3" style="flex:0.7;"></div>
+    </div>
+  `;
+
+  document.body.appendChild(panel);
+
+  const svg = document.getElementById('alfred-svg');
+  if (svg) {
+    svg.style.cursor = 'pointer';
+    let lastClick = 0;
+    svg.addEventListener('click', () => {
+      const now = Date.now();
+      if (now - lastClick < 400) {
+        const visible = panel.style.display !== 'none';
+        if (visible) {
+          panel.style.display = 'none';
+        } else {
+          remplirPanneauRepliques();
+          panel.style.display = 'block';
+        }
+      }
+      lastClick = now;
+    });
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') panel.style.display = 'none';
+  });
+}
+
+function remplirPanneauRepliques() {
+  const list = (typeof currentLangue !== 'undefined' && currentLangue === 'nl')
+    ? ALFRED_CONFIG.REPLIQUES_NL
+    : ALFRED_CONFIG.REPLIQUES_FR;
+
+  const acte1 = list.filter(r => r.acte === 1);
+  const acte2 = list.filter(r => r.acte === 2);
+  const acte3 = list.filter(r => r.acte === 3);
+
+  function renderCol(colId, repliques, acteNum) {
+    const col = document.getElementById(colId);
+    if (!col) return;
+    col.innerHTML = `<div style="color:rgba(255,255,255,.3);font-size:8px;letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;">Acte ${acteNum}</div>`;
+    repliques.forEach(r => {
+      const idx = list.indexOf(r);
+      const btn = document.createElement('div');
+      btn.textContent = r.label;
+      btn.style.cssText = `
+        color:rgba(255,255,255,.75); font-size:11px; padding:5px 8px;
+        border-radius:6px; cursor:pointer; margin-bottom:2px;
+        transition:background .15s, color .15s;
+      `;
+      btn.onmouseover = () => { btn.style.background = 'rgba(255,255,255,.12)'; btn.style.color = '#fff'; };
+      btn.onmouseout  = () => { btn.style.background = 'transparent'; btn.style.color = 'rgba(255,255,255,.75)'; };
+      btn.onclick = () => {
+        if (typeof secoursIdx !== 'undefined') secoursIdx = idx;
+        document.getElementById('alfred-repliques-panel').style.display = 'none';
+        if (typeof jouerSecours === 'function') jouerSecours();
+      };
+      col.appendChild(btn);
+    });
+  }
+
+  renderCol('alfred-col-1', acte1, 1);
+  renderCol('alfred-col-2', acte2, 2);
+  renderCol('alfred-col-3', acte3, 3);
+}
+
+// ── Init UI ───────────────────────────────────────────────
 function initAlfredUI() {
   if (document.getElementById('alfred-left-panel')) return;
 
@@ -73,15 +211,13 @@ function initAlfredUI() {
     #alfred-dots.show { opacity:1; }
     .alfred-dot { width:6px; height:6px; border-radius:50%; background:#14b0bd; }
     #alfred-state-lbl { color:rgba(255,255,255,.4); font-size:8px; letter-spacing:1.5px; text-transform:uppercase; margin-top:6px; text-align:center; font-family:sans-serif; }
-    #alfred-bubble { background:rgba(255,255,255,.15); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.25); border-radius:14px 14px 14px 4px; padding:10px 12px; font-size:11px; color:rgba(255,255,255,.95); line-height:1.65; min-height:46px; max-height:120px; overflow-y:auto; margin-top:10px; width:100%; opacity:0; transform:translateY(6px); transition:opacity .35s ease,transform .35s ease; font-family:sans-serif; box-sizing:border-box; }
-    #alfred-bubble.show { opacity:1; transform:translateY(0); }
-    #alfred-transcript { font-size:9px; color:rgba(255,255,255,.25); font-style:italic; text-align:center; margin-top:3px; min-height:13px; width:100%; font-family:sans-serif; }
-    #alfred-vol-wrap { width:100%; height:2px; background:rgba(255,255,255,.1); border-radius:1px; margin-top:6px; overflow:hidden; }
+    #alfred-transcript { font-size:10px; color:rgba(255,255,255,.5); font-style:italic; text-align:center; margin-top:12px; min-height:13px; width:100%; font-family:sans-serif; padding:0 4px; box-sizing:border-box; }
+    #alfred-vol-wrap { width:100%; height:2px; background:rgba(255,255,255,.1); border-radius:1px; margin-top:10px; overflow:hidden; }
     #alfred-vol-bar { height:100%; width:0%; background:rgba(255,255,255,.6); border-radius:1px; transition:width .04s linear; }
-    #alfred-mic-btn { margin-top:10px; background:rgba(255,255,255,.15); color:rgba(255,255,255,.9); border:1px solid rgba(255,255,255,.3); border-radius:20px; padding:8px 16px; font-size:11px; font-weight:600; cursor:pointer; width:100%; transition:background .2s,transform .15s; font-family:sans-serif; }
+    #alfred-mic-btn { margin-top:12px; background:rgba(255,255,255,.15); color:rgba(255,255,255,.9); border:1px solid rgba(255,255,255,.3); border-radius:20px; padding:8px 16px; font-size:11px; font-weight:600; cursor:pointer; width:100%; transition:background .2s,transform .15s; font-family:sans-serif; }
     #alfred-mic-btn:hover { background:rgba(255,255,255,.25); transform:translateY(-1px); }
     #alfred-mic-btn.listening { background:rgba(255,255,255,.9); color:#054561; animation:alfred-pulse-mic 1.2s ease-in-out infinite; }
-    #alfred-langue-lbl { font-size:9px; color:rgba(255,255,255,.3); margin-top:6px; cursor:pointer; transition:color .2s; font-family:sans-serif; user-select:none; }
+    #alfred-langue-lbl { font-size:9px; color:rgba(255,255,255,.3); margin-top:8px; cursor:pointer; transition:color .2s; font-family:sans-serif; user-select:none; }
     #alfred-langue-lbl:hover { color:rgba(255,255,255,.7); }
     #alfred-secours { position:absolute; bottom:8px; left:0; right:0; text-align:center; font-size:7px; color:rgba(255,255,255,.1); transition:color .3s; font-family:sans-serif; cursor:default; }
     #alfred-secours:hover { color:rgba(255,255,255,.45); }
@@ -119,7 +255,6 @@ function initAlfredUI() {
       ${ALFRED_SVG}
     </div>
     <div id="alfred-state-lbl">EN ATTENTE</div>
-    <div id="alfred-bubble"></div>
     <div id="alfred-transcript"></div>
     <div id="alfred-vol-wrap"><div id="alfred-vol-bar"></div></div>
     <button id="alfred-mic-btn" onclick="toggleMic()">🎤 Parler</button>
@@ -138,6 +273,8 @@ function initAlfredUI() {
 
   requestAnimationFrame(() => setTimeout(() => left.classList.add('visible'), 50));
 
+  creerSousTitres();
+  creerPanneauRepliques();
   startBlinking();
   startEyeLerp();
   resetSleepTimer();
@@ -146,11 +283,11 @@ function initAlfredUI() {
   setTimeout(async () => {
     setAlfredState('idle');
     const msg = "Bonjour. Alfred est en ligne.";
-    showBubble(msg);
     if (typeof speakGoogleTTS === 'function') await speakGoogleTTS(msg, 'fr');
   }, 700);
 }
 
+// ── États Alfred ──────────────────────────────────────────
 function setAlfredState(state) {
   curState = state;
   const body  = document.getElementById('alfred-body-main');
@@ -178,7 +315,6 @@ function setAlfredState(state) {
       if (mouth) mouth.setAttribute('d','M189.28,136.79c-6.31,0-13.32-1.49-20.51-6.13-2.45-1.58-3.24-4.91-1.58-7.36,1.58-2.45,4.91-3.15,7.36-1.58,15.07,9.64,30.23.35,30.85,0,2.45-1.58,5.78-.79,7.36,1.66s.88,5.78-1.58,7.36c-.61.35-9.73,6.13-21.91,6.13');
       resetSleepTimer();
       break;
-
     case 'think':
       if (body) { body.style.transformOrigin='189.9px 320px'; body.style.animation='alfred-sway 1.4s ease-in-out infinite'; }
       if (eyeL) eyeL.style.animation='alfred-eye-lr 1.4s ease-in-out infinite';
@@ -191,13 +327,11 @@ function setAlfredState(state) {
         });
       }
       break;
-
     case 'talk':
       if (body) body.style.animation='alfred-talk-vib .12s ease-in-out infinite alternate';
       if (eyeL) eyeL.style.animation='alfred-blink 3s ease-in-out infinite';
       if (eyeR) eyeR.style.animation='alfred-blink 3s ease-in-out .1s infinite';
       break;
-
     case 'sleep':
       if (body) body.style.animation='alfred-sleep 5s ease-in-out infinite';
       if (eyeL) { eyeL.style.transition='opacity .4s ease'; eyeL.style.opacity='0'; }
@@ -273,17 +407,7 @@ function resetSleepTimer() {
   }, (ALFRED_CONFIG?.SLEEP_APRES || 30) * 1000);
 }
 
-function showBubble(text) {
-  const b = document.getElementById('alfred-bubble');
-  if (!b) return;
-  b.classList.remove('show'); b.textContent=''; void b.offsetWidth; b.classList.add('show');
-  const words = text.split(' '); let i=0;
-  const iv = setInterval(() => {
-    if (i < words.length) { b.textContent+=(i===0?'':' ')+words[i]; b.scrollTop=b.scrollHeight; i++; }
-    else clearInterval(iv);
-  }, 75);
-}
-
+// ── Helpers UI ────────────────────────────────────────────
 function showTranscript(t)  { const el=document.getElementById('alfred-transcript'); if(el) el.textContent=t||''; }
 function updateVolBar(amp)   { const b=document.getElementById('alfred-vol-bar');    if(b) b.style.width=(amp*100)+'%'; }
 function updateMicBtn(on)    { const b=document.getElementById('alfred-mic-btn');    if(!b)return; b.textContent=on?'⏹ Stop':'🎤 Parler'; b.classList.toggle('listening',on); }
@@ -293,6 +417,11 @@ function addToHistory(w,t)   { console.log(`%c[${w.toUpperCase()}]%c ${t.substri
 function updateSecoursLabel(label,acte,idx,total) {
   const el=document.getElementById('alfred-secours');
   if(el){el.textContent=`A${acte} · ${label} · ${idx}/${total}`;setTimeout(()=>{if(el)el.textContent='← →';},4000);}
+}
+
+// ── showBubble retiré — remplacé par sous-titres ──────────
+function showBubble(text) {
+  afficherSousTitres(text);
 }
 
 initAlfredUI();
