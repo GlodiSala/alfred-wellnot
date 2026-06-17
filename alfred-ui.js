@@ -208,7 +208,7 @@ function initAlfredUI() {
     #alfred-logo { color:rgba(255,255,255,.7); font-size:9px; font-weight:700; letter-spacing:2.5px; margin-bottom:10px; text-align:center; white-space:nowrap; opacity:0; transition:opacity .4s ease .3s; font-family:-apple-system,sans-serif; }
     #alfred-left-panel.visible #alfred-logo { opacity:1; }
     .alfred-dot { width:6px; height:6px; border-radius:50%; background:#14b0bd; }
-    .alfred-z { position:absolute; font-weight:800; color:rgba(255,255,255,.8); opacity:0; font-family:sans-serif; }
+    .alfred-z { position:absolute; font-weight:800; opacity:0; font-family:sans-serif; }
     #alfred-state-lbl { color:rgba(255,255,255,.4); font-size:8px; letter-spacing:1.5px; text-transform:uppercase; margin-top:6px; text-align:center; font-family:sans-serif; }
     #alfred-transcript { font-size:10px; color:rgba(255,255,255,.5); font-style:italic; text-align:center; margin-top:12px; min-height:13px; width:100%; font-family:sans-serif; padding:0 4px; box-sizing:border-box; }
     #alfred-vol-wrap { width:100%; height:2px; background:rgba(255,255,255,.1); border-radius:1px; margin-top:10px; overflow:hidden; }
