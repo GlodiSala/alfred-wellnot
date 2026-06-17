@@ -241,7 +241,6 @@ async function jouerSecours() {
   secoursIdx = secoursIdx % list.length;
   const r = list[secoursIdx];
 
-  // Traduction = liste opposée
   const listeTrad = currentLangue === 'nl'
     ? ALFRED_CONFIG.REPLIQUES_FR
     : ALFRED_CONFIG.REPLIQUES_NL;
@@ -251,24 +250,20 @@ async function jouerSecours() {
 
   addToHistory('alfred', r.texte);
 
-  // Bascule automatique Acte 1 → 2
   if (r.acte === 2 && currentActe === 1) {
     currentActe = 2;
     console.log('[Alfred] Acte 2 activé via →');
   }
 
-  // Navigation DOM seulement en Acte 2
-  if (currentActe >= 2) {
-    if (typeof executerActionDOM === 'function') {
-      await executerActionDOM(r.label);
-    }
-  }
-
-  // Sous-titres juste avant de parler — toujours la langue opposée
+  // Sous-titres immédiatement
   afficherSousTitres(rTrad ? rTrad.texte : r.texte);
 
-  // Parler
-  await speak(naturaliserTexte(r.texte), currentLangue);
+  // Voix + navigation DOM en parallèle
+  const promises = [speak(naturaliserTexte(r.texte), currentLangue)];
+  if (currentActe >= 2 && typeof executerActionDOM === 'function') {
+    promises.push(executerActionDOM(r.label));
+  }
+  await Promise.all(promises);
 
   updateSecoursLabel(r.label, r.acte, secoursIdx + 1, list.length);
   secoursIdx++;
