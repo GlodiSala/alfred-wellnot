@@ -180,6 +180,15 @@ async function seq_montrerNotifications() {
   await naviguerOnglet('Notifications');
   await attendre(800);
 }
+// Réplique 22 — Cliquer sur une proposition d'e-mail
+async function seq_montrerEvenements() {
+  const notif = Array.from(document.querySelectorAll('li'))
+    .find(el => el.textContent.includes("Proposition d'e-mail"));
+  if (notif) {
+    curseurVers(notif, () => notif.click());
+  }
+  await attendre(800);
+}
 
 // ── Mapping label → séquence ──────────────────────────────
 const DOM_ACTIONS = {
@@ -195,7 +204,7 @@ const DOM_ACTIONS = {
   'Redactie':    seq_montrerCompromis,
   'Chatbot':     seq_montrerNotifications,
   'Événements':  seq_montrerNotifications,
-  'Notifications': seq_montrerNotifications,
+  'Notifications': seq_montrerEvenements,
 };
 
 async function executerActionDOM(label) {
