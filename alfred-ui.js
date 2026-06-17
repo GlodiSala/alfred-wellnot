@@ -87,8 +87,21 @@ function afficherSousTitres(text) {
   const sub = document.getElementById('alfred-subtitles');
   if (!sub || !text) return;
   clearInterval(subtitleInterval);
-  sub.textContent = text;
   sub.style.opacity = '1';
+
+  // Découper en phrases
+  const phrases = text.match(/[^.!?]+[.!?]+/g) || [text];
+  let i = 0;
+  sub.textContent = phrases[0] || '';
+
+  subtitleInterval = setInterval(() => {
+    i++;
+    if (i < phrases.length) {
+      sub.textContent = phrases[i].trim();
+    } else {
+      clearInterval(subtitleInterval);
+    }
+  }, 3500); // change de phrase toutes les 3.5s
 }
 
 function cacherSousTitres() {
