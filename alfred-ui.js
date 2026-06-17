@@ -54,6 +54,7 @@ const ALFRED_SVG = `
       <div class="alfred-dot" id="alfred-dot1"></div>
       <div class="alfred-dot" id="alfred-dot2"></div>
       <div class="alfred-dot" id="alfred-dot3"></div>
+    </div>
     <div id="alfred-zzz" style="position:absolute;top:50px;right:25px;pointer-events:none;opacity:0;transition:opacity .4s;z-index:10;">
       <span class="alfred-z" style="font-size:11px;right:0;top:32px;color:rgba(5,69,97,.7);">z</span>
       <span class="alfred-z" style="font-size:14px;right:8px;top:16px;color:rgba(5,69,97,.7);">z</span>
@@ -207,7 +208,7 @@ function initAlfredUI() {
     #alfred-logo { color:rgba(255,255,255,.7); font-size:9px; font-weight:700; letter-spacing:2.5px; margin-bottom:10px; text-align:center; white-space:nowrap; opacity:0; transition:opacity .4s ease .3s; font-family:-apple-system,sans-serif; }
     #alfred-left-panel.visible #alfred-logo { opacity:1; }
     .alfred-dot { width:6px; height:6px; border-radius:50%; background:#14b0bd; }
-    .alfred-z { position:absolute; font-weight:800; opacity:0; font-family:sans-serif; }
+    .alfred-z { position:absolute; font-weight:800; color:rgba(255,255,255,.8); opacity:0; font-family:sans-serif; }
     #alfred-state-lbl { color:rgba(255,255,255,.4); font-size:8px; letter-spacing:1.5px; text-transform:uppercase; margin-top:6px; text-align:center; font-family:sans-serif; }
     #alfred-transcript { font-size:10px; color:rgba(255,255,255,.5); font-style:italic; text-align:center; margin-top:12px; min-height:13px; width:100%; font-family:sans-serif; padding:0 4px; box-sizing:border-box; }
     #alfred-vol-wrap { width:100%; height:2px; background:rgba(255,255,255,.1); border-radius:1px; margin-top:10px; overflow:hidden; }
