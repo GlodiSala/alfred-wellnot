@@ -124,23 +124,23 @@ async function naviguerOnglet(texte) {
 
 // Réplique 11 — Dashboard + ouvrir dossier R426
 async function seq_ouvrirDossier() {
-  // 1. Cliquer sur DOSSIERS via sélecteur exact
+  // 1. Cliquer sur DOSSIERS
   const navLinks = document.querySelectorAll('a.nav-link.uppercase');
   const dossiers = Array.from(navLinks).find(el => el.textContent.trim() === 'Dossiers');
   if (dossiers) {
     curseurVers(dossiers, () => dossiers.click());
   }
-  await attendre(1200);
+  await attendre(1500); // était 1200
 
   // 2. Effet de frappe sur R426
   const input = document.querySelector('input[placeholder="Rechercher"]');
   if (input) {
     curseurVers(input, async () => {
-      await attendre(300);
+      await attendre(500); // était 300
       await taper(input, 'R426');
     });
   }
-  await attendre(1800);
+  await attendre(2500); // était 1800 — laisse le filtre s'actualiser
 
   // 3. Cliquer sur la ligne R426
   const lignes = Array.from(document.querySelectorAll('tr'))
@@ -148,7 +148,7 @@ async function seq_ouvrirDossier() {
   if (lignes[1]) {
     curseurVers(lignes[1], () => lignes[1].click());
   }
-  await attendre(1000);
+  await attendre(1200); // était 1000
 }
 
 // Réplique 13 — Onglet Parties
