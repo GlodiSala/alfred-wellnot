@@ -47,25 +47,33 @@ function afficherSousTitresSync(sousTitre, audio) {
 
   const phrases = sousTitre.match(/[^.!?]+[.!?]+/g) || [sousTitre];
 
-  // Afficher première phrase immédiatement
   sub.style.opacity = '1';
   sub.textContent = phrases[0].trim();
 
   if (phrases.length <= 1) return null;
 
-  // Attendre la durée audio pour synchroniser
   let phraseTimer = null;
+
   audio.onloadedmetadata = () => {
-    const delai = (audio.duration * 1000) / phrases.length;
+    const totalMots = phrases.reduce((acc, p) => acc + p.trim().split(' ').length, 0);
+    const msParMot = (audio.duration * 1000) / totalMots;
+
     let i = 0;
-    phraseTimer = setInterval(() => {
+
+    function afficherSuivante() {
       i++;
-      if (i < phrases.length) {
-        sub.textContent = phrases[i].trim();
-      } else {
-        clearInterval(phraseTimer);
+      if (i >= phrases.length) return;
+      sub.textContent = phrases[i].trim();
+      const motsSuivant = i + 1 < phrases.length
+        ? phrases[i].trim().split(' ').length
+        : 0;
+      if (motsSuivant > 0) {
+        phraseTimer = setTimeout(afficherSuivante, motsSuivant * msParMot);
       }
-    }, delai);
+    }
+
+    const motsPhrase0 = phrases[0].trim().split(' ').length;
+    phraseTimer = setTimeout(afficherSuivante, motsPhrase0 * msParMot);
   };
 
   return phraseTimer;
