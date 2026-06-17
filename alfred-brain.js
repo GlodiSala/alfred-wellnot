@@ -136,10 +136,15 @@ async function askAlfred(text, retries = 2) {
     const raw  = data?.candidates?.[0]?.content?.parts?.[0]?.text || null;
 
     if (!raw) {
-      const fb = langue === 'nl' ? 'Ik sta klaar voor uw volgende vraag.' : 'Posez votre prochaine question.';
-      const trad = await traduire(fb, langue === 'nl' ? 'fr' : 'nl');
+      const fb = langue === 'nl'
+        ? 'Ik sta klaar voor uw volgende vraag.'
+        : 'Posez votre prochaine question.';
+      const autreLangue = langue === 'nl' ? 'fr' : 'nl';
+      const [trad] = await Promise.all([
+        traduire(fb, autreLangue),
+        speak(naturaliserTexte(fb), langue)
+      ]);
       afficherSousTitres(trad || fb);
-      await speak(naturaliserTexte(fb), langue);
       return;
     }
 
@@ -164,9 +169,11 @@ async function askAlfred(text, retries = 2) {
     }
 
     const autreLangue = langue === 'nl' ? 'fr' : 'nl';
-    const trad = await traduire(replyClean, autreLangue);
+    const [trad] = await Promise.all([
+      traduire(replyClean, autreLangue),
+      speak(naturaliserTexte(replyClean), langue)
+    ]);
     afficherSousTitres(trad || replyClean);
-    await speak(naturaliserTexte(replyClean), langue);
 
   } catch(e) {
     console.error('askAlfred:', e);
@@ -234,6 +241,7 @@ async function jouerSecours() {
   secoursIdx = secoursIdx % list.length;
   const r = list[secoursIdx];
 
+  // Traduction = liste opposée
   const listeTrad = currentLangue === 'nl'
     ? ALFRED_CONFIG.REPLIQUES_FR
     : ALFRED_CONFIG.REPLIQUES_NL;
@@ -241,26 +249,30 @@ async function jouerSecours() {
   const rTrad = listeTrad.find(t => t.acte === r.acte && t.label === r.label)
              || listeTrad[Math.min(secoursIdx, listeTrad.length - 1)];
 
-  afficherSousTitres(rTrad ? rTrad.texte : r.texte);
   addToHistory('alfred', r.texte);
 
+  // Bascule automatique Acte 1 → 2
   if (r.acte === 2 && currentActe === 1) {
     currentActe = 2;
     console.log('[Alfred] Acte 2 activé via →');
   }
 
+  // Navigation DOM seulement en Acte 2
   if (currentActe >= 2) {
     if (typeof executerActionDOM === 'function') {
       await executerActionDOM(r.label);
     }
   }
 
+  // Sous-titres juste avant de parler — toujours la langue opposée
+  afficherSousTitres(rTrad ? rTrad.texte : r.texte);
+
+  // Parler
   await speak(naturaliserTexte(r.texte), currentLangue);
 
   updateSecoursLabel(r.label, r.acte, secoursIdx + 1, list.length);
   secoursIdx++;
 }
-
 // ── Clavier ───────────────────────────────────────────────
 document.addEventListener('keydown', e => {
   if (e.key === 'ArrowRight') {
