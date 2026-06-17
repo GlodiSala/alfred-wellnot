@@ -130,25 +130,32 @@ async function seq_ouvrirDossier() {
   if (dossiers) {
     curseurVers(dossiers, () => dossiers.click());
   }
-  await attendre(1500); // était 1200
+  await attendre(2000); // était 1500
 
-  // 2. Effet de frappe sur R426
-  const input = document.querySelector('input[placeholder="Rechercher"]');
+  // 2. Attendre que l'input soit dans le DOM
+  let input = null;
+  for (let i = 0; i < 10; i++) {
+    input = document.querySelector('input[placeholder="Rechercher"]');
+    if (input) break;
+    await attendre(300);
+  }
+
+  // 3. Effet de frappe sur R426
   if (input) {
     curseurVers(input, async () => {
-      await attendre(500); // était 300
+      await attendre(400);
       await taper(input, 'R426');
     });
   }
-  await attendre(2500); // était 1800 — laisse le filtre s'actualiser
+  await attendre(3000); // était 2500
 
-  // 3. Cliquer sur la ligne R426
+  // 4. Cliquer sur la ligne R426
   const lignes = Array.from(document.querySelectorAll('tr'))
     .filter(el => el.textContent.trim().length > 0);
   if (lignes[1]) {
     curseurVers(lignes[1], () => lignes[1].click());
   }
-  await attendre(1200); // était 1000
+  await attendre(1500); // était 1200
 }
 
 // Réplique 13 — Onglet Parties
