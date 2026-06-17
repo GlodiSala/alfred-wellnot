@@ -56,28 +56,7 @@ function getContexteEcran() {
   return '';
 }
 
-// ── Bulle mot par mot ─────────────────────────────────────
-function showBubble(text) {
-  const b = document.getElementById('alfred-bubble');
-  if (!b) return;
-  b.classList.remove('show');
-  b.textContent = '';
-  void b.offsetWidth;
-  b.classList.add('show');
-  const words = text.split(' ');
-  let i = 0;
-  const iv = setInterval(() => {
-    if (i < words.length) {
-      b.textContent += (i === 0 ? '' : ' ') + words[i];
-      b.scrollTop = b.scrollHeight;
-      i++;
-    } else {
-      clearInterval(iv);
-    }
-  }, 120);
-}
-
-// ── Traduction bulle ──────────────────────────────────────
+// ── Traduction sous-titres ────────────────────────────────
 async function traduire(text, versLangue) {
   const prompt = versLangue === 'nl'
     ? `Traduis en néerlandais belge, même ton, même longueur. Uniquement la traduction : "${text}"`
@@ -127,7 +106,6 @@ async function askAlfred(text, retries = 2) {
   const langLbl = document.getElementById('alfred-langue-lbl');
   if (langLbl) langLbl.textContent = langue === 'nl' ? '🇧🇪 NL' : '🇧🇪 FR';
 
-  // Détection transition Acte 1 → 2 via micro
   if (currentActe === 1 && detecterTransitionActe2(text)) {
     currentActe = 2;
     console.log('[Alfred] Acte 2 activé via micro');
@@ -160,7 +138,7 @@ async function askAlfred(text, retries = 2) {
     if (!raw) {
       const fb = langue === 'nl' ? 'Ik sta klaar voor uw volgende vraag.' : 'Posez votre prochaine question.';
       const trad = await traduire(fb, langue === 'nl' ? 'fr' : 'nl');
-      showBubble(trad || fb);
+      afficherSousTitres(trad || fb);
       await speak(naturaliserTexte(fb), langue);
       return;
     }
@@ -178,7 +156,6 @@ async function askAlfred(text, retries = 2) {
 
     addToHistory('alfred', replyClean);
 
-    // Navigation Acte 2 — via micro si intention détectée
     if (currentActe >= 2) {
       const intention = detecterIntentionActe2(text);
       if (intention && typeof executerActionDOM === 'function') {
@@ -188,7 +165,7 @@ async function askAlfred(text, retries = 2) {
 
     const autreLangue = langue === 'nl' ? 'fr' : 'nl';
     const trad = await traduire(replyClean, autreLangue);
-    showBubble(trad || replyClean);
+    afficherSousTitres(trad || replyClean);
     await speak(naturaliserTexte(replyClean), langue);
 
   } catch(e) {
@@ -264,16 +241,14 @@ async function jouerSecours() {
   const rTrad = listeTrad.find(t => t.acte === r.acte && t.label === r.label)
              || listeTrad[Math.min(secoursIdx, listeTrad.length - 1)];
 
-  showBubble(rTrad ? rTrad.texte : r.texte);
+  afficherSousTitres(rTrad ? rTrad.texte : r.texte);
   addToHistory('alfred', r.texte);
 
-  // Bascule automatique Acte 1 → 2
   if (r.acte === 2 && currentActe === 1) {
     currentActe = 2;
     console.log('[Alfred] Acte 2 activé via →');
   }
 
-  // Navigation DOM seulement en Acte 2
   if (currentActe >= 2) {
     if (typeof executerActionDOM === 'function') {
       await executerActionDOM(r.label);
