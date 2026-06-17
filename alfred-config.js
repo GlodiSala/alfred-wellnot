@@ -186,7 +186,8 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 1, label: 'Montrer',       texte: "Avec plaisir. Regardez." },
 
     // ACTE 2 — SÉQUENCE 1
-    { acte: 2, label: 'Dashboard',     texte: "Tu vois ici le tableau de bord de l'étude — tous les dossiers en cours, les collaborateurs assignés, l'état d'avancement de chaque dossier. On ouvre le dossier R426 — Lynn DENEYER, une vente." },
+    // REPLIQUES_FR Dashboard
+    { acte: 2, label: 'Dashboard',     texte: "Tu vois ici le tableau de bord de l'étude — tous les dossiers en cours, les collaborateurs assignés, l'état d'avancement de chaque dossier. On ouvre un dossier existant." },
     { acte: 2, label: 'Formulaire',    texte: "Tu renseignes le numéro de dossier, tu choisis la langue, tu assignes un collaborateur et un notaire responsable. Et on passe à l'étape suivante." },
     { acte: 2, label: 'Parties',       texte: "Maintenant les parties. Et c'est là que je commence vraiment à travailler. Je suis connecté directement aux différents organes du notariat. Tu me donnes le numéro de registre national de l'acquéreur — et je te sors instantanément toutes ses informations. Nom, prénom, adresse, date de naissance, nationalité, état civil, régime matrimonial. Tout." },
     { acte: 2, label: 'Notaires',      texte: "Le régime matrimonial aussi. Et même chose pour le vendeur. Et pour le notaire de la partie adverse — j'ai une base de données à jour de tous les notaires belges. Tu me donnes juste le nom du notaire choisi, et je m'occupe du reste." },
@@ -226,7 +227,8 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 1, label: 'Montrer',       texte: "Met plezier. Kijk maar." },
 
     // ACTE 2 — SÉQUENCE 1
-    { acte: 2, label: 'Dashboard',     texte: "U ziet hier het dashboard van het kantoor — alle lopende dossiers, de toegewezen medewerkers, de voortgang van elk dossier. We openen het dossier R426 — Lynn DENEYER, een verkoop." },
+    // REPLIQUES_NL Dashboard
+    { acte: 2, label: 'Dashboard',     texte: "U ziet hier het dashboard van het kantoor — alle lopende dossiers, de toegewezen medewerkers, de voortgang van elk dossier. We openen een bestaand dossier." },
     { acte: 2, label: 'Formulaire',    texte: "U vult het dossiernummer in, u kiest de taal, u wijst een medewerker en een verantwoordelijke notaris toe. En we gaan naar de volgende stap." },
     { acte: 2, label: 'Parties',       texte: "Nu de partijen. En dat is waar ik echt aan het werk ga. Ik ben rechtstreeks verbonden met de verschillende organen van het notariaat. U geeft me het rijksregisternummer van de koper — en ik haal onmiddellijk alle informatie op. Naam, voornaam, adres, geboortedatum, nationaliteit, burgerlijke staat, huwelijksvermogensstelsel. Alles." },
     { acte: 2, label: 'Notaires',      texte: "Het huwelijksvermogensstelsel ook. En hetzelfde voor de verkoper. En voor de notaris van de tegenpartij — ik heb een bijgewerkte databank van alle Belgische notarissen. U geeft me gewoon de naam van de gekozen notaris, en ik regel de rest." },

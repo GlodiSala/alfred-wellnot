@@ -124,11 +124,15 @@ async function naviguerOnglet(texte) {
 
 // Réplique 11 — Dashboard + ouvrir dossier R426
 async function seq_ouvrirDossier() {
-  // 1. Curseur vers DOSSIERS dans le menu
-  await naviguerVers(['DOSSIERS', 'Dossiers']);
-  await attendre(800);
+  // 1. Cliquer sur DOSSIERS via sélecteur exact
+  const navLinks = document.querySelectorAll('a.nav-link.uppercase');
+  const dossiers = Array.from(navLinks).find(el => el.textContent.trim() === 'Dossiers');
+  if (dossiers) {
+    curseurVers(dossiers, () => dossiers.click());
+  }
+  await attendre(1200);
 
-  // 2. Curseur vers le champ recherche + effet frappe
+  // 2. Effet de frappe sur R426
   const input = document.querySelector('input[placeholder="Rechercher"]');
   if (input) {
     curseurVers(input, async () => {
@@ -138,7 +142,7 @@ async function seq_ouvrirDossier() {
   }
   await attendre(1800);
 
-  // 3. Curseur vers la ligne R426 + clic
+  // 3. Cliquer sur la ligne R426
   const lignes = Array.from(document.querySelectorAll('tr'))
     .filter(el => el.textContent.trim().length > 0);
   if (lignes[1]) {
