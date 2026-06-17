@@ -217,7 +217,7 @@ const DOM_ACTIONS = {
   'Rédaction2':  seq_montrerCompromis,
   'Redactie':    seq_montrerCompromis,
   'Chatbot':     seq_montrerNotifications,
-  'Événements':  seq_montrerNotifications,
+  'Événements':  seq_montrerEvenements,
   'Notifications': seq_montrerEvenements,
 };
 
