@@ -130,34 +130,41 @@ async function seq_ouvrirDossier() {
   if (dossiers) {
     curseurVers(dossiers, () => dossiers.click());
   }
-  await attendre(2000); // était 1500
+  await attendre(2000);
 
   // 2. Attendre que l'input soit dans le DOM
   let input = null;
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 15; i++) {
     input = document.querySelector('input[placeholder="Rechercher"]');
     if (input) break;
     await attendre(300);
   }
+  if (!input) { console.warn('[Alfred DOM] Input non trouvé'); return; }
 
-  // 3. Effet de frappe sur R426
-  if (input) {
-    curseurVers(input, async () => {
-      await attendre(400);
-      await taper(input, 'R426');
-    });
-  }
-  await attendre(3000); // était 2500
+  // 3. Curseur vers input puis frappe
+  curseurVers(input, () => {});
+  await attendre(800);
+  await taper(input, 'R426');
 
-  // 4. Cliquer sur la ligne R426
-  const lignes = Array.from(document.querySelectorAll('tr'))
-    .filter(el => el.textContent.trim().length > 0);
-  if (lignes[1]) {
-    curseurVers(lignes[1], () => lignes[1].click());
+  // 4. Attendre que la ligne R426 soit visible et cliquable
+  let cible = null;
+  for (let i = 0; i < 20; i++) {
+    const lignes = Array.from(document.querySelectorAll('tr'))
+      .filter(el => el.textContent.trim().length > 0);
+    if (lignes[1] && lignes[1].textContent.includes('R426')) {
+      cible = lignes[1];
+      break;
+    }
+    await attendre(300);
   }
-  await attendre(1500); // était 1200
+
+  if (cible) {
+    curseurVers(cible, () => cible.click());
+  } else {
+    console.warn('[Alfred DOM] Ligne R426 non trouvée');
+  }
+  await attendre(1500);
 }
-
 // Réplique 13 — Onglet Parties
 async function seq_montrerParties() {
   await naviguerOnglet('Parties');
