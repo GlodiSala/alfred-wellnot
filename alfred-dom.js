@@ -395,8 +395,12 @@ async function taperDansChamp(id, texte, tentatives = 15) {
     await attendre(300);
   }
   if (!champ) { console.warn('[Alfred DOM] Champ introuvable:', id); return false; }
-  curseurVers(champ, () => {});
-  await attendre(300);
+  // Un vrai focus() (pas juste l'animation visuelle du curseur) est
+  // nécessaire pour qu'Angular considère le champ comme « touché » et
+  // valide correctement le formulaire (sinon "Suivant" peut rester
+  // bloqué même une fois la valeur saisie).
+  await curseurVersAsync(champ, () => champ.focus());
+  await attendre(200);
   await taper(champ, String(texte));
   return true;
 }
