@@ -2,6 +2,7 @@ const ALFRED_CONFIG = {
 
   API_GEMINI: 'https://alfred-wellnot.vercel.app/api/gemini',
   API_TTS:    'https://alfred-wellnot.vercel.app/api/tts',
+  API_SCRIPT: 'https://alfred-wellnot.vercel.app/api/script',
 
   EVENEMENT: {
     nom:          'Congrès des Notaires belges',
@@ -270,16 +271,28 @@ var talkTick      = null;
 var curState      = 'idle';
 var currentActe   = 1;
 
-// ── Script éditable — persistance locale ──────────────────
+// ── Script éditable — synchro serveur + cache local ────────
 // Permet de modifier les répliques FR/NL depuis l'interface (panneau
-// répliques) sans repasser par le code. Les valeurs par défaut ci-dessus
-// restent intactes dans REPLIQUES_FR_DEFAUT / REPLIQUES_NL_DEFAUT pour
-// pouvoir réinitialiser le script à tout moment.
-const ALFRED_SCRIPT_STORAGE_KEY = 'alfred_script_overrides';
+// répliques) sans repasser par le code, et de partager ces modifications
+// entre plusieurs navigateurs via une petite API (api/script.js + base KV).
+// Le cache local (localStorage) sert de secours immédiat au chargement et
+// en cas de coupure réseau. Les valeurs par défaut ci-dessus restent
+// intactes dans REPLIQUES_FR_DEFAUT / REPLIQUES_NL_DEFAUT pour pouvoir
+// réinitialiser le script à tout moment.
+const ALFRED_SCRIPT_STORAGE_KEY   = 'alfred_script_overrides';
+const ALFRED_SCRIPT_PASSWORD_KEY  = 'alfred_script_password';
 
 ALFRED_CONFIG.REPLIQUES_FR_DEFAUT = JSON.parse(JSON.stringify(ALFRED_CONFIG.REPLIQUES_FR));
 ALFRED_CONFIG.REPLIQUES_NL_DEFAUT = JSON.parse(JSON.stringify(ALFRED_CONFIG.REPLIQUES_NL));
 
+function appliquerScript(fr, nl) {
+  ALFRED_CONFIG.REPLIQUES_FR = fr;
+  ALFRED_CONFIG.REPLIQUES_NL = nl;
+  localStorage.setItem(ALFRED_SCRIPT_STORAGE_KEY, JSON.stringify({ fr, nl }));
+}
+
+// Chargement immédiat depuis le cache local — évite un flash de contenu
+// par défaut le temps que le réseau réponde.
 function chargerScriptPersonnalise() {
   try {
     const raw = localStorage.getItem(ALFRED_SCRIPT_STORAGE_KEY);
@@ -290,15 +303,58 @@ function chargerScriptPersonnalise() {
       ALFRED_CONFIG.REPLIQUES_NL = data.nl;
     }
   } catch (e) {
-    console.warn('[Alfred Config] Script personnalisé illisible, valeurs par défaut utilisées.', e);
+    console.warn('[Alfred Config] Script local illisible, valeurs par défaut utilisées.', e);
   }
 }
 
-function sauvegarderScriptPersonnalise() {
+// Récupère la version partagée en ligne (en tâche de fond, sans bloquer)
+// et rafraîchit le panneau si celui-ci est déjà ouvert.
+async function rafraichirScriptDepuisServeur() {
+  try {
+    const res = await fetch(ALFRED_CONFIG.API_SCRIPT);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data && Array.isArray(data.fr) && Array.isArray(data.nl) && data.fr.length === data.nl.length) {
+      appliquerScript(data.fr, data.nl);
+      if (typeof remplirPanneauRepliques === 'function') remplirPanneauRepliques();
+    }
+  } catch (e) {
+    console.warn('[Alfred Config] Synchro serveur indisponible, script local conservé.', e);
+  }
+}
+
+// Sauvegarde en ligne (partagée) + en local (secours hors-ligne).
+// Retourne { ok, offlineOnly?, wrongPassword? } pour permettre à l'UI
+// d'afficher un retour clair.
+async function sauvegarderScriptPersonnalise() {
   localStorage.setItem(ALFRED_SCRIPT_STORAGE_KEY, JSON.stringify({
     fr: ALFRED_CONFIG.REPLIQUES_FR,
     nl: ALFRED_CONFIG.REPLIQUES_NL,
   }));
+
+  let mdp = localStorage.getItem(ALFRED_SCRIPT_PASSWORD_KEY);
+  if (!mdp) {
+    mdp = prompt('Mot de passe partagé pour synchroniser en ligne (demandé une seule fois par appareil) :');
+    if (!mdp) return { ok: false, offlineOnly: true };
+    localStorage.setItem(ALFRED_SCRIPT_PASSWORD_KEY, mdp);
+  }
+
+  try {
+    const res = await fetch(ALFRED_CONFIG.API_SCRIPT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Alfred-Password': mdp },
+      body: JSON.stringify({ fr: ALFRED_CONFIG.REPLIQUES_FR, nl: ALFRED_CONFIG.REPLIQUES_NL }),
+    });
+    if (res.status === 401) {
+      localStorage.removeItem(ALFRED_SCRIPT_PASSWORD_KEY);
+      return { ok: false, wrongPassword: true };
+    }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return { ok: true };
+  } catch (e) {
+    console.warn('[Alfred Config] Sauvegarde en ligne impossible, gardé en local seulement.', e);
+    return { ok: false, offlineOnly: true };
+  }
 }
 
 function reinitialiserScript() {
@@ -308,3 +364,4 @@ function reinitialiserScript() {
 }
 
 chargerScriptPersonnalise();
+rafraichirScriptDepuisServeur();

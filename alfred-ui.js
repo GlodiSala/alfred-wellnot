@@ -138,6 +138,7 @@ function creerPanneauRepliques() {
   panel.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
       <div style="color:rgba(255,255,255,.35);font-size:8px;letter-spacing:2.5px;">SCRIPT · ALFRED</div>
+      <div id="alfred-script-status" style="color:rgba(255,255,255,.4);font-size:9px;"></div>
       <div style="display:flex;gap:10px;">
         <span id="alfred-script-reset" title="Réinitialiser le script par défaut" style="color:rgba(255,255,255,.35);font-size:11px;cursor:pointer;">↺</span>
       </div>
@@ -248,6 +249,25 @@ function creerPanneauEdition() {
   });
 }
 
+// Affiche un retour visuel après une tentative de sauvegarde en ligne
+async function afficherStatutSauvegarde(resultatPromise) {
+  const status = document.getElementById('alfred-script-status');
+  const resultat = await resultatPromise;
+  if (!status) return resultat;
+  if (resultat.ok) {
+    status.textContent = '✓ Synchronisé';
+    status.style.color = 'rgba(120,255,150,.8)';
+  } else if (resultat.wrongPassword) {
+    status.textContent = '✗ Mot de passe incorrect';
+    status.style.color = 'rgba(255,120,120,.8)';
+  } else {
+    status.textContent = '⚠ Enregistré localement (hors-ligne)';
+    status.style.color = 'rgba(255,200,120,.8)';
+  }
+  setTimeout(() => { if (status) status.textContent = ''; }, 4000);
+  return resultat;
+}
+
 function champLabel(texte) {
   const l = document.createElement('label');
   l.textContent = texte;
@@ -351,7 +371,7 @@ function ouvrirEditionRéplique(index, nouvelActe) {
       ALFRED_CONFIG.REPLIQUES_FR[index] = nouvelleFR;
       ALFRED_CONFIG.REPLIQUES_NL[index] = nouvelleNL;
     }
-    if (typeof sauvegarderScriptPersonnalise === 'function') sauvegarderScriptPersonnalise();
+    if (typeof sauvegarderScriptPersonnalise === 'function') afficherStatutSauvegarde(sauvegarderScriptPersonnalise());
     panel.style.display = 'none';
     remplirPanneauRepliques();
     document.getElementById('alfred-repliques-panel').style.display = 'block';
@@ -379,7 +399,7 @@ function ouvrirEditionRéplique(index, nouvelActe) {
       if (!confirm('Supprimer « ' + rFR.label + ' » du script (FR et NL) ?')) return;
       ALFRED_CONFIG.REPLIQUES_FR.splice(index, 1);
       ALFRED_CONFIG.REPLIQUES_NL.splice(index, 1);
-      if (typeof sauvegarderScriptPersonnalise === 'function') sauvegarderScriptPersonnalise();
+      if (typeof sauvegarderScriptPersonnalise === 'function') afficherStatutSauvegarde(sauvegarderScriptPersonnalise());
       panel.style.display = 'none';
       remplirPanneauRepliques();
       document.getElementById('alfred-repliques-panel').style.display = 'block';
