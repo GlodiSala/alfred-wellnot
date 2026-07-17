@@ -140,6 +140,7 @@ function creerPanneauRepliques() {
       <div style="color:rgba(255,255,255,.35);font-size:8px;letter-spacing:2.5px;">SCRIPT · ALFRED</div>
       <div id="alfred-script-status" style="color:rgba(255,255,255,.4);font-size:9px;"></div>
       <div style="display:flex;gap:10px;">
+        <span id="alfred-donnees-ouvrir" title="Données du dossier démo" style="color:rgba(255,255,255,.35);font-size:11px;cursor:pointer;">⚙</span>
         <span id="alfred-script-reset" title="Réinitialiser le script par défaut" style="color:rgba(255,255,255,.35);font-size:11px;cursor:pointer;">↺</span>
       </div>
     </div>
@@ -150,6 +151,11 @@ function creerPanneauRepliques() {
     </div>
   `;
   document.body.appendChild(panel);
+
+  panel.querySelector('#alfred-donnees-ouvrir').onclick = () => {
+    panel.style.display = 'none';
+    ouvrirPanneauDonneesCreation();
+  };
 
   panel.querySelector('#alfred-script-reset').onclick = () => {
     if (!confirm('Réinitialiser le script au contenu par défaut, pour tout le monde ? Les modifications seront perdues.')) return;
@@ -272,6 +278,119 @@ async function afficherStatutSauvegarde(resultatPromise) {
   }
   setTimeout(() => { if (status) status.textContent = ''; }, 4000);
   return resultat;
+}
+
+// ── Panneau « Données du dossier démo » ───────────────────
+function creerPanneauDonneesCreation() {
+  if (document.getElementById('alfred-donnees-panel')) return;
+  const panel = document.createElement('div');
+  panel.id = 'alfred-donnees-panel';
+  panel.style.cssText = `
+    display:none; position:fixed;
+    top:50%; left:50%; transform:translate(-50%,-50%);
+    background:rgba(5,69,97,0.99); border-radius:14px;
+    padding:20px; z-index:1000000; width:420px; max-width:90vw;
+    max-height:85vh; overflow-y:auto;
+    box-shadow:0 8px 48px rgba(0,0,0,0.6);
+    font-family:sans-serif;
+  `;
+  document.body.appendChild(panel);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && panel.style.display !== 'none') panel.style.display = 'none';
+  });
+}
+
+function champTexte(valeur, placeholder) {
+  const input = document.createElement('input');
+  input.value = valeur || '';
+  if (placeholder) input.placeholder = placeholder;
+  input.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:12px;';
+  return input;
+}
+
+function ouvrirPanneauDonneesCreation() {
+  const panel = document.getElementById('alfred-donnees-panel');
+  if (!panel) return;
+  const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
+  panel.innerHTML = '';
+
+  const titre = document.createElement('div');
+  titre.textContent = 'Données du dossier démo (création automatique)';
+  titre.style.cssText = 'color:rgba(255,255,255,.4);font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;';
+  panel.appendChild(titre);
+
+  const champs = {};
+  function ligne(label, cle, valeur, placeholder) {
+    panel.appendChild(champLabel(label));
+    const input = champTexte(valeur, placeholder);
+    champs[cle] = input;
+    panel.appendChild(input);
+  }
+
+  ligne('Code du dossier', 'code', cfg.code);
+  ligne('Collaborateur', 'collaborateur', cfg.collaborateur);
+  ligne('Notaire responsable', 'notaire', cfg.notaire);
+  ligne('Registre national — Vendeur', 'vendeur_rn', cfg.vendeur_rn, '__.__.__-___.__');
+  ligne('Registre national — Acquéreur', 'acquereur_rn', cfg.acquereur_rn, '__.__.__-___.__');
+  ligne('Notaire de la partie adverse', 'notaire_adverse', cfg.notaire_adverse);
+
+  const sousTitreBien = document.createElement('div');
+  sousTitreBien.textContent = 'Bien immobilier';
+  sousTitreBien.style.cssText = 'color:rgba(255,255,255,.3);font-size:8px;letter-spacing:2px;text-transform:uppercase;margin-top:14px;';
+  panel.appendChild(sousTitreBien);
+
+  const champsBien = {};
+  function ligneBien(label, cle, valeur, placeholder) {
+    panel.appendChild(champLabel(label));
+    const input = champTexte(valeur, placeholder);
+    champsBien[cle] = input;
+    panel.appendChild(input);
+  }
+  ligneBien('Type', 'type', cfg.bien.type);
+  ligneBien('N° de parcelle', 'parcelle', cfg.bien.parcelle, '0419XP0000');
+  ligneBien('Section', 'section', cfg.bien.section, 'A');
+  ligneBien('Division', 'division', cfg.bien.division, '00141');
+  ligneBien('Surface', 'surface', cfg.bien.surface);
+  ligneBien('Revenu cadastral', 'revenu_cadastral', cfg.bien.revenu_cadastral);
+  ligneBien('Rue', 'rue', cfg.bien.rue);
+  ligneBien('N°', 'numero', cfg.bien.numero, '42');
+  ligneBien('Commune', 'commune', cfg.bien.commune, 'Rechercher une commune par son nom ou son code postal');
+
+  const boutons = document.createElement('div');
+  boutons.style.cssText = 'display:flex;gap:8px;margin-top:16px;';
+
+  const btnSave = document.createElement('button');
+  btnSave.textContent = 'Enregistrer';
+  btnSave.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:none;background:#14b0bd;color:#fff;font-size:12px;font-weight:600;cursor:pointer;';
+  btnSave.onclick = () => {
+    Object.keys(champs).forEach(cle => { ALFRED_CONFIG.DOSSIER_CREATION_DEMO[cle] = champs[cle].value.trim(); });
+    Object.keys(champsBien).forEach(cle => { ALFRED_CONFIG.DOSSIER_CREATION_DEMO.bien[cle] = champsBien[cle].value.trim(); });
+    if (typeof sauvegarderDonneesCreation === 'function') sauvegarderDonneesCreation();
+    panel.style.display = 'none';
+  };
+
+  const btnCancel = document.createElement('button');
+  btnCancel.textContent = 'Annuler';
+  btnCancel.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:transparent;color:rgba(255,255,255,.8);font-size:12px;cursor:pointer;';
+  btnCancel.onclick = () => { panel.style.display = 'none'; };
+
+  boutons.appendChild(btnSave);
+  boutons.appendChild(btnCancel);
+  panel.appendChild(boutons);
+
+  const btnReset = document.createElement('div');
+  btnReset.textContent = '↺ Réinitialiser aux valeurs par défaut';
+  btnReset.style.cssText = 'text-align:center;color:rgba(255,255,255,.4);font-size:10px;margin-top:12px;cursor:pointer;';
+  btnReset.onmouseover = () => { btnReset.style.color = '#fff'; };
+  btnReset.onmouseout  = () => { btnReset.style.color = 'rgba(255,255,255,.4)'; };
+  btnReset.onclick = () => {
+    if (!confirm('Réinitialiser les données du dossier démo ?')) return;
+    if (typeof reinitialiserDonneesCreation === 'function') reinitialiserDonneesCreation();
+    ouvrirPanneauDonneesCreation();
+  };
+  panel.appendChild(btnReset);
+
+  panel.style.display = 'block';
 }
 
 function champLabel(texte) {
@@ -548,6 +667,7 @@ function initAlfredUI() {
   creerSousTitres();
   creerPanneauRepliques();
   creerPanneauEdition();
+  creerPanneauDonneesCreation();
   startBlinking();
   startEyeLerp();
   resetSleepTimer();

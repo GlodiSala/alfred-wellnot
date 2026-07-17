@@ -204,6 +204,153 @@ async function seq_montrerEvenements() {
   await attendre(800);
 }
 
+// ── Helpers génériques pour la création de dossier ────────
+// Cherche un bouton visible dont le texte correspond exactement.
+function trouverBoutonParTexte(texte) {
+  return Array.from(document.querySelectorAll('button'))
+    .find(b => b.textContent.trim() === texte && b.getBoundingClientRect().width > 0);
+}
+
+// Clique un bouton par son texte, avec attente qu'il apparaisse.
+async function cliquerBouton(texte, tentatives = 15) {
+  let btn = null;
+  for (let i = 0; i < tentatives; i++) {
+    btn = trouverBoutonParTexte(texte);
+    if (btn) break;
+    await attendre(300);
+  }
+  if (!btn) { console.warn('[Alfred DOM] Bouton introuvable:', texte); return false; }
+  return new Promise(resolve => curseurVers(btn, () => { btn.click(); resolve(true); }));
+}
+
+// Ouvre un menu déroulant PrimeNG en cliquant sur le texte actuellement
+// affiché (placeholder ou valeur sélectionnée), puis choisit une option
+// dans la liste qui apparaît. Sélecteurs approximatifs (texte visible) —
+// à ajuster si la structure réelle du site diffère.
+async function choisirDansDropdown(texteDeclencheur, texteOption) {
+  const span = Array.from(document.querySelectorAll('span'))
+    .find(s => s.textContent.trim() === texteDeclencheur && s.getBoundingClientRect().width > 0);
+  const declencheur = span ? (span.closest('div,button') || span) : null;
+  if (!declencheur) { console.warn('[Alfred DOM] Menu déroulant introuvable:', texteDeclencheur); return false; }
+  curseurVers(declencheur, () => declencheur.click());
+  await attendre(500);
+  for (let i = 0; i < 15; i++) {
+    const opt = Array.from(document.querySelectorAll('li'))
+      .find(li => li.textContent.trim() === texteOption && li.getBoundingClientRect().width > 0);
+    if (opt) {
+      curseurVers(opt, () => opt.click());
+      await attendre(400);
+      return true;
+    }
+    await attendre(200);
+  }
+  console.warn('[Alfred DOM] Option introuvable dans le menu:', texteOption);
+  return false;
+}
+
+// Tape dans un champ identifié par son id, avec attente qu'il apparaisse.
+async function taperDansChamp(id, texte, tentatives = 15) {
+  let champ = null;
+  for (let i = 0; i < tentatives; i++) {
+    champ = document.getElementById(id);
+    if (champ) break;
+    await attendre(300);
+  }
+  if (!champ) { console.warn('[Alfred DOM] Champ introuvable:', id); return false; }
+  curseurVers(champ, () => {});
+  await attendre(300);
+  await taper(champ, String(texte));
+  return true;
+}
+
+// Ajoute une partie (Vendeur/Acquéreur) via recherche par registre national.
+// Suppose un RN réel et valide (recherche e-notariat en direct) : le
+// formulaire se remplit alors automatiquement, il ne reste qu'à enregistrer.
+async function ajouterPartieParRN(qualite, rn) {
+  await choisirDansDropdown('Sélectionnez une qualité', qualite);
+  await attendre(400);
+  await cliquerBouton('Ajouter');
+  await attendre(600);
+  await cliquerBouton('Personne physique');
+  await attendre(600);
+  await taperDansChamp('search-rn', rn);
+  await cliquerBouton('Rechercher');
+  await attendre(2000); // laisse le temps à la recherche e-notariat de remplir le formulaire
+  await cliquerBouton('Enregistrer');
+  await attendre(1000);
+}
+
+// Ajoute un bien manuellement (plus fiable en démo que la recherche CADASTRE).
+async function ajouterBienManuel(bien) {
+  await cliquerBouton('Ajouter manuellement');
+  await attendre(600);
+  const typeSpan = document.getElementById('asset-type');
+  if (typeSpan) {
+    const declencheur = typeSpan.closest('div,button') || typeSpan;
+    curseurVers(declencheur, () => declencheur.click());
+    await attendre(500);
+    for (let i = 0; i < 15; i++) {
+      const opt = Array.from(document.querySelectorAll('li'))
+        .find(li => li.textContent.trim() === bien.type && li.getBoundingClientRect().width > 0);
+      if (opt) { curseurVers(opt, () => opt.click()); await attendre(400); break; }
+      await attendre(200);
+    }
+  }
+  await taperDansChamp('asset-parcel-number', bien.parcelle);
+  await taperDansChamp('asset-section', bien.section);
+  await taperDansChamp('asset-division', bien.division);
+  await taperDansChamp('asset-surface', bien.surface);
+  await taperDansChamp('asset-cadastral-income', bien.revenu_cadastral);
+  await taperDansChamp('asset-street', bien.rue);
+  await taperDansChamp('asset-street-number', bien.numero);
+  await taperDansChamp('asset-municipality', bien.commune);
+  await attendre(500);
+  await cliquerBouton('Enregistrer');
+  await attendre(1000);
+}
+
+// ── Réplique dédiée — Création live d'un dossier de démo ──
+// Démonstration séparée de R426 (qui reste la référence "dossier déjà
+// riche" pour le reste du script). Utilise ALFRED_CONFIG.DOSSIER_CREATION_DEMO,
+// éditable depuis le panneau "Données démo".
+async function seq_creerDossierDemo() {
+  const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
+  if (!cfg) { console.warn('[Alfred DOM] Données de création démo non configurées'); return; }
+
+  // Étape 0 — ouvrir le formulaire de création
+  await naviguerVers(['Dossiers']);
+  await attendre(1200);
+  await cliquerBouton('Créer un dossier');
+  await attendre(1500);
+
+  // Étape 1 — Informations générales
+  await taperDansChamp('folder-code', cfg.code);
+  await attendre(400);
+  // NOTE : le texte exact affiché par défaut sur ces deux menus n'a pas pu
+  // être capturé (champs vides dans nos relevés) — à ajuster après un
+  // premier test en direct si "Sélectionnez..." ne correspond pas.
+  await choisirDansDropdown('Sélectionnez un collaborateur', cfg.collaborateur);
+  await choisirDansDropdown('Sélectionnez un notaire', cfg.notaire);
+  await attendre(500);
+  await cliquerBouton('Suivant');
+  await attendre(1500);
+
+  // Étape 2 — Personnes (vendeur puis acquéreur)
+  await ajouterPartieParRN('Vendeur', cfg.vendeur_rn);
+  await ajouterPartieParRN('Acquéreur', cfg.acquereur_rn);
+  await cliquerBouton('Suivant');
+  await attendre(1500);
+
+  // Étape 3 — Biens
+  await ajouterBienManuel(cfg.bien);
+  await cliquerBouton('Suivant');
+  await attendre(1500);
+
+  // Étape 4 — Documents : on termine directement (aucun document à joindre en démo)
+  await cliquerBouton('Enregistrer');
+  await attendre(1500);
+}
+
 // ── Mapping label → séquence ──────────────────────────────
 const DOM_ACTIONS = {
   'Dashboard':   seq_ouvrirDossier,
@@ -219,6 +366,7 @@ const DOM_ACTIONS = {
   'Chatbot':     seq_montrerNotifications,
   'Événements':  seq_montrerEvenements,
   'Notifications': seq_montrerEvenements,
+  'CreationDossier': seq_creerDossierDemo,
 };
 
 async function executerActionDOM(label) {

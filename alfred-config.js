@@ -21,6 +21,29 @@ const ALFRED_CONFIG = {
     date_creation: '04/06/2026',
   },
 
+  // Données utilisées par la création automatique d'un nouveau dossier en
+  // live (démonstration séparée de R426, qui reste la référence "dossier
+  // déjà riche" pour le reste du script).
+  DOSSIER_CREATION_DEMO: {
+    code:          'DEMO01',
+    collaborateur: 'Cyril Cabuy',
+    notaire:       'Alain Caprasse',
+    vendeur_rn:    '84.06.28-314.70',
+    acquereur_rn:  '00.12.20-324.62',
+    bien: {
+      type:             'Maison',
+      parcelle:         '0419XP0000',
+      section:          'A',
+      division:         '00141',
+      surface:          '10',
+      revenu_cadastral: '100',
+      rue:              'Rue de la Station',
+      numero:           '42',
+      commune:          '6000 — Charleroi',
+    },
+    notaire_adverse: 'Jean-François Ghigny',
+  },
+
   SYSTEM_PROMPT: `Tu es Alfred, le premier collaborateur d'une étude notariale qui ne dort jamais.
 Développé par Wellnot, startup belge fondée par Jean-François Ghigny et Alain Caprasse (tous deux notaires).
 Site : wellnot.be — Contact : hello@wellnot.be
@@ -406,3 +429,38 @@ function reinitialiserScript() {
 
 chargerScriptPersonnalise();
 rafraichirScriptDepuisServeur();
+
+// ── Données de création de dossier démo — persistance locale ──────────
+// Contrairement au script (partagé en ligne), ces données restent locales
+// à chaque appareil : moins critique à synchroniser, et évite d'exposer
+// des numéros de registre national via une API publique.
+const ALFRED_CREATION_STORAGE_KEY = 'alfred_creation_demo_overrides';
+
+ALFRED_CONFIG.DOSSIER_CREATION_DEMO_DEFAUT = JSON.parse(JSON.stringify(ALFRED_CONFIG.DOSSIER_CREATION_DEMO));
+
+function chargerDonneesCreationPersonnalisees() {
+  try {
+    const raw = localStorage.getItem(ALFRED_CREATION_STORAGE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data && typeof data === 'object') {
+      ALFRED_CONFIG.DOSSIER_CREATION_DEMO = Object.assign(
+        {}, ALFRED_CONFIG.DOSSIER_CREATION_DEMO, data,
+        { bien: Object.assign({}, ALFRED_CONFIG.DOSSIER_CREATION_DEMO.bien, data.bien || {}) }
+      );
+    }
+  } catch (e) {
+    console.warn('[Alfred Config] Données démo création illisibles, valeurs par défaut utilisées.', e);
+  }
+}
+
+function sauvegarderDonneesCreation() {
+  localStorage.setItem(ALFRED_CREATION_STORAGE_KEY, JSON.stringify(ALFRED_CONFIG.DOSSIER_CREATION_DEMO));
+}
+
+function reinitialiserDonneesCreation() {
+  ALFRED_CONFIG.DOSSIER_CREATION_DEMO = JSON.parse(JSON.stringify(ALFRED_CONFIG.DOSSIER_CREATION_DEMO_DEFAUT));
+  localStorage.removeItem(ALFRED_CREATION_STORAGE_KEY);
+}
+
+chargerDonneesCreationPersonnalisees();
