@@ -141,6 +141,7 @@ function creerPanneauRepliques() {
       <div id="alfred-script-status" style="color:rgba(255,255,255,.4);font-size:9px;"></div>
       <span id="alfred-script-reset" title="Réinitialiser le script par défaut" style="color:rgba(255,255,255,.35);font-size:11px;cursor:pointer;">↺</span>
     </div>
+    <button id="alfred-donnees-ouvrir" style="width:100%;margin-bottom:14px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:rgba(255,255,255,.85);font-size:11px;font-weight:600;cursor:pointer;">📋 Données du dossier démo</button>
     <div style="display:flex;gap:20px;align-items:flex-start;">
       <div id="alfred-col-1" style="flex:1;"></div>
       <div id="alfred-col-2" style="flex:1.2;"></div>
@@ -148,6 +149,14 @@ function creerPanneauRepliques() {
     </div>
   `;
   document.body.appendChild(panel);
+
+  const btnDonnees = panel.querySelector('#alfred-donnees-ouvrir');
+  btnDonnees.onmouseover = () => { btnDonnees.style.background = 'rgba(255,255,255,.18)'; };
+  btnDonnees.onmouseout  = () => { btnDonnees.style.background = 'rgba(255,255,255,.08)'; };
+  btnDonnees.onclick = () => {
+    panel.style.display = 'none';
+    ouvrirPanneauDonneesCreation();
+  };
 
   panel.querySelector('#alfred-script-reset').onclick = () => {
     if (!confirm('Réinitialiser le script au contenu par défaut, pour tout le monde ? Les modifications seront perdues.')) return;
@@ -584,13 +593,6 @@ function initAlfredUI() {
     }
     #alfred-mic-btn:hover { background:rgba(255,255,255,.25); transform:translateY(-1px); }
     #alfred-mic-btn.listening { background:rgba(255,255,255,.9); color:#054561; animation:alfred-pulse-mic 1.2s ease-in-out infinite; }
-    #alfred-donnees-btn-permanent {
-      margin-top:8px; background:rgba(255,255,255,.1); color:rgba(255,255,255,.85);
-      border:1px solid rgba(255,255,255,.25); border-radius:20px; padding:8px 16px;
-      font-size:11px; font-weight:600; cursor:pointer; width:100%;
-      transition:background .2s,transform .15s; font-family:sans-serif;
-    }
-    #alfred-donnees-btn-permanent:hover { background:rgba(255,255,255,.22); transform:translateY(-1px); }
     #alfred-langue-lbl {
       font-size:9px; color:rgba(255,255,255,.3); margin-top:10px;
       cursor:pointer; transition:color .2s; font-family:sans-serif; user-select:none;
@@ -648,7 +650,6 @@ function initAlfredUI() {
     <div id="alfred-transcript"></div>
     <div id="alfred-vol-wrap"><div id="alfred-vol-bar"></div></div>
     <button id="alfred-mic-btn" onclick="toggleMic()">🎤 Parler</button>
-    <button id="alfred-donnees-btn-permanent">📋 Dossier démo</button>
     <div id="alfred-langue-lbl" onclick="toggleLangue()">🇧🇪 FR</div>
     <div id="alfred-secours">← →</div>
   `;
@@ -668,7 +669,6 @@ function initAlfredUI() {
   creerPanneauRepliques();
   creerPanneauEdition();
   creerPanneauDonneesCreation();
-  document.getElementById('alfred-donnees-btn-permanent').onclick = () => ouvrirPanneauDonneesCreation();
   startBlinking();
   startEyeLerp();
   resetSleepTimer();
