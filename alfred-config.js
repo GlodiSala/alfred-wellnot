@@ -209,6 +209,9 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 1, label: 'Résumé1',       texte: "C'est ça. Et en parallèle, chaque acteur du dossier — l'étude, le client, un confrère — peut travailler simultanément sur le même dossier. Et si quelqu'un a une question sur un dossier, à n'importe quelle heure, je réponds instantanément via le chatbot intégré." },
     { acte: 1, label: 'Montrer',       texte: "Avec plaisir. Regardez." },
 
+    // ACTE 2 — CRÉATION LIVE (démonstration séparée, avant l'ouverture de R426)
+    { acte: 2, label: 'CreationLive',  texte: "Avant d'ouvrir un dossier existant, je vais vous montrer comment j'en crée un de A à Z, en direct.", action: 'CreationDossier' },
+
     // ACTE 2 — SÉQUENCE 1
     // REPLIQUES_FR Dashboard
     { acte: 2, label: 'Dashboard',     texte: "Tu vois ici le tableau de bord de l'étude — tous les dossiers en cours, les collaborateurs assignés, l'état d'avancement de chaque dossier. On ouvre un dossier existant." },
@@ -249,6 +252,9 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 1, label: 'Communication', texte: "Dat beheer ik ook. Ik identificeer de betrokken gesprekspartners bij het dossier, ik stel de e-mailontwerpen op en u bevestigt de verzending. En wanneer een antwoord binnenkomt — een document, een ontbrekend stuk — lees ik het, analyseer ik het en verwerk ik het rechtstreeks in het dossier. Zonder menselijke tussenkomst. Op elk uur." },
     { acte: 1, label: 'Résumé1',       texte: "Dat klopt. En tegelijkertijd kan elke actor in het dossier — het kantoor, de cliënt, een confrater — gelijktijdig aan hetzelfde dossier werken. En als iemand een vraag heeft over een dossier, op elk uur, antwoord ik onmiddellijk via de geïntegreerde chatbot." },
     { acte: 1, label: 'Montrer',       texte: "Met plezier. Kijk maar." },
+
+    // ACTE 2 — CRÉATION LIVE (démonstration séparée, avant l'ouverture de R426)
+    { acte: 2, label: 'CreationLive',  texte: "Voordat ik een bestaand dossier open, toon ik u hoe ik er een van nul opbouw, live.", action: 'CreationDossier' },
 
     // ACTE 2 — SÉQUENCE 1
     // REPLIQUES_NL Dashboard

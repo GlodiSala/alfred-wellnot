@@ -136,14 +136,12 @@ function creerPanneauRepliques() {
     font-family:sans-serif;
   `;
   panel.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
       <div style="color:rgba(255,255,255,.35);font-size:8px;letter-spacing:2.5px;">SCRIPT · ALFRED</div>
       <div id="alfred-script-status" style="color:rgba(255,255,255,.4);font-size:9px;"></div>
-      <div style="display:flex;gap:10px;">
-        <span id="alfred-donnees-ouvrir" title="Données du dossier démo" style="color:rgba(255,255,255,.35);font-size:11px;cursor:pointer;">⚙</span>
-        <span id="alfred-script-reset" title="Réinitialiser le script par défaut" style="color:rgba(255,255,255,.35);font-size:11px;cursor:pointer;">↺</span>
-      </div>
+      <span id="alfred-script-reset" title="Réinitialiser le script par défaut" style="color:rgba(255,255,255,.35);font-size:11px;cursor:pointer;">↺</span>
     </div>
+    <button id="alfred-donnees-ouvrir" style="width:100%;margin-bottom:14px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:rgba(255,255,255,.85);font-size:11px;font-weight:600;cursor:pointer;">⚙ Données du dossier démo</button>
     <div style="display:flex;gap:20px;align-items:flex-start;">
       <div id="alfred-col-1" style="flex:1;"></div>
       <div id="alfred-col-2" style="flex:1.2;"></div>
@@ -152,7 +150,10 @@ function creerPanneauRepliques() {
   `;
   document.body.appendChild(panel);
 
-  panel.querySelector('#alfred-donnees-ouvrir').onclick = () => {
+  const btnDonnees = panel.querySelector('#alfred-donnees-ouvrir');
+  btnDonnees.onmouseover = () => { btnDonnees.style.background = 'rgba(255,255,255,.18)'; };
+  btnDonnees.onmouseout  = () => { btnDonnees.style.background = 'rgba(255,255,255,.08)'; };
+  btnDonnees.onclick = () => {
     panel.style.display = 'none';
     ouvrirPanneauDonneesCreation();
   };
