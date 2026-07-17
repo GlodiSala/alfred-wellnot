@@ -56,6 +56,18 @@ function curseurVers(el, callback) {
 
 function attendre(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+// Comme curseurVers, mais attend réellement que l'animation du curseur soit
+// terminée et que le callback (le clic) ait été exécuté avant de continuer.
+// curseurVers seul ne fait que lancer l'animation (~730ms avant que le
+// callback ne s'exécute) sans bloquer l'appelant — du code qui enchaîne un
+// court attendre() après un curseurVers "à la volée" avance donc souvent
+// avant que le clic n'ait réellement eu lieu.
+function curseurVersAsync(el, callback) {
+  return new Promise(resolve => {
+    curseurVers(el, () => { if (callback) callback(); resolve(); });
+  });
+}
+
 // Simule un clic complet (pointerdown/mousedown/pointerup/mouseup/click) au
 // lieu du simple el.click(). Certains composants PrimeNG (menus déroulants
 // notamment) écoutent spécifiquement mousedown pour s'ouvrir — un simple
@@ -83,6 +95,17 @@ async function taper(input, texte, delaiParLettre = 90) {
     input.dispatchEvent(new Event('input', { bubbles: true }));
     await attendre(delaiParLettre + Math.random() * 40);
   }
+}
+
+// Simule l'appui sur Entrée puis un blur sur un champ — certains formulaires
+// Angular ne valident/rafraîchissent leur état (ex: activer "Suivant") que
+// sur ces événements, pas sur "input" seul.
+function validerChamp(input) {
+  const opts = { bubbles: true, cancelable: true, key: 'Enter', code: 'Enter', keyCode: 13, which: 13 };
+  input.dispatchEvent(new KeyboardEvent('keydown', opts));
+  input.dispatchEvent(new KeyboardEvent('keyup', opts));
+  input.blur();
+  input.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
 // ── Trouver un onglet par texte exact ─────────────────────
@@ -304,14 +327,14 @@ async function choisirDansDropdownParLabelProche(labelTexte, texteOption) {
     await attendre(300);
   }
   if (!declencheur) { console.warn('[Alfred DOM] Dropdown introuvable près du label:', labelTexte); return false; }
-  curseurVers(declencheur, () => simulerClic(declencheur));
-  await attendre(500);
+  await curseurVersAsync(declencheur, () => simulerClic(declencheur));
+  await attendre(300);
   for (let i = 0; i < 15; i++) {
     const opt = Array.from(document.querySelectorAll('li'))
       .find(li => li.textContent.trim() === texteOption && li.getBoundingClientRect().width > 0);
     if (opt) {
-      curseurVers(opt, () => simulerClic(opt));
-      await attendre(400);
+      await curseurVersAsync(opt, () => simulerClic(opt));
+      await attendre(300);
       return true;
     }
     await attendre(200);
@@ -329,14 +352,14 @@ async function choisirDansDropdown(texteDeclencheur, texteOption) {
     .find(s => s.textContent.trim() === texteDeclencheur && s.getBoundingClientRect().width > 0);
   const declencheur = span ? (span.closest('div,button') || span) : null;
   if (!declencheur) { console.warn('[Alfred DOM] Menu déroulant introuvable:', texteDeclencheur); return false; }
-  curseurVers(declencheur, () => simulerClic(declencheur));
-  await attendre(500);
+  await curseurVersAsync(declencheur, () => simulerClic(declencheur));
+  await attendre(300);
   for (let i = 0; i < 15; i++) {
     const opt = Array.from(document.querySelectorAll('li'))
       .find(li => li.textContent.trim() === texteOption && li.getBoundingClientRect().width > 0);
     if (opt) {
-      curseurVers(opt, () => simulerClic(opt));
-      await attendre(400);
+      await curseurVersAsync(opt, () => simulerClic(opt));
+      await attendre(300);
       return true;
     }
     await attendre(200);
@@ -384,12 +407,12 @@ async function ajouterBienManuel(bien) {
   const typeSpan = document.getElementById('asset-type');
   if (typeSpan) {
     const declencheur = typeSpan.closest('div,button') || typeSpan;
-    curseurVers(declencheur, () => simulerClic(declencheur));
-    await attendre(500);
+    await curseurVersAsync(declencheur, () => simulerClic(declencheur));
+    await attendre(300);
     for (let i = 0; i < 15; i++) {
       const opt = Array.from(document.querySelectorAll('li'))
         .find(li => li.textContent.trim() === bien.type && li.getBoundingClientRect().width > 0);
-      if (opt) { curseurVers(opt, () => simulerClic(opt)); await attendre(400); break; }
+      if (opt) { await curseurVersAsync(opt, () => simulerClic(opt)); await attendre(300); break; }
       await attendre(200);
     }
   }
@@ -434,9 +457,14 @@ async function seq_creerDossierDemo() {
   // libellé). "Collaborateur administratif" et "Notaire en charge du
   // dossier" restent vides — pas nécessaires pour activer "Suivant".
   await taperDansChamp('folder-code', cfg.code);
-  await attendre(400);
-  await choisirDansDropdownParLabelProche('Collaborateur en charge du dossier', cfg.collaborateur);
+  // Entrée + blur : certains champs Angular ne valident/rafraîchissent leur
+  // état (dont l'activation de "Suivant") que sur ces événements, pas sur
+  // la frappe seule.
+  const champCode = document.getElementById('folder-code');
+  if (champCode) validerChamp(champCode);
   await attendre(500);
+  await choisirDansDropdownParLabelProche('Collaborateur en charge du dossier', cfg.collaborateur);
+  await attendre(600);
   // "Suivant" reste désactivé tant que les champs requis ne sont pas valides —
   // on attend qu'il s'active plutôt que de cliquer trop tôt sur un bouton inactif.
   await cliquerBoutonQuandActif('Suivant');
