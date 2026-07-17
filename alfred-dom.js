@@ -8,7 +8,7 @@ function creerCurseur() {
   c.style.cssText = `
     position:fixed; width:16px; height:16px;
     background:#14b0bd; border-radius:50%;
-    pointer-events:none; z-index:999999; opacity:0;
+    pointer-events:none; z-index:450; opacity:0;
     box-shadow:0 0 10px rgba(20,176,189,0.8);
     transform:translate(-50%,-50%);
     transition:left .5s cubic-bezier(.25,.46,.45,.94),
@@ -343,7 +343,10 @@ async function choisirDansDropdownParLabelProche(labelTexte, texteOption) {
   if (!declencheur) { console.warn('[Alfred DOM] Dropdown introuvable près du label:', labelTexte); return false; }
   console.log('[Alfred DOM] Déclencheur trouvé pour', labelTexte, '— rect:', declencheur.getBoundingClientRect(), 'texte actuel:', JSON.stringify(declencheur.textContent.trim()));
   await curseurVersAsync(declencheur, () => simulerClic(declencheur));
-  await attendre(300);
+  // Pause volontairement plus longue : laisse le menu visible à l'écran un
+  // instant avant de sélectionner, pour que ce soit lisible en démo live
+  // plutôt qu'une valeur qui semble s'écrire "toute seule".
+  await attendre(800);
   for (let i = 0; i < 15; i++) {
     const opt = Array.from(document.querySelectorAll('li'))
       .find(li => li.textContent.trim() === texteOption && li.getBoundingClientRect().width > 0);
@@ -371,7 +374,7 @@ async function choisirDansDropdown(texteDeclencheur, texteOption) {
     .find(s => s.textContent.trim() === texteDeclencheur && s.getBoundingClientRect().width > 0);
   if (!declencheur) { console.warn('[Alfred DOM] Menu déroulant introuvable:', texteDeclencheur); return false; }
   await curseurVersAsync(declencheur, () => simulerClic(declencheur));
-  await attendre(300);
+  await attendre(800); // laisse le menu visible un instant, plus lisible en démo live
   for (let i = 0; i < 15; i++) {
     const opt = Array.from(document.querySelectorAll('li'))
       .find(li => li.textContent.trim() === texteOption && li.getBoundingClientRect().width > 0);

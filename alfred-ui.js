@@ -72,7 +72,7 @@ function creerSousTitres() {
     max-width:70%; background:rgba(0,0,0,0.72); color:#fff;
     font-size:20px; font-weight:500; line-height:1.5;
     padding:12px 28px; border-radius:10px;
-    text-align:center; z-index:999997;
+    text-align:center; z-index:450;
     opacity:0; transition:opacity .3s ease;
     pointer-events:none; font-family:sans-serif;
     letter-spacing:0.01em;
@@ -130,7 +130,7 @@ function creerPanneauRepliques() {
     display:none; position:fixed;
     top:50%; left:270px; transform:translateY(-50%);
     background:rgba(5,69,97,0.97); border-radius:14px;
-    padding:16px; z-index:999999; min-width:460px; max-width:520px;
+    padding:16px; z-index:500; min-width:460px; max-width:520px;
     max-height:80vh; overflow-y:auto;
     box-shadow:0 8px 40px rgba(0,0,0,0.5);
     font-family:sans-serif;
@@ -249,7 +249,7 @@ function creerPanneauEdition() {
     display:none; position:fixed;
     top:50%; left:50%; transform:translate(-50%,-50%);
     background:rgba(5,69,97,0.99); border-radius:14px;
-    padding:20px; z-index:1000000; width:460px; max-width:90vw;
+    padding:20px; z-index:500; width:460px; max-width:90vw;
     box-shadow:0 8px 48px rgba(0,0,0,0.6);
     font-family:sans-serif;
   `;
@@ -290,7 +290,7 @@ function creerPanneauDonneesCreation() {
     display:none; position:fixed;
     top:50%; left:50%; transform:translate(-50%,-50%);
     background:rgba(5,69,97,0.99); border-radius:14px;
-    padding:20px; z-index:1000000; width:420px; max-width:90vw;
+    padding:20px; z-index:500; width:420px; max-width:90vw;
     max-height:85vh; overflow-y:auto;
     box-shadow:0 8px 48px rgba(0,0,0,0.6);
     font-family:sans-serif;
@@ -569,7 +569,7 @@ function initAlfredUI() {
   style.id = 'alfred-styles';
   style.textContent = `
     body.alfred-active { margin:0; padding:0; overflow:hidden; }
-    #alfred-wrapper { display:flex; height:100vh; width:100vw; position:fixed; top:0; left:0; z-index:99998; pointer-events:none; }
+    #alfred-wrapper { display:flex; height:100vh; width:100vw; position:fixed; top:0; left:0; z-index:400; pointer-events:none; }
     #alfred-left-panel {
       width:0; min-width:0; height:100vh;
       background:linear-gradient(180deg,#054561 0%,#14b0bd 50%,#ebe0c4 100%);
