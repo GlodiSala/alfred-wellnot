@@ -223,6 +223,26 @@ async function cliquerBouton(texte, tentatives = 15) {
   return new Promise(resolve => curseurVers(btn, () => { btn.click(); resolve(true); }));
 }
 
+// Comme cliquerBouton, mais attend en plus que le bouton soit actif
+// (non désactivé) avant de cliquer — utile pour "Suivant" dans un
+// formulaire multi-étapes, désactivé tant que les champs requis ne sont
+// pas remplis (ex : le vendeur pas encore ajouté).
+function boutonEstActif(btn) {
+  return !btn.disabled
+    && btn.getAttribute('aria-disabled') !== 'true'
+    && !btn.classList.contains('p-disabled');
+}
+async function cliquerBoutonQuandActif(texte, tentatives = 40, delai = 400) {
+  let btn = null;
+  for (let i = 0; i < tentatives; i++) {
+    const candidat = trouverBoutonParTexte(texte);
+    if (candidat && boutonEstActif(candidat)) { btn = candidat; break; }
+    await attendre(delai);
+  }
+  if (!btn) { console.warn('[Alfred DOM] Bouton actif introuvable (toujours désactivé ?):', texte); return false; }
+  return new Promise(resolve => curseurVers(btn, () => { btn.click(); resolve(true); }));
+}
+
 // Ouvre un menu déroulant PrimeNG en cliquant sur le texte actuellement
 // affiché (placeholder ou valeur sélectionnée), puis choisit une option
 // dans la liste qui apparaît. Sélecteurs approximatifs (texte visible) —
@@ -334,28 +354,29 @@ async function seq_creerDossierDemo() {
   // Étape 1 — Informations générales
   await taperDansChamp('folder-code', cfg.code);
   await attendre(400);
-  // NOTE : le texte exact affiché par défaut sur ces deux menus n'a pas pu
-  // être capturé (champs vides dans nos relevés) — à ajuster après un
-  // premier test en direct si "Sélectionnez..." ne correspond pas.
   await choisirDansDropdown('Sélectionnez un collaborateur', cfg.collaborateur);
   await choisirDansDropdown('Sélectionnez un notaire', cfg.notaire);
   await attendre(500);
-  await cliquerBouton('Suivant');
+  // "Suivant" reste désactivé tant que les champs requis (dont le
+  // collaborateur) ne sont pas valides — on attend qu'il s'active plutôt
+  // que de cliquer trop tôt sur un bouton inactif.
+  await cliquerBoutonQuandActif('Suivant');
   await attendre(1500);
 
-  // Étape 2 — Personnes (vendeur puis acquéreur)
+  // Étape 2 — Personnes (vendeur puis acquéreur). "Suivant" reste désactivé
+  // tant que le vendeur n'a pas été ajouté avec succès.
   await ajouterPartieParRN('Vendeur', cfg.vendeur_rn);
   await ajouterPartieParRN('Acquéreur', cfg.acquereur_rn);
-  await cliquerBouton('Suivant');
+  await cliquerBoutonQuandActif('Suivant');
   await attendre(1500);
 
   // Étape 3 — Biens
   await ajouterBienManuel(cfg.bien);
-  await cliquerBouton('Suivant');
+  await cliquerBoutonQuandActif('Suivant');
   await attendre(1500);
 
   // Étape 4 — Documents : on termine directement (aucun document à joindre en démo)
-  await cliquerBouton('Enregistrer');
+  await cliquerBoutonQuandActif('Enregistrer');
   await attendre(1500);
 }
 
