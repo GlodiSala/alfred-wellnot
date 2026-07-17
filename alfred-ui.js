@@ -121,7 +121,7 @@ function cacherSousTitres() {
   }
 }
 
-// ── Panneau répliques ─────────────────────────────────────
+// ── Panneau répliques (lecture + édition FR/NL) ───────────
 function creerPanneauRepliques() {
   if (document.getElementById('alfred-repliques-panel')) return;
   const panel = document.createElement('div');
@@ -130,12 +130,18 @@ function creerPanneauRepliques() {
     display:none; position:fixed;
     top:50%; left:270px; transform:translateY(-50%);
     background:rgba(5,69,97,0.97); border-radius:14px;
-    padding:16px; z-index:999999; min-width:440px;
+    padding:16px; z-index:999999; min-width:460px; max-width:520px;
+    max-height:80vh; overflow-y:auto;
     box-shadow:0 8px 40px rgba(0,0,0,0.5);
     font-family:sans-serif;
   `;
   panel.innerHTML = `
-    <div style="color:rgba(255,255,255,.35);font-size:8px;letter-spacing:2.5px;margin-bottom:12px;text-align:center;">SCRIPT · ALFRED</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div style="color:rgba(255,255,255,.35);font-size:8px;letter-spacing:2.5px;">SCRIPT · ALFRED</div>
+      <div style="display:flex;gap:10px;">
+        <span id="alfred-script-reset" title="Réinitialiser le script par défaut" style="color:rgba(255,255,255,.35);font-size:11px;cursor:pointer;">↺</span>
+      </div>
+    </div>
     <div style="display:flex;gap:20px;align-items:flex-start;">
       <div id="alfred-col-1" style="flex:1;"></div>
       <div id="alfred-col-2" style="flex:1.2;"></div>
@@ -143,6 +149,12 @@ function creerPanneauRepliques() {
     </div>
   `;
   document.body.appendChild(panel);
+
+  panel.querySelector('#alfred-script-reset').onclick = () => {
+    if (!confirm('Réinitialiser le script au contenu par défaut ? Les modifications seront perdues.')) return;
+    if (typeof reinitialiserScript === 'function') reinitialiserScript();
+    remplirPanneauRepliques();
+  };
 
   const svgEl = document.getElementById('alfred-svg');
   if (svgEl) {
@@ -164,22 +176,25 @@ function creerPanneauRepliques() {
 }
 
 function remplirPanneauRepliques() {
-  const list = (typeof currentLangue !== 'undefined' && currentLangue === 'nl')
-    ? ALFRED_CONFIG.REPLIQUES_NL
-    : ALFRED_CONFIG.REPLIQUES_FR;
-  const acte1 = list.filter(r => r.acte === 1);
-  const acte2 = list.filter(r => r.acte === 2);
-  const acte3 = list.filter(r => r.acte === 3);
+  const list = ALFRED_CONFIG.REPLIQUES_FR; // l'index est commun aux listes FR et NL
 
-  function renderCol(colId, repliques, acteNum) {
+  function renderCol(colId, acteNum) {
     const col = document.getElementById(colId);
     if (!col) return;
-    col.innerHTML = `<div style="color:rgba(255,255,255,.3);font-size:8px;letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;">Acte ${acteNum}</div>`;
-    repliques.forEach(r => {
-      const idx = list.indexOf(r);
+    col.innerHTML = '';
+    const titre = document.createElement('div');
+    titre.textContent = 'Acte ' + acteNum;
+    titre.style.cssText = 'color:rgba(255,255,255,.3);font-size:8px;letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;';
+    col.appendChild(titre);
+
+    list.forEach((r, idx) => {
+      if (r.acte !== acteNum) return;
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:4px;margin-bottom:2px;';
+
       const btn = document.createElement('div');
       btn.textContent = r.label;
-      btn.style.cssText = `color:rgba(255,255,255,.75);font-size:11px;padding:5px 8px;border-radius:6px;cursor:pointer;margin-bottom:2px;transition:background .15s,color .15s;`;
+      btn.style.cssText = 'flex:1;color:rgba(255,255,255,.75);font-size:11px;padding:5px 8px;border-radius:6px;cursor:pointer;transition:background .15s,color .15s;';
       btn.onmouseover = () => { btn.style.background='rgba(255,255,255,.12)'; btn.style.color='#fff'; };
       btn.onmouseout  = () => { btn.style.background='transparent'; btn.style.color='rgba(255,255,255,.75)'; };
       btn.onclick = () => {
@@ -187,12 +202,181 @@ function remplirPanneauRepliques() {
         document.getElementById('alfred-repliques-panel').style.display = 'none';
         if (typeof jouerSecours === 'function') jouerSecours();
       };
-      col.appendChild(btn);
+
+      const editBtn = document.createElement('span');
+      editBtn.textContent = '✎';
+      editBtn.title = 'Modifier';
+      editBtn.style.cssText = 'color:rgba(255,255,255,.4);font-size:11px;cursor:pointer;padding:4px;';
+      editBtn.onmouseover = () => { editBtn.style.color = '#fff'; };
+      editBtn.onmouseout  = () => { editBtn.style.color = 'rgba(255,255,255,.4)'; };
+      editBtn.onclick = (e) => { e.stopPropagation(); ouvrirEditionRéplique(idx); };
+
+      row.appendChild(btn);
+      row.appendChild(editBtn);
+      col.appendChild(row);
     });
+
+    const addBtn = document.createElement('div');
+    addBtn.textContent = '+ Ajouter';
+    addBtn.style.cssText = 'color:rgba(255,255,255,.35);font-size:10px;padding:6px 8px;cursor:pointer;margin-top:4px;';
+    addBtn.onmouseover = () => { addBtn.style.color = '#fff'; };
+    addBtn.onmouseout  = () => { addBtn.style.color = 'rgba(255,255,255,.35)'; };
+    addBtn.onclick = () => ouvrirEditionRéplique(null, acteNum);
+    col.appendChild(addBtn);
   }
-  renderCol('alfred-col-1', acte1, 1);
-  renderCol('alfred-col-2', acte2, 2);
-  renderCol('alfred-col-3', acte3, 3);
+  renderCol('alfred-col-1', 1);
+  renderCol('alfred-col-2', 2);
+  renderCol('alfred-col-3', 3);
+}
+
+// ── Édition d'une réplique (FR + NL + action liée) ────────
+function creerPanneauEdition() {
+  if (document.getElementById('alfred-edition-panel')) return;
+  const panel = document.createElement('div');
+  panel.id = 'alfred-edition-panel';
+  panel.style.cssText = `
+    display:none; position:fixed;
+    top:50%; left:50%; transform:translate(-50%,-50%);
+    background:rgba(5,69,97,0.99); border-radius:14px;
+    padding:20px; z-index:1000000; width:460px; max-width:90vw;
+    box-shadow:0 8px 48px rgba(0,0,0,0.6);
+    font-family:sans-serif;
+  `;
+  document.body.appendChild(panel);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') panel.style.display = 'none';
+  });
+}
+
+function champLabel(texte) {
+  const l = document.createElement('label');
+  l.textContent = texte;
+  l.style.cssText = 'display:block;color:rgba(255,255,255,.5);font-size:9px;letter-spacing:1px;text-transform:uppercase;margin:10px 0 4px;';
+  return l;
+}
+
+function ouvrirEditionRéplique(index, nouvelActe) {
+  const panel = document.getElementById('alfred-edition-panel');
+  if (!panel) return;
+  document.getElementById('alfred-repliques-panel').style.display = 'none';
+
+  const estNouveau = index === null || index === undefined;
+  const rFR = estNouveau ? { acte: nouvelActe, label: '', texte: '', action: '' } : ALFRED_CONFIG.REPLIQUES_FR[index];
+  const rNL = estNouveau ? { acte: nouvelActe, label: '', texte: '', action: '' } : ALFRED_CONFIG.REPLIQUES_NL[index];
+
+  panel.innerHTML = '';
+
+  const titre = document.createElement('div');
+  titre.textContent = estNouveau ? 'Nouvelle réplique — Acte ' + nouvelActe : 'Modifier — ' + rFR.label;
+  titre.style.cssText = 'color:rgba(255,255,255,.4);font-size:9px;letter-spacing:2px;text-transform:uppercase;';
+  panel.appendChild(titre);
+
+  panel.appendChild(champLabel('Nom (identifiant interne)'));
+  const inputLabel = document.createElement('input');
+  inputLabel.value = rFR.label;
+  inputLabel.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:12px;';
+  panel.appendChild(inputLabel);
+
+  panel.appendChild(champLabel('Texte FR'));
+  const taFR = document.createElement('textarea');
+  taFR.value = rFR.texte;
+  taFR.rows = 4;
+  taFR.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:12px;font-family:sans-serif;resize:vertical;';
+  panel.appendChild(taFR);
+
+  panel.appendChild(champLabel('Texte NL'));
+  const taNL = document.createElement('textarea');
+  taNL.value = rNL.texte;
+  taNL.rows = 4;
+  taNL.style.cssText = taFR.style.cssText;
+  panel.appendChild(taNL);
+
+  panel.appendChild(champLabel('Action déclenchée (optionnel)'));
+  const select = document.createElement('select');
+  select.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:12px;';
+  const optNone = document.createElement('option');
+  optNone.value = ''; optNone.textContent = '— Aucune —';
+  select.appendChild(optNone);
+  const actionsDispo = (typeof DOM_ACTIONS !== 'undefined')
+    ? [...new Set(Object.keys(DOM_ACTIONS))]
+    : [];
+  actionsDispo.forEach(a => {
+    const opt = document.createElement('option');
+    opt.value = a; opt.textContent = a;
+    select.appendChild(opt);
+  });
+  select.value = rFR.action || '';
+  panel.appendChild(select);
+
+  const boutons = document.createElement('div');
+  boutons.style.cssText = 'display:flex;gap:8px;margin-top:16px;';
+
+  const btnSave = document.createElement('button');
+  btnSave.textContent = 'Enregistrer';
+  btnSave.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:none;background:#14b0bd;color:#fff;font-size:12px;font-weight:600;cursor:pointer;';
+  btnSave.onclick = () => {
+    const label = inputLabel.value.trim();
+    if (!label) { alert('Le nom de la réplique est requis.'); return; }
+    const action = select.value || undefined;
+    const nouvelleFR = { acte: rFR.acte, label, texte: taFR.value.trim(), action };
+    const nouvelleNL = { acte: rNL.acte, label, texte: taNL.value.trim(), action };
+    if (!nouvelleFR.action) delete nouvelleFR.action;
+    if (!nouvelleNL.action) delete nouvelleNL.action;
+
+    if (estNouveau) {
+      const idx = trouverIndexInsertion(ALFRED_CONFIG.REPLIQUES_FR, nouvelActe);
+      ALFRED_CONFIG.REPLIQUES_FR.splice(idx, 0, nouvelleFR);
+      ALFRED_CONFIG.REPLIQUES_NL.splice(idx, 0, nouvelleNL);
+    } else {
+      ALFRED_CONFIG.REPLIQUES_FR[index] = nouvelleFR;
+      ALFRED_CONFIG.REPLIQUES_NL[index] = nouvelleNL;
+    }
+    if (typeof sauvegarderScriptPersonnalise === 'function') sauvegarderScriptPersonnalise();
+    panel.style.display = 'none';
+    remplirPanneauRepliques();
+    document.getElementById('alfred-repliques-panel').style.display = 'block';
+  };
+
+  const btnCancel = document.createElement('button');
+  btnCancel.textContent = 'Annuler';
+  btnCancel.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:transparent;color:rgba(255,255,255,.8);font-size:12px;cursor:pointer;';
+  btnCancel.onclick = () => {
+    panel.style.display = 'none';
+    document.getElementById('alfred-repliques-panel').style.display = 'block';
+  };
+
+  boutons.appendChild(btnSave);
+  boutons.appendChild(btnCancel);
+  panel.appendChild(boutons);
+
+  if (!estNouveau) {
+    const btnDelete = document.createElement('div');
+    btnDelete.textContent = 'Supprimer cette réplique';
+    btnDelete.style.cssText = 'text-align:center;color:rgba(255,120,120,.7);font-size:11px;margin-top:12px;cursor:pointer;';
+    btnDelete.onmouseover = () => { btnDelete.style.color = 'rgba(255,120,120,1)'; };
+    btnDelete.onmouseout  = () => { btnDelete.style.color = 'rgba(255,120,120,.7)'; };
+    btnDelete.onclick = () => {
+      if (!confirm('Supprimer « ' + rFR.label + ' » du script (FR et NL) ?')) return;
+      ALFRED_CONFIG.REPLIQUES_FR.splice(index, 1);
+      ALFRED_CONFIG.REPLIQUES_NL.splice(index, 1);
+      if (typeof sauvegarderScriptPersonnalise === 'function') sauvegarderScriptPersonnalise();
+      panel.style.display = 'none';
+      remplirPanneauRepliques();
+      document.getElementById('alfred-repliques-panel').style.display = 'block';
+    };
+    panel.appendChild(btnDelete);
+  }
+
+  panel.style.display = 'block';
+}
+
+// Trouve l'index où insérer une nouvelle réplique pour garder les actes groupés
+function trouverIndexInsertion(list, acte) {
+  let dernier = -1;
+  list.forEach((r, i) => { if (r.acte === acte) dernier = i; });
+  if (dernier !== -1) return dernier + 1;
+  const idxActeSuivant = list.findIndex(r => r.acte > acte);
+  return idxActeSuivant === -1 ? list.length : idxActeSuivant;
 }
 
 // ── Init UI ───────────────────────────────────────────────
@@ -317,6 +501,7 @@ function initAlfredUI() {
 
   creerSousTitres();
   creerPanneauRepliques();
+  creerPanneauEdition();
   startBlinking();
   startEyeLerp();
   resetSleepTimer();

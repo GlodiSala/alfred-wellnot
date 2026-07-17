@@ -253,7 +253,7 @@ async function jouerSecours() {
   const sousTitre = rTrad ? rTrad.texte : r.texte;
   const promises = [speak(naturaliserTexte(r.texte), currentLangue, sousTitre)];
   if (currentActe >= 2 && typeof executerActionDOM === 'function') {
-    promises.push(executerActionDOM(r.label));
+    promises.push(executerActionDOM(r.action || r.label));
   }
   await Promise.all(promises);
 

@@ -269,3 +269,42 @@ var currentAudio  = null;
 var talkTick      = null;
 var curState      = 'idle';
 var currentActe   = 1;
+
+// ── Script éditable — persistance locale ──────────────────
+// Permet de modifier les répliques FR/NL depuis l'interface (panneau
+// répliques) sans repasser par le code. Les valeurs par défaut ci-dessus
+// restent intactes dans REPLIQUES_FR_DEFAUT / REPLIQUES_NL_DEFAUT pour
+// pouvoir réinitialiser le script à tout moment.
+const ALFRED_SCRIPT_STORAGE_KEY = 'alfred_script_overrides';
+
+ALFRED_CONFIG.REPLIQUES_FR_DEFAUT = JSON.parse(JSON.stringify(ALFRED_CONFIG.REPLIQUES_FR));
+ALFRED_CONFIG.REPLIQUES_NL_DEFAUT = JSON.parse(JSON.stringify(ALFRED_CONFIG.REPLIQUES_NL));
+
+function chargerScriptPersonnalise() {
+  try {
+    const raw = localStorage.getItem(ALFRED_SCRIPT_STORAGE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (Array.isArray(data.fr) && Array.isArray(data.nl) && data.fr.length === data.nl.length) {
+      ALFRED_CONFIG.REPLIQUES_FR = data.fr;
+      ALFRED_CONFIG.REPLIQUES_NL = data.nl;
+    }
+  } catch (e) {
+    console.warn('[Alfred Config] Script personnalisé illisible, valeurs par défaut utilisées.', e);
+  }
+}
+
+function sauvegarderScriptPersonnalise() {
+  localStorage.setItem(ALFRED_SCRIPT_STORAGE_KEY, JSON.stringify({
+    fr: ALFRED_CONFIG.REPLIQUES_FR,
+    nl: ALFRED_CONFIG.REPLIQUES_NL,
+  }));
+}
+
+function reinitialiserScript() {
+  ALFRED_CONFIG.REPLIQUES_FR = JSON.parse(JSON.stringify(ALFRED_CONFIG.REPLIQUES_FR_DEFAUT));
+  ALFRED_CONFIG.REPLIQUES_NL = JSON.parse(JSON.stringify(ALFRED_CONFIG.REPLIQUES_NL_DEFAUT));
+  localStorage.removeItem(ALFRED_SCRIPT_STORAGE_KEY);
+}
+
+chargerScriptPersonnalise();
