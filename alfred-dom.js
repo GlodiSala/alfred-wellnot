@@ -245,8 +245,12 @@ async function cliquerBoutonQuandActif(texte, tentatives = 40, delai = 400) {
 
 // Trouve tous les déclencheurs de menu déroulant PrimeNG visibles sur
 // l'écran actuel, dans l'ordre du DOM (qui correspond à l'ordre visuel).
+// Uniquement [role="combobox"] : c'est le <span> interne réellement
+// cliquable, pas le <p-select>/<p-dropdown> englobant (qui matche aussi ces
+// classes mais ne réagit pas au clic de la même façon — confirmé par un
+// diagnostic en direct où cliquer le conteneur n'ouvrait rien).
 function trouverDeclencheursDropdown() {
-  return Array.from(document.querySelectorAll('[role="combobox"], .p-dropdown, .p-select'))
+  return Array.from(document.querySelectorAll('[role="combobox"]'))
     .filter(el => {
       const r = el.getBoundingClientRect();
       return r.width > 0 && r.height > 0;
