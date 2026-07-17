@@ -56,6 +56,22 @@ function curseurVers(el, callback) {
 
 function attendre(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+// Simule un clic complet (pointerdown/mousedown/pointerup/mouseup/click) au
+// lieu du simple el.click(). Certains composants PrimeNG (menus déroulants
+// notamment) écoutent spécifiquement mousedown pour s'ouvrir — un simple
+// événement "click" synthétique ne suffit pas toujours à les déclencher.
+function simulerClic(el) {
+  const r = el.getBoundingClientRect();
+  const x = r.left + r.width / 2;
+  const y = r.top + r.height / 2;
+  const opts = { bubbles: true, cancelable: true, view: window, clientX: x, clientY: y, button: 0 };
+  try { el.dispatchEvent(new PointerEvent('pointerdown', opts)); } catch (e) {}
+  el.dispatchEvent(new MouseEvent('mousedown', opts));
+  try { el.dispatchEvent(new PointerEvent('pointerup', opts)); } catch (e) {}
+  el.dispatchEvent(new MouseEvent('mouseup', opts));
+  el.dispatchEvent(new MouseEvent('click', opts));
+}
+
 // ── Effet de frappe sur un input ──────────────────────────
 async function taper(input, texte, delaiParLettre = 90) {
   input.value = '';
@@ -288,13 +304,13 @@ async function choisirDansDropdownParLabelProche(labelTexte, texteOption) {
     await attendre(300);
   }
   if (!declencheur) { console.warn('[Alfred DOM] Dropdown introuvable près du label:', labelTexte); return false; }
-  curseurVers(declencheur, () => declencheur.click());
+  curseurVers(declencheur, () => simulerClic(declencheur));
   await attendre(500);
   for (let i = 0; i < 15; i++) {
     const opt = Array.from(document.querySelectorAll('li'))
       .find(li => li.textContent.trim() === texteOption && li.getBoundingClientRect().width > 0);
     if (opt) {
-      curseurVers(opt, () => opt.click());
+      curseurVers(opt, () => simulerClic(opt));
       await attendre(400);
       return true;
     }
@@ -313,13 +329,13 @@ async function choisirDansDropdown(texteDeclencheur, texteOption) {
     .find(s => s.textContent.trim() === texteDeclencheur && s.getBoundingClientRect().width > 0);
   const declencheur = span ? (span.closest('div,button') || span) : null;
   if (!declencheur) { console.warn('[Alfred DOM] Menu déroulant introuvable:', texteDeclencheur); return false; }
-  curseurVers(declencheur, () => declencheur.click());
+  curseurVers(declencheur, () => simulerClic(declencheur));
   await attendre(500);
   for (let i = 0; i < 15; i++) {
     const opt = Array.from(document.querySelectorAll('li'))
       .find(li => li.textContent.trim() === texteOption && li.getBoundingClientRect().width > 0);
     if (opt) {
-      curseurVers(opt, () => opt.click());
+      curseurVers(opt, () => simulerClic(opt));
       await attendre(400);
       return true;
     }
@@ -368,12 +384,12 @@ async function ajouterBienManuel(bien) {
   const typeSpan = document.getElementById('asset-type');
   if (typeSpan) {
     const declencheur = typeSpan.closest('div,button') || typeSpan;
-    curseurVers(declencheur, () => declencheur.click());
+    curseurVers(declencheur, () => simulerClic(declencheur));
     await attendre(500);
     for (let i = 0; i < 15; i++) {
       const opt = Array.from(document.querySelectorAll('li'))
         .find(li => li.textContent.trim() === bien.type && li.getBoundingClientRect().width > 0);
-      if (opt) { curseurVers(opt, () => opt.click()); await attendre(400); break; }
+      if (opt) { curseurVers(opt, () => simulerClic(opt)); await attendre(400); break; }
       await attendre(200);
     }
   }
