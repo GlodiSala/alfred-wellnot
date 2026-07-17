@@ -273,13 +273,27 @@ function boutonEstActif(btn) {
 }
 async function cliquerBoutonQuandActif(texte, tentatives = 40, delai = 400) {
   let btn = null;
+  let dernierCandidat = null;
   for (let i = 0; i < tentatives; i++) {
     const candidat = trouverBoutonParTexte(texte);
+    dernierCandidat = candidat;
     if (candidat && boutonEstActif(candidat)) { btn = candidat; break; }
     await attendre(delai);
   }
-  if (!btn) { console.warn('[Alfred DOM] Bouton actif introuvable (toujours désactivé ?):', texte); return false; }
-  return new Promise(resolve => curseurVers(btn, () => { btn.click(); resolve(true); }));
+  if (!btn) {
+    if (!dernierCandidat) {
+      console.warn('[Alfred DOM] Bouton introuvable dans le DOM:', texte);
+    } else {
+      console.warn('[Alfred DOM] Bouton trouvé mais jamais actif:', texte, {
+        disabled: dernierCandidat.disabled,
+        ariaDisabled: dernierCandidat.getAttribute('aria-disabled'),
+        classe: dernierCandidat.className,
+      });
+    }
+    return false;
+  }
+  await curseurVersAsync(btn, () => btn.click());
+  return true;
 }
 
 // Trouve tous les déclencheurs de menu déroulant PrimeNG visibles sur
@@ -327,6 +341,7 @@ async function choisirDansDropdownParLabelProche(labelTexte, texteOption) {
     await attendre(300);
   }
   if (!declencheur) { console.warn('[Alfred DOM] Dropdown introuvable près du label:', labelTexte); return false; }
+  console.log('[Alfred DOM] Déclencheur trouvé pour', labelTexte, '— rect:', declencheur.getBoundingClientRect(), 'texte actuel:', JSON.stringify(declencheur.textContent.trim()));
   await curseurVersAsync(declencheur, () => simulerClic(declencheur));
   await attendre(300);
   for (let i = 0; i < 15; i++) {
@@ -335,11 +350,13 @@ async function choisirDansDropdownParLabelProche(labelTexte, texteOption) {
     if (opt) {
       await curseurVersAsync(opt, () => simulerClic(opt));
       await attendre(300);
+      console.log('[Alfred DOM] Après sélection, texte du déclencheur:', JSON.stringify(declencheur.textContent.trim()));
       return true;
     }
     await attendre(200);
   }
-  console.warn('[Alfred DOM] Option introuvable dans le menu:', texteOption);
+  const liVisibles = Array.from(document.querySelectorAll('li')).filter(li => li.getBoundingClientRect().width > 0).map(li => li.textContent.trim());
+  console.warn('[Alfred DOM] Option introuvable dans le menu:', texteOption, '— li visibles actuellement:', liVisibles);
   return false;
 }
 
@@ -462,24 +479,36 @@ async function seq_creerDossierDemo() {
   // la frappe seule.
   const champCode = document.getElementById('folder-code');
   if (champCode) validerChamp(champCode);
+  console.log('[Alfred DOM] Valeur du champ numéro de dossier après saisie:', champCode ? JSON.stringify(champCode.value) : 'champ introuvable');
   await attendre(500);
   await choisirDansDropdownParLabelProche('Collaborateur en charge du dossier', cfg.collaborateur);
   await attendre(600);
   // "Suivant" reste désactivé tant que les champs requis ne sont pas valides —
   // on attend qu'il s'active plutôt que de cliquer trop tôt sur un bouton inactif.
-  await cliquerBoutonQuandActif('Suivant');
+  // On s'arrête ici si ça échoue : continuer sur le mauvais écran ne fait
+  // que produire des erreurs en cascade pour les étapes suivantes.
+  if (!await cliquerBoutonQuandActif('Suivant')) {
+    console.warn('[Alfred DOM] Étape 1 bloquée — arrêt de la séquence.');
+    return;
+  }
   await attendre(1500);
 
   // Étape 2 — Personnes (vendeur puis acquéreur). "Suivant" reste désactivé
   // tant que le vendeur n'a pas été ajouté avec succès.
   await ajouterPartieParRN('Vendeur', cfg.vendeur_rn);
   await ajouterPartieParRN('Acquéreur', cfg.acquereur_rn);
-  await cliquerBoutonQuandActif('Suivant');
+  if (!await cliquerBoutonQuandActif('Suivant')) {
+    console.warn('[Alfred DOM] Étape 2 bloquée — arrêt de la séquence.');
+    return;
+  }
   await attendre(1500);
 
   // Étape 3 — Biens
   await ajouterBienManuel(cfg.bien);
-  await cliquerBoutonQuandActif('Suivant');
+  if (!await cliquerBoutonQuandActif('Suivant')) {
+    console.warn('[Alfred DOM] Étape 3 bloquée — arrêt de la séquence.');
+    return;
+  }
   await attendre(1500);
 
   // Étape 4 — Documents : on termine directement (aucun document à joindre en démo)
