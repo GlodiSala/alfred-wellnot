@@ -293,9 +293,10 @@ function ouvrirEditionRéplique(index, nouvelActe) {
 
   panel.appendChild(champLabel('Action déclenchée (optionnel)'));
   const select = document.createElement('select');
-  select.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:12px;';
+  select.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:#0a3b52;color:#fff;font-size:12px;';
   const optNone = document.createElement('option');
   optNone.value = ''; optNone.textContent = '— Aucune —';
+  optNone.style.cssText = 'background:#0a3b52;color:#fff;';
   select.appendChild(optNone);
   const actionsDispo = (typeof DOM_ACTIONS !== 'undefined')
     ? [...new Set(Object.keys(DOM_ACTIONS))]
@@ -303,9 +304,14 @@ function ouvrirEditionRéplique(index, nouvelActe) {
   actionsDispo.forEach(a => {
     const opt = document.createElement('option');
     opt.value = a; opt.textContent = a;
+    opt.style.cssText = 'background:#0a3b52;color:#fff;';
     select.appendChild(opt);
   });
-  select.value = rFR.action || '';
+  // Une réplique d'origine (sans champ `action` explicite) peut déjà être
+  // reliée à une action via son `label` — on l'affiche pour que ce ne soit
+  // pas invisible dans l'éditeur.
+  const actionImplicite = (typeof DOM_ACTIONS !== 'undefined' && DOM_ACTIONS[rFR.label]) ? rFR.label : '';
+  select.value = rFR.action || actionImplicite;
   panel.appendChild(select);
 
   const boutons = document.createElement('div');
