@@ -298,9 +298,19 @@ function ouvrirEditionRéplique(index, nouvelActe) {
   optNone.value = ''; optNone.textContent = '— Aucune —';
   optNone.style.cssText = 'background:#0a3b52;color:#fff;';
   select.appendChild(optNone);
-  const actionsDispo = (typeof DOM_ACTIONS !== 'undefined')
-    ? [...new Set(Object.keys(DOM_ACTIONS))]
-    : [];
+  // Plusieurs noms (FR/NL, alias historiques) pointent parfois vers la même
+  // fonction d'action (ex: 'Parties' et 'Partijen' font la même chose) —
+  // on ne garde qu'un nom par action réelle pour éviter les doublons.
+  const actionsDispo = [];
+  if (typeof DOM_ACTIONS !== 'undefined') {
+    const dejaVues = new Set();
+    Object.keys(DOM_ACTIONS).forEach(cle => {
+      const fn = DOM_ACTIONS[cle];
+      if (dejaVues.has(fn)) return;
+      dejaVues.add(fn);
+      actionsDispo.push(cle);
+    });
+  }
   actionsDispo.forEach(a => {
     const opt = document.createElement('option');
     opt.value = a; opt.textContent = a;
@@ -309,9 +319,13 @@ function ouvrirEditionRéplique(index, nouvelActe) {
   });
   // Une réplique d'origine (sans champ `action` explicite) peut déjà être
   // reliée à une action via son `label` — on l'affiche pour que ce ne soit
-  // pas invisible dans l'éditeur.
-  const actionImplicite = (typeof DOM_ACTIONS !== 'undefined' && DOM_ACTIONS[rFR.label]) ? rFR.label : '';
-  select.value = rFR.action || actionImplicite;
+  // pas invisible dans l'éditeur. Si ce label est un alias (ex: 'Partijen'),
+  // on retombe sur le nom canonique retenu ci-dessus.
+  const actionBrute = rFR.action || ((typeof DOM_ACTIONS !== 'undefined' && DOM_ACTIONS[rFR.label]) ? rFR.label : '');
+  const actionImplicite = (actionBrute && typeof DOM_ACTIONS !== 'undefined')
+    ? (actionsDispo.find(cle => DOM_ACTIONS[cle] === DOM_ACTIONS[actionBrute]) || actionBrute)
+    : actionBrute;
+  select.value = actionImplicite;
   panel.appendChild(select);
 
   const boutons = document.createElement('div');
