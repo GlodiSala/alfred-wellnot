@@ -253,18 +253,37 @@ function trouverDeclencheursDropdown() {
     });
 }
 
-// Sélectionne une option dans le n-ième menu déroulant visible sur l'écran
-// (0 = premier). Utile quand les champs sont vides et n'ont donc aucun
-// texte de déclencheur fiable pour les cibler autrement — on cible par
-// position, dans l'ordre où ils apparaissent visuellement.
-async function choisirDansDropdownParIndex(index, texteOption) {
+// Trouve le déclencheur de dropdown le plus proche, juste en dessous, d'un
+// libellé de champ affiché à l'écran (ex: "Collaborateur en charge du
+// dossier"). Plus fiable que se fier à l'ordre des menus dans le DOM, qui
+// dépend de champs déjà pré-remplis (Langue, Catégorie) et peut varier.
+function trouverDeclencheurProcheLabel(labelTexte) {
+  const label = Array.from(document.querySelectorAll('*'))
+    .find(el => el.children.length === 0 && el.textContent.trim() === labelTexte && el.getBoundingClientRect().width > 0);
+  if (!label) return null;
+  const lr = label.getBoundingClientRect();
+  let meilleur = null;
+  let meilleureDistance = Infinity;
+  for (const c of trouverDeclencheursDropdown()) {
+    const r = c.getBoundingClientRect();
+    if (r.top < lr.bottom - 5) continue; // le menu est censé être sous le libellé
+    const distance = (r.top - lr.bottom) + Math.abs(r.left - lr.left);
+    if (distance < meilleureDistance) { meilleureDistance = distance; meilleur = c; }
+  }
+  return meilleur;
+}
+
+// Sélectionne une option dans le menu déroulant situé juste sous un libellé
+// donné. Utile quand le champ est vide et n'a donc aucun texte de
+// déclencheur fiable pour être ciblé autrement.
+async function choisirDansDropdownParLabelProche(labelTexte, texteOption) {
   let declencheur = null;
   for (let i = 0; i < 15; i++) {
-    const declencheurs = trouverDeclencheursDropdown();
-    if (declencheurs[index]) { declencheur = declencheurs[index]; break; }
+    declencheur = trouverDeclencheurProcheLabel(labelTexte);
+    if (declencheur) break;
     await attendre(300);
   }
-  if (!declencheur) { console.warn('[Alfred DOM] Dropdown #' + index + ' introuvable'); return false; }
+  if (!declencheur) { console.warn('[Alfred DOM] Dropdown introuvable près du label:', labelTexte); return false; }
   curseurVers(declencheur, () => declencheur.click());
   await attendre(500);
   for (let i = 0; i < 15; i++) {
@@ -390,16 +409,13 @@ async function seq_creerDossierDemo() {
   await attendre(1500);
 
   // Étape 1 — Informations générales
-  // Le formulaire affiche 5 menus déroulants dans cet ordre visuel : Langue
-  // (déjà pré-rempli sur "Français"), Collaborateur administratif, Collaborateur
-  // en charge du dossier, Notaire en charge du dossier (facultatif, on ne le
-  // remplit pas), Catégorie (déjà pré-remplie sur "Vente"). Les deux champs
-  // collaborateur étant vides, ils n'ont pas de texte de déclencheur fiable :
-  // on les cible par position (index 1 et 2) plutôt que par texte.
+  // Seul "Collaborateur en charge du dossier" est rempli (le champ vide n'a
+  // pas de texte de déclencheur fiable, on le cible par sa position sous le
+  // libellé). "Collaborateur administratif" et "Notaire en charge du
+  // dossier" restent vides — pas nécessaires pour activer "Suivant".
   await taperDansChamp('folder-code', cfg.code);
   await attendre(400);
-  await choisirDansDropdownParIndex(1, cfg.collaborateur); // Collaborateur administratif
-  await choisirDansDropdownParIndex(2, cfg.collaborateur); // Collaborateur en charge du dossier
+  await choisirDansDropdownParLabelProche('Collaborateur en charge du dossier', cfg.collaborateur);
   await attendre(500);
   // "Suivant" reste désactivé tant que les champs requis ne sont pas valides —
   // on attend qu'il s'active plutôt que de cliquer trop tôt sur un bouton inactif.
