@@ -152,9 +152,12 @@ function creerPanneauRepliques() {
   document.body.appendChild(panel);
 
   panel.querySelector('#alfred-script-reset').onclick = () => {
-    if (!confirm('Réinitialiser le script au contenu par défaut ? Les modifications seront perdues.')) return;
+    if (!confirm('Réinitialiser le script au contenu par défaut, pour tout le monde ? Les modifications seront perdues.')) return;
     if (typeof reinitialiserScript === 'function') reinitialiserScript();
     remplirPanneauRepliques();
+    // Pousse aussi la remise à zéro en ligne, sinon la prochaine synchro
+    // ré-appliquerait l'ancienne version partagée par-dessus le reset local.
+    if (typeof sauvegarderScriptPersonnalise === 'function') afficherStatutSauvegarde(sauvegarderScriptPersonnalise());
   };
 
   const svgEl = document.getElementById('alfred-svg');
