@@ -362,12 +362,13 @@ async function choisirDansDropdownParLabelProche(labelTexte, texteOption) {
 
 // Ouvre un menu déroulant PrimeNG en cliquant sur le texte actuellement
 // affiché (placeholder ou valeur sélectionnée), puis choisit une option
-// dans la liste qui apparaît. Sélecteurs approximatifs (texte visible) —
-// à ajuster si la structure réelle du site diffère.
+// dans la liste qui apparaît. Clique directement le <span> trouvé — pas un
+// ancêtre via closest('div,button'), qui saute le composant <p-select>
+// (pas une balise div/button) et attrape un conteneur bien trop large qui
+// ne réagit pas au clic (même bug que pour les menus collaborateur).
 async function choisirDansDropdown(texteDeclencheur, texteOption) {
-  const span = Array.from(document.querySelectorAll('span'))
+  const declencheur = Array.from(document.querySelectorAll('span'))
     .find(s => s.textContent.trim() === texteDeclencheur && s.getBoundingClientRect().width > 0);
-  const declencheur = span ? (span.closest('div,button') || span) : null;
   if (!declencheur) { console.warn('[Alfred DOM] Menu déroulant introuvable:', texteDeclencheur); return false; }
   await curseurVersAsync(declencheur, () => simulerClic(declencheur));
   await attendre(300);
@@ -423,8 +424,10 @@ async function ajouterBienManuel(bien) {
   await attendre(600);
   const typeSpan = document.getElementById('asset-type');
   if (typeSpan) {
-    const declencheur = typeSpan.closest('div,button') || typeSpan;
-    await curseurVersAsync(declencheur, () => simulerClic(declencheur));
+    // Clique le span directement (même correctif que choisirDansDropdown —
+    // closest('div,button') sauterait le <p-select> et attraperait un
+    // conteneur trop large qui ne réagit pas au clic).
+    await curseurVersAsync(typeSpan, () => simulerClic(typeSpan));
     await attendre(300);
     for (let i = 0; i < 15; i++) {
       const opt = Array.from(document.querySelectorAll('li'))
