@@ -317,8 +317,16 @@ async function seq_creerDossierDemo() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) { console.warn('[Alfred DOM] Données de création démo non configurées'); return; }
 
-  // Étape 0 — ouvrir le formulaire de création
-  await naviguerVers(['Dossiers']);
+  // Étape 0 — ouvrir le formulaire de création (même sélecteur fiable que
+  // seq_ouvrirDossier, plutôt que naviguerVers/trouverNav qui est trop
+  // large et peut cliquer sur le mauvais élément).
+  const navLinks = document.querySelectorAll('a.nav-link.uppercase');
+  const dossiers = Array.from(navLinks).find(el => el.textContent.trim() === 'Dossiers');
+  if (dossiers) {
+    curseurVers(dossiers, () => dossiers.click());
+  } else {
+    console.warn('[Alfred DOM] Lien "Dossiers" introuvable');
+  }
   await attendre(1200);
   await cliquerBouton('Créer un dossier');
   await attendre(1500);
