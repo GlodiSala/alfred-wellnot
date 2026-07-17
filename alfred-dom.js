@@ -243,6 +243,44 @@ async function cliquerBoutonQuandActif(texte, tentatives = 40, delai = 400) {
   return new Promise(resolve => curseurVers(btn, () => { btn.click(); resolve(true); }));
 }
 
+// Trouve tous les déclencheurs de menu déroulant PrimeNG visibles sur
+// l'écran actuel, dans l'ordre du DOM (qui correspond à l'ordre visuel).
+function trouverDeclencheursDropdown() {
+  return Array.from(document.querySelectorAll('[role="combobox"], .p-dropdown, .p-select'))
+    .filter(el => {
+      const r = el.getBoundingClientRect();
+      return r.width > 0 && r.height > 0;
+    });
+}
+
+// Sélectionne une option dans le n-ième menu déroulant visible sur l'écran
+// (0 = premier). Utile quand les champs sont vides et n'ont donc aucun
+// texte de déclencheur fiable pour les cibler autrement — on cible par
+// position, dans l'ordre où ils apparaissent visuellement.
+async function choisirDansDropdownParIndex(index, texteOption) {
+  let declencheur = null;
+  for (let i = 0; i < 15; i++) {
+    const declencheurs = trouverDeclencheursDropdown();
+    if (declencheurs[index]) { declencheur = declencheurs[index]; break; }
+    await attendre(300);
+  }
+  if (!declencheur) { console.warn('[Alfred DOM] Dropdown #' + index + ' introuvable'); return false; }
+  curseurVers(declencheur, () => declencheur.click());
+  await attendre(500);
+  for (let i = 0; i < 15; i++) {
+    const opt = Array.from(document.querySelectorAll('li'))
+      .find(li => li.textContent.trim() === texteOption && li.getBoundingClientRect().width > 0);
+    if (opt) {
+      curseurVers(opt, () => opt.click());
+      await attendre(400);
+      return true;
+    }
+    await attendre(200);
+  }
+  console.warn('[Alfred DOM] Option introuvable dans le menu:', texteOption);
+  return false;
+}
+
 // Ouvre un menu déroulant PrimeNG en cliquant sur le texte actuellement
 // affiché (placeholder ou valeur sélectionnée), puis choisit une option
 // dans la liste qui apparaît. Sélecteurs approximatifs (texte visible) —
@@ -352,14 +390,19 @@ async function seq_creerDossierDemo() {
   await attendre(1500);
 
   // Étape 1 — Informations générales
+  // Le formulaire affiche 5 menus déroulants dans cet ordre visuel : Langue
+  // (déjà pré-rempli sur "Français"), Collaborateur administratif, Collaborateur
+  // en charge du dossier, Notaire en charge du dossier (facultatif, on ne le
+  // remplit pas), Catégorie (déjà pré-remplie sur "Vente"). Les deux champs
+  // collaborateur étant vides, ils n'ont pas de texte de déclencheur fiable :
+  // on les cible par position (index 1 et 2) plutôt que par texte.
   await taperDansChamp('folder-code', cfg.code);
   await attendre(400);
-  await choisirDansDropdown('Sélectionnez un collaborateur', cfg.collaborateur);
-  await choisirDansDropdown('Sélectionnez un notaire', cfg.notaire);
+  await choisirDansDropdownParIndex(1, cfg.collaborateur); // Collaborateur administratif
+  await choisirDansDropdownParIndex(2, cfg.collaborateur); // Collaborateur en charge du dossier
   await attendre(500);
-  // "Suivant" reste désactivé tant que les champs requis (dont le
-  // collaborateur) ne sont pas valides — on attend qu'il s'active plutôt
-  // que de cliquer trop tôt sur un bouton inactif.
+  // "Suivant" reste désactivé tant que les champs requis ne sont pas valides —
+  // on attend qu'il s'active plutôt que de cliquer trop tôt sur un bouton inactif.
   await cliquerBoutonQuandActif('Suivant');
   await attendre(1500);
 
