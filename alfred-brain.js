@@ -261,7 +261,13 @@ async function jouerSecours() {
   secoursIdx++;
 }
 // ── Clavier ───────────────────────────────────────────────
+function saisieEnCours(e) {
+  const tag = (e.target?.tagName || '').toLowerCase();
+  return tag === 'input' || tag === 'textarea' || tag === 'select' || e.target?.isContentEditable;
+}
+
 document.addEventListener('keydown', e => {
+  if (saisieEnCours(e)) return;
   if (e.key === 'ArrowRight') {
     e.preventDefault();
     jouerSecours();
