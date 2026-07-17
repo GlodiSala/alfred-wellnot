@@ -27,7 +27,7 @@ const ALFRED_CONFIG = {
   // déjà riche" pour le reste du script).
   DOSSIER_CREATION_DEMO: {
     code:          'DEMO01',
-    collaborateur: 'Collaborateur administratif',
+    collaborateur: 'Cyril Cabuy',
     notaire:       'Alain Caprasse',
     vendeur_rn:    '84.06.28-314.70',
     acquereur_rn:  '00.12.20-324.62',
