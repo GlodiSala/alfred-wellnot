@@ -3,6 +3,7 @@ const ALFRED_CONFIG = {
   API_GEMINI: 'https://alfred-wellnot.vercel.app/api/gemini',
   API_TTS:    'https://alfred-wellnot.vercel.app/api/tts',
   API_SCRIPT: 'https://alfred-wellnot.vercel.app/api/script',
+  API_DEMO_DATA: 'https://alfred-wellnot.vercel.app/api/demo-data',
 
   EVENEMENT: {
     nom:          'Congrès des Notaires belges',
@@ -436,32 +437,117 @@ function reinitialiserScript() {
 chargerScriptPersonnalise();
 rafraichirScriptDepuisServeur();
 
-// ── Données de création de dossier démo — persistance locale ──────────
-// Contrairement au script (partagé en ligne), ces données restent locales
-// à chaque appareil : moins critique à synchroniser, et évite d'exposer
-// des numéros de registre national via une API publique.
+// ── Données de création de dossier démo — synchro serveur + cache local ──
+// Contrairement au script (lecture publique), ces données contiennent un
+// vrai numéro de registre national : lecture ET écriture sont protégées par
+// le même mot de passe partagé que le script (voir api/demo-data.js).
 const ALFRED_CREATION_STORAGE_KEY = 'alfred_creation_demo_overrides';
+const ALFRED_CREATION_SYNC_KEY    = 'alfred_creation_demo_last_sync';
 
 ALFRED_CONFIG.DOSSIER_CREATION_DEMO_DEFAUT = JSON.parse(JSON.stringify(ALFRED_CONFIG.DOSSIER_CREATION_DEMO));
+
+function appliquerDonneesCreation(data) {
+  ALFRED_CONFIG.DOSSIER_CREATION_DEMO = Object.assign(
+    {}, ALFRED_CONFIG.DOSSIER_CREATION_DEMO, data,
+    { bien: Object.assign({}, ALFRED_CONFIG.DOSSIER_CREATION_DEMO.bien, data.bien || {}) }
+  );
+  localStorage.setItem(ALFRED_CREATION_STORAGE_KEY, JSON.stringify(ALFRED_CONFIG.DOSSIER_CREATION_DEMO));
+}
 
 function chargerDonneesCreationPersonnalisees() {
   try {
     const raw = localStorage.getItem(ALFRED_CREATION_STORAGE_KEY);
     if (!raw) return;
     const data = JSON.parse(raw);
-    if (data && typeof data === 'object') {
-      ALFRED_CONFIG.DOSSIER_CREATION_DEMO = Object.assign(
-        {}, ALFRED_CONFIG.DOSSIER_CREATION_DEMO, data,
-        { bien: Object.assign({}, ALFRED_CONFIG.DOSSIER_CREATION_DEMO.bien, data.bien || {}) }
-      );
-    }
+    if (data && typeof data === 'object') appliquerDonneesCreation(data);
   } catch (e) {
     console.warn('[Alfred Config] Données démo création illisibles, valeurs par défaut utilisées.', e);
   }
 }
 
-function sauvegarderDonneesCreation() {
+// Ces données étant protégées en lecture, on ne les récupère en tâche de
+// fond au chargement que si un mot de passe est déjà connu sur l'appareil —
+// sinon on attend que l'utilisateur ouvre le panneau et le fournisse.
+async function rafraichirDonneesCreationDepuisServeur() {
+  const mdp = localStorage.getItem(ALFRED_SCRIPT_PASSWORD_KEY);
+  if (!mdp) return;
+  try {
+    const res = await fetch(ALFRED_CONFIG.API_DEMO_DATA, {
+      headers: { 'X-Alfred-Password': mdp },
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data && typeof data === 'object') {
+      appliquerDonneesCreation(data);
+      if (data.updatedAt) localStorage.setItem(ALFRED_CREATION_SYNC_KEY, data.updatedAt);
+      if (typeof remplirPanneauDonneesCreation === 'function') remplirPanneauDonneesCreation();
+    }
+  } catch (e) {
+    console.warn('[Alfred Config] Synchro des données démo indisponible, valeurs locales conservées.', e);
+  }
+}
+
+// Sauvegarde en ligne (partagée, protégée) + en local. Même logique de
+// détection de conflit que le script.
+async function sauvegarderDonneesCreationEnLigne(forcerEcrasement) {
   localStorage.setItem(ALFRED_CREATION_STORAGE_KEY, JSON.stringify(ALFRED_CONFIG.DOSSIER_CREATION_DEMO));
+
+  let mdp = localStorage.getItem(ALFRED_SCRIPT_PASSWORD_KEY);
+  if (!mdp) {
+    mdp = prompt('Mot de passe partagé pour synchroniser en ligne (demandé une seule fois par appareil) :');
+    if (!mdp) return { ok: false, offlineOnly: true };
+    localStorage.setItem(ALFRED_SCRIPT_PASSWORD_KEY, mdp);
+  }
+
+  if (!forcerEcrasement) {
+    try {
+      const check = await fetch(ALFRED_CONFIG.API_DEMO_DATA, { headers: { 'X-Alfred-Password': mdp } });
+      if (check.ok) {
+        const serveur = await check.json();
+        const dernierConnu = localStorage.getItem(ALFRED_CREATION_SYNC_KEY);
+        if (serveur && serveur.updatedAt && dernierConnu && serveur.updatedAt !== dernierConnu) {
+          return { ok: false, conflict: true };
+        }
+      }
+    } catch (e) {
+      // Contrôle de conflit indisponible (réseau) — on tente quand même la sauvegarde.
+    }
+  }
+
+  try {
+    const res = await fetch(ALFRED_CONFIG.API_DEMO_DATA, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Alfred-Password': mdp },
+      body: JSON.stringify(ALFRED_CONFIG.DOSSIER_CREATION_DEMO),
+    });
+    if (res.status === 401) {
+      localStorage.removeItem(ALFRED_SCRIPT_PASSWORD_KEY);
+      return { ok: false, wrongPassword: true };
+    }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.updatedAt) localStorage.setItem(ALFRED_CREATION_SYNC_KEY, data.updatedAt);
+    return { ok: true };
+  } catch (e) {
+    console.warn('[Alfred Config] Sauvegarde en ligne des données démo impossible, gardé en local seulement.', e);
+    return { ok: false, offlineOnly: true };
+  }
+}
+
+async function sauvegarderDonneesCreationAvecGestionConflit() {
+  let resultat = await sauvegarderDonneesCreationEnLigne();
+  if (resultat.conflict) {
+    const ecraser = confirm(
+      'Quelqu\'un a modifié les données du dossier démo en ligne depuis ton dernier chargement.\n' +
+      'Écraser sa version avec la tienne ? (Annuler pour garder tes changements en local seulement, sans les partager)'
+    );
+    if (ecraser) {
+      resultat = await sauvegarderDonneesCreationEnLigne(true);
+    } else {
+      resultat = { ok: false, conflict: true, annule: true };
+    }
+  }
+  return resultat;
 }
 
 function reinitialiserDonneesCreation() {
@@ -470,3 +556,4 @@ function reinitialiserDonneesCreation() {
 }
 
 chargerDonneesCreationPersonnalisees();
+rafraichirDonneesCreationDepuisServeur();

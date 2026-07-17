@@ -260,8 +260,8 @@ function creerPanneauEdition() {
 }
 
 // Affiche un retour visuel après une tentative de sauvegarde en ligne
-async function afficherStatutSauvegarde(resultatPromise) {
-  const status = document.getElementById('alfred-script-status');
+async function afficherStatutSauvegarde(resultatPromise, statusId) {
+  const status = document.getElementById(statusId || 'alfred-script-status');
   const resultat = await resultatPromise;
   if (!status) return resultat;
   if (resultat.ok) {
@@ -307,6 +307,14 @@ function champTexte(valeur, placeholder) {
   if (placeholder) input.placeholder = placeholder;
   input.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:12px;';
   return input;
+}
+
+// Rafraîchit les champs affichés uniquement si le panneau est déjà ouvert
+// (appelé après une synchro serveur en tâche de fond, sans forcer l'ouverture).
+function remplirPanneauDonneesCreation() {
+  const panel = document.getElementById('alfred-donnees-panel');
+  if (!panel || panel.style.display === 'none') return;
+  ouvrirPanneauDonneesCreation();
 }
 
 function ouvrirPanneauDonneesCreation() {
@@ -366,14 +374,22 @@ function ouvrirPanneauDonneesCreation() {
   btnSave.onclick = () => {
     Object.keys(champs).forEach(cle => { ALFRED_CONFIG.DOSSIER_CREATION_DEMO[cle] = champs[cle].value.trim(); });
     Object.keys(champsBien).forEach(cle => { ALFRED_CONFIG.DOSSIER_CREATION_DEMO.bien[cle] = champsBien[cle].value.trim(); });
-    if (typeof sauvegarderDonneesCreation === 'function') sauvegarderDonneesCreation();
+    if (typeof sauvegarderDonneesCreationAvecGestionConflit === 'function') {
+      afficherStatutSauvegarde(sauvegarderDonneesCreationAvecGestionConflit(), 'alfred-script-status');
+    }
     panel.style.display = 'none';
+    const repliques = document.getElementById('alfred-repliques-panel');
+    if (repliques) repliques.style.display = 'block';
   };
 
   const btnCancel = document.createElement('button');
   btnCancel.textContent = 'Annuler';
   btnCancel.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:transparent;color:rgba(255,255,255,.8);font-size:12px;cursor:pointer;';
-  btnCancel.onclick = () => { panel.style.display = 'none'; };
+  btnCancel.onclick = () => {
+    panel.style.display = 'none';
+    const repliques = document.getElementById('alfred-repliques-panel');
+    if (repliques) repliques.style.display = 'block';
+  };
 
   boutons.appendChild(btnSave);
   boutons.appendChild(btnCancel);
