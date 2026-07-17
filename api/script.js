@@ -30,7 +30,8 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     const password = req.headers['x-alfred-password'];
-    if (!process.env.ALFRED_SCRIPT_PASSWORD || password !== process.env.ALFRED_SCRIPT_PASSWORD) {
+    const motDePasseAttendu = process.env.SCRIPT_PASSWORD || process.env.ALFRED_SCRIPT_PASSWORD;
+    if (!motDePasseAttendu || password !== motDePasseAttendu) {
       return res.status(401).json({ error: 'Mot de passe incorrect' });
     }
 
