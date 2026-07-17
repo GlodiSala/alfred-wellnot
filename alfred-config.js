@@ -281,6 +281,7 @@ var currentActe   = 1;
 // réinitialiser le script à tout moment.
 const ALFRED_SCRIPT_STORAGE_KEY   = 'alfred_script_overrides';
 const ALFRED_SCRIPT_PASSWORD_KEY  = 'alfred_script_password';
+const ALFRED_SCRIPT_SYNC_KEY      = 'alfred_script_last_sync'; // horodatage de la dernière version connue en ligne
 
 ALFRED_CONFIG.REPLIQUES_FR_DEFAUT = JSON.parse(JSON.stringify(ALFRED_CONFIG.REPLIQUES_FR));
 ALFRED_CONFIG.REPLIQUES_NL_DEFAUT = JSON.parse(JSON.stringify(ALFRED_CONFIG.REPLIQUES_NL));
@@ -316,6 +317,7 @@ async function rafraichirScriptDepuisServeur() {
     const data = await res.json();
     if (data && Array.isArray(data.fr) && Array.isArray(data.nl) && data.fr.length === data.nl.length) {
       appliquerScript(data.fr, data.nl);
+      if (data.updatedAt) localStorage.setItem(ALFRED_SCRIPT_SYNC_KEY, data.updatedAt);
       if (typeof remplirPanneauRepliques === 'function') remplirPanneauRepliques();
     }
   } catch (e) {
@@ -324,9 +326,12 @@ async function rafraichirScriptDepuisServeur() {
 }
 
 // Sauvegarde en ligne (partagée) + en local (secours hors-ligne).
-// Retourne { ok, offlineOnly?, wrongPassword? } pour permettre à l'UI
-// d'afficher un retour clair.
-async function sauvegarderScriptPersonnalise() {
+// Vérifie d'abord que personne n'a sauvegardé une version plus récente
+// depuis notre dernier chargement — sinon on écraserait son travail sans
+// le savoir. `forcerEcrasement` permet de passer outre après confirmation.
+// Retourne { ok, offlineOnly?, wrongPassword?, conflict? } pour permettre
+// à l'UI d'afficher un retour clair.
+async function sauvegarderScriptPersonnalise(forcerEcrasement) {
   localStorage.setItem(ALFRED_SCRIPT_STORAGE_KEY, JSON.stringify({
     fr: ALFRED_CONFIG.REPLIQUES_FR,
     nl: ALFRED_CONFIG.REPLIQUES_NL,
@@ -337,6 +342,22 @@ async function sauvegarderScriptPersonnalise() {
     mdp = prompt('Mot de passe partagé pour synchroniser en ligne (demandé une seule fois par appareil) :');
     if (!mdp) return { ok: false, offlineOnly: true };
     localStorage.setItem(ALFRED_SCRIPT_PASSWORD_KEY, mdp);
+  }
+
+  if (!forcerEcrasement) {
+    try {
+      const check = await fetch(ALFRED_CONFIG.API_SCRIPT);
+      if (check.ok) {
+        const serveur = await check.json();
+        const dernierConnu = localStorage.getItem(ALFRED_SCRIPT_SYNC_KEY);
+        if (serveur && serveur.updatedAt && dernierConnu && serveur.updatedAt !== dernierConnu) {
+          return { ok: false, conflict: true };
+        }
+      }
+    } catch (e) {
+      // Le contrôle de conflit a échoué (réseau) — on ne bloque pas la
+      // sauvegarde pour autant, elle tentera simplement normalement.
+    }
   }
 
   try {
@@ -350,11 +371,31 @@ async function sauvegarderScriptPersonnalise() {
       return { ok: false, wrongPassword: true };
     }
     if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.updatedAt) localStorage.setItem(ALFRED_SCRIPT_SYNC_KEY, data.updatedAt);
     return { ok: true };
   } catch (e) {
     console.warn('[Alfred Config] Sauvegarde en ligne impossible, gardé en local seulement.', e);
     return { ok: false, offlineOnly: true };
   }
+}
+
+// Gère le dialogue de conflit : si quelqu'un a modifié la version en ligne
+// entre-temps, demande confirmation avant d'écraser.
+async function sauvegarderAvecGestionConflit() {
+  let resultat = await sauvegarderScriptPersonnalise();
+  if (resultat.conflict) {
+    const ecraser = confirm(
+      'Quelqu\'un a modifié le script en ligne depuis ton dernier chargement.\n' +
+      'Écraser sa version avec la tienne ? (Annuler pour garder tes changements en local seulement, sans les partager)'
+    );
+    if (ecraser) {
+      resultat = await sauvegarderScriptPersonnalise(true);
+    } else {
+      resultat = { ok: false, conflict: true, annule: true };
+    }
+  }
+  return resultat;
 }
 
 function reinitialiserScript() {

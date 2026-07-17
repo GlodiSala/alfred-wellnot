@@ -157,7 +157,7 @@ function creerPanneauRepliques() {
     remplirPanneauRepliques();
     // Pousse aussi la remise à zéro en ligne, sinon la prochaine synchro
     // ré-appliquerait l'ancienne version partagée par-dessus le reset local.
-    if (typeof sauvegarderScriptPersonnalise === 'function') afficherStatutSauvegarde(sauvegarderScriptPersonnalise());
+    if (typeof sauvegarderAvecGestionConflit === 'function') afficherStatutSauvegarde(sauvegarderAvecGestionConflit());
   };
 
   const svgEl = document.getElementById('alfred-svg');
@@ -263,6 +263,9 @@ async function afficherStatutSauvegarde(resultatPromise) {
   } else if (resultat.wrongPassword) {
     status.textContent = '✗ Mot de passe incorrect';
     status.style.color = 'rgba(255,120,120,.8)';
+  } else if (resultat.conflict && resultat.annule) {
+    status.textContent = '⚠ Annulé (gardé en local seulement)';
+    status.style.color = 'rgba(255,200,120,.8)';
   } else {
     status.textContent = '⚠ Enregistré localement (hors-ligne)';
     status.style.color = 'rgba(255,200,120,.8)';
@@ -374,7 +377,7 @@ function ouvrirEditionRéplique(index, nouvelActe) {
       ALFRED_CONFIG.REPLIQUES_FR[index] = nouvelleFR;
       ALFRED_CONFIG.REPLIQUES_NL[index] = nouvelleNL;
     }
-    if (typeof sauvegarderScriptPersonnalise === 'function') afficherStatutSauvegarde(sauvegarderScriptPersonnalise());
+    if (typeof sauvegarderAvecGestionConflit === 'function') afficherStatutSauvegarde(sauvegarderAvecGestionConflit());
     panel.style.display = 'none';
     remplirPanneauRepliques();
     document.getElementById('alfred-repliques-panel').style.display = 'block';
@@ -402,7 +405,7 @@ function ouvrirEditionRéplique(index, nouvelActe) {
       if (!confirm('Supprimer « ' + rFR.label + ' » du script (FR et NL) ?')) return;
       ALFRED_CONFIG.REPLIQUES_FR.splice(index, 1);
       ALFRED_CONFIG.REPLIQUES_NL.splice(index, 1);
-      if (typeof sauvegarderScriptPersonnalise === 'function') afficherStatutSauvegarde(sauvegarderScriptPersonnalise());
+      if (typeof sauvegarderAvecGestionConflit === 'function') afficherStatutSauvegarde(sauvegarderAvecGestionConflit());
       panel.style.display = 'none';
       remplirPanneauRepliques();
       document.getElementById('alfred-repliques-panel').style.display = 'block';

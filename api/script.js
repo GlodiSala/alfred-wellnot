@@ -40,7 +40,8 @@ export default async function handler(req, res) {
     }
 
     try {
-      const value = JSON.stringify({ fr: body.fr, nl: body.nl, updatedAt: new Date().toISOString() });
+      const updatedAt = new Date().toISOString();
+      const value = JSON.stringify({ fr: body.fr, nl: body.nl, updatedAt });
       const r = await fetch(`${KV_URL}/set/${KEY}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${KV_TOKEN}`, 'Content-Type': 'text/plain' },
@@ -48,7 +49,7 @@ export default async function handler(req, res) {
       });
       const data = await r.json();
       if (data.result !== 'OK') throw new Error('Échec de l\'écriture dans la base');
-      return res.status(200).json({ ok: true });
+      return res.status(200).json({ ok: true, updatedAt });
     } catch (error) {
       return res.status(500).json({ error: error.message });
     }
