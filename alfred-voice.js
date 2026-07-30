@@ -5,14 +5,14 @@ const VOIX_CONFIG = {
     languageCode: 'fr-FR',
     name:         'fr-FR-Wavenet-D',
     ssmlGender:   'MALE',
-    speakingRate:  0.92,
+    speakingRate:  0.82,
     pitch:        -1.5
   },
   nl: {
     languageCode: 'nl-BE',
     name:         'nl-BE-Wavenet-A',
     ssmlGender:   'MALE',
-    speakingRate:  0.90,
+    speakingRate:  0.80,
     pitch:        -1.0
   }
 };
@@ -164,7 +164,7 @@ function fallbackSpeak(text, langue, sousTitre) {
 
   const u    = new SpeechSynthesisUtterance(text);
   u.lang     = langue === 'nl' ? 'nl-BE' : 'fr-FR';
-  u.rate     = 0.92;
+  u.rate     = 0.82;
   u.pitch    = 0.88;
 
   let open = false;

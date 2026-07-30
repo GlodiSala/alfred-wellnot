@@ -25,6 +25,16 @@ const ALFRED_CONFIG = {
   // Données utilisées par la création automatique d'un nouveau dossier en
   // live (démonstration séparée de R426, qui reste la référence "dossier
   // déjà riche" pour le reste du script).
+  //
+  // Cyril a fourni de nouvelles données réelles (mail du 27/07) qui changent
+  // la nature du vendeur (personne morale via BCE, plutôt que personne
+  // physique via RN) et du bien (recherche CADASTRE par commune, plutôt que
+  // saisie manuelle) — flux pas encore automatisés (capture DOM en attente).
+  // Pour ne pas casser la démo actuelle qui fonctionne, on garde ce format
+  // en attendant ; les nouvelles infos sont notées ci-dessous pour référence :
+  //   Vendeur (personne morale) : BIMBIMMO — BCE 0653.910.157 — notaire Alain Caprasse
+  //   Acheteur (personne physique) : Alain Caprasse — RN 84.02.13-307.14 — notaire Jean-François Ghigny
+  //   Bien : commune 8670 Coxyde (recherche CADASTRE, un seul résultat attendu)
   DOSSIER_CREATION_DEMO: {
     code:          'DEMO01',
     collaborateur: 'Cyril Cabuy',
