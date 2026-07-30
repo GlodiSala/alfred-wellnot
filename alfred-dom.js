@@ -1,5 +1,10 @@
 // === ALFRED DOM — Navigation + Curseur ===
 
+// Facteur global de ralentissement des actions démo (curseur, frappe,
+// pauses entre étapes). Un seul endroit à ajuster si le retour "trop
+// rapide" revient — évite de devoir retoucher chaque délai un par un.
+const ALFRED_RALENTI = 1.4;
+
 // ── Curseur teal ──────────────────────────────────────────
 function creerCurseur() {
   if (document.getElementById('alfred-cursor')) return;
@@ -36,9 +41,10 @@ function curseurVers(el, callback) {
 
   c.style.opacity = '1';
 
+  const dureeDeplacement = (0.8 * ALFRED_RALENTI).toFixed(2);
   setTimeout(() => {
-    c.style.transition = `left .8s cubic-bezier(.25,.46,.45,.94),
-                          top  .8s cubic-bezier(.25,.46,.45,.94),
+    c.style.transition = `left ${dureeDeplacement}s cubic-bezier(.25,.46,.45,.94),
+                          top  ${dureeDeplacement}s cubic-bezier(.25,.46,.45,.94),
                           opacity .2s ease`;
     c.style.left = x + 'px';
     c.style.top  = y + 'px';
@@ -48,13 +54,16 @@ function curseurVers(el, callback) {
       setTimeout(() => {
         c.style.transform = 'translate(-50%,-50%) scale(1)';
         if (callback) callback();
-        setTimeout(() => { c.style.opacity = '0'; }, 500);
-      }, 250);
-    }, 820);
-  }, 100);
+        setTimeout(() => { c.style.opacity = '0'; }, 500 * ALFRED_RALENTI);
+      }, 250 * ALFRED_RALENTI);
+    }, 820 * ALFRED_RALENTI);
+  }, 100 * ALFRED_RALENTI);
 }
 
-function attendre(ms) { return new Promise(r => setTimeout(r, ms)); }
+// Tous les délais explicites du script (pauses entre étapes, attentes de
+// résultats réseau) passent par cette fonction — la multiplication par
+// ALFRED_RALENTI les ralentit donc tous d'un coup.
+function attendre(ms) { return new Promise(r => setTimeout(r, ms * ALFRED_RALENTI)); }
 
 // Comme curseurVers, mais attend réellement que l'animation du curseur soit
 // terminée et que le callback (le clic) ait été exécuté avant de continuer.
@@ -460,28 +469,49 @@ async function rattacherNotaire(nomNotaire) {
     await attendre(300);
   }
   if (!input) { console.warn('[Alfred DOM] Champ de recherche notaire introuvable'); return false; }
-  await curseurVersAsync(input, () => input.focus());
-  await attendre(200);
-  await taper(input, nomNotaire);
-  await attendre(900);
-  let opt = null;
-  for (let i = 0; i < 15; i++) {
-    opt = Array.from(document.querySelectorAll('li'))
-      .find(li => li.textContent.includes(nomNotaire) && li.getBoundingClientRect().width > 0);
-    if (opt) break;
-    await attendre(300);
+
+  // La recherche sur le nom complet (avec espace/tiret, ex: "Jean-François
+  // Ghigny") ne retournait rien en test live — on tente d'abord le nom
+  // complet puis, en repli, le seul nom de famille (plus proche de ce que
+  // le backend semble indexer, à en juger par les adresses e-mail du type
+  // prenom.nom@belnot.be).
+  const motsNom = nomNotaire.trim().split(/\s+/);
+  const nomFamille = motsNom[motsNom.length - 1];
+  const tentatives = [nomNotaire, nomFamille].filter((v, i, arr) => arr.indexOf(v) === i);
+
+  for (const terme of tentatives) {
+    await curseurVersAsync(input, () => input.focus());
+    await attendre(200);
+    await taper(input, '');   // vide le champ avant une nouvelle tentative
+    await taper(input, terme);
+    await attendre(1400); // laisse le temps à la recherche backend de répondre
+
+    let opt = null;
+    for (let i = 0; i < 12; i++) {
+      opt = Array.from(document.querySelectorAll('li'))
+        .find(li => li.textContent.includes(nomFamille) && li.getBoundingClientRect().width > 0);
+      if (opt) break;
+      await attendre(400);
+    }
+    if (opt) {
+      await curseurVersAsync(opt, () => simulerClic(opt));
+      await attendre(500);
+      await cliquerBouton('Ajouter');
+      await attendre(1200);
+      return true;
+    }
+    console.warn('[Alfred DOM] Notaire introuvable avec le terme de recherche:', terme);
   }
-  if (!opt) { console.warn('[Alfred DOM] Notaire introuvable dans les résultats:', nomNotaire); return false; }
-  await curseurVersAsync(opt, () => simulerClic(opt));
-  await attendre(500);
-  await cliquerBouton('Ajouter');
-  await attendre(1200);
-  return true;
+  console.warn('[Alfred DOM] Échec du rattachement du notaire:', nomNotaire);
+  return false;
 }
 
 // Lance la rédaction du compromis de vente à partir du dossier tout juste créé.
+// Le bouton peut rester indisponible un long moment après la création du
+// dossier (traitement backend des parties/bien) — on attend activement
+// plutôt que d'abandonner après quelques secondes.
 async function lancerRedactionCompromis() {
-  if (!await cliquerBouton('Rédiger un document')) return false;
+  if (!await cliquerBoutonQuandActif('Rédiger un document', 60, 1000)) return false;
   await attendre(900);
   let opt = null;
   for (let i = 0; i < 15; i++) {
@@ -515,6 +545,56 @@ async function montrerPropositionEmail() {
   if (consulter) await curseurVersAsync(consulter, () => consulter.click());
   await attendre(1200);
   return true;
+}
+
+// Tente d'ajouter le bien via la recherche CADASTRE (par commune). Si la
+// sélection ne remplit pas réellement les champs de parcelle (bug constaté
+// en direct — la recherche trouve la commune mais ne pré-remplit rien),
+// on considère la tentative en échec et on bascule sur la saisie manuelle.
+async function essayerAjouterBienParCadastre(bien) {
+  if (!bien.commune) return false;
+
+  let input = document.getElementById('municipality');
+  if (!input) {
+    input = Array.from(document.querySelectorAll('input'))
+      .find(i => i.placeholder === 'Rechercher une commune par son nom ou son code postal' && i.getBoundingClientRect().width > 0);
+  }
+  if (!input) { console.warn('[Alfred DOM] Champ de recherche commune (CADASTRE) introuvable'); return false; }
+
+  await curseurVersAsync(input, () => input.focus());
+  await attendre(200);
+  await taper(input, bien.commune);
+  await cliquerBouton('Rechercher');
+  await attendre(1800);
+
+  let li = null;
+  for (let i = 0; i < 10; i++) {
+    li = Array.from(document.querySelectorAll('li'))
+      .find(el => el.textContent.trim() === bien.commune && el.getBoundingClientRect().width > 0);
+    if (li) break;
+    await attendre(400);
+  }
+  if (!li) { console.warn('[Alfred DOM] Commune introuvable dans les résultats CADASTRE:', bien.commune); return false; }
+
+  await curseurVersAsync(li, () => simulerClic(li));
+  await attendre(1500);
+
+  const champParcelle = document.getElementById('asset-parcel-number');
+  if (!champParcelle || !champParcelle.value || !champParcelle.value.trim()) {
+    console.warn('[Alfred DOM] Sélection CADASTRE effectuée mais parcelle non pré-remplie — bascule sur saisie manuelle.');
+    return false;
+  }
+  await cliquerBoutonQuandActif('Enregistrer');
+  await attendre(1000);
+  return true;
+}
+
+// Ajoute le bien : essaie d'abord la recherche CADASTRE (plus rapide et
+// plus impressionnant en démo quand elle fonctionne), et si elle échoue,
+// bascule automatiquement sur la saisie manuelle.
+async function ajouterBien(bien) {
+  if (await essayerAjouterBienParCadastre(bien)) return;
+  await ajouterBienManuel(bien);
 }
 
 // Ajoute un bien manuellement (plus fiable en démo que la recherche CADASTRE).
@@ -622,7 +702,7 @@ async function seq_creationDossier_parties() {
 async function seq_creationDossier_bien() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) return;
-  await ajouterBienManuel(cfg.bien);
+  await ajouterBien(cfg.bien);
   if (!await cliquerBoutonQuandActif('Suivant')) {
     console.warn('[Alfred DOM] Étape "bien" bloquée — arrêt de la séquence.');
     return;
