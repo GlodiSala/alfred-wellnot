@@ -34,7 +34,7 @@ const ALFRED_CONFIG = {
   DOSSIER_CREATION_DEMO: {
     code:                       'DEMO01',
     collaborateur:              'Cyril Cabuy', // "Collaborateur en charge du dossier"
-    collaborateur_administratif: 'Cyril Cabuy', // "Collaborateur administratif"
+    collaborateur_administratif: 'Jean-François Ghigny', // "Collaborateur administratif"
     notaire:                    'Alain Caprasse', // "Notaire en charge du dossier"
     vendeur_type:      'morale',            // 'physique' (RN) ou 'morale' (BCE)
     vendeur_rn:        '84.06.28-314.70',    // utilisé si vendeur_type === 'physique'
