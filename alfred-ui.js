@@ -186,6 +186,23 @@ function creerPanneauRepliques() {
   });
 }
 
+// Déplace la réplique à l'index `depuisIdx` juste avant celle à `versIdx`
+// (indices communs à REPLIQUES_FR/REPLIQUES_NL), sauvegarde et resynchronise.
+function deplacerReplique(depuisIdx, versIdx) {
+  const fr = ALFRED_CONFIG.REPLIQUES_FR;
+  const nl = ALFRED_CONFIG.REPLIQUES_NL;
+  const [itemFr] = fr.splice(depuisIdx, 1);
+  const [itemNl] = nl.splice(depuisIdx, 1);
+  let cible = versIdx;
+  if (depuisIdx < versIdx) cible -= 1; // le retrait a décalé les index suivants
+  fr.splice(cible, 0, itemFr);
+  nl.splice(cible, 0, itemNl);
+  remplirPanneauRepliques();
+  if (typeof sauvegarderAvecGestionConflit === 'function') afficherStatutSauvegarde(sauvegarderAvecGestionConflit());
+}
+
+let dragSourceIdx = null;
+
 function remplirPanneauRepliques() {
   const list = ALFRED_CONFIG.REPLIQUES_FR; // l'index est commun aux listes FR et NL
 
@@ -201,7 +218,38 @@ function remplirPanneauRepliques() {
     list.forEach((r, idx) => {
       if (r.acte !== acteNum) return;
       const row = document.createElement('div');
-      row.style.cssText = 'display:flex;align-items:center;gap:4px;margin-bottom:2px;';
+      row.style.cssText = 'display:flex;align-items:center;gap:4px;margin-bottom:2px;border-top:2px solid transparent;';
+
+      // Poignée de glisser-déposer — permet de réordonner les répliques au
+      // sein d'un même acte, sans interférer avec le clic (jouer) ou ✎ (éditer).
+      const handle = document.createElement('span');
+      handle.textContent = '⠿';
+      handle.title = 'Glisser pour réordonner';
+      handle.draggable = true;
+      handle.style.cssText = 'color:rgba(255,255,255,.3);font-size:11px;cursor:grab;padding:2px 4px;';
+      handle.onmouseover = () => { handle.style.color = '#fff'; };
+      handle.onmouseout  = () => { handle.style.color = 'rgba(255,255,255,.3)'; };
+      handle.ondragstart = (e) => {
+        dragSourceIdx = idx;
+        e.dataTransfer.effectAllowed = 'move';
+        row.style.opacity = '0.4';
+      };
+      handle.ondragend = () => { row.style.opacity = '1'; };
+
+      row.ondragover = (e) => {
+        if (dragSourceIdx === null || list[dragSourceIdx].acte !== acteNum) return;
+        e.preventDefault();
+        row.style.borderTop = '2px solid #14b0bd';
+      };
+      row.ondragleave = () => { row.style.borderTop = '2px solid transparent'; };
+      row.ondrop = (e) => {
+        e.preventDefault();
+        row.style.borderTop = '2px solid transparent';
+        if (dragSourceIdx === null || dragSourceIdx === idx) return;
+        if (list[dragSourceIdx].acte !== acteNum) return; // pas de réordre entre actes différents
+        deplacerReplique(dragSourceIdx, idx);
+        dragSourceIdx = null;
+      };
 
       const btn = document.createElement('div');
       btn.textContent = r.label;
@@ -222,6 +270,7 @@ function remplirPanneauRepliques() {
       editBtn.onmouseout  = () => { editBtn.style.color = 'rgba(255,255,255,.4)'; };
       editBtn.onclick = (e) => { e.stopPropagation(); ouvrirEditionRéplique(idx); };
 
+      row.appendChild(handle);
       row.appendChild(btn);
       row.appendChild(editBtn);
       col.appendChild(row);
