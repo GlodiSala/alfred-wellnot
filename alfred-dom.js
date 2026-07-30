@@ -425,6 +425,98 @@ async function ajouterPartieParRN(qualite, rn) {
   await attendre(1400);
 }
 
+// Ajoute une partie (Vendeur/Acquéreur) via recherche par numéro BCE — pour
+// une "Personne morale" (société). Même logique que ajouterPartieParRN, mais
+// cible "Personne morale" puis le champ de recherche BCE.
+async function ajouterPartieParBCE(qualite, bce) {
+  await choisirDansDropdown('Sélectionnez une qualité', qualite);
+  await attendre(700);
+  await cliquerBouton('Ajouter');
+  await attendre(900);
+  await cliquerBouton('Personne morale');
+  await attendre(900);
+  await taperDansChamp('search-company-number', bce);
+  await cliquerBouton('Rechercher');
+  await attendre(2200); // laisse le temps à la recherche BCE de remplir le formulaire
+  await cliquerBouton('Enregistrer');
+  await attendre(1400);
+}
+
+// Rattache un notaire (recherche dans la liste de l'étude) via la modale
+// "Rechercher dans votre liste de notaires". D'après la capture DOM,
+// "Ajouter un notaire" apparaît au même niveau que "Ajouter un
+// vendeur"/"Ajouter un acquéreur" dans l'onglet Parties — mais son
+// association précise à une partie donnée n'a pas encore été testée en
+// direct dans la séquence automatisée. À valider/ajuster après un premier
+// essai live (diagnostics console si le bouton ou le champ sont introuvables).
+async function rattacherNotaire(nomNotaire) {
+  if (!nomNotaire) return false;
+  if (!await cliquerBouton('Ajouter un notaire')) return false;
+  await attendre(900);
+  let input = null;
+  for (let i = 0; i < 15; i++) {
+    input = document.querySelector('input[placeholder="Rechercher dans votre liste de notaires"]');
+    if (input) break;
+    await attendre(300);
+  }
+  if (!input) { console.warn('[Alfred DOM] Champ de recherche notaire introuvable'); return false; }
+  await curseurVersAsync(input, () => input.focus());
+  await attendre(200);
+  await taper(input, nomNotaire);
+  await attendre(900);
+  let opt = null;
+  for (let i = 0; i < 15; i++) {
+    opt = Array.from(document.querySelectorAll('li'))
+      .find(li => li.textContent.includes(nomNotaire) && li.getBoundingClientRect().width > 0);
+    if (opt) break;
+    await attendre(300);
+  }
+  if (!opt) { console.warn('[Alfred DOM] Notaire introuvable dans les résultats:', nomNotaire); return false; }
+  await curseurVersAsync(opt, () => simulerClic(opt));
+  await attendre(500);
+  await cliquerBouton('Ajouter');
+  await attendre(1200);
+  return true;
+}
+
+// Lance la rédaction du compromis de vente à partir du dossier tout juste créé.
+async function lancerRedactionCompromis() {
+  if (!await cliquerBouton('Rédiger un document')) return false;
+  await attendre(900);
+  let opt = null;
+  for (let i = 0; i < 15; i++) {
+    opt = Array.from(document.querySelectorAll('li'))
+      .find(li => li.textContent.trim() === 'Compromis' && li.getBoundingClientRect().width > 0);
+    if (opt) break;
+    await attendre(300);
+  }
+  if (!opt) { console.warn('[Alfred DOM] Option "Compromis" introuvable'); return false; }
+  await curseurVersAsync(opt, () => simulerClic(opt));
+  await attendre(2500); // chargement de l'éditeur, champs fusionnés depuis parties/bien
+  return true;
+}
+
+// Ouvre l'onglet Événements et affiche la proposition d'e-mail générée
+// automatiquement (pièces manquantes détectées après rédaction du compromis).
+async function montrerPropositionEmail() {
+  const onglet = trouverOnglet('Événements');
+  if (onglet) curseurVers(onglet, () => onglet.click());
+  await attendre(1200);
+  let li = null;
+  for (let i = 0; i < 20; i++) {
+    li = Array.from(document.querySelectorAll('li'))
+      .find(el => el.textContent.includes("Proposition d'e-mail"));
+    if (li) break;
+    await attendre(1000);
+  }
+  if (!li) { console.warn("[Alfred DOM] Proposition d'e-mail non trouvée"); return false; }
+  const consulter = Array.from(li.querySelectorAll('button')).find(b => b.textContent.trim() === 'Consulter')
+    || trouverBoutonParTexte('Consulter');
+  if (consulter) await curseurVersAsync(consulter, () => consulter.click());
+  await attendre(1200);
+  return true;
+}
+
 // Ajoute un bien manuellement (plus fiable en démo que la recherche CADASTRE).
 async function ajouterBienManuel(bien) {
   await cliquerBouton('Ajouter manuellement');
@@ -456,17 +548,22 @@ async function ajouterBienManuel(bien) {
   await attendre(1000);
 }
 
-// ── Réplique dédiée — Création live d'un dossier de démo ──
+// ── Répliques dédiées — Création live d'un dossier de démo ──
 // Démonstration séparée de R426 (qui reste la référence "dossier déjà
 // riche" pour le reste du script). Utilise ALFRED_CONFIG.DOSSIER_CREATION_DEMO,
-// éditable depuis le panneau "Données démo".
-async function seq_creerDossierDemo() {
+// éditable depuis le panneau "Données démo". Décomposée en 6 étapes qui
+// correspondent chacune à une réplique du script, sur le modèle du
+// processus en 6 temps décrit par Cyril (ouverture → parties → bien →
+// notaires → rédaction → e-mail généré).
+
+// Étape 1 — ouvrir le formulaire de création et les informations générales.
+async function seq_creationDossier_ouvrir() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) { console.warn('[Alfred DOM] Données de création démo non configurées'); return; }
 
-  // Étape 0 — ouvrir le formulaire de création (même sélecteur fiable que
-  // seq_ouvrirDossier, plutôt que naviguerVers/trouverNav qui est trop
-  // large et peut cliquer sur le mauvais élément).
+  // Même sélecteur fiable que seq_ouvrirDossier, plutôt que
+  // naviguerVers/trouverNav qui est trop large et peut cliquer sur le
+  // mauvais élément.
   const navLinks = document.querySelectorAll('a.nav-link.uppercase');
   const dossiers = Array.from(navLinks).find(el => el.textContent.trim() === 'Dossiers');
   if (dossiers) {
@@ -478,7 +575,6 @@ async function seq_creerDossierDemo() {
   await cliquerBouton('Créer un dossier');
   await attendre(2200);
 
-  // Étape 1 — Informations générales
   // Seul "Collaborateur en charge du dossier" est rempli (le champ vide n'a
   // pas de texte de déclencheur fiable, on le cible par sa position sous le
   // libellé). "Collaborateur administratif" et "Notaire en charge du
@@ -489,7 +585,6 @@ async function seq_creerDossierDemo() {
   // la frappe seule.
   const champCode = document.getElementById('folder-code');
   if (champCode) validerChamp(champCode);
-  console.log('[Alfred DOM] Valeur du champ numéro de dossier après saisie:', champCode ? JSON.stringify(champCode.value) : 'champ introuvable');
   await attendre(800);
   await choisirDansDropdownParLabelProche('Collaborateur en charge du dossier', cfg.collaborateur);
   await attendre(900);
@@ -498,32 +593,76 @@ async function seq_creerDossierDemo() {
   // On s'arrête ici si ça échoue : continuer sur le mauvais écran ne fait
   // que produire des erreurs en cascade pour les étapes suivantes.
   if (!await cliquerBoutonQuandActif('Suivant')) {
-    console.warn('[Alfred DOM] Étape 1 bloquée — arrêt de la séquence.');
+    console.warn('[Alfred DOM] Étape "ouvrir" bloquée — arrêt de la séquence.');
     return;
   }
   await attendre(2200);
+}
 
-  // Étape 2 — Personnes (vendeur puis acquéreur). "Suivant" reste désactivé
-  // tant que le vendeur n'a pas été ajouté avec succès.
-  await ajouterPartieParRN('Vendeur', cfg.vendeur_rn);
+// Étape 2 — Parties : vendeur (morale via BCE, ou physique via RN) puis
+// acquéreur (physique via RN).
+async function seq_creationDossier_parties() {
+  const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
+  if (!cfg) return;
+  if (cfg.vendeur_type === 'morale' && cfg.vendeur_bce) {
+    await ajouterPartieParBCE('Vendeur', cfg.vendeur_bce);
+  } else {
+    await ajouterPartieParRN('Vendeur', cfg.vendeur_rn);
+  }
   await ajouterPartieParRN('Acquéreur', cfg.acquereur_rn);
+  // "Suivant" reste désactivé tant que le vendeur n'a pas été ajouté avec succès.
   if (!await cliquerBoutonQuandActif('Suivant')) {
-    console.warn('[Alfred DOM] Étape 2 bloquée — arrêt de la séquence.');
+    console.warn('[Alfred DOM] Étape "parties" bloquée — arrêt de la séquence.');
     return;
   }
   await attendre(2200);
+}
 
-  // Étape 3 — Biens
+// Étape 3 — Bien, puis finalisation (Documents : rien à joindre en démo).
+async function seq_creationDossier_bien() {
+  const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
+  if (!cfg) return;
   await ajouterBienManuel(cfg.bien);
   if (!await cliquerBoutonQuandActif('Suivant')) {
-    console.warn('[Alfred DOM] Étape 3 bloquée — arrêt de la séquence.');
+    console.warn('[Alfred DOM] Étape "bien" bloquée — arrêt de la séquence.');
     return;
   }
   await attendre(2200);
-
-  // Étape 4 — Documents : on termine directement (aucun document à joindre en démo)
   await cliquerBoutonQuandActif('Enregistrer');
   await attendre(2200);
+}
+
+// Étape 4 — Rattacher les notaires (vendeur et acquéreur) depuis l'onglet Parties.
+async function seq_creationDossier_notaires() {
+  const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
+  if (!cfg) return;
+  await naviguerOnglet('Parties');
+  await attendre(900);
+  if (cfg.vendeur_notaire) await rattacherNotaire(cfg.vendeur_notaire);
+  if (cfg.acquereur_notaire && cfg.acquereur_notaire !== cfg.vendeur_notaire) {
+    await attendre(600);
+    await rattacherNotaire(cfg.acquereur_notaire);
+  }
+}
+
+// Étape 5 — Lancer la rédaction du compromis.
+async function seq_creationDossier_redaction() {
+  await lancerRedactionCompromis();
+}
+
+// Étape 6 — Attendre/montrer l'e-mail généré automatiquement.
+async function seq_creationDossier_email() {
+  await montrerPropositionEmail();
+}
+
+// Séquence complète (rétrocompatibilité — enchaîne les 6 étapes).
+async function seq_creerDossierDemo() {
+  await seq_creationDossier_ouvrir();
+  await seq_creationDossier_parties();
+  await seq_creationDossier_bien();
+  await seq_creationDossier_notaires();
+  await seq_creationDossier_redaction();
+  await seq_creationDossier_email();
 }
 
 // ── Mapping label → séquence ──────────────────────────────
@@ -541,7 +680,13 @@ const DOM_ACTIONS = {
   'Chatbot':     seq_montrerNotifications,
   'Événements':  seq_montrerEvenements,
   'Notifications': seq_montrerEvenements,
-  'CreationDossier': seq_creerDossierDemo,
+  'CreationDossier':   seq_creerDossierDemo, // séquence complète (rétrocompat)
+  'CreationOuvrir':    seq_creationDossier_ouvrir,
+  'CreationParties':   seq_creationDossier_parties,
+  'CreationBien':      seq_creationDossier_bien,
+  'CreationNotaires':  seq_creationDossier_notaires,
+  'CreationRedaction': seq_creationDossier_redaction,
+  'CreationEmail':     seq_creationDossier_email,
 };
 
 async function executerActionDOM(label) {

@@ -26,21 +26,21 @@ const ALFRED_CONFIG = {
   // live (démonstration séparée de R426, qui reste la référence "dossier
   // déjà riche" pour le reste du script).
   //
-  // Cyril a fourni de nouvelles données réelles (mail du 27/07) qui changent
-  // la nature du vendeur (personne morale via BCE, plutôt que personne
-  // physique via RN) et du bien (recherche CADASTRE par commune, plutôt que
-  // saisie manuelle) — flux pas encore automatisés (capture DOM en attente).
-  // Pour ne pas casser la démo actuelle qui fonctionne, on garde ce format
-  // en attendant ; les nouvelles infos sont notées ci-dessous pour référence :
-  //   Vendeur (personne morale) : BIMBIMMO — BCE 0653.910.157 — notaire Alain Caprasse
-  //   Acheteur (personne physique) : Alain Caprasse — RN 84.02.13-307.14 — notaire Jean-François Ghigny
-  //   Bien : commune 8670 Coxyde (recherche CADASTRE, un seul résultat attendu)
+  // Cyril a fourni de nouvelles données réelles (mail du 27/07). Le vendeur
+  // est une personne morale (recherche BCE) et le bien est recherché par
+  // commune (CADASTRE) — mais cette dernière recherche ne remplit pas les
+  // champs de la parcelle automatiquement (bug confirmé par capture DOM en
+  // direct), donc le bien reste saisi manuellement, avec la vraie commune.
   DOSSIER_CREATION_DEMO: {
-    code:          'DEMO01',
-    collaborateur: 'Cyril Cabuy',
-    notaire:       'Alain Caprasse',
-    vendeur_rn:    '84.06.28-314.70',
-    acquereur_rn:  '00.12.20-324.62',
+    code:              'DEMO01',
+    collaborateur:     'Cyril Cabuy',
+    notaire:           'Alain Caprasse',
+    vendeur_type:      'morale',            // 'physique' (RN) ou 'morale' (BCE)
+    vendeur_rn:        '84.06.28-314.70',    // utilisé si vendeur_type === 'physique'
+    vendeur_bce:       '0653.910.157',       // utilisé si vendeur_type === 'morale' (BIMBIMMO)
+    vendeur_notaire:   'Alain Caprasse',
+    acquereur_rn:      '84.02.13-307.14',
+    acquereur_notaire: 'Jean-François Ghigny',
     bien: {
       type:             'Maison',
       parcelle:         '0419XP0000',
@@ -50,7 +50,7 @@ const ALFRED_CONFIG = {
       revenu_cadastral: '100',
       rue:              'Rue de la Station',
       numero:           '42',
-      commune:          '6000 — Charleroi',
+      commune:          '8670 — Coxyde',
     },
     notaire_adverse: 'Jean-François Ghigny',
   },
@@ -221,7 +221,14 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 1, label: 'Montrer',       texte: "Avec plaisir. Regardez." },
 
     // ACTE 2 — CRÉATION LIVE (démonstration séparée, avant l'ouverture de R426)
-    { acte: 2, label: 'CreationLive',  texte: "Avant d'ouvrir un dossier existant, je vais vous montrer comment j'en crée un de A à Z, en direct.", action: 'CreationDossier' },
+    // Décomposée en 6 répliques qui suivent le processus décrit par Cyril :
+    // ouverture → parties → bien → notaires → rédaction → e-mail généré.
+    { acte: 2, label: 'CreationOuvrir',    texte: "Avant d'ouvrir un dossier existant, je vais vous montrer comment j'en crée un de A à Z, en direct. Je crée le dossier et j'assigne un collaborateur responsable.", action: 'CreationOuvrir' },
+    { acte: 2, label: 'CreationParties',   texte: "Maintenant les parties. Le vendeur ici est une société — je le retrouve directement via son numéro BCE, toutes ses informations légales arrivent automatiquement. Et pour l'acquéreur, le numéro de registre national suffit.", action: 'CreationParties' },
+    { acte: 2, label: 'CreationBien',      texte: "Le bien immobilier, ensuite. J'intègre les données cadastrales et j'enregistre le dossier.", action: 'CreationBien' },
+    { acte: 2, label: 'CreationNotaires',  texte: "Il ne reste plus qu'à rattacher les notaires des deux parties. J'ai une base de données à jour de tous les notaires belges — je les retrouve en quelques secondes.", action: 'CreationNotaires' },
+    { acte: 2, label: 'CreationRedaction', texte: "Le dossier est complet. Je peux déjà lancer la rédaction du compromis de vente — regardez, tout se remplit automatiquement à partir de ce que je viens de collecter.", action: 'CreationRedaction' },
+    { acte: 2, label: 'CreationEmail',     texte: "Et pendant que le projet se construit, j'ai déjà détecté qu'il manque certaines pièces. J'ai rédigé le mail à envoyer au client pour les récupérer — il ne reste plus qu'à le valider.", action: 'CreationEmail' },
 
     // ACTE 2 — SÉQUENCE 1
     // REPLIQUES_FR Dashboard
@@ -264,8 +271,13 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 1, label: 'Résumé1',       texte: "Dat klopt. En tegelijkertijd kan elke actor in het dossier — het kantoor, de cliënt, een confrater — gelijktijdig aan hetzelfde dossier werken. En als iemand een vraag heeft over een dossier, op elk uur, antwoord ik onmiddellijk via de geïntegreerde chatbot." },
     { acte: 1, label: 'Montrer',       texte: "Met plezier. Kijk maar." },
 
-    // ACTE 2 — CRÉATION LIVE (démonstration séparée, avant l'ouverture de R426)
-    { acte: 2, label: 'CreationLive',  texte: "Voordat ik een bestaand dossier open, toon ik u hoe ik er een van nul opbouw, live.", action: 'CreationDossier' },
+    // ACTE 2 — CRÉATION LIVE (démonstration séparée, avant l'ouverture van R426)
+    { acte: 2, label: 'CreationOuvrir',    texte: "Voordat ik een bestaand dossier open, toon ik u hoe ik er een van nul opbouw, live. Ik maak het dossier aan en ik wijs een verantwoordelijke medewerker toe.", action: 'CreationOuvrir' },
+    { acte: 2, label: 'CreationParties',   texte: "Nu de partijen. De verkoper hier is een vennootschap — ik vind ze rechtstreeks via haar KBO-nummer, alle wettelijke gegevens komen automatisch binnen. En voor de koper volstaat het rijksregisternummer.", action: 'CreationParties' },
+    { acte: 2, label: 'CreationBien',      texte: "Het onroerend goed, vervolgens. Ik voeg de kadastrale gegevens toe en ik registreer het dossier.", action: 'CreationBien' },
+    { acte: 2, label: 'CreationNotaires',  texte: "Nu nog de notarissen van beide partijen koppelen. Ik heb een actuele databank van alle Belgische notarissen — ik vind ze in enkele seconden.", action: 'CreationNotaires' },
+    { acte: 2, label: 'CreationRedaction', texte: "Het dossier is compleet. Ik kan meteen de opstelling van de verkoopbelofte starten — kijk, alles wordt automatisch ingevuld op basis van wat ik net verzameld heb.", action: 'CreationRedaction' },
+    { acte: 2, label: 'CreationEmail',     texte: "En terwijl het ontwerp wordt opgebouwd, heb ik al gedetecteerd dat er stukken ontbreken. Ik heb de e-mail opgesteld die naar de klant moet, om ze op te vragen — die hoeft nu enkel nog gevalideerd te worden.", action: 'CreationEmail' },
 
     // ACTE 2 — SÉQUENCE 1
     // REPLIQUES_NL Dashboard
