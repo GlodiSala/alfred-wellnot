@@ -451,14 +451,51 @@ async function ajouterPartieParBCE(qualite, bce) {
   await attendre(1400);
 }
 
+// Coche la case sous "REPRÉSENTE" pour associer le notaire qu'on vient
+// d'ajouter à la bonne partie (Vendeur/Acquéreur) — étape confirmée
+// manquante par capture d'écran : après sélection du notaire, sa fiche
+// affiche une liste de parties du dossier avec une case à cocher et un
+// badge de qualité (Vendeur/Acquéreur) à côté de chaque nom. Ciblage par
+// texte du badge, dans le même esprit que trouverDeclencheurProcheLabel.
+async function cocherRepresentation(qualitePartie) {
+  let titre = null;
+  for (let i = 0; i < 10; i++) {
+    titre = Array.from(document.querySelectorAll('*'))
+      .find(el => el.children.length === 0 && el.textContent.trim() === 'REPRÉSENTE' && el.getBoundingClientRect().width > 0);
+    if (titre) break;
+    await attendre(500);
+  }
+  if (!titre) { console.warn('[Alfred DOM] Section "REPRÉSENTE" introuvable'); return false; }
+  titre.scrollIntoView({ block: 'center' });
+  await attendre(500);
+
+  const tr = titre.getBoundingClientRect();
+  const badge = Array.from(document.querySelectorAll('*'))
+    .filter(el => el.children.length === 0 && el.textContent.trim() === qualitePartie && el.getBoundingClientRect().width > 0)
+    .filter(el => el.getBoundingClientRect().top >= tr.bottom - 5)
+    .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top)[0];
+  if (!badge) { console.warn('[Alfred DOM] Badge de partie introuvable sous REPRÉSENTE:', qualitePartie); return false; }
+
+  // Remonte de quelques ancêtres pour trouver la ligne complète (nom +
+  // badge + case à cocher), plutôt que de dépendre d'une structure DOM
+  // précise inconnue.
+  let ligne = badge;
+  let checkbox = null;
+  for (let i = 0; i < 4 && ligne && !checkbox; i++) {
+    ligne = ligne.parentElement;
+    if (ligne) checkbox = ligne.querySelector('input[type="checkbox"]');
+  }
+  if (!checkbox) { console.warn('[Alfred DOM] Case à cocher introuvable pour:', qualitePartie); return false; }
+  await curseurVersAsync(checkbox, () => simulerClic(checkbox));
+  await attendre(600);
+  return true;
+}
+
 // Rattache un notaire (recherche dans la liste de l'étude) via la modale
-// "Rechercher dans votre liste de notaires". D'après la capture DOM,
-// "Ajouter un notaire" apparaît au même niveau que "Ajouter un
-// vendeur"/"Ajouter un acquéreur" dans l'onglet Parties — mais son
-// association précise à une partie donnée n'a pas encore été testée en
-// direct dans la séquence automatisée. À valider/ajuster après un premier
-// essai live (diagnostics console si le bouton ou le champ sont introuvables).
-async function rattacherNotaire(nomNotaire) {
+// "Rechercher dans votre liste de notaires", puis coche la case
+// "REPRÉSENTE" pour l'associer à la bonne partie (qualitePartie: 'Vendeur'
+// ou 'Acquéreur').
+async function rattacherNotaire(nomNotaire, qualitePartie) {
   if (!nomNotaire) return false;
   if (!await cliquerBouton('Ajouter un notaire')) return false;
   await attendre(900);
@@ -470,40 +507,48 @@ async function rattacherNotaire(nomNotaire) {
   }
   if (!input) { console.warn('[Alfred DOM] Champ de recherche notaire introuvable'); return false; }
 
-  // La recherche sur le nom complet (avec espace/tiret, ex: "Jean-François
-  // Ghigny") ne retournait rien en test live — on tente d'abord le nom
-  // complet puis, en repli, le seul nom de famille (plus proche de ce que
-  // le backend semble indexer, à en juger par les adresses e-mail du type
-  // prenom.nom@belnot.be).
+  // La recherche sur le nom complet ou sur le seul nom de famille (ex:
+  // "Alain Caprasse" ou "Caprasse") ne retournait rien en test live —
+  // chercher sur le seul prénom, avec plus de temps laissé au backend,
+  // fonctionne mieux.
   const motsNom = nomNotaire.trim().split(/\s+/);
+  const prenom = motsNom[0];
   const nomFamille = motsNom[motsNom.length - 1];
-  const tentatives = [nomNotaire, nomFamille].filter((v, i, arr) => arr.indexOf(v) === i);
+  const tentatives = [prenom, nomNotaire, nomFamille].filter((v, i, arr) => arr.indexOf(v) === i);
 
+  let trouve = false;
   for (const terme of tentatives) {
     await curseurVersAsync(input, () => input.focus());
     await attendre(200);
     await taper(input, '');   // vide le champ avant une nouvelle tentative
     await taper(input, terme);
-    await attendre(1400); // laisse le temps à la recherche backend de répondre
+    await attendre(1800); // laisse largement le temps à la recherche backend de répondre
 
     let opt = null;
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 14; i++) {
       opt = Array.from(document.querySelectorAll('li'))
-        .find(li => li.textContent.includes(nomFamille) && li.getBoundingClientRect().width > 0);
+        .find(li => li.textContent.toLowerCase().includes(nomFamille.toLowerCase()) && li.getBoundingClientRect().width > 0);
       if (opt) break;
       await attendre(400);
     }
     if (opt) {
       await curseurVersAsync(opt, () => simulerClic(opt));
-      await attendre(500);
-      await cliquerBouton('Ajouter');
-      await attendre(1200);
-      return true;
+      await attendre(700);
+      trouve = true;
+      break;
     }
     console.warn('[Alfred DOM] Notaire introuvable avec le terme de recherche:', terme);
   }
-  console.warn('[Alfred DOM] Échec du rattachement du notaire:', nomNotaire);
-  return false;
+  if (!trouve) { console.warn('[Alfred DOM] Échec du rattachement du notaire:', nomNotaire); return false; }
+
+  // Certains flux affichent encore un bouton "Ajouter" pour confirmer la
+  // fiche ; s'il n'existe pas ici, cliquerBouton échoue silencieusement
+  // (averti en console) sans bloquer la suite.
+  await cliquerBouton('Ajouter', 6);
+  await attendre(1200);
+
+  if (qualitePartie) await cocherRepresentation(qualitePartie);
+  return true;
 }
 
 // Lance la rédaction du compromis de vente à partir du dossier tout juste créé.
@@ -727,10 +772,10 @@ async function seq_creationDossier_notaires() {
   if (!cfg) return;
   await naviguerOnglet('Parties');
   await attendre(900);
-  if (cfg.vendeur_notaire) await rattacherNotaire(cfg.vendeur_notaire);
+  if (cfg.vendeur_notaire) await rattacherNotaire(cfg.vendeur_notaire, 'Vendeur');
   if (cfg.acquereur_notaire && cfg.acquereur_notaire !== cfg.vendeur_notaire) {
     await attendre(600);
-    await rattacherNotaire(cfg.acquereur_notaire);
+    await rattacherNotaire(cfg.acquereur_notaire, 'Acquéreur');
   }
 }
 
