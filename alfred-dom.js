@@ -37,8 +37,8 @@ function curseurVers(el, callback) {
   c.style.opacity = '1';
 
   setTimeout(() => {
-    c.style.transition = `left .5s cubic-bezier(.25,.46,.45,.94),
-                          top  .5s cubic-bezier(.25,.46,.45,.94),
+    c.style.transition = `left .8s cubic-bezier(.25,.46,.45,.94),
+                          top  .8s cubic-bezier(.25,.46,.45,.94),
                           opacity .2s ease`;
     c.style.left = x + 'px';
     c.style.top  = y + 'px';
@@ -49,9 +49,9 @@ function curseurVers(el, callback) {
         c.style.transform = 'translate(-50%,-50%) scale(1)';
         if (callback) callback();
         setTimeout(() => { c.style.opacity = '0'; }, 500);
-      }, 150);
-    }, 520);
-  }, 60);
+      }, 250);
+    }, 820);
+  }, 100);
 }
 
 function attendre(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -413,22 +413,22 @@ async function taperDansChamp(id, texte, tentatives = 15) {
 // formulaire se remplit alors automatiquement, il ne reste qu'à enregistrer.
 async function ajouterPartieParRN(qualite, rn) {
   await choisirDansDropdown('Sélectionnez une qualité', qualite);
-  await attendre(400);
+  await attendre(700);
   await cliquerBouton('Ajouter');
-  await attendre(600);
+  await attendre(900);
   await cliquerBouton('Personne physique');
-  await attendre(600);
+  await attendre(900);
   await taperDansChamp('search-rn', rn);
   await cliquerBouton('Rechercher');
-  await attendre(2000); // laisse le temps à la recherche e-notariat de remplir le formulaire
+  await attendre(2200); // laisse le temps à la recherche e-notariat de remplir le formulaire
   await cliquerBouton('Enregistrer');
-  await attendre(1000);
+  await attendre(1400);
 }
 
 // Ajoute un bien manuellement (plus fiable en démo que la recherche CADASTRE).
 async function ajouterBienManuel(bien) {
   await cliquerBouton('Ajouter manuellement');
-  await attendre(600);
+  await attendre(900);
   const typeSpan = document.getElementById('asset-type');
   if (typeSpan) {
     // Clique le span directement (même correctif que choisirDansDropdown —
@@ -474,9 +474,9 @@ async function seq_creerDossierDemo() {
   } else {
     console.warn('[Alfred DOM] Lien "Dossiers" introuvable');
   }
-  await attendre(1200);
+  await attendre(1800);
   await cliquerBouton('Créer un dossier');
-  await attendre(1500);
+  await attendre(2200);
 
   // Étape 1 — Informations générales
   // Seul "Collaborateur en charge du dossier" est rempli (le champ vide n'a
@@ -490,9 +490,9 @@ async function seq_creerDossierDemo() {
   const champCode = document.getElementById('folder-code');
   if (champCode) validerChamp(champCode);
   console.log('[Alfred DOM] Valeur du champ numéro de dossier après saisie:', champCode ? JSON.stringify(champCode.value) : 'champ introuvable');
-  await attendre(500);
+  await attendre(800);
   await choisirDansDropdownParLabelProche('Collaborateur en charge du dossier', cfg.collaborateur);
-  await attendre(600);
+  await attendre(900);
   // "Suivant" reste désactivé tant que les champs requis ne sont pas valides —
   // on attend qu'il s'active plutôt que de cliquer trop tôt sur un bouton inactif.
   // On s'arrête ici si ça échoue : continuer sur le mauvais écran ne fait
@@ -501,7 +501,7 @@ async function seq_creerDossierDemo() {
     console.warn('[Alfred DOM] Étape 1 bloquée — arrêt de la séquence.');
     return;
   }
-  await attendre(1500);
+  await attendre(2200);
 
   // Étape 2 — Personnes (vendeur puis acquéreur). "Suivant" reste désactivé
   // tant que le vendeur n'a pas été ajouté avec succès.
@@ -511,7 +511,7 @@ async function seq_creerDossierDemo() {
     console.warn('[Alfred DOM] Étape 2 bloquée — arrêt de la séquence.');
     return;
   }
-  await attendre(1500);
+  await attendre(2200);
 
   // Étape 3 — Biens
   await ajouterBienManuel(cfg.bien);
@@ -519,11 +519,11 @@ async function seq_creerDossierDemo() {
     console.warn('[Alfred DOM] Étape 3 bloquée — arrêt de la séquence.');
     return;
   }
-  await attendre(1500);
+  await attendre(2200);
 
   // Étape 4 — Documents : on termine directement (aucun document à joindre en démo)
   await cliquerBoutonQuandActif('Enregistrer');
-  await attendre(1500);
+  await attendre(2200);
 }
 
 // ── Mapping label → séquence ──────────────────────────────
