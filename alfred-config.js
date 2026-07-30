@@ -32,9 +32,10 @@ const ALFRED_CONFIG = {
   // champs de la parcelle automatiquement (bug confirmé par capture DOM en
   // direct), donc le bien reste saisi manuellement, avec la vraie commune.
   DOSSIER_CREATION_DEMO: {
-    code:              'DEMO01',
-    collaborateur:     'Cyril Cabuy',
-    notaire:           'Alain Caprasse',
+    code:                       'DEMO01',
+    collaborateur:              'Cyril Cabuy', // "Collaborateur en charge du dossier"
+    collaborateur_administratif: 'Cyril Cabuy', // "Collaborateur administratif"
+    notaire:                    'Alain Caprasse', // "Notaire en charge du dossier"
     vendeur_type:      'morale',            // 'physique' (RN) ou 'morale' (BCE)
     vendeur_rn:        '84.06.28-314.70',    // utilisé si vendeur_type === 'physique'
     vendeur_bce:       '0653.910.157',       // utilisé si vendeur_type === 'morale' (BIMBIMMO)

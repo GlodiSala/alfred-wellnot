@@ -655,10 +655,11 @@ async function seq_creationDossier_ouvrir() {
   await cliquerBouton('Créer un dossier');
   await attendre(2200);
 
-  // Seul "Collaborateur en charge du dossier" est rempli (le champ vide n'a
-  // pas de texte de déclencheur fiable, on le cible par sa position sous le
+  // Les trois champs sont remplis (le champ vide n'a pas de texte de
+  // déclencheur fiable, on cible chaque menu par sa position sous son
   // libellé). "Collaborateur administratif" et "Notaire en charge du
-  // dossier" restent vides — pas nécessaires pour activer "Suivant".
+  // dossier" n'étaient jusqu'ici pas remplis — le champ notaire existait
+  // pourtant déjà dans la config (cfg.notaire) mais n'était jamais utilisé.
   await taperDansChamp('folder-code', cfg.code);
   // Entrée + blur : certains champs Angular ne valident/rafraîchissent leur
   // état (dont l'activation de "Suivant") que sur ces événements, pas sur
@@ -668,6 +669,14 @@ async function seq_creationDossier_ouvrir() {
   await attendre(800);
   await choisirDansDropdownParLabelProche('Collaborateur en charge du dossier', cfg.collaborateur);
   await attendre(900);
+  if (cfg.collaborateur_administratif) {
+    await choisirDansDropdownParLabelProche('Collaborateur administratif', cfg.collaborateur_administratif);
+    await attendre(900);
+  }
+  if (cfg.notaire) {
+    await choisirDansDropdownParLabelProche('Notaire en charge du dossier', cfg.notaire);
+    await attendre(900);
+  }
   // "Suivant" reste désactivé tant que les champs requis ne sont pas valides —
   // on attend qu'il s'active plutôt que de cliquer trop tôt sur un bouton inactif.
   // On s'arrête ici si ça échoue : continuer sur le mauvais écran ne fait

@@ -386,10 +386,15 @@ function ouvrirPanneauDonneesCreation() {
   }
 
   ligne('Code du dossier', 'code', cfg.code);
-  ligne('Collaborateur', 'collaborateur', cfg.collaborateur);
-  ligne('Notaire responsable', 'notaire', cfg.notaire);
-  ligne('Registre national — Vendeur', 'vendeur_rn', cfg.vendeur_rn, '__.__.__-___.__');
+  ligne('Collaborateur en charge du dossier', 'collaborateur', cfg.collaborateur);
+  ligne('Collaborateur administratif', 'collaborateur_administratif', cfg.collaborateur_administratif);
+  ligne('Notaire en charge du dossier', 'notaire', cfg.notaire);
+  ligne('Type de vendeur (physique ou morale)', 'vendeur_type', cfg.vendeur_type, 'physique / morale');
+  ligne('Registre national — Vendeur (si physique)', 'vendeur_rn', cfg.vendeur_rn, '__.__.__-___.__');
+  ligne('N° BCE — Vendeur (si morale)', 'vendeur_bce', cfg.vendeur_bce, '0653.910.157');
+  ligne('Notaire du vendeur', 'vendeur_notaire', cfg.vendeur_notaire);
   ligne('Registre national — Acquéreur', 'acquereur_rn', cfg.acquereur_rn, '__.__.__-___.__');
+  ligne('Notaire de l’acquéreur', 'acquereur_notaire', cfg.acquereur_notaire);
   ligne('Notaire de la partie adverse', 'notaire_adverse', cfg.notaire_adverse);
 
   const sousTitreBien = document.createElement('div');
