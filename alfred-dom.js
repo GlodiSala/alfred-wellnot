@@ -119,7 +119,7 @@ function trouverConteneurDefilant(el) {
 // scrollIntoView({behavior:'smooth'}) dont la vitesse native n'est pas
 // réglable (pas de paramètre de durée), remonté plusieurs fois comme trop
 // rapide en démo live.
-async function defilerVersElement(el, dureeMs = 900) {
+async function defilerVersElement(el, dureeMs = 1800) {
   const r = el.getBoundingClientRect();
   const dejaVisible = r.top >= 0 && r.bottom <= window.innerHeight;
   if (dejaVisible) return;
