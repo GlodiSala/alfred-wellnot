@@ -1162,19 +1162,20 @@ async function seq_creationDossier_notaires_vendeur() {
   if (!cfg) return;
   await naviguerOnglet(SELECTEURS.onglets.parties);
   await attendre(900);
-  // EN SUSPENS : incertitude sur si le vendeur (BIMBIMMO) doit être
-  // représenté par un notaire externe cherché/ajouté (Ghigny, comportement
-  // actuel) ou coché directement sous "Mes clients" sur la fiche d'Alain
-  // Caprasse — deux indices contradictoires trouvés en commentaire (voir
-  // alfred-config.js autour de DOSSIER_CREATION_DEMO). Laissé inchangé en
-  // attendant confirmation du texte exact du script Word d'origine.
-  if (cfg.vendeur_notaire) await rattacherNotaire(cfg.vendeur_notaire, 'Vendeur');
+  // Confirmé dans le séquencier d'origine (Alfred_sequencier_actions) :
+  // « BIMBIMMO = nous » → « Rattacher l'ÉTUDE (JF) à BIMBIMMO » — à
+  // distinguer explicitement de l'acquéreur, où le séquencier dit
+  // « rechercher... dans la base des notaires ». BIMBIMMO ne doit donc PAS
+  // passer par une recherche/ajout d'un notaire externe : on coche "Mes
+  // clients" sur la fiche du notaire déjà présent sur le dossier (celui
+  // renseigné comme "Notaire en charge" à l'étape 1).
+  await cocherMesClients('Vendeur');
 }
 
 async function seq_creationDossier_notaires_acquereur() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) return;
-  if (cfg.acquereur_notaire && cfg.acquereur_notaire !== cfg.vendeur_notaire) {
+  if (cfg.acquereur_notaire) {
     await rattacherNotaire(cfg.acquereur_notaire, 'Acquéreur');
   }
 }

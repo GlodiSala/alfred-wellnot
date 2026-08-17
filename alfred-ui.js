@@ -648,7 +648,10 @@ function ouvrirPanneauDonneesCreation() {
   ligne('Type de vendeur (physique ou morale)', 'vendeur_type', cfg.vendeur_type, 'physique / morale');
   ligne('Registre national — Vendeur (si physique)', 'vendeur_rn', cfg.vendeur_rn, '__.__.__-___.__');
   ligne('N° BCE — Vendeur (si morale)', 'vendeur_bce', cfg.vendeur_bce, '0653.910.157');
-  ligne('Notaire du vendeur', 'vendeur_notaire', cfg.vendeur_notaire);
+  // Pas de champ "Notaire du vendeur" : le séquencier indique que BIMBIMMO
+  // est représenté par l'étude elle-même (coché sous "Mes clients" sur la
+  // fiche du notaire déjà présent — champ "notaire" ci-dessus), pas par un
+  // notaire externe recherché comme pour l'acquéreur.
   ligne('Registre national — Acquéreur', 'acquereur_rn', cfg.acquereur_rn, '__.__.__-___.__');
   ligne('Notaire de l’acquéreur', 'acquereur_notaire', cfg.acquereur_notaire);
 

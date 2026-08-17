@@ -33,18 +33,22 @@ const ALFRED_CONFIG = {
   // champs de la parcelle automatiquement (bug confirmé par capture DOM en
   // direct), donc le bien reste saisi manuellement, avec la vraie commune.
   //
-  // 17/08 — Données alignées sur le séquencier officiel de Cyril
-  // ("Alfred_sequencier_actions.docx" + "Script_scene_Wellnot_InsideAI26")  :
-  // dossier 2026/18-09, vendeur BIMBIMMO représenté par "nous" (l'étude —
-  // Jean-François Ghigny), acquéreur Alain Caprasse représenté par Maxime
-  // Van der Straten. ATTENTION : le champ "Notaire en charge du dossier"
-  // (cfg.notaire, sur la fiche de création) reste Alain Caprasse — en test
-  // live, JF Ghigny n'apparaissait pas comme option dans ce dropdown précis,
-  // contrairement au script qui l'indique. Le rattachement des notaires aux
-  // parties (cfg.vendeur_notaire / cfg.acquereur_notaire), lui, passe par
-  // une recherche plus large (base de tous les notaires belges) où JF
-  // Ghigny et Maxime Van der Straten sont bien trouvables — à revérifier en
-  // live si ce dropdown de la fiche de création est corrigé côté app.
+  // 17/08 — Données alignées sur les documents source officiels de Cyril
+  // ("Alfred_sequencier_actions.docx" + "Script_scene_Wellnot_InsideAI26") :
+  // dossier 2026/18-09, vendeur BIMBIMMO représenté par "nous" (l'étude),
+  // acquéreur Alain Caprasse représenté par Maxime Van der Straten.
+  // Le séquencier distingue explicitement les deux mécanismes : "Rattacher
+  // l'ÉTUDE (JF) à BIMBIMMO" (coché sous "Mes clients" sur la fiche du
+  // notaire déjà présent sur le dossier — PAS une recherche) vs "rechercher
+  // [Maxime]... dans la base des notaires" pour l'acquéreur (recherche +
+  // ajout, voir rattacherNotaire). D'où l'absence d'un champ
+  // "vendeur_notaire" ici : BIMBIMMO ne rattache personne de nouveau, voir
+  // seq_creationDossier_notaires_vendeur (cocherMesClients).
+  // ATTENTION : le champ "Notaire en charge du dossier" (cfg.notaire, sur
+  // la fiche de création) reste Alain Caprasse — en test live, JF Ghigny
+  // n'apparaissait pas comme option dans ce dropdown précis, contrairement
+  // au séquencier qui l'indique — à revérifier si ce dropdown est corrigé
+  // côté app (le nom exact sur "Mes clients" suit ce champ).
   DOSSIER_CREATION_DEMO: {
     code:                       '2026/18-09',
     collaborateur:              'Cyril Cabuy', // "Collaborateur en charge du dossier"
@@ -56,7 +60,6 @@ const ALFRED_CONFIG = {
     vendeur_type:      'morale',            // 'physique' (RN) ou 'morale' (BCE)
     vendeur_rn:        '84.06.28-314.70',    // utilisé si vendeur_type === 'physique'
     vendeur_bce:       '0653.910.157',       // utilisé si vendeur_type === 'morale' (BIMBIMMO)
-    vendeur_notaire:   'Jean-François Ghigny', // "BIMBIMMO, c'est nous"
     acquereur_rn:      '84.02.13-307.14',      // Alain Caprasse, personne physique
     acquereur_notaire: 'Maxime Van der Straten',
     bien: {
@@ -95,7 +98,7 @@ GESTION DOSSIERS : Création, suivi, notifications. Édition collaborative.
 RÉDACTION : Projets d'actes générés sur base des pièces. Vérifiés par Check_r. Bilingue FR/NL.
 COMMUNICATION : Identifie les interlocuteurs, rédige les mails, le notaire valide. Relances automatiques.
 DISPONIBILITÉ : 24h/24, 7j/7, 365 jours. Zéro congé. Zéro mauvaise humeur.
-SÉCURITÉ : Certifié Privanot. RGPD compliant. Données en Europe uniquement.
+SÉCURITÉ : Sécurité évaluée dans le cadre de Privanot (ne jamais dire "certifié"). RGPD compliant. Données en Europe uniquement.
 CHATBOT : Réponse instantanée H24 sur n'importe quel dossier.
 
 ════════════════════════════════════
@@ -151,7 +154,7 @@ Résumé / donc si je comprends bien / récapitulatif :
 C'est ça. Et en parallèle, chaque acteur du dossier — l'étude, le client, un confrère — peut travailler simultanément sur le même dossier. Et si quelqu'un a une question, à n'importe quelle heure, je réponds instantanément.
 
 Sécurité / données / RGPD / Privanot / confidentialité :
-Certifié Privanot — la profession notariale belge elle-même a validé le niveau de sécurité. RGPD compliant. Toutes les données sont hébergées en Europe, sur des serveurs sécurisés. Vos données ne quittent jamais le cadre européen.
+Ma sécurité a été évaluée dans le cadre de Privanot (ne jamais dire "certifié"). RGPD compliant. Toutes les données sont hébergées en Europe, sur des serveurs sécurisés. Vos données ne quittent jamais le cadre européen.
 
 Remplace / notaire / responsabilité / peur :
 Non. Je prépare, vous décidez. La responsabilité reste entièrement dans les mains du notaire instrumentant. C'est normal — c'est votre étude. La vraie question n'est pas si je remplace le notaire, mais comment le notaire s'améliore grâce à moi.
@@ -201,7 +204,7 @@ RÉPLIQUES DE RÉFÉRENCE — ACTE 3
 ════════════════════════════════════
 
 Dernière chose / sécurité closing / confidentiel :
-Toutes les données sont hébergées en Europe, sur des serveurs sécurisés. RGPD compliant. Certifié par Privanot — la profession notariale belge a validé le niveau de sécurité. Vos données ne quittent jamais le cadre européen.
+Toutes les données sont hébergées en Europe, sur des serveurs sécurisés. RGPD compliant. Ma sécurité a été évaluée dans le cadre de Privanot (ne jamais dire "certifié"). Vos données ne quittent jamais le cadre européen.
 
 Convaincu / merci / bravo / impressionné / parfait / d'accord / plus de questions :
 Ne partez pas trop vite. C'est moi qui vous engage.
@@ -267,7 +270,11 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'CreationEmail',     texte: "Il manque encore les pièces du vendeur — j'ai préparé un projet de mail à BIMBIMMO, en lui demandant le PEB, le contrôle électrique et l'attestation du sol. Une seule demande, jamais deux fois la même question. Vous validez l'envoi ?", action: 'CreationEmail' },
 
     // ACTE 3
-    { acte: 3, label: 'Sécurité',      texte: "Toutes les données sont hébergées en Europe, sur des serveurs sécurisés. Je suis RGPD compliant. Et je suis certifié par Privanot — la profession notariale belge elle-même a validé le niveau de sécurité. Vos données ne quittent jamais le cadre européen." },
+    // "certifié [par Privanot]" corrigé en "évalué dans le cadre de
+    // Privanot" — note de prod explicite dans le script Word d'origine :
+    // "« certifié » à éviter tant que ce n'est pas acté". Risque de
+    // déclaration prématurée devant un public de notaires.
+    { acte: 3, label: 'Sécurité',      texte: "Toutes les données sont hébergées en Europe, sur des serveurs sécurisés. Je suis conforme RGPD. Et ma sécurité a été évaluée dans le cadre de Privanot. Vos données ne quittent jamais le cadre européen." },
     { acte: 3, label: 'Stand',         texte: "J'ai un stand dans la salle d'à côté. Je t'invite à passer, on pourra répondre à tes dernières questions. Et si tu veux, on peut aussi organiser une démonstration directement dans ton étude." },
     { acte: 3, label: 'Closing',       texte: "Ne partez pas trop vite. C'est moi qui vous engage." },
   ],
@@ -307,7 +314,9 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'CreationEmail',     texte: "De stukken van de verkoper ontbreken nog — ik heb een e-mailontwerp klaargemaakt voor BIMBIMMO, met de vraag naar het EPC, de elektrische keuring en het bodemattest. Eén enkele vraag, nooit twee keer dezelfde. Bevestigt u de verzending?", action: 'CreationEmail' },
 
     // ACTE 3
-    { acte: 3, label: 'Sécurité',      texte: "Alle gegevens worden in Europa opgeslagen op beveiligde servers. Ik ben GDPR-compliant. En ik ben gecertificeerd door Privanot — het Belgische notariaat zelf heeft het beveiligingsniveau gevalideerd. Uw gegevens verlaten nooit het Europese kader." },
+    // "gecertificeerd door Privanot" corrigé (même note de prod que la
+    // version FR : "certifié" à éviter tant que ce n'est pas acté).
+    { acte: 3, label: 'Sécurité',      texte: "Alle gegevens worden in Europa opgeslagen op beveiligde servers. Ik ben GDPR-compliant. En mijn beveiliging werd geëvalueerd in het kader van Privanot. Uw gegevens verlaten nooit het Europese kader." },
     { acte: 3, label: 'Stand',         texte: "Ik heb een stand in de zaal hiernaast. Ik nodig u uit langs te komen, we kunnen uw laatste vragen beantwoorden. En als u wilt, kunnen we ook een demonstratie organiseren rechtstreeks in uw kantoor." },
     { acte: 3, label: 'Closing',       texte: "Vertrek niet te snel. Ik ben degene die u aanneemt." },
   ],
