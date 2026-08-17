@@ -5,6 +5,67 @@
 // rapide" revient — évite de devoir retoucher chaque délai un par un.
 const ALFRED_RALENTI = 1.4;
 
+// ── Sélecteurs de l'interface app.alfred.be ───────────────
+// Textes de boutons/menus et identifiants de champs, centralisés ici plutôt
+// qu'éparpillés dans chaque fonction. On ne contrôle pas cette interface
+// (démo construite depuis l'extérieur, sans API — voir historique) : si
+// l'équipe Wellnot change un libellé ou un id, TOUTE une séquence peut
+// casser d'un coup. Avoir tout au même endroit rend le diagnostic et la
+// correction beaucoup plus rapides — comparer avec une capture DOM fraîche
+// (script de capture fourni séparément) pour repérer ce qui a changé.
+const SELECTEURS = {
+  boutons: {
+    ajouter:             'Ajouter',
+    ajouterManuellement: 'Ajouter manuellement',
+    ajouterNotaire:      'Ajouter un notaire',
+    creerDossier:        'Créer un dossier',
+    enregistrer:         'Enregistrer',
+    personnePhysique:    'Personne physique',
+    personneMorale:      'Personne morale',
+    rechercher:          'Rechercher',
+    rediger:             'Rédiger un document',
+    genererCompromis:    'Générer le compromis',
+    suivant:             'Suivant',
+    validerEtEnvoyer:    'Valider et envoyer',
+    consulter:           'Consulter',
+  },
+  champs: {
+    dossierCode:         'folder-code',
+    rechercheRN:         'search-rn',
+    rechercheBCE:        'search-company-number',
+    communeCadastre:     'municipality',
+    bienType:            'asset-type',
+    bienParcelle:        'asset-parcel-number',
+    bienSection:         'asset-section',
+    bienDivision:        'asset-division',
+    bienSurface:         'asset-surface',
+    bienRevenuCadastral: 'asset-cadastral-income',
+    bienRue:             'asset-street',
+    bienNumero:          'asset-street-number',
+    bienCommune:         'asset-municipality',
+  },
+  placeholders: {
+    rechercheCommune: 'Rechercher une commune par son nom ou son code postal',
+    rechercheNotaire: 'Rechercher dans votre liste de notaires',
+  },
+  menus: {
+    qualitePartie:              'Sélectionnez une qualité',
+    collaborateurEnCharge:      'Collaborateur en charge du dossier',
+    collaborateurAdministratif: 'Collaborateur administratif',
+    notaireEnCharge:            'Notaire en charge du dossier',
+  },
+  onglets: {
+    evenements: 'Événements',
+    parties:    'Parties',
+  },
+  textes: {
+    represente: 'REPRÉSENTE',
+    optionCompromis: 'Compromis',
+    propositionEmail: "Proposition d'e-mail",
+    lienDossiers: 'Dossiers',
+  },
+};
+
 // ── Curseur teal ──────────────────────────────────────────
 function creerCurseur() {
   if (document.getElementById('alfred-cursor')) return;
@@ -421,16 +482,16 @@ async function taperDansChamp(id, texte, tentatives = 15) {
 // Suppose un RN réel et valide (recherche e-notariat en direct) : le
 // formulaire se remplit alors automatiquement, il ne reste qu'à enregistrer.
 async function ajouterPartieParRN(qualite, rn) {
-  await choisirDansDropdown('Sélectionnez une qualité', qualite);
+  await choisirDansDropdown(SELECTEURS.menus.qualitePartie, qualite);
   await attendre(900);
-  await cliquerBouton('Ajouter');
+  await cliquerBouton(SELECTEURS.boutons.ajouter);
   await attendre(1200);
-  await cliquerBouton('Personne physique');
+  await cliquerBouton(SELECTEURS.boutons.personnePhysique);
   await attendre(1200);
-  await taperDansChamp('search-rn', rn);
-  await cliquerBouton('Rechercher');
+  await taperDansChamp(SELECTEURS.champs.rechercheRN, rn);
+  await cliquerBouton(SELECTEURS.boutons.rechercher);
   await attendre(3200); // laisse largement le temps à la recherche e-notariat de remplir le formulaire
-  await cliquerBouton('Enregistrer');
+  await cliquerBouton(SELECTEURS.boutons.enregistrer);
   await attendre(1800);
 }
 
@@ -438,16 +499,16 @@ async function ajouterPartieParRN(qualite, rn) {
 // une "Personne morale" (société). Même logique que ajouterPartieParRN, mais
 // cible "Personne morale" puis le champ de recherche BCE.
 async function ajouterPartieParBCE(qualite, bce) {
-  await choisirDansDropdown('Sélectionnez une qualité', qualite);
+  await choisirDansDropdown(SELECTEURS.menus.qualitePartie, qualite);
   await attendre(900);
-  await cliquerBouton('Ajouter');
+  await cliquerBouton(SELECTEURS.boutons.ajouter);
   await attendre(1200);
-  await cliquerBouton('Personne morale');
+  await cliquerBouton(SELECTEURS.boutons.personneMorale);
   await attendre(1200);
-  await taperDansChamp('search-company-number', bce);
-  await cliquerBouton('Rechercher');
+  await taperDansChamp(SELECTEURS.champs.rechercheBCE, bce);
+  await cliquerBouton(SELECTEURS.boutons.rechercher);
   await attendre(3200); // laisse largement le temps à la recherche BCE de remplir le formulaire
-  await cliquerBouton('Enregistrer');
+  await cliquerBouton(SELECTEURS.boutons.enregistrer);
   await attendre(1800);
 }
 
@@ -461,7 +522,7 @@ async function cocherRepresentation(qualitePartie) {
   let titre = null;
   for (let i = 0; i < 10; i++) {
     titre = Array.from(document.querySelectorAll('*'))
-      .find(el => el.children.length === 0 && el.textContent.trim() === 'REPRÉSENTE' && el.getBoundingClientRect().width > 0);
+      .find(el => el.children.length === 0 && el.textContent.trim() === SELECTEURS.textes.represente && el.getBoundingClientRect().width > 0);
     if (titre) break;
     await attendre(500);
   }
@@ -497,11 +558,11 @@ async function cocherRepresentation(qualitePartie) {
 // ou 'Acquéreur').
 async function rattacherNotaire(nomNotaire, qualitePartie) {
   if (!nomNotaire) return false;
-  if (!await cliquerBouton('Ajouter un notaire')) return false;
+  if (!await cliquerBouton(SELECTEURS.boutons.ajouterNotaire)) return false;
   await attendre(900);
   let input = null;
   for (let i = 0; i < 15; i++) {
-    input = document.querySelector('input[placeholder="Rechercher dans votre liste de notaires"]');
+    input = document.querySelector(`input[placeholder="${SELECTEURS.placeholders.rechercheNotaire}"]`);
     if (input) break;
     await attendre(300);
   }
@@ -544,7 +605,7 @@ async function rattacherNotaire(nomNotaire, qualitePartie) {
   // Certains flux affichent encore un bouton "Ajouter" pour confirmer la
   // fiche ; s'il n'existe pas ici, cliquerBouton échoue silencieusement
   // (averti en console) sans bloquer la suite.
-  await cliquerBouton('Ajouter', 6);
+  await cliquerBouton(SELECTEURS.boutons.ajouter, 6);
   await attendre(1200);
 
   if (qualitePartie) await cocherRepresentation(qualitePartie);
@@ -558,17 +619,17 @@ async function rattacherNotaire(nomNotaire, qualitePartie) {
 // en live ("Rédiger un document" → option "Compromis") diffère de celui du
 // script de Cyril ("Générer le compromis") — on essaie les deux.
 async function lancerRedactionCompromis() {
-  const viaMenu = await cliquerBoutonQuandActif('Rédiger un document', 60, 1000);
+  const viaMenu = await cliquerBoutonQuandActif(SELECTEURS.boutons.rediger, 60, 1000);
   if (!viaMenu) {
     // Repli sur le libellé du script de Cyril : ce bouton lance
     // vraisemblablement directement la génération, sans sous-menu.
-    return await cliquerBoutonQuandActif('Générer le compromis', 6, 1000);
+    return await cliquerBoutonQuandActif(SELECTEURS.boutons.genererCompromis, 6, 1000);
   }
   await attendre(900);
   let opt = null;
   for (let i = 0; i < 15; i++) {
     opt = Array.from(document.querySelectorAll('li'))
-      .find(li => li.textContent.trim() === 'Compromis' && li.getBoundingClientRect().width > 0);
+      .find(li => li.textContent.trim() === SELECTEURS.textes.optionCompromis && li.getBoundingClientRect().width > 0);
     if (opt) break;
     await attendre(300);
   }
@@ -590,23 +651,23 @@ async function lancerRedactionCompromis() {
 // séquence s'arrête après l'envoi du mail — la suite (A20-A22 : réception,
 // analyse, questions au chat) reste à faire manuellement en démo.
 async function montrerPropositionEmail() {
-  const onglet = trouverOnglet('Événements');
+  const onglet = trouverOnglet(SELECTEURS.onglets.evenements);
   if (onglet) curseurVers(onglet, () => onglet.click());
   await attendre(1200);
   let li = null;
   for (let i = 0; i < 20; i++) {
     li = Array.from(document.querySelectorAll('li'))
-      .find(el => el.textContent.includes("Proposition d'e-mail"));
+      .find(el => el.textContent.includes(SELECTEURS.textes.propositionEmail));
     if (li) break;
     await attendre(1000);
   }
   if (!li) { console.warn("[Alfred DOM] Proposition d'e-mail non trouvée"); return false; }
-  const consulter = Array.from(li.querySelectorAll('button')).find(b => b.textContent.trim() === 'Consulter')
-    || trouverBoutonParTexte('Consulter');
+  const consulter = Array.from(li.querySelectorAll('button')).find(b => b.textContent.trim() === SELECTEURS.boutons.consulter)
+    || trouverBoutonParTexte(SELECTEURS.boutons.consulter);
   if (consulter) await curseurVersAsync(consulter, () => consulter.click());
   await attendre(1200);
 
-  if (!await cliquerBoutonQuandActif('Valider et envoyer', 10, 500)) {
+  if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.validerEtEnvoyer, 10, 500)) {
     console.warn('[Alfred DOM] Bouton "Valider et envoyer" introuvable ou inactif — mail non envoyé.');
     return false;
   }
@@ -631,9 +692,9 @@ async function essayerAjouterBienParCadastre(bien) {
 
   let input = null;
   for (let i = 0; i < 10; i++) {
-    input = document.getElementById('municipality')
+    input = document.getElementById(SELECTEURS.champs.communeCadastre)
       || Array.from(document.querySelectorAll('input'))
-        .find(i => i.placeholder === 'Rechercher une commune par son nom ou son code postal' && i.getBoundingClientRect().width > 0);
+        .find(i => i.placeholder === SELECTEURS.placeholders.rechercheCommune && i.getBoundingClientRect().width > 0);
     if (input) break;
     await attendre(400);
   }
@@ -642,7 +703,7 @@ async function essayerAjouterBienParCadastre(bien) {
   await curseurVersAsync(input, () => input.focus());
   await attendre(200);
   await taper(input, bien.commune);
-  await cliquerBouton('Rechercher');
+  await cliquerBouton(SELECTEURS.boutons.rechercher);
   await attendre(2600); // laisse largement le temps à la recherche de répondre
 
   let li = null;
@@ -657,12 +718,12 @@ async function essayerAjouterBienParCadastre(bien) {
   await curseurVersAsync(li, () => simulerClic(li));
   await attendre(2200); // laisse le temps à une éventuelle auto-complétion de la parcelle
 
-  const champParcelle = document.getElementById('asset-parcel-number');
+  const champParcelle = document.getElementById(SELECTEURS.champs.bienParcelle);
   if (!champParcelle || !champParcelle.value || !champParcelle.value.trim()) {
     console.warn('[Alfred DOM] Sélection CADASTRE effectuée mais parcelle non pré-remplie — bascule sur saisie manuelle.');
     return false;
   }
-  await cliquerBoutonQuandActif('Enregistrer');
+  await cliquerBoutonQuandActif(SELECTEURS.boutons.enregistrer);
   await attendre(1000);
   return true;
 }
@@ -677,9 +738,9 @@ async function ajouterBien(bien) {
 
 // Ajoute un bien manuellement (plus fiable en démo que la recherche CADASTRE).
 async function ajouterBienManuel(bien) {
-  await cliquerBouton('Ajouter manuellement');
+  await cliquerBouton(SELECTEURS.boutons.ajouterManuellement);
   await attendre(900);
-  const typeSpan = document.getElementById('asset-type');
+  const typeSpan = document.getElementById(SELECTEURS.champs.bienType);
   if (typeSpan) {
     // Clique le span directement (même correctif que choisirDansDropdown —
     // closest('div,button') sauterait le <p-select> et attraperait un
@@ -693,16 +754,16 @@ async function ajouterBienManuel(bien) {
       await attendre(200);
     }
   }
-  await taperDansChamp('asset-parcel-number', bien.parcelle);
-  await taperDansChamp('asset-section', bien.section);
-  await taperDansChamp('asset-division', bien.division);
-  await taperDansChamp('asset-surface', bien.surface);
-  await taperDansChamp('asset-cadastral-income', bien.revenu_cadastral);
-  await taperDansChamp('asset-street', bien.rue);
-  await taperDansChamp('asset-street-number', bien.numero);
-  await taperDansChamp('asset-municipality', bien.commune);
+  await taperDansChamp(SELECTEURS.champs.bienParcelle, bien.parcelle);
+  await taperDansChamp(SELECTEURS.champs.bienSection, bien.section);
+  await taperDansChamp(SELECTEURS.champs.bienDivision, bien.division);
+  await taperDansChamp(SELECTEURS.champs.bienSurface, bien.surface);
+  await taperDansChamp(SELECTEURS.champs.bienRevenuCadastral, bien.revenu_cadastral);
+  await taperDansChamp(SELECTEURS.champs.bienRue, bien.rue);
+  await taperDansChamp(SELECTEURS.champs.bienNumero, bien.numero);
+  await taperDansChamp(SELECTEURS.champs.bienCommune, bien.commune);
   await attendre(500);
-  await cliquerBouton('Enregistrer');
+  await cliquerBouton(SELECTEURS.boutons.enregistrer);
   await attendre(1000);
 }
 
@@ -723,14 +784,14 @@ async function seq_creationDossier_ouvrir() {
   // naviguerVers/trouverNav qui est trop large et peut cliquer sur le
   // mauvais élément.
   const navLinks = document.querySelectorAll('a.nav-link.uppercase');
-  const dossiers = Array.from(navLinks).find(el => el.textContent.trim() === 'Dossiers');
+  const dossiers = Array.from(navLinks).find(el => el.textContent.trim() === SELECTEURS.textes.lienDossiers);
   if (dossiers) {
     curseurVers(dossiers, () => dossiers.click());
   } else {
     console.warn('[Alfred DOM] Lien "Dossiers" introuvable');
   }
   await attendre(1800);
-  await cliquerBouton('Créer un dossier');
+  await cliquerBouton(SELECTEURS.boutons.creerDossier);
   await attendre(2200);
 
   // Les trois champs sont remplis (le champ vide n'a pas de texte de
@@ -738,28 +799,28 @@ async function seq_creationDossier_ouvrir() {
   // libellé). "Collaborateur administratif" et "Notaire en charge du
   // dossier" n'étaient jusqu'ici pas remplis — le champ notaire existait
   // pourtant déjà dans la config (cfg.notaire) mais n'était jamais utilisé.
-  await taperDansChamp('folder-code', cfg.code);
+  await taperDansChamp(SELECTEURS.champs.dossierCode, cfg.code);
   // Entrée + blur : certains champs Angular ne valident/rafraîchissent leur
   // état (dont l'activation de "Suivant") que sur ces événements, pas sur
   // la frappe seule.
-  const champCode = document.getElementById('folder-code');
+  const champCode = document.getElementById(SELECTEURS.champs.dossierCode);
   if (champCode) validerChamp(champCode);
   await attendre(800);
-  await choisirDansDropdownParLabelProche('Collaborateur en charge du dossier', cfg.collaborateur);
+  await choisirDansDropdownParLabelProche(SELECTEURS.menus.collaborateurEnCharge, cfg.collaborateur);
   await attendre(900);
   if (cfg.collaborateur_administratif) {
-    await choisirDansDropdownParLabelProche('Collaborateur administratif', cfg.collaborateur_administratif);
+    await choisirDansDropdownParLabelProche(SELECTEURS.menus.collaborateurAdministratif, cfg.collaborateur_administratif);
     await attendre(900);
   }
   if (cfg.notaire) {
-    await choisirDansDropdownParLabelProche('Notaire en charge du dossier', cfg.notaire);
+    await choisirDansDropdownParLabelProche(SELECTEURS.menus.notaireEnCharge, cfg.notaire);
     await attendre(900);
   }
   // "Suivant" reste désactivé tant que les champs requis ne sont pas valides —
   // on attend qu'il s'active plutôt que de cliquer trop tôt sur un bouton inactif.
   // On s'arrête ici si ça échoue : continuer sur le mauvais écran ne fait
   // que produire des erreurs en cascade pour les étapes suivantes.
-  if (!await cliquerBoutonQuandActif('Suivant')) {
+  if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.suivant)) {
     console.warn('[Alfred DOM] Étape "ouvrir" bloquée — arrêt de la séquence.');
     return;
   }
@@ -778,7 +839,7 @@ async function seq_creationDossier_parties() {
   }
   await ajouterPartieParRN('Acquéreur', cfg.acquereur_rn);
   // "Suivant" reste désactivé tant que le vendeur n'a pas été ajouté avec succès.
-  if (!await cliquerBoutonQuandActif('Suivant')) {
+  if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.suivant)) {
     console.warn('[Alfred DOM] Étape "parties" bloquée — arrêt de la séquence.');
     return;
   }
@@ -790,12 +851,12 @@ async function seq_creationDossier_bien() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) return;
   await ajouterBien(cfg.bien);
-  if (!await cliquerBoutonQuandActif('Suivant')) {
+  if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.suivant)) {
     console.warn('[Alfred DOM] Étape "bien" bloquée — arrêt de la séquence.');
     return;
   }
   await attendre(2200);
-  await cliquerBoutonQuandActif('Enregistrer');
+  await cliquerBoutonQuandActif(SELECTEURS.boutons.enregistrer);
   await attendre(2200);
 }
 
@@ -803,7 +864,7 @@ async function seq_creationDossier_bien() {
 async function seq_creationDossier_notaires() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) return;
-  await naviguerOnglet('Parties');
+  await naviguerOnglet(SELECTEURS.onglets.parties);
   await attendre(900);
   if (cfg.vendeur_notaire) await rattacherNotaire(cfg.vendeur_notaire, 'Vendeur');
   if (cfg.acquereur_notaire && cfg.acquereur_notaire !== cfg.vendeur_notaire) {
