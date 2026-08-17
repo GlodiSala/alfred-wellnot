@@ -581,7 +581,10 @@ async function ajouterPartieParBCE(qualite, bce) {
 // texte du badge, dans le même esprit que trouverDeclencheurProcheLabel.
 async function cocherRepresentation(qualitePartie) {
   let titre = null;
-  for (let i = 0; i < 10; i++) {
+  // Budget élargi (10×500ms → 16×500ms) : deux échecs consécutifs remontés
+  // en test live pour vendeur ET acquéreur — probablement la section met
+  // plus longtemps à apparaître après le rattachement du notaire que prévu.
+  for (let i = 0; i < 16; i++) {
     titre = Array.from(document.querySelectorAll('*'))
       .find(el => el.children.length === 0 && el.textContent.trim() === SELECTEURS.textes.represente && el.getBoundingClientRect().width > 0);
     if (titre) break;
@@ -667,7 +670,7 @@ async function rattacherNotaire(nomNotaire, qualitePartie) {
   // fiche ; s'il n'existe pas ici, cliquerBouton échoue silencieusement
   // (averti en console) sans bloquer la suite.
   await cliquerBouton(SELECTEURS.boutons.ajouter, 6);
-  await attendre(800);
+  await attendre(1000); // légèrement remonté (800→1000) : la section "REPRÉSENTE" qui suit met parfois plus longtemps à apparaître
 
   if (qualitePartie) await cocherRepresentation(qualitePartie);
   return true;
@@ -780,20 +783,25 @@ async function essayerAjouterBienParCadastre(bien) {
   }
   if (!input) { console.warn('[Alfred DOM] Champ de recherche commune (CADASTRE) introuvable'); return false; }
 
+  // Le code postal et le nom de commune configurés (ex: "8670 — Coxyde")
+  // arrivent avant la recherche des résultats — nécessaire aussi pour
+  // taper la recherche elle-même : le champ de recherche réel de l'appli
+  // ne comprend PAS le format complet "8670 — Coxyde" (renvoie "Aucun
+  // résultat"), seulement le nom ("Coxyde") — confirmé en test live.
+  const [codePostal, nomCommune] = bien.commune.split(/[—-]/).map(s => s && s.trim());
+
   await curseurVersAsync(input, () => input.focus());
   await attendre(200);
-  await taper(input, bien.commune);
+  await taper(input, nomCommune || bien.commune);
   await cliquerBouton(SELECTEURS.boutons.rechercher);
   await attendre(2600); // laisse largement le temps à la recherche de répondre
 
-  // Comparaison stricte (===) trop fragile : le code postal et le nom de
-  // commune configurés (ex: "8670 — Coxyde") ne s'affichent pas forcément
-  // avec le même séparateur/ordre dans le résultat de recherche réel de
-  // l'appli (ex: "8670 Koksijde", "Coxyde (8670)"...) — même famille de bug
-  // que pour le notaire (voir optionCorrespond). On vérifie plutôt que le
-  // code postal ET le nom de commune apparaissent tous les deux quelque
-  // part dans le texte de l'option, sans exiger un format précis.
-  const [codePostal, nomCommune] = bien.commune.split(/[—-]/).map(s => s && s.trim());
+  // Comparaison stricte (===) trop fragile : le résultat de recherche réel
+  // ne s'affiche pas forcément avec le même séparateur/ordre (ex: "8670
+  // Koksijde", "Coxyde (8670)"...) — même famille de bug que pour le
+  // notaire (voir optionCorrespond). On vérifie plutôt que le code postal
+  // ET le nom de commune apparaissent tous les deux quelque part dans le
+  // texte de l'option, sans exiger un format précis.
   let li = null;
   for (let i = 0; i < 10; i++) {
     li = Array.from(document.querySelectorAll('li'))
@@ -995,6 +1003,10 @@ async function seq_creationDossier_parties_acquereur() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) return;
   await ajouterPartieParRN('Acquéreur', cfg.acquereur_rn);
+  // Petite pause volontaire : sans elle, le clic sur "Suivant" arrivait
+  // presque immédiatement après l'ajout de l'acquéreur — remonté en test
+  // live ("on a à peine le temps de voir il appuie Suivant").
+  await attendre(500);
   // "Suivant" reste désactivé tant que le vendeur n'a pas été ajouté avec succès.
   if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.suivant)) {
     console.warn('[Alfred DOM] Étape "parties" bloquée — arrêt de la séquence.');
