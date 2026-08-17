@@ -188,6 +188,9 @@ function creerPanneauRepliques() {
 
   const btnLectureAuto = panel.querySelector('#alfred-lecture-auto');
   btnLectureAuto.onclick = () => {
+    // Le panneau doit se cacher comme pour un clic individuel — remonté
+    // en test live ("l'interface ne disparaît pas, c'est pas agréable").
+    panel.style.display = 'none';
     if (typeof lectureAutomatique === 'function') lectureAutomatique();
   };
 
@@ -272,13 +275,17 @@ function remplirPanneauRepliques() {
     titre.textContent = 'Acte ' + acteNum;
     titre.style.cssText = 'color:rgba(255,255,255,.3);font-size:8px;letter-spacing:2px;text-transform:uppercase;';
     ligneTitre.appendChild(titre);
+    // Un peu plus mis en avant (pastille + libellé texte, pas juste un
+    // triangle discret) — remonté en test live comme trop effacé, et un
+    // petit message texte reste plus clair qu'une icône seule.
     const btnJouerActe = document.createElement('span');
-    btnJouerActe.textContent = '▶';
+    btnJouerActe.textContent = '▶ Jouer';
     btnJouerActe.title = 'Jouer tout l\'acte ' + acteNum;
-    btnJouerActe.style.cssText = 'color:rgba(20,176,189,.7);font-size:10px;cursor:pointer;padding:2px 4px;';
-    btnJouerActe.onmouseover = () => { btnJouerActe.style.color = '#14b0bd'; };
-    btnJouerActe.onmouseout  = () => { btnJouerActe.style.color = 'rgba(20,176,189,.7)'; };
+    btnJouerActe.style.cssText = 'color:#14b0bd;background:rgba(20,176,189,.15);border:1px solid rgba(20,176,189,.35);border-radius:10px;font-size:9px;font-weight:600;cursor:pointer;padding:2px 8px;';
+    btnJouerActe.onmouseover = () => { btnJouerActe.style.background = 'rgba(20,176,189,.3)'; };
+    btnJouerActe.onmouseout  = () => { btnJouerActe.style.background = 'rgba(20,176,189,.15)'; };
     btnJouerActe.onclick = () => {
+      document.getElementById('alfred-repliques-panel').style.display = 'none';
       if (typeof lectureAutomatique === 'function') lectureAutomatique({ acte: acteNum });
     };
     ligneTitre.appendChild(btnJouerActe);

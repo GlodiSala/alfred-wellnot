@@ -400,6 +400,11 @@ document.addEventListener('keydown', e => {
   }
   if (e.key === 'Escape') {
     if (typeof stopAudio === 'function') stopAudio();
+    // Une fois le panneau caché (lecture auto lancée depuis un bouton qui
+    // le referme), il n'y avait plus aucun moyen d'arrêter la lecture
+    // automatique sans le rouvrir. Échap l'arrête aussi maintenant, comme
+    // il arrête déjà l'audio.
+    if (lectureAutoActive) lectureAutomatique();
     setAlfredState('idle');
   }
   if (e.key === 'l' || e.key === 'L') {
