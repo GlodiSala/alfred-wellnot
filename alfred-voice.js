@@ -160,13 +160,16 @@ const GEMINI_VOIX_CATALOGUE = [
 // Alfred est un candidat qui passe un entretien d'embauche devant une
 // salle de notaires) et par le guide de style d'ALFRED_CONFIG.SYSTEM_PROMPT
 // (naturel, direct, confiant, humour discret, jamais "excellente question").
-// Formulation volontairement calme/courte : les versions précédentes,
-// plus chargées en émotion ("outsider", "envie de convaincre", "humour
-// malicieux"), poussaient le modèle vers un rendu trop théâtral en
-// pratique — même en demandant explicitement "jamais théâtral" juste
-// après. Un prompt court et posé donne un résultat plus naturel qu'un
-// prompt qui décrit beaucoup d'émotion à la fois.
-const TON_GEMINI_DEFAUT = "Ton calme, posé et naturel, comme dans une conversation professionnelle normale. Assurance tranquille, sans emphase.";
+// Deux essais précédents, deux excès opposés : trop chargé en émotion
+// ("outsider", "envie de convaincre", "humour malicieux") → trop théâtral ;
+// réduit à de simples adjectifs calmes ("calme, posé, sans emphase") → trop
+// plat/monocorde. Conseil officiel Google retrouvé entre-temps : "les notes
+// de style doivent amplifier, pas atténuer, pour éviter un rendu robotique"
+// — la solution n'est donc pas de doser l'émotion, mais de donner une
+// référence concrète (une scène, un type d'orateur) plutôt que des
+// adjectifs abstraits, sans reprendre les mots à forte charge dramatique
+// qui posaient problème la première fois.
+const TON_GEMINI_DEFAUT = "Scène : un entretien d'embauche professionnel, face à un public de notaires. Parle avec l'assurance calme d'un bon orateur — engageant et naturel, jamais monocorde, jamais théâtral.";
 
 const ALFRED_VOIX_MOTEUR_KEY = 'alfred_voix_moteur'; // 'gemini' | 'cloud' (cloud = repli automatique, pas de choix utilisateur)
 const ALFRED_GEMINI_TON_KEY  = 'alfred_gemini_ton';  // chaîne simple, partagée FR/NL
