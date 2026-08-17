@@ -141,7 +141,8 @@ function creerPanneauRepliques() {
       <div id="alfred-script-status" style="color:rgba(255,255,255,.4);font-size:9px;"></div>
       <span id="alfred-script-reset" title="Réinitialiser le script par défaut" style="color:rgba(255,255,255,.35);font-size:11px;cursor:pointer;">↺</span>
     </div>
-    <button id="alfred-donnees-ouvrir" style="width:100%;margin-bottom:14px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:rgba(255,255,255,.85);font-size:11px;font-weight:600;cursor:pointer;">📋 Données du dossier démo</button>
+    <button id="alfred-donnees-ouvrir" style="width:100%;margin-bottom:8px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:rgba(255,255,255,.85);font-size:11px;font-weight:600;cursor:pointer;">📋 Données du dossier démo</button>
+    <button id="alfred-voix-ouvrir" style="width:100%;margin-bottom:14px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:rgba(255,255,255,.85);font-size:11px;font-weight:600;cursor:pointer;">🔊 Voix d'Alfred</button>
     <div style="display:flex;gap:20px;align-items:flex-start;">
       <div id="alfred-col-1" style="flex:1;"></div>
       <div id="alfred-col-2" style="flex:1.2;"></div>
@@ -156,6 +157,14 @@ function creerPanneauRepliques() {
   btnDonnees.onclick = () => {
     panel.style.display = 'none';
     ouvrirPanneauDonneesCreation();
+  };
+
+  const btnVoix = panel.querySelector('#alfred-voix-ouvrir');
+  btnVoix.onmouseover = () => { btnVoix.style.background = 'rgba(255,255,255,.18)'; };
+  btnVoix.onmouseout  = () => { btnVoix.style.background = 'rgba(255,255,255,.08)'; };
+  btnVoix.onclick = () => {
+    panel.style.display = 'none';
+    ouvrirPanneauVoix();
   };
 
   panel.querySelector('#alfred-script-reset').onclick = () => {
@@ -356,6 +365,121 @@ function creerPanneauDonneesCreation() {
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && panel.style.display !== 'none') panel.style.display = 'none';
   });
+}
+
+// ── Panneau « Voix d'Alfred » ─────────────────────────────
+// Choix de voix Google TTS purement local (préférence par appareil, pas de
+// synchro partagée — contrairement au script/données démo, ça ne concerne
+// que la personne qui teste/anime la démo sur cet écran-là).
+function creerPanneauVoix() {
+  if (document.getElementById('alfred-voix-panel')) return;
+  const panel = document.createElement('div');
+  panel.id = 'alfred-voix-panel';
+  panel.style.cssText = `
+    display:none; position:fixed;
+    top:50%; left:50%; transform:translate(-50%,-50%);
+    background:rgba(5,69,97,0.99); border-radius:14px;
+    padding:20px; z-index:500; width:380px; max-width:90vw;
+    max-height:85vh; overflow-y:auto;
+    box-shadow:0 8px 48px rgba(0,0,0,0.6);
+    font-family:sans-serif;
+  `;
+  document.body.appendChild(panel);
+}
+
+function ouvrirPanneauVoix() {
+  const panel = document.getElementById('alfred-voix-panel');
+  if (!panel || typeof VOIX_CATALOGUE === 'undefined' || typeof VOIX_CONFIG === 'undefined') return;
+  panel.innerHTML = '';
+
+  const titre = document.createElement('div');
+  titre.textContent = 'Voix d\'Alfred (préférence sur cet appareil)';
+  titre.style.cssText = 'color:rgba(255,255,255,.4);font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;';
+  panel.appendChild(titre);
+
+  const avertissement = document.createElement('div');
+  avertissement.textContent = 'Les voix "si dispo" (Studio/Chirp3 HD) ne sont pas garanties disponibles pour cette langue chez Google — le bouton "Tester" te le dira tout de suite.';
+  avertissement.style.cssText = 'color:rgba(255,255,255,.45);font-size:10px;margin-bottom:14px;line-height:1.4;';
+  panel.appendChild(avertissement);
+
+  const selects = {};
+
+  ['fr', 'nl'].forEach(langue => {
+    panel.appendChild(champLabel(langue === 'fr' ? 'Voix française' : 'Voix néerlandaise'));
+
+    const ligne = document.createElement('div');
+    ligne.style.cssText = 'display:flex;gap:6px;margin-bottom:14px;';
+
+    const select = document.createElement('select');
+    select.style.cssText = 'flex:1;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:#0a3b52;color:#fff;font-size:12px;';
+    (VOIX_CATALOGUE[langue] || []).forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v.id;
+      opt.textContent = v.label;
+      opt.style.cssText = 'background:#0a3b52;color:#fff;';
+      select.appendChild(opt);
+    });
+    select.value = (VOIX_CATALOGUE[langue] || []).find(v => v.name === VOIX_CONFIG[langue].name)?.id
+      || (VOIX_CATALOGUE[langue][0] && VOIX_CATALOGUE[langue][0].id);
+    selects[langue] = select;
+    ligne.appendChild(select);
+
+    const btnTester = document.createElement('button');
+    btnTester.textContent = '▶';
+    btnTester.title = 'Tester cette voix';
+    btnTester.style.cssText = 'padding:8px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:12px;cursor:pointer;';
+    btnTester.onclick = async () => {
+      const v = (VOIX_CATALOGUE[langue] || []).find(x => x.id === select.value);
+      if (!v) return;
+      const texteTest = langue === 'fr'
+        ? "Bonjour, je suis Alfred. Voici un exemple de ma voix."
+        : "Goeiedag, ik ben Alfred. Dit is een voorbeeld van mijn stem.";
+      const original = { name: VOIX_CONFIG[langue].name, ssmlGender: VOIX_CONFIG[langue].ssmlGender, languageCode: VOIX_CONFIG[langue].languageCode };
+      VOIX_CONFIG[langue].name = v.name;
+      VOIX_CONFIG[langue].ssmlGender = v.gender;
+      if (v.languageCode) VOIX_CONFIG[langue].languageCode = v.languageCode;
+      try {
+        await speak(texteTest, langue, texteTest);
+      } catch (e) {
+        alert('Cette voix n\'a pas pu être générée (probablement indisponible pour cette langue chez Google). Choisis-en une autre.');
+      } finally {
+        // Restaure la voix active tant que "Enregistrer" n'a pas été cliqué,
+        // pour ne pas changer la voix en cours d'essai par surprise.
+        Object.assign(VOIX_CONFIG[langue], original);
+      }
+    };
+    ligne.appendChild(btnTester);
+
+    panel.appendChild(ligne);
+  });
+
+  const boutons = document.createElement('div');
+  boutons.style.cssText = 'display:flex;gap:8px;margin-top:6px;';
+
+  const btnSave = document.createElement('button');
+  btnSave.textContent = 'Enregistrer';
+  btnSave.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:none;background:#14b0bd;color:#fff;font-size:12px;font-weight:600;cursor:pointer;';
+  btnSave.onclick = () => {
+    const choix = { fr: selects.fr.value, nl: selects.nl.value };
+    localStorage.setItem(ALFRED_VOIX_CHOIX_KEY, JSON.stringify(choix));
+    if (typeof appliquerChoixVoix === 'function') appliquerChoixVoix();
+    panel.style.display = 'none';
+    document.getElementById('alfred-repliques-panel').style.display = 'block';
+  };
+
+  const btnCancel = document.createElement('button');
+  btnCancel.textContent = 'Annuler';
+  btnCancel.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:transparent;color:rgba(255,255,255,.8);font-size:12px;cursor:pointer;';
+  btnCancel.onclick = () => {
+    panel.style.display = 'none';
+    document.getElementById('alfred-repliques-panel').style.display = 'block';
+  };
+
+  boutons.appendChild(btnSave);
+  boutons.appendChild(btnCancel);
+  panel.appendChild(boutons);
+
+  panel.style.display = 'block';
 }
 
 function champTexte(valeur, placeholder) {
@@ -752,6 +876,7 @@ function initAlfredUI() {
   creerPanneauRepliques();
   creerPanneauEdition();
   creerPanneauDonneesCreation();
+  creerPanneauVoix();
   startBlinking();
   startEyeLerp();
   resetSleepTimer();
