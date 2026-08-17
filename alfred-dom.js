@@ -616,12 +616,14 @@ async function ajouterPartieParBCE(qualite, bce) {
 // texte du badge, dans le même esprit que trouverDeclencheurProcheLabel.
 async function cocherRepresentation(qualitePartie) {
   let titre = null;
-  // Budget élargi (10×500ms → 16×500ms) : deux échecs consécutifs remontés
-  // en test live pour vendeur ET acquéreur — probablement la section met
-  // plus longtemps à apparaître après le rattachement du notaire que prévu.
+  // Cause réelle trouvée en inspectant le DOM en direct : "REPRÉSENTE"
+  // affiché en majuscules à l'écran n'est que du CSS (text-transform), le
+  // vrai texte du DOM est "Représente" (casse normale) — la comparaison
+  // stricte en majuscules ne matchait donc jamais, depuis le début (pas
+  // un problème de timing, malgré le budget élargi ci-dessous).
   for (let i = 0; i < 16; i++) {
     titre = Array.from(document.querySelectorAll('*'))
-      .find(el => el.children.length === 0 && el.textContent.trim() === SELECTEURS.textes.represente && el.getBoundingClientRect().width > 0);
+      .find(el => el.children.length === 0 && el.textContent.trim().toLowerCase() === SELECTEURS.textes.represente.toLowerCase() && el.getBoundingClientRect().width > 0);
     if (titre) break;
     await attendre(500);
   }
