@@ -711,7 +711,15 @@ async function montrerPropositionEmail() {
 // à la page de finir de charger avant de chercher, et à la recherche
 // elle-même de répondre — d'où les pauses plus généreuses ci-dessous.
 async function essayerAjouterBienParCadastre(bien) {
-  if (!bien.commune) return false;
+  // Échouait ici en silence total (aucun log) si le champ "commune" était
+  // vide dans les données démo (ex: après une synchro avec une version
+  // plus ancienne qui ne l'avait pas encore) — impossible à diagnostiquer
+  // depuis la console. Remonté en test live : "il va en manuel direct,
+  // sans même essayer le cadastre".
+  if (!bien.commune) {
+    console.warn('[Alfred DOM] Pas de commune configurée pour le bien — recherche CADASTRE sautée, bascule directe sur la saisie manuelle. Vérifie le panneau "Données démo".');
+    return false;
+  }
 
   // Laisse la page de l'étape "Biens" finir de se charger avant de
   // chercher le champ — sinon on peut cliquer/taper trop tôt.
