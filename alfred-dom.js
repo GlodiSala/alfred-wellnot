@@ -647,7 +647,23 @@ async function cocherRepresentation(qualitePartie) {
   }
   if (!checkbox) { console.warn('[Alfred DOM] Case à cocher introuvable pour:', qualitePartie); return false; }
   await curseurVersAsync(checkbox, () => simulerClic(checkbox));
-  await attendre(400);
+  await attendre(300);
+
+  // Remonté en test live : le clic simulé "ne fait rien" (case jamais
+  // cochée à l'écran). Cas classique déjà vu ailleurs sur ce site (menus
+  // PrimeNG) : le vrai gestionnaire de clic écoute sur un élément visuel
+  // autour de l'input caché, pas sur l'input lui-même. On revérifie l'état
+  // et on retente sur le parent si besoin.
+  if (!checkbox.checked) {
+    const wrapper = checkbox.closest('[role="checkbox"]') || checkbox.parentElement;
+    if (wrapper && wrapper !== checkbox) {
+      await curseurVersAsync(wrapper, () => simulerClic(wrapper));
+      await attendre(300);
+    }
+  }
+  if (!checkbox.checked) {
+    console.warn('[Alfred DOM] La case à cocher ne semble toujours pas cochée après le clic pour:', qualitePartie, '— composant peut-être différent de ce qui était attendu.');
+  }
   return true;
 }
 
@@ -782,6 +798,24 @@ async function montrerPropositionEmail() {
 // D'après un test live : le principe marche, mais il faut laisser le temps
 // à la page de finir de charger avant de chercher, et à la recherche
 // elle-même de répondre — d'où les pauses plus généreuses ci-dessous.
+// Ferme une fenêtre/panneau ouvert (le "×" en haut à droite) — utilisé
+// quand la recherche CADASTRE échoue en cours de route : sans ça, le
+// panneau "Ajouter un bien via le CADASTRE" restait ouvert par-dessus
+// l'écran, et la bascule vers la saisie manuelle qui suit (qui cherche le
+// bouton "Ajouter manuellement" resté caché derrière) échouait à son tour.
+function fermerFenetreOuverte() {
+  const candidats = Array.from(document.querySelectorAll('button, [role="button"], span, svg, a'))
+    .filter(el => el.getBoundingClientRect().width > 0);
+  const fermeture = candidats.find(el => {
+    const txt = el.textContent.trim();
+    const label = (el.getAttribute('aria-label') || '').toLowerCase();
+    return txt === '×' || txt === '✕' || txt === 'X' || label.includes('fermer') || label.includes('close');
+  });
+  if (fermeture) { curseurVers(fermeture, () => simulerClic(fermeture)); return true; }
+  console.warn('[Alfred DOM] Bouton de fermeture (×) introuvable — le panneau CADASTRE risque de rester ouvert.');
+  return false;
+}
+
 async function essayerAjouterBienParCadastre(bien) {
   // Échouait ici en silence total (aucun log) si le champ "commune" était
   // vide dans les données démo (ex: après une synchro avec une version
@@ -816,7 +850,12 @@ async function essayerAjouterBienParCadastre(bien) {
     if (input) break;
     await attendre(400);
   }
-  if (!input) { console.warn('[Alfred DOM] Champ de recherche commune (CADASTRE) introuvable'); return false; }
+  if (!input) {
+    console.warn('[Alfred DOM] Champ de recherche commune (CADASTRE) introuvable');
+    fermerFenetreOuverte();
+    await attendre(500);
+    return false;
+  }
 
   // Le code postal et le nom de commune configurés (ex: "8670 — Coxyde")
   // arrivent avant la recherche des résultats — nécessaire aussi pour
@@ -852,6 +891,8 @@ async function essayerAjouterBienParCadastre(bien) {
   if (!li) {
     const liVisibles = Array.from(document.querySelectorAll('li')).filter(el => el.getBoundingClientRect().width > 0).map(el => el.textContent.trim());
     console.warn('[Alfred DOM] Commune introuvable dans les résultats CADASTRE:', bien.commune, '— li visibles actuellement:', liVisibles);
+    fermerFenetreOuverte();
+    await attendre(500);
     return false;
   }
 
@@ -875,6 +916,8 @@ async function essayerAjouterBienParCadastre(bien) {
   const champParcelle = document.getElementById(SELECTEURS.champs.bienParcelle);
   if (!champParcelle || !champParcelle.value || !champParcelle.value.trim()) {
     console.warn('[Alfred DOM] Sélection CADASTRE effectuée mais parcelle non pré-remplie — bascule sur saisie manuelle.');
+    fermerFenetreOuverte();
+    await attendre(500);
     return false;
   }
   await cliquerBoutonQuandActif(SELECTEURS.boutons.enregistrer);
