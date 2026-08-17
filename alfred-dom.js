@@ -70,7 +70,10 @@ const SELECTEURS = {
     represente: 'REPRÉSENTE',
     mesClients: 'Mes clients',
     optionCompromis: 'Compromis',
-    propositionEmail: "Proposition d'e-mail",
+    // "Proposition d'e-mail" ne correspondait à rien dans le vrai DOM —
+    // confirmé par capture d'écran, le vrai titre de la carte est "Email à
+    // valider".
+    propositionEmail: "Email à valider",
     lienDossiers: 'Dossiers',
   },
 };
@@ -779,13 +782,11 @@ async function lancerRedactionCompromis() {
 // automatiquement (pièces manquantes détectées après rédaction du
 // compromis), et clique "Valider et envoyer" (A18/A19 du séquencier).
 //
-// Ce que cette fonction NE fait PAS, volontairement : attendre/simuler la
-// réponse du vendeur (A20 « le vendeur dépose les documents » — le
-// séquencier de Cyril dit "simuler la réception", mais on ignore par quel
-// mécanisme côté app — bouton de debug ? second dossier déjà préparé avec
-// les pièces ? à clarifier avec lui). Tant que ce n'est pas su, la
-// séquence s'arrête après l'envoi du mail — la suite (A20-A22 : réception,
-// analyse, questions au chat) reste à faire manuellement en démo.
+// Ce que cette fonction NE fait PAS : attendre/simuler la réponse du
+// vendeur (A20-A21) — confirmé avec l'utilisatrice, ça dépend d'une vraie
+// réponse envoyée manuellement par Cyril depuis une boîte mail, hors de
+// notre contrôle. Voir seq_creationDossier_attenteReponseVendeur (étape
+// séparée, juste après celle-ci) pour l'attente + la suite.
 async function montrerPropositionEmail() {
   const onglet = trouverOnglet(SELECTEURS.onglets.evenements);
   if (onglet) curseurVers(onglet, () => onglet.click());
