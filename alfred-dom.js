@@ -792,13 +792,18 @@ async function montrerPropositionEmail() {
   if (onglet) curseurVers(onglet, () => onglet.click());
   await attendre(1200);
   let li = null;
-  for (let i = 0; i < 20; i++) {
+  // Budget large (20s → 90s) : la génération réelle du compromis côté
+  // backend (juste avant, voir lancerRedactionCompromis) peut prendre du
+  // temps avant que l'événement "Email à valider" n'apparaisse — remonté
+  // par l'utilisatrice ("il faut du temps... Alfred fait une notif quand
+  // il est prêt").
+  for (let i = 0; i < 90; i++) {
     li = Array.from(document.querySelectorAll('li'))
       .find(el => el.textContent.includes(SELECTEURS.textes.propositionEmail));
     if (li) break;
     await attendre(1000);
   }
-  if (!li) { console.warn("[Alfred DOM] Proposition d'e-mail non trouvée"); return false; }
+  if (!li) { console.warn("[Alfred DOM] \"Email à valider\" non trouvé après 90s"); return false; }
   const consulter = Array.from(li.querySelectorAll('button')).find(b => b.textContent.trim() === SELECTEURS.boutons.consulter)
     || trouverBoutonParTexte(SELECTEURS.boutons.consulter);
   if (consulter) await curseurVersAsync(consulter, () => consulter.click());
