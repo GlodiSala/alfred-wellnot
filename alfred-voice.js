@@ -327,7 +327,18 @@ async function genererAudioGemini(text, voixId, ton) {
       });
       const data = await res.json();
       const part = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData;
-      if (!part || !part.data) throw new Error('Pas audio (Gemini) — ' + JSON.stringify(data?.error || data));
+      if (!part || !part.data) {
+        // Quota gratuit journalier dépassé (100 requêtes/jour sur le
+        // compte Gemini gratuit) : message clair plutôt que du JSON brut —
+        // la solution est d'activer la facturation sur ce compte Google
+        // (aistudio.google.com), pas un bug côté code.
+        if (data?.error?.code === 429 || data?.error?.status === 'RESOURCE_EXHAUSTED') {
+          const err = new Error('Quota Gemini gratuit dépassé pour aujourd\'hui (100 requêtes/jour) — active la facturation sur le compte Google associé à la clé API (aistudio.google.com) pour lever cette limite.');
+          err.quotaExceeded = true;
+          throw err;
+        }
+        throw new Error('Pas audio (Gemini) — ' + JSON.stringify(data?.error || data));
+      }
       base64 = part.data;
       taux = tauxDepuisMimeType(part.mimeType);
       ecrireCacheTTS(cle, JSON.stringify({ base64, rate: taux })); // local, en tâche de fond
@@ -415,6 +426,7 @@ async function prechargerScript(voixFr, voixNl, ton, onProgress) {
 
   let fait = 0;
   let echecs = 0;
+  let quotaDepasse = false;
   let indexSuivant = 0;
 
   async function travailleur() {
@@ -424,6 +436,7 @@ async function prechargerScript(voixFr, voixNl, ton, onProgress) {
         await genererAudioGemini(ligne.texte, ligne.voix, ton);
       } catch (e) {
         echecs++;
+        if (e && e.quotaExceeded) quotaDepasse = true;
         console.warn('[Alfred Voice] Préchargement échoué pour une réplique:', ligne.texte.slice(0, 40), e);
       }
       fait++;
@@ -434,7 +447,7 @@ async function prechargerScript(voixFr, voixNl, ton, onProgress) {
   const travailleurs = Array.from({ length: Math.min(PRECHARGEMENT_CONCURRENCE, lignes.length) }, travailleur);
   await Promise.all(travailleurs);
 
-  return { total: lignes.length, echecs };
+  return { total: lignes.length, echecs, quotaDepasse };
 }
 
 // ── Anime la bouche selon amplitude ──────────────────────

@@ -478,7 +478,9 @@ function ouvrirPanneauVoix() {
         await audio.play();
       } catch (e) {
         console.warn('[Alfred Voice] Test de voix échoué:', e);
-        alert('Cette voix n\'a pas pu être générée (réseau, ou clé API pas encore active côté serveur). Regarde la console pour le détail.');
+        alert(e && e.quotaExceeded
+          ? e.message
+          : 'Cette voix n\'a pas pu être générée (réseau, ou clé API pas encore active côté serveur). Regarde la console pour le détail.');
       } finally {
         btn.disabled = false;
         btn.textContent = original;
@@ -526,7 +528,9 @@ function ouvrirPanneauVoix() {
 
     panel.style.display = 'none';
     document.getElementById('alfred-repliques-panel').style.display = 'block';
-    if (resultat.echecs > 0) {
+    if (resultat.quotaDepasse) {
+      alert(`Enregistré, mais le préchargement s'est arrêté en cours de route (${resultat.echecs}/${resultat.total} répliques manquantes) : quota Gemini gratuit dépassé pour aujourd'hui (100 requêtes/jour). Active la facturation sur le compte Google associé à la clé API (aistudio.google.com) pour lever cette limite, puis reclique "Enregistrer".`);
+    } else if (resultat.echecs > 0) {
       alert(`Enregistré. Préchargement terminé avec ${resultat.echecs} échec(s) sur ${resultat.total} répliques — regarde la console pour le détail.`);
     }
   };
