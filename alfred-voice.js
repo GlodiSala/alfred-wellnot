@@ -539,19 +539,35 @@ async function speak(text, langue, sousTitre, moteurForce) {
       animateMouth(amp);
     }, 35);
 
-    audio.onended = () => {
-      clearInterval(phraseTimer);
-      clearInterval(talkTick);
-      updateVolBar(0);
-      resetMouth();
-      setAlfredState('idle');
-      currentAudio = null;
-      resetSleepTimer();
-      cacherSousTitres();
-      ctx.close().catch(() => {});
-    };
-
-    await audio.play();
+    // audio.play() se résout dès que la lecture DÉMARRE, pas quand elle se
+    // termine — un simple `await audio.play()` laissait donc le code
+    // continuer (et l'audio suivant démarrer) alors que celui-ci jouait
+    // encore. Avec une seule réplique ça ne se voyait pas, mais avec
+    // plusieurs segments enchaînés (voir jouerSecours), le suivant
+    // démarrait par-dessus le précédent — deux voix mélangées. On attend
+    // maintenant explicitement la fin réelle (événement "ended").
+    await new Promise((resolve, reject) => {
+      // stopAudio() (touche Échap) appelle .pause(), pas .play() jusqu'au
+      // bout — ça ne déclenche jamais "ended". Sans ce filet, la promesse
+      // resterait bloquée pour toujours, et avec elle toute la séquence de
+      // répliques (le verrou anti-double-déclenchement ne se relâcherait
+      // plus). On écoute donc aussi "pause" ; resolve() est sans risque à
+      // appeler deux fois (la 2e est ignorée).
+      audio.onpause = () => resolve();
+      audio.onended = () => {
+        clearInterval(phraseTimer);
+        clearInterval(talkTick);
+        updateVolBar(0);
+        resetMouth();
+        setAlfredState('idle');
+        currentAudio = null;
+        resetSleepTimer();
+        cacherSousTitres();
+        ctx.close().catch(() => {});
+        resolve();
+      };
+      audio.play().catch(reject);
+    });
 
   } catch(e) {
     console.warn('TTS erreur — fallback:', e);
