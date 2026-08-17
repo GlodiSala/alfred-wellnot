@@ -401,12 +401,15 @@ function trouverDeclencheurProcheLabel(labelTexte) {
 }
 
 // Une option de menu correspond si son texte est exactement celui attendu,
-// ou le contient (ex: "Alain Caprasse — Charleroi" ou un texte avec un
-// espace insécable/en trop) — l'égalité stricte s'est révélée trop rigide
-// en test live (option visible à l'écran mais jamais sélectionnée).
+// ou le contient, en ignorant la casse — confirmé en test live : l'appli
+// affiche parfois les noms de famille tout en majuscules ("Alain
+// CAPRASSE"), alors que la config utilise une casse normale ("Alain
+// Caprasse") — une comparaison sensible à la casse ratait l'option
+// pourtant visible à l'écran.
 function optionCorrespond(li, texteOption) {
-  const texte = li.textContent.trim();
-  return texte === texteOption || texte.includes(texteOption);
+  const texte = li.textContent.trim().toLowerCase();
+  const attendu = texteOption.toLowerCase();
+  return texte === attendu || texte.includes(attendu);
 }
 
 // Sélectionne une option dans le menu déroulant situé juste sous un libellé
@@ -819,7 +822,14 @@ async function seq_creationDossier_ouvrir() {
   // libellé). "Collaborateur administratif" et "Notaire en charge du
   // dossier" n'étaient jusqu'ici pas remplis — le champ notaire existait
   // pourtant déjà dans la config (cfg.notaire) mais n'était jamais utilisé.
-  await taperDansChamp(SELECTEURS.champs.dossierCode, cfg.code);
+  // Le numéro de dossier doit être unique — l'appli refuse un doublon et
+  // bloque "Suivant". Pour ne pas devoir y penser à chaque test, on ajoute
+  // automatiquement l'heure du moment (HHMMSS) au code configuré : chaque
+  // lancement génère donc un numéro différent, sans jamais retomber sur un
+  // ancien dossier déjà créé.
+  const horodatage = new Date().toTimeString().slice(0, 8).replace(/:/g, '');
+  const codeUnique = `${cfg.code}-${horodatage}`;
+  await taperDansChamp(SELECTEURS.champs.dossierCode, codeUnique);
   // Entrée + blur : certains champs Angular ne valident/rafraîchissent leur
   // état (dont l'activation de "Suivant") que sur ces événements, pas sur
   // la frappe seule.
