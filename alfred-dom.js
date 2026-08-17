@@ -734,14 +734,31 @@ async function essayerAjouterBienParCadastre(bien) {
   await cliquerBouton(SELECTEURS.boutons.rechercher);
   await attendre(2600); // laisse largement le temps à la recherche de répondre
 
+  // Comparaison stricte (===) trop fragile : le code postal et le nom de
+  // commune configurés (ex: "8670 — Coxyde") ne s'affichent pas forcément
+  // avec le même séparateur/ordre dans le résultat de recherche réel de
+  // l'appli (ex: "8670 Koksijde", "Coxyde (8670)"...) — même famille de bug
+  // que pour le notaire (voir optionCorrespond). On vérifie plutôt que le
+  // code postal ET le nom de commune apparaissent tous les deux quelque
+  // part dans le texte de l'option, sans exiger un format précis.
+  const [codePostal, nomCommune] = bien.commune.split(/[—-]/).map(s => s && s.trim());
   let li = null;
   for (let i = 0; i < 10; i++) {
     li = Array.from(document.querySelectorAll('li'))
-      .find(el => el.textContent.trim() === bien.commune && el.getBoundingClientRect().width > 0);
+      .find(el => {
+        if (el.getBoundingClientRect().width <= 0) return false;
+        const texte = el.textContent.trim().toLowerCase();
+        return (!codePostal || texte.includes(codePostal.toLowerCase()))
+            && (!nomCommune  || texte.includes(nomCommune.toLowerCase()));
+      });
     if (li) break;
     await attendre(400);
   }
-  if (!li) { console.warn('[Alfred DOM] Commune introuvable dans les résultats CADASTRE:', bien.commune); return false; }
+  if (!li) {
+    const liVisibles = Array.from(document.querySelectorAll('li')).filter(el => el.getBoundingClientRect().width > 0).map(el => el.textContent.trim());
+    console.warn('[Alfred DOM] Commune introuvable dans les résultats CADASTRE:', bien.commune, '— li visibles actuellement:', liVisibles);
+    return false;
+  }
 
   await curseurVersAsync(li, () => simulerClic(li));
   await attendre(2200); // laisse le temps à une éventuelle auto-complétion de la parcelle
