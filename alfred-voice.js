@@ -153,7 +153,7 @@ const GEMINI_VOIX_CATALOGUE = [
 // Alfred est un candidat qui passe un entretien d'embauche devant une
 // salle de notaires) et par le guide de style d'ALFRED_CONFIG.SYSTEM_PROMPT
 // (naturel, direct, confiant, humour discret, jamais "excellente question").
-const TON_GEMINI_DEFAUT = "Tu es Alfred, un candidat qui passe un entretien d'embauche devant une salle de notaires — pas un lecteur de script. Parle avec assurance, chaleur et un humour discret par moments, toujours direct et sans détour, jamais théâtral.";
+const TON_GEMINI_DEFAUT = "Tu es Alfred : un outsider sans parcours classique qui passe un entretien d'embauche devant une salle de notaires exigeants, et qui a vraiment envie de les convaincre. Parle avec assurance, chaleur et une pointe d'humour malicieux, toujours direct, jamais théâtral.";
 
 // Séparateur entre l'instruction de ton et le texte à prononcer — sans lui,
 // le modèle lit parfois l'instruction elle-même à voix haute au lieu de
