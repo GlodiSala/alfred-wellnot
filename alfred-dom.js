@@ -804,10 +804,13 @@ async function ajouterBienManuel(bien) {
 // notaires → rédaction → e-mail généré).
 
 // Étape 1 — ouvrir le formulaire de création et les informations générales.
-async function seq_creationDossier_ouvrir() {
-  const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
-  if (!cfg) { console.warn('[Alfred DOM] Données de création démo non configurées'); return; }
+// Découpée en deux sous-étapes (au lieu d'une seule) pour que chacune
+// puisse être déclenchée par son propre segment de réplique dans
+// alfred-brain.js : le clic sur "Créer un dossier" se fait pendant qu'Alfred
+// en parle, pas pendant qu'il parle déjà du numéro de dossier.
 
+// 1a. Ouvrir l'écran de création (clic "Dossiers" puis "Créer un dossier").
+async function seq_creationDossier_ouvrir_ecran() {
   // Même sélecteur fiable que seq_ouvrirDossier, plutôt que
   // naviguerVers/trouverNav qui est trop large et peut cliquer sur le
   // mauvais élément.
@@ -821,6 +824,13 @@ async function seq_creationDossier_ouvrir() {
   await attendre(1800);
   await cliquerBouton(SELECTEURS.boutons.creerDossier);
   await attendre(2200);
+}
+
+// 1b. Remplir le numéro de dossier, les collaborateurs et le notaire, puis
+// passer à l'étape suivante.
+async function seq_creationDossier_ouvrir_champs() {
+  const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
+  if (!cfg) { console.warn('[Alfred DOM] Données de création démo non configurées'); return; }
 
   // Les trois champs sont remplis (le champ vide n'a pas de texte de
   // déclencheur fiable, on cible chaque menu par sa position sous son
@@ -864,6 +874,13 @@ async function seq_creationDossier_ouvrir() {
     return;
   }
   await attendre(2200);
+}
+
+// Rétrocompatibilité — enchaîne les deux sous-étapes (utile pour un test
+// manuel en console ; le script normal déclenche chaque sous-étape à part).
+async function seq_creationDossier_ouvrir() {
+  await seq_creationDossier_ouvrir_ecran();
+  await seq_creationDossier_ouvrir_champs();
 }
 
 // Étape 2 — Parties : vendeur (morale via BCE, ou physique via RN) puis
@@ -953,7 +970,12 @@ const DOM_ACTIONS = {
   // d'un coup sur une seule réplique. seq_creerDossierDemo() reste
   // disponible dans le code pour du débogage/test manuel en console, mais
   // n'apparaît plus dans la liste d'actions sélectionnables du script.
-  'CreationOuvrir':    seq_creationDossier_ouvrir,
+  'CreationOuvrir':       seq_creationDossier_ouvrir,
+  // Sous-étapes de CreationOuvrir, pour les répliques "groupées" (voir
+  // alfred-brain.js) — un segment de texte plus court, calé sur son
+  // propre bout d'action.
+  'CreationOuvrir_Ecran':  seq_creationDossier_ouvrir_ecran,
+  'CreationOuvrir_Champs': seq_creationDossier_ouvrir_champs,
   'CreationParties':   seq_creationDossier_parties,
   'CreationBien':      seq_creationDossier_bien,
   'CreationNotaires':  seq_creationDossier_notaires,

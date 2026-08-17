@@ -246,20 +246,33 @@ async function jouerSecours() {
   const rTrad = listeTrad.find(t => t.acte === r.acte && t.label === r.label)
              || listeTrad[Math.min(secoursIdx, listeTrad.length - 1)];
 
-  addToHistory('alfred', r.texte);
-
   if (r.acte === 2 && currentActe === 1) {
     currentActe = 2;
     console.log('[Alfred] Acte 2 activé via →');
   }
 
-  // Sous-titres immédiatement
-  const sousTitre = rTrad ? rTrad.texte : r.texte;
-  const promises = [speak(naturaliserTexte(r.texte), currentLangue, sousTitre)];
-  if (currentActe >= 2 && typeof executerActionDOM === 'function') {
-    promises.push(executerActionDOM(r.action || r.label));
+  // Réplique "groupée" (r.segments) : plusieurs petits bouts de texte
+  // joués à la suite, chacun avec sa propre action DOM déclenchée en même
+  // temps que lui — pour que l'action colle à ce qui est en train d'être
+  // dit, plutôt qu'un seul long paragraphe avec toute l'action lancée
+  // d'un coup dès le premier mot. Une réplique classique (texte + action
+  // uniques) est traitée comme un groupe à un seul segment, donc rien ne
+  // change pour elle. Un seul appui sur → avance sur tout le groupe.
+  const segmentsR    = r.segments || [{ texte: r.texte, action: r.action }];
+  const segmentsTrad = rTrad?.segments || [{ texte: rTrad?.texte }];
+
+  for (let i = 0; i < segmentsR.length; i++) {
+    const seg = segmentsR[i];
+    if (!seg.texte) continue;
+    const segTrad = segmentsTrad[i] || segmentsTrad[segmentsTrad.length - 1];
+    addToHistory('alfred', seg.texte);
+    const sousTitre = segTrad?.texte || seg.texte;
+    const promises = [speak(naturaliserTexte(seg.texte), currentLangue, sousTitre)];
+    if (currentActe >= 2 && seg.action && typeof executerActionDOM === 'function') {
+      promises.push(executerActionDOM(seg.action));
+    }
+    await Promise.all(promises);
   }
-  await Promise.all(promises);
 
   updateSecoursLabel(r.label, r.acte, secoursIdx + 1, list.length);
   secoursIdx++;

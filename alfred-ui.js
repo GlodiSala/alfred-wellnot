@@ -688,17 +688,26 @@ function ouvrirEditionRéplique(index, nouvelActe) {
   inputLabel.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:12px;';
   panel.appendChild(inputLabel);
 
-  panel.appendChild(champLabel('Texte FR'));
+  // Une réplique "groupée" (r.segments — plusieurs bouts de texte, chacun
+  // avec sa propre action) ne peut pas être éditée correctement dans ce
+  // panneau simple, pensé pour un texte + une action. On l'affiche quand
+  // même (segments recollés) pour référence, mais on bloque l'enregistrement
+  // pour ne pas écraser silencieusement les segments par un seul bloc.
+  const estGroupee = !!(rFR.segments || rNL.segments);
+
+  panel.appendChild(champLabel('Texte FR' + (estGroupee ? ' (réplique groupée — lecture seule)' : '')));
   const taFR = document.createElement('textarea');
-  taFR.value = rFR.texte;
+  taFR.value = rFR.segments ? rFR.segments.map(s => s.texte).join('\n\n') : rFR.texte;
   taFR.rows = 4;
+  taFR.disabled = estGroupee;
   taFR.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:12px;font-family:sans-serif;resize:vertical;';
   panel.appendChild(taFR);
 
-  panel.appendChild(champLabel('Texte NL'));
+  panel.appendChild(champLabel('Texte NL' + (estGroupee ? ' (réplique groupée — lecture seule)' : '')));
   const taNL = document.createElement('textarea');
-  taNL.value = rNL.texte;
+  taNL.value = rNL.segments ? rNL.segments.map(s => s.texte).join('\n\n') : rNL.texte;
   taNL.rows = 4;
+  taNL.disabled = estGroupee;
   taNL.style.cssText = taFR.style.cssText;
   panel.appendChild(taNL);
 
@@ -746,6 +755,7 @@ function ouvrirEditionRéplique(index, nouvelActe) {
   btnSave.textContent = 'Enregistrer';
   btnSave.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:none;background:#14b0bd;color:#fff;font-size:12px;font-weight:600;cursor:pointer;';
   btnSave.onclick = () => {
+    if (estGroupee) { alert('Réplique groupée : modifiable uniquement dans le code (alfred-brain.js).'); return; }
     const label = inputLabel.value.trim();
     if (!label) { alert('Le nom de la réplique est requis.'); return; }
     const action = select.value || undefined;

@@ -240,7 +240,15 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Texte aligné sur les répliques exactes d'Alfred dans le script officiel
     // "Script_scene_Wellnot_InsideAI26" (section 4, étapes 6 à 11) — ne pas
     // reformuler sans mettre à jour aussi le script papier de Cyril.
-    { acte: 2, label: 'CreationOuvrir',    texte: "Voici d'abord le tableau de bord : tous les dossiers en cours, les collaborateurs, les statuts. Pour créer un dossier, rien de plus simple : je clique sur « Créer un dossier » et j'arrive sur la fiche de création. Donnez-moi le numéro de dossier, la langue de rédaction, le collaborateur en charge et le notaire en charge, et on passe à la création des parties.", action: 'CreationOuvrir' },
+    // Réplique "groupée" : même texte que la version à plat ci-dessus
+    // (aucun mot changé — juste redécoupé en 3 segments), mais chaque
+    // segment déclenche son action au bon moment, plutôt que tout le DOM
+    // d'un coup dès le premier mot de la réplique complète.
+    { acte: 2, label: 'CreationOuvrir', segments: [
+      { texte: "Voici d'abord le tableau de bord : tous les dossiers en cours, les collaborateurs, les statuts." },
+      { texte: "Pour créer un dossier, rien de plus simple : je clique sur « Créer un dossier » et j'arrive sur la fiche de création.", action: 'CreationOuvrir_Ecran' },
+      { texte: "Donnez-moi le numéro de dossier, la langue de rédaction, le collaborateur en charge et le notaire en charge, et on passe à la création des parties.", action: 'CreationOuvrir_Champs' },
+    ] },
     { acte: 2, label: 'CreationParties',   texte: "Le vendeur est une société : BIMBIMMO. Je récupère : dénomination, siège, forme juridique, représentants. Rattaché au dossier. L'acquéreur est une personne physique : Alain Caprasse. Je récupère : nom, adresse, date de naissance, nationalité, état civil, régime matrimonial. Tout remonte, prêt pour la rédaction du compromis.", action: 'CreationParties' },
     { acte: 2, label: 'CreationBien',      texte: "Pour le bien, vous sélectionnez le bon, et je récupère automatiquement la matrice cadastrale. Il se situe en Flandre, à 8670 Coxyde. Matrice cadastrale récupérée. Parties, notaires, cadastre — tout est déjà là.", action: 'CreationBien' },
     { acte: 2, label: 'CreationNotaires',  texte: "Chaque partie doit être représentée par un notaire. BIMBIMMO, c'est nous. Pour l'acquéreur, j'ajoute Maxime Van der Straten — je le retrouve dans la base de tous les notaires belges et je le rattache à l'acquéreur. Chaque partie a son notaire.", action: 'CreationNotaires' },
@@ -270,7 +278,11 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Tekst afgestemd op Alfreds exacte repliek in het officiële script
     // "Script_scene_Wellnot_InsideAI26" — niet herformuleren zonder ook
     // Cyrils papieren script bij te werken.
-    { acte: 2, label: 'CreationOuvrir',    texte: "Hier eerst het dashboard: alle lopende dossiers, de medewerkers, de statussen. Om een dossier aan te maken, niets eenvoudiger: ik klik op « Dossier aanmaken » en ik kom op de aanmaakfiche. Geef me het dossiernummer, de opstellingstaal, de verantwoordelijke medewerker en de verantwoordelijke notaris, en we gaan naar de aanmaak van de partijen.", action: 'CreationOuvrir' },
+    { acte: 2, label: 'CreationOuvrir', segments: [
+      { texte: "Hier eerst het dashboard: alle lopende dossiers, de medewerkers, de statussen." },
+      { texte: "Om een dossier aan te maken, niets eenvoudiger: ik klik op « Dossier aanmaken » en ik kom op de aanmaakfiche.", action: 'CreationOuvrir_Ecran' },
+      { texte: "Geef me het dossiernummer, de opstellingstaal, de verantwoordelijke medewerker en de verantwoordelijke notaris, en we gaan naar de aanmaak van de partijen.", action: 'CreationOuvrir_Champs' },
+    ] },
     { acte: 2, label: 'CreationParties',   texte: "De verkoper is een vennootschap: BIMBIMMO. Ik haal op: benaming, zetel, rechtsvorm, vertegenwoordigers. Gekoppeld aan het dossier. De koper is een natuurlijke persoon: Alain Caprasse. Ik haal op: naam, adres, geboortedatum, nationaliteit, burgerlijke staat, huwelijksvermogensstelsel. Alles is klaar voor de opstelling van de verkoopbelofte.", action: 'CreationParties' },
     { acte: 2, label: 'CreationBien',      texte: "Voor het onroerend goed selecteert u gewoon het juiste, en ik haal automatisch de kadastrale matrix op. Het bevindt zich in Vlaanderen, in 8670 Koksijde. Kadastrale matrix opgehaald. Partijen, notarissen, kadaster — alles staat er al.", action: 'CreationBien' },
     { acte: 2, label: 'CreationNotaires',  texte: "Elke partij moet vertegenwoordigd worden door een notaris. BIMBIMMO, dat zijn wij. Voor de koper voeg ik Maxime Van der Straten toe — ik vind hem in de databank van alle Belgische notarissen en koppel hem aan de koper. Elke partij heeft haar notaris.", action: 'CreationNotaires' },
