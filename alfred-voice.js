@@ -145,20 +145,15 @@ const GEMINI_VOIX_CATALOGUE = [
   { id: 'Rasalgethi', label: 'Informative, posée (Rasalgethi)' },
 ];
 
-// Instruction de ton par défaut, éditable dans le panneau "Voix". Structurée
-// en trois blocs (profil / scène / consignes de jeu) — recommandation
-// officielle Google pour un rendu naturel plutôt qu'une longue phrase qui
-// tente de tout dire à la fois. Informée par le personnage établi dans le
-// script officiel (Acte 1 — L'entretien : Alfred est un candidat qui passe
-// un entretien d'embauche théâtral devant une salle de notaires) et par le
-// guide de style d'ALFRED_CONFIG.SYSTEM_PROMPT (naturel, direct, confiant,
-// humour discret, jamais "excellente question"). Volontairement pas
-// sur-spécifiée (pas de mention de rythme mot à mot, de respiration
-// précise, etc.) — laisser de la place au modèle donne un résultat plus
-// naturel qu'un contrôle trop strict.
-const TON_GEMINI_DEFAUT = `Profil : Alfred, un candidat qui passe un entretien d'embauche devant une salle de notaires. Assuré, chaleureux, un humour sec et discret par moments — jamais un lecteur de script.
-Scène : un entretien d'embauche vivant, un peu joué, face à un public de professionnels exigeants qu'il veut convaincre, pas juste informer.
-Consignes de jeu : ton posé et confiant du début à la fin, sans emphase excessive ni bascule dramatique. Respecte les pauses naturelles aux virgules et points.`;
+// Instruction de ton par défaut, éditable dans le panneau "Voix". Une seule
+// phrase simple à modifier (pas un formulaire à 3 blocs à respecter) —
+// Google recommande justement de ne pas sur-détailler : le modèle comble
+// les manques plus naturellement qu'un contrôle trop strict. Informée par
+// le personnage établi dans le script officiel (Acte 1 — L'entretien :
+// Alfred est un candidat qui passe un entretien d'embauche devant une
+// salle de notaires) et par le guide de style d'ALFRED_CONFIG.SYSTEM_PROMPT
+// (naturel, direct, confiant, humour discret, jamais "excellente question").
+const TON_GEMINI_DEFAUT = "Tu es Alfred, un candidat qui passe un entretien d'embauche devant une salle de notaires — pas un lecteur de script. Parle avec assurance et chaleur, avec un humour discret par moments, sans jamais devenir théâtral.";
 
 // Séparateur entre l'instruction de ton et le texte à prononcer — sans lui,
 // le modèle lit parfois l'instruction elle-même à voix haute au lieu de

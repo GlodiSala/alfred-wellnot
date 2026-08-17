@@ -414,12 +414,17 @@ function ouvrirPanneauVoix() {
   selectVoix.value = voixGeminiActuelle();
   panel.appendChild(selectVoix);
 
-  panel.appendChild(champLabel('Ton (comment Alfred doit sonner — écris-le en français, ça marche aussi pour le néerlandais : c\'est une instruction de jeu, pas du texte à prononcer, pas besoin de la traduire)'));
+  panel.appendChild(champLabel('Ton (comment Alfred doit sonner)'));
   const taTon = document.createElement('textarea');
   taTon.value = tonGemini();
-  taTon.rows = 6;
-  taTon.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:11px;font-family:sans-serif;resize:vertical;margin-bottom:14px;';
+  taTon.rows = 4;
+  taTon.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:11px;font-family:sans-serif;resize:vertical;margin-bottom:6px;';
   panel.appendChild(taTon);
+
+  const aideTon = document.createElement('div');
+  aideTon.textContent = 'Écris-le comme une phrase normale, en français (pas besoin de le traduire, c\'est une consigne de jeu, pas du texte à prononcer). Pour ajuster : ajoute juste quelques mots, ex. "plus d\'humour", "plus sérieux", "parle plus lentement".';
+  aideTon.style.cssText = 'color:rgba(255,255,255,.4);font-size:10px;margin-bottom:14px;line-height:1.4;';
+  panel.appendChild(aideTon);
 
   const zoneTest = document.createElement('div');
   zoneTest.style.cssText = 'display:flex;gap:6px;margin-bottom:8px;';
