@@ -266,6 +266,40 @@ async function ecrireCachePartage(cleBrute, donnees) {
 // de reconstruire un en-tête WAV à partir de PCM brut). Langue explicite
 // nécessaire (contrairement à l'API Gemini brute, réellement multilingue
 // sans le préciser) : Cloud TTS reste un produit par locale.
+function attendreMs(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// Appelle Cloud TTS Gemini-TTS, avec re-essai automatique en cas de
+// limite "par minute" (429, distincte du plafond journalier — celle-ci se
+// débloque toute seule après quelques secondes, pas besoin d'intervention).
+async function appellerGeminiTTS(text, voixId, ton, languageCode, tentative = 1) {
+  const res = await fetch(ALFRED_CONFIG.API_TTS, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      input:       { text, prompt: ton },
+      voice:       { languageCode, name: voixId, modelName: 'gemini-2.5-flash-tts' },
+      audioConfig: { audioEncoding: 'MP3' }
+    })
+  });
+  const data = await res.json();
+  if (data.audioContent) return data.audioContent;
+
+  const err = data?.error;
+  const estLimiteParMinute = err?.code === 429 && /per_minute/i.test(err?.message || '');
+  if (estLimiteParMinute && tentative <= 3) {
+    const attente = tentative * 15000; // 15s, 30s, 45s
+    console.warn(`[Alfred Voice] Limite Gemini-TTS par minute atteinte — nouvelle tentative dans ${attente / 1000}s (essai ${tentative}/3).`);
+    await attendreMs(attente);
+    return appellerGeminiTTS(text, voixId, ton, languageCode, tentative + 1);
+  }
+  if (err?.code === 429) {
+    const e = new Error('Quota Gemini-TTS dépassé et toujours bloqué après plusieurs tentatives — réessaie dans quelques minutes, ou vérifie le quota sur console.cloud.google.com (Vertex AI → Quotas).');
+    e.quotaExceeded = true;
+    throw e;
+  }
+  throw new Error('Pas audio (Gemini-TTS) — ' + JSON.stringify(err || data));
+}
+
 async function genererAudioGemini(text, voixId, ton, langue) {
   // nl-BE n'est pas supporté pour les voix Gemini (confirmé par erreur
   // "language code 'nl-BE' is not supported for Gemini voices") — nl-NL
@@ -283,18 +317,7 @@ async function genererAudioGemini(text, voixId, ton, langue) {
       audioContent = partage.base64;
       ecrireCacheTTS(cle, audioContent); // copie en local pour la prochaine fois
     } else {
-      const res = await fetch(ALFRED_CONFIG.API_TTS, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          input:       { text, prompt: ton },
-          voice:       { languageCode, name: voixId, modelName: 'gemini-2.5-flash-tts' },
-          audioConfig: { audioEncoding: 'MP3' }
-        })
-      });
-      const data = await res.json();
-      if (!data.audioContent) throw new Error('Pas audio (Gemini-TTS) — ' + JSON.stringify(data?.error || data));
-      audioContent = data.audioContent;
+      audioContent = await appellerGeminiTTS(text, voixId, ton, languageCode);
       ecrireCacheTTS(cle, audioContent); // local, en tâche de fond
       ecrireCachePartage(cle, { base64: audioContent, format: 'mp3' }); // partagé, en tâche de fond
     }
@@ -366,11 +389,13 @@ async function obtenirAudio(text, langue, moteurForce) {
 // démo, plutôt que ligne par ligne pendant qu'on est en direct devant la
 // salle. Après un préchargement complet, toute lecture scriptée ressort du
 // cache, instantanément, quel que soit le moteur choisi.
-// CONCURRENCE : nombre de répliques générées en parallèle. Un simple `for`
-// séquentiel sur ~64 lignes à 2-5s chacune prenait plusieurs minutes —
-// quelques requêtes en vol en même temps réduit ça d'autant (÷4 environ),
-// sans survolter l'API.
-const PRECHARGEMENT_CONCURRENCE = 4;
+// CONCURRENCE : nombre de répliques générées en parallèle. Réduit de 4 à 2
+// après avoir déclenché la limite Vertex AI "requêtes par minute" en test
+// réel (quota par défaut assez bas sur un projet neuf) — 2 reste plus
+// rapide qu'un `for` séquentiel tout en restant sous cette limite. Le
+// re-essai automatique dans appellerGeminiTTS absorbe les dépassements
+// ponctuels si ça arrive quand même.
+const PRECHARGEMENT_CONCURRENCE = 2;
 
 async function prechargerScript(voixFr, voixNl, ton, onProgress) {
   const lignes = [
