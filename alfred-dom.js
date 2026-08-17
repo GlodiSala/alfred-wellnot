@@ -1225,15 +1225,26 @@ async function seq_creationDossier_attenteReponseVendeur() {
   // l'attente ci-dessus, ce n'est qu'un maximum — on continue dès que
   // détecté, pas besoin d'attendre le plafond.
   const nombreAvant = document.querySelectorAll('li').length;
+  let detecte = false;
   for (let i = 0; i < 480; i++) {
     if (document.querySelectorAll('li').length > nombreAvant) {
       console.log('[Alfred DOM] Nouvel élément détecté dans "Événements" — réponse du vendeur probablement arrivée.');
-      return true;
+      detecte = true;
+      break;
     }
     await attendre(1000);
   }
-  console.warn('[Alfred DOM] Aucune nouvelle notification détectée dans "Événements" après 8 minutes — la réponse du vendeur a-t-elle bien été envoyée ? Reclique sur cette réplique pour réessayer.');
-  return false;
+  if (!detecte) {
+    console.warn('[Alfred DOM] Aucune nouvelle notification détectée dans "Événements" après 8 minutes — la réponse du vendeur a-t-elle bien été envoyée ? Reclique sur cette réplique pour réessayer.');
+    return false;
+  }
+
+  // La réplique dit "Regardez le compromis" — il faut donc y retourner
+  // pour le montrer, pas rester sur Événements (trou trouvé : la fonction
+  // s'arrêtait juste après la détection, sans jamais y retourner).
+  await naviguerOnglet('Compromis');
+  await attendre(800);
+  return true;
 }
 
 // Séquence complète (rétrocompatibilité — enchaîne les 7 étapes).
