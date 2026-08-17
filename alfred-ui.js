@@ -402,56 +402,56 @@ function ouvrirPanneauVoix() {
   titre.style.cssText = 'color:rgba(255,255,255,.4);font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;';
   panel.appendChild(titre);
 
-  const selectsVoix = {};
-  ['fr', 'nl'].forEach(langue => {
-    panel.appendChild(champLabel(langue === 'fr' ? 'Voix française' : 'Voix néerlandaise'));
-    const select = document.createElement('select');
-    select.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:#0a3b52;color:#fff;font-size:12px;margin-bottom:12px;';
-    GEMINI_VOIX_CATALOGUE.forEach(v => {
-      const opt = document.createElement('option');
-      opt.value = v.id; opt.textContent = v.label;
-      opt.style.cssText = 'background:#0a3b52;color:#fff;';
-      select.appendChild(opt);
-    });
-    select.value = voixGeminiActuelle(langue);
-    selectsVoix[langue] = select;
-    panel.appendChild(select);
+  panel.appendChild(champLabel('Voix (une seule, valable en FR et en NL)'));
+  const selectVoix = document.createElement('select');
+  selectVoix.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:#0a3b52;color:#fff;font-size:12px;margin-bottom:14px;';
+  GEMINI_VOIX_CATALOGUE.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v.id; opt.textContent = v.label;
+    opt.style.cssText = 'background:#0a3b52;color:#fff;';
+    selectVoix.appendChild(opt);
   });
+  selectVoix.value = voixGeminiActuelle();
+  panel.appendChild(selectVoix);
 
-  panel.appendChild(champLabel('Ton (comment Alfred doit sonner)'));
+  panel.appendChild(champLabel('Ton (comment Alfred doit sonner — écris-le en français, ça marche aussi pour le néerlandais : c\'est une instruction de jeu, pas du texte à prononcer, pas besoin de la traduire)'));
   const taTon = document.createElement('textarea');
   taTon.value = tonGemini();
-  taTon.rows = 5;
-  taTon.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:11px;font-family:sans-serif;resize:vertical;margin-bottom:6px;';
+  taTon.rows = 6;
+  taTon.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:11px;font-family:sans-serif;resize:vertical;margin-bottom:14px;';
   panel.appendChild(taTon);
 
-  const aide = document.createElement('div');
-  aide.textContent = 'Une seule instruction, valable en français comme en néerlandais.';
-  aide.style.cssText = 'color:rgba(255,255,255,.4);font-size:10px;margin-bottom:14px;';
-  panel.appendChild(aide);
-
-  const btnTester = document.createElement('button');
-  btnTester.textContent = '▶ Tester (FR)';
-  btnTester.style.cssText = 'width:100%;margin-bottom:8px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:12px;cursor:pointer;';
-  btnTester.onclick = async () => {
-    btnTester.disabled = true;
-    btnTester.textContent = '… génération';
-    try {
-      const audio = await genererAudioGemini(
-        "Bonjour, je suis Alfred. Voici un exemple de ma voix.",
-        selectsVoix.fr.value,
-        taTon.value
-      );
-      await audio.play();
-    } catch (e) {
-      console.warn('[Alfred Voice] Test de voix échoué:', e);
-      alert('Cette voix n\'a pas pu être générée (réseau, ou clé API pas encore active côté serveur). Regarde la console pour le détail.');
-    } finally {
-      btnTester.disabled = false;
-      btnTester.textContent = '▶ Tester (FR)';
-    }
-  };
-  panel.appendChild(btnTester);
+  const zoneTest = document.createElement('div');
+  zoneTest.style.cssText = 'display:flex;gap:6px;margin-bottom:8px;';
+  const btnTesterFR = document.createElement('button');
+  btnTesterFR.textContent = '▶ Tester en FR';
+  const btnTesterNL = document.createElement('button');
+  btnTesterNL.textContent = '▶ Tester en NL';
+  [btnTesterFR, btnTesterNL].forEach(btn => {
+    btn.style.cssText = 'flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:12px;cursor:pointer;';
+  });
+  function testerVoix(btn, texte) {
+    return async () => {
+      const original = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '… génération';
+      try {
+        const audio = await genererAudioGemini(texte, selectVoix.value, taTon.value);
+        await audio.play();
+      } catch (e) {
+        console.warn('[Alfred Voice] Test de voix échoué:', e);
+        alert('Cette voix n\'a pas pu être générée (réseau, ou clé API pas encore active côté serveur). Regarde la console pour le détail.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = original;
+      }
+    };
+  }
+  btnTesterFR.onclick = testerVoix(btnTesterFR, "Bonjour, je suis Alfred. Voici un exemple de ma voix.");
+  btnTesterNL.onclick = testerVoix(btnTesterNL, "Goeiedag, ik ben Alfred. Dit is een voorbeeld van mijn stem.");
+  zoneTest.appendChild(btnTesterFR);
+  zoneTest.appendChild(btnTesterNL);
+  panel.appendChild(zoneTest);
 
   const boutons = document.createElement('div');
   boutons.style.cssText = 'display:flex;gap:8px;';
@@ -469,12 +469,12 @@ function ouvrirPanneauVoix() {
   btnSave.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:none;background:#14b0bd;color:#fff;font-size:12px;font-weight:600;cursor:pointer;';
   btnSave.onclick = async () => {
     localStorage.setItem(ALFRED_VOIX_MOTEUR_KEY, 'gemini');
-    localStorage.setItem(ALFRED_GEMINI_VOIX_KEY, JSON.stringify({ fr: selectsVoix.fr.value, nl: selectsVoix.nl.value }));
+    localStorage.setItem(ALFRED_GEMINI_VOIX_KEY, selectVoix.value);
     localStorage.setItem(ALFRED_GEMINI_TON_KEY, taTon.value);
 
     btnSave.disabled = true;
     btnCancel.style.display = 'none';
-    const resultat = await prechargerScript(selectsVoix.fr.value, selectsVoix.nl.value, taTon.value, (fait, total) => {
+    const resultat = await prechargerScript(selectVoix.value, selectVoix.value, taTon.value, (fait, total) => {
       btnSave.textContent = `⏳ Préchargement ${fait}/${total}…`;
     });
     btnSave.disabled = false;

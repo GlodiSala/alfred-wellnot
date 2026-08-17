@@ -129,32 +129,45 @@ async function ecrireCacheTTS(cle, base64) {
 }
 
 // ── Voix par défaut : Gemini TTS ──────────────────────────
-// Gemini TTS utilise les mêmes voix quelle que soit la langue du texte
-// (contrairement à Google Cloud TTS où chaque locale a son propre
-// sous-catalogue, parfois très limité — nl-BE par exemple n'a aucune voix
-// "HD"). Il permet aussi une instruction de ton en langage naturel — une
-// seule pour les deux langues, puisque c'est une intention de jeu, pas du
-// texte à prononcer. Le nom technique reste affiché entre parenthèses (ça
-// aide à s'y référer/comparer), mais la description passe en premier.
+// Une seule voix pour les deux langues (Gemini ne distingue pas la langue
+// pour choisir sa voix — avoir deux réglages différents n'avait pas de
+// justification et compliquait le panneau pour rien). Le nom technique
+// reste affiché entre parenthèses (ça aide à s'y référer/comparer), mais
+// la description passe en premier.
 const GEMINI_VOIX_CATALOGUE = [
   { id: 'Algenib',    label: 'Grave et posée (Algenib) — recommandé' },
   { id: 'Charon',     label: 'Chaleureuse et posée (Charon)' },
   { id: 'Orus',       label: 'Assurée et directe (Orus)' },
   { id: 'Iapetus',    label: 'Claire et nette (Iapetus)' },
+  { id: 'Puck',       label: 'Enjouée et vive (Puck)' },
+  { id: 'Fenrir',     label: 'Énergique (Fenrir)' },
+  { id: 'Schedar',    label: 'Posée et régulière (Schedar)' },
+  { id: 'Rasalgethi', label: 'Informative, posée (Rasalgethi)' },
 ];
 
-// Instruction de ton par défaut, éditable dans le panneau "Voix" — informée
-// par le personnage établi dans le script officiel (section "Acte 1 —
-// L'entretien" : Alfred est un candidat qui passe un entretien d'embauche
-// théâtral devant une salle de notaires, pas un lecteur de script) et par
-// le guide de style d'ALFRED_CONFIG.SYSTEM_PROMPT ("naturel, direct,
-// confiant, humour discret, jamais 'excellente question'"). Une seule
-// instruction pour les deux langues (intention de jeu, pas texte prononcé).
-const TON_GEMINI_DEFAUT = "Instruction de ton : tu es Alfred, un candidat qui passe un entretien d'embauche devant une salle de notaires — pas un assistant vocal qui lit un texte. Parle avec l'assurance tranquille de quelqu'un qui maîtrise parfaitement son sujet et qui a vraiment envie de convaincre, avec un humour discret quand ça se prête. Jamais théâtral, jamais exagéré, jamais une lecture neutre : tu crois sincèrement à ce que tu dis.";
+// Instruction de ton par défaut, éditable dans le panneau "Voix". Structurée
+// en trois blocs (profil / scène / consignes de jeu) — recommandation
+// officielle Google pour un rendu naturel plutôt qu'une longue phrase qui
+// tente de tout dire à la fois. Informée par le personnage établi dans le
+// script officiel (Acte 1 — L'entretien : Alfred est un candidat qui passe
+// un entretien d'embauche théâtral devant une salle de notaires) et par le
+// guide de style d'ALFRED_CONFIG.SYSTEM_PROMPT (naturel, direct, confiant,
+// humour discret, jamais "excellente question"). Volontairement pas
+// sur-spécifiée (pas de mention de rythme mot à mot, de respiration
+// précise, etc.) — laisser de la place au modèle donne un résultat plus
+// naturel qu'un contrôle trop strict.
+const TON_GEMINI_DEFAUT = `Profil : Alfred, un candidat qui passe un entretien d'embauche devant une salle de notaires. Assuré, chaleureux, un humour sec et discret par moments — jamais un lecteur de script.
+Scène : un entretien d'embauche vivant, un peu joué, face à un public de professionnels exigeants qu'il veut convaincre, pas juste informer.
+Consignes de jeu : ton posé et confiant du début à la fin, sans emphase excessive ni bascule dramatique. Respecte les pauses naturelles aux virgules et points.`;
+
+// Séparateur entre l'instruction de ton et le texte à prononcer — sans lui,
+// le modèle lit parfois l'instruction elle-même à voix haute au lieu de
+// l'appliquer silencieusement (piège documenté des prompts Gemini TTS).
+const GEMINI_TTS_DELIMITEUR = '\n\n#### TRANSCRIPT\n';
 
 const ALFRED_VOIX_MOTEUR_KEY = 'alfred_voix_moteur'; // 'gemini' | 'cloud' (cloud = repli automatique, pas de choix utilisateur)
 const ALFRED_GEMINI_TON_KEY  = 'alfred_gemini_ton';  // chaîne simple, partagée FR/NL
-const ALFRED_GEMINI_VOIX_KEY = 'alfred_gemini_voix'; // { fr: 'Algenib', nl: 'Charon' }
+const ALFRED_GEMINI_VOIX_KEY = 'alfred_gemini_voix'; // id de voix, unique, partagé FR/NL
 
 function moteurVoixActuel() {
   return localStorage.getItem(ALFRED_VOIX_MOTEUR_KEY) || 'gemini';
@@ -164,13 +177,8 @@ function tonGemini() {
   return localStorage.getItem(ALFRED_GEMINI_TON_KEY) || TON_GEMINI_DEFAUT;
 }
 
-function voixGeminiActuelle(langue) {
-  try {
-    const raw = localStorage.getItem(ALFRED_GEMINI_VOIX_KEY);
-    const parsed = raw ? JSON.parse(raw) : {};
-    if (parsed[langue]) return parsed[langue];
-  } catch (e) {}
-  return 'Algenib';
+function voixGeminiActuelle() {
+  return localStorage.getItem(ALFRED_GEMINI_VOIX_KEY) || 'Algenib';
 }
 
 // Extrait le taux d'échantillonnage d'un mimeType du type
@@ -235,7 +243,7 @@ async function genererAudioGemini(text, voixId, ton) {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: ton + '\n\n' + text }] }],
+        contents: [{ parts: [{ text: ton + GEMINI_TTS_DELIMITEUR + text }] }],
         generationConfig: {
           responseModalities: ['AUDIO'],
           speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voixId } } }
@@ -286,7 +294,7 @@ async function genererAudioCloud(text, voix) {
 async function obtenirAudio(text, langue) {
   if (moteurVoixActuel() === 'gemini') {
     try {
-      return await genererAudioGemini(text, voixGeminiActuelle(langue), tonGemini());
+      return await genererAudioGemini(text, voixGeminiActuelle(), tonGemini());
     } catch (e) {
       console.warn('[Alfred Voice] Gemini TTS indisponible, repli sur Cloud TTS:', e);
     }
