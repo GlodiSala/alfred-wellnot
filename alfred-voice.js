@@ -1,26 +1,39 @@
 // === ALFRED VOICE ===
 
 // Catalogue de voix Google Cloud TTS proposées au choix, du plus robotique
-// (Wavenet, l'actuel) au plus réaliste (Neural2, puis Studio/Chirp3 HD —
-// plus naturelles mais pas forcément disponibles dans toutes les langues,
-// à vérifier en le testant depuis le panneau "Voix"). languageCode est
-// repris par défaut du groupe (fr/nl) sauf override explicite (utile pour
-// tester une voix nl-NL faute d'équivalent nl-BE).
+// (Wavenet, l'actuel) au plus réaliste (Neural2, puis Chirp3 HD — la gamme
+// la plus naturelle actuellement chez Google). Noms vérifiés via la doc
+// Google (17/08) plutôt que devinés :
+//  - fr-FR Neural2 : seulement A (féminin) et B (masculin) existent — un
+//    précédent "Neural2-D" inventé n'existait pas, d'où l'échec de test.
+//  - Chirp3 HD : 8 noms de personæ partagés entre toutes les langues
+//    supportées (Aoede/Charon/Fenrir/Kore/Leda/Orus/Puck/Zephyr) — le genre
+//    ci-dessous est indicatif (à confirmer à l'oreille via "Tester").
+//  - Chirp3 HD n'existe QUE sur l'API v1beta1 (corrigé dans api/tts.js —
+//    c'est ça qui causait "Pas audio", pas le nom de la voix).
+//  - nl-BE n'a PAS de Chirp3 HD chez Google (contrairement à nl-NL) — d'où
+//    le repli sur nl-NL ci-dessous, à accent différent, pour au moins
+//    pouvoir tester le rendu Chirp3 HD en néerlandais.
+// languageCode est repris par défaut du groupe (fr/nl) sauf override
+// explicite (utilisé justement pour ce repli nl-NL).
 const VOIX_CATALOGUE = {
   fr: [
-    { id: 'fr-FR-Wavenet-D',       label: 'Wavenet D (actuel)',              name: 'fr-FR-Wavenet-D',       gender: 'MALE' },
-    { id: 'fr-FR-Neural2-D',       label: 'Neural2 D — plus naturel',        name: 'fr-FR-Neural2-D',       gender: 'MALE' },
-    { id: 'fr-FR-Neural2-B',       label: 'Neural2 B — plus naturel',        name: 'fr-FR-Neural2-B',       gender: 'MALE' },
-    { id: 'fr-FR-Studio-D',        label: 'Studio D — très réaliste (si dispo)',      name: 'fr-FR-Studio-D',        gender: 'MALE' },
-    { id: 'fr-FR-Chirp3-HD-Charon',label: 'Chirp3 HD Charon — très réaliste (si dispo)', name: 'fr-FR-Chirp3-HD-Charon', gender: 'MALE' },
-    { id: 'fr-FR-Chirp3-HD-Puck',  label: 'Chirp3 HD Puck — très réaliste (si dispo)',   name: 'fr-FR-Chirp3-HD-Puck',   gender: 'MALE' },
+    { id: 'fr-FR-Wavenet-D',        label: 'Wavenet D (actuel)',                name: 'fr-FR-Wavenet-D',        gender: 'MALE' },
+    { id: 'fr-FR-Neural2-B',        label: 'Neural2 B — plus naturel',          name: 'fr-FR-Neural2-B',        gender: 'MALE' },
+    { id: 'fr-FR-Neural2-A',        label: 'Neural2 A — plus naturel (féminin)',name: 'fr-FR-Neural2-A',        gender: 'FEMALE' },
+    { id: 'fr-FR-Chirp3-HD-Puck',   label: 'Chirp3 HD Puck — très naturel',     name: 'fr-FR-Chirp3-HD-Puck',   gender: 'MALE' },
+    { id: 'fr-FR-Chirp3-HD-Charon', label: 'Chirp3 HD Charon — très naturel',   name: 'fr-FR-Chirp3-HD-Charon', gender: 'MALE' },
+    { id: 'fr-FR-Chirp3-HD-Fenrir', label: 'Chirp3 HD Fenrir — très naturel',   name: 'fr-FR-Chirp3-HD-Fenrir', gender: 'MALE' },
+    { id: 'fr-FR-Chirp3-HD-Orus',   label: 'Chirp3 HD Orus — très naturel',     name: 'fr-FR-Chirp3-HD-Orus',   gender: 'MALE' },
+    { id: 'fr-FR-Chirp3-HD-Kore',   label: 'Chirp3 HD Kore — très naturel (féminin)', name: 'fr-FR-Chirp3-HD-Kore', gender: 'FEMALE' },
   ],
   nl: [
-    { id: 'nl-BE-Wavenet-A',       label: 'Wavenet A (actuel)',              name: 'nl-BE-Wavenet-A',       gender: 'MALE' },
-    { id: 'nl-BE-Wavenet-B',       label: 'Wavenet B',                       name: 'nl-BE-Wavenet-B',       gender: 'MALE' },
-    // nl-BE a beaucoup moins de voix premium que fr-FR chez Google — repli
-    // sur nl-NL (Pays-Bas, accent différent) si on veut tester du Chirp3 HD.
-    { id: 'nl-NL-Chirp3-HD-Charon',label: 'Chirp3 HD Charon — nl-NL, accent différent (si dispo)', name: 'nl-NL-Chirp3-HD-Charon', gender: 'MALE', languageCode: 'nl-NL' },
+    { id: 'nl-BE-Wavenet-A',        label: 'Wavenet A (actuel)',                name: 'nl-BE-Wavenet-A',        gender: 'MALE' },
+    { id: 'nl-BE-Wavenet-B',        label: 'Wavenet B',                         name: 'nl-BE-Wavenet-B',        gender: 'MALE' },
+    // nl-BE n'a pas de Chirp3 HD chez Google — repli sur nl-NL (Pays-Bas,
+    // accent différent) pour au moins pouvoir tester le rendu.
+    { id: 'nl-NL-Chirp3-HD-Puck',   label: 'Chirp3 HD Puck — nl-NL, accent différent', name: 'nl-NL-Chirp3-HD-Puck',   gender: 'MALE', languageCode: 'nl-NL' },
+    { id: 'nl-NL-Chirp3-HD-Charon', label: 'Chirp3 HD Charon — nl-NL, accent différent', name: 'nl-NL-Chirp3-HD-Charon', gender: 'MALE', languageCode: 'nl-NL' },
   ],
 };
 
