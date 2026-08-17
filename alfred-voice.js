@@ -305,7 +305,13 @@ async function genererAudioGemini(text, voixId, ton, langue) {
   // "language code 'nl-BE' is not supported for Gemini voices") — nl-NL
   // (Pays-Bas, accent différent) l'est, même limitation que Chirp3 HD.
   const languageCode = langue === 'nl' ? 'nl-NL' : 'fr-FR';
-  const cle = ['gemini-tts', voixId, ton, languageCode, text].join('|');
+  // "v2" : invalide volontairement tout ancien audio caché (local ET
+  // partagé) — remonté en test live, une réplique se mettait à dire le
+  // prompt de ton avant sa vraie phrase. Cause probable : un audio
+  // défectueux généré du temps de l'ancien pipeline (avant le passage à
+  // Cloud TTS), resté en cache car la clé de cache n'avait pas changé
+  // depuis. Bumper la clé force tout le monde à régénérer proprement.
+  const cle = ['gemini-tts-v2', voixId, ton, languageCode, text].join('|');
 
   let audioContent = await lireCacheTTS(cle);
   if (audioContent) {
