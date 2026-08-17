@@ -619,13 +619,23 @@ async function montrerPropositionEmail() {
 // sélection ne remplit pas réellement les champs de parcelle (bug constaté
 // en direct — la recherche trouve la commune mais ne pré-remplit rien),
 // on considère la tentative en échec et on bascule sur la saisie manuelle.
+// D'après un test live : le principe marche, mais il faut laisser le temps
+// à la page de finir de charger avant de chercher, et à la recherche
+// elle-même de répondre — d'où les pauses plus généreuses ci-dessous.
 async function essayerAjouterBienParCadastre(bien) {
   if (!bien.commune) return false;
 
-  let input = document.getElementById('municipality');
-  if (!input) {
-    input = Array.from(document.querySelectorAll('input'))
-      .find(i => i.placeholder === 'Rechercher une commune par son nom ou son code postal' && i.getBoundingClientRect().width > 0);
+  // Laisse la page de l'étape "Biens" finir de se charger avant de
+  // chercher le champ — sinon on peut cliquer/taper trop tôt.
+  await attendre(1500);
+
+  let input = null;
+  for (let i = 0; i < 10; i++) {
+    input = document.getElementById('municipality')
+      || Array.from(document.querySelectorAll('input'))
+        .find(i => i.placeholder === 'Rechercher une commune par son nom ou son code postal' && i.getBoundingClientRect().width > 0);
+    if (input) break;
+    await attendre(400);
   }
   if (!input) { console.warn('[Alfred DOM] Champ de recherche commune (CADASTRE) introuvable'); return false; }
 
@@ -633,7 +643,7 @@ async function essayerAjouterBienParCadastre(bien) {
   await attendre(200);
   await taper(input, bien.commune);
   await cliquerBouton('Rechercher');
-  await attendre(1800);
+  await attendre(2600); // laisse largement le temps à la recherche de répondre
 
   let li = null;
   for (let i = 0; i < 10; i++) {
@@ -645,7 +655,7 @@ async function essayerAjouterBienParCadastre(bien) {
   if (!li) { console.warn('[Alfred DOM] Commune introuvable dans les résultats CADASTRE:', bien.commune); return false; }
 
   await curseurVersAsync(li, () => simulerClic(li));
-  await attendre(1500);
+  await attendre(2200); // laisse le temps à une éventuelle auto-complétion de la parcelle
 
   const champParcelle = document.getElementById('asset-parcel-number');
   if (!champParcelle || !champParcelle.value || !champParcelle.value.trim()) {
