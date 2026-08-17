@@ -258,7 +258,10 @@ async function ecrireCachePartage(cleBrute, donnees) {
 // nécessaire (contrairement à l'API Gemini brute, réellement multilingue
 // sans le préciser) : Cloud TTS reste un produit par locale.
 async function genererAudioGemini(text, voixId, ton, langue) {
-  const languageCode = langue === 'nl' ? 'nl-BE' : 'fr-FR';
+  // nl-BE n'est pas supporté pour les voix Gemini (confirmé par erreur
+  // "language code 'nl-BE' is not supported for Gemini voices") — nl-NL
+  // (Pays-Bas, accent différent) l'est, même limitation que Chirp3 HD.
+  const languageCode = langue === 'nl' ? 'nl-NL' : 'fr-FR';
   const cle = ['gemini-tts', voixId, ton, languageCode, text].join('|');
 
   let audioContent = await lireCacheTTS(cle);
