@@ -128,6 +128,173 @@ async function ecrireCacheTTS(cle, base64) {
   }
 }
 
+// ── Moteur vocal : Google Cloud TTS ou Gemini TTS ─────────
+// Gemini TTS utilise les mêmes ~30 voix ("personæ") quelle que soit la
+// langue du texte — contrairement à Cloud TTS où chaque locale (fr-FR,
+// nl-BE...) a son propre sous-catalogue, parfois très limité (nl-BE n'a
+// par exemple aucune voix Chirp3 HD). Avantage supplémentaire : le prompt
+// peut inclure une instruction de ton en langage naturel, appliquée par le
+// modèle à la lecture — pas juste "lire le texte", une vraie intention.
+// Genre indicatif seulement (Google ne documente pas le genre par nom) —
+// à confirmer à l'oreille avec "Tester". Seules des voix à consonance
+// masculine/neutre sont listées ici, pour rester cohérent avec le
+// personnage d'Alfred.
+const GEMINI_VOIX_CATALOGUE = [
+  { id: 'Puck',        label: 'Puck — enjoué' },
+  { id: 'Charon',      label: 'Charon — posé, informatif' },
+  { id: 'Fenrir',      label: 'Fenrir — énergique' },
+  { id: 'Orus',        label: 'Orus — assuré' },
+  { id: 'Algenib',     label: 'Algenib — grave' },
+  { id: 'Iapetus',     label: 'Iapetus — clair' },
+  { id: 'Schedar',     label: 'Schedar — posé, régulier' },
+  { id: 'Rasalgethi',  label: 'Rasalgethi — informatif' },
+];
+
+// Instruction de ton par défaut, éditable dans le panneau "Voix" — ce que
+// demande explicitement Glodi : convaincu, naturel, pas théâtral, pas une
+// simple lecture de script.
+const TON_GEMINI_DEFAUT_FR = "Instruction de ton : lis ce texte avec assurance et conviction, comme si tu y croyais vraiment — pas comme une lecture de script. Reste naturel et chaleureux, jamais théâtral ni exagéré.";
+const TON_GEMINI_DEFAUT_NL = "Toon-instructie: lees deze tekst met overtuiging en zelfvertrouwen, alsof je er echt in gelooft — niet als het oplezen van een script. Blijf natuurlijk en warm, nooit theatraal of overdreven.";
+
+const ALFRED_VOIX_MOTEUR_KEY = 'alfred_voix_moteur'; // 'gemini' | 'cloud'
+const ALFRED_GEMINI_TON_KEY  = 'alfred_gemini_ton';  // { fr: '...', nl: '...' }
+
+function moteurVoixActuel() {
+  return localStorage.getItem(ALFRED_VOIX_MOTEUR_KEY) || 'gemini';
+}
+
+function tonGemini(langue) {
+  try {
+    const raw = localStorage.getItem(ALFRED_GEMINI_TON_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    if (parsed[langue]) return parsed[langue];
+  } catch (e) {}
+  return langue === 'nl' ? TON_GEMINI_DEFAUT_NL : TON_GEMINI_DEFAUT_FR;
+}
+
+function voixGeminiActuelle(langue) {
+  try {
+    const raw = localStorage.getItem(ALFRED_VOIX_CHOIX_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    if (parsed.gemini && parsed.gemini[langue]) return parsed.gemini[langue];
+  } catch (e) {}
+  return 'Puck';
+}
+
+// Extrait le taux d'échantillonnage d'un mimeType du type
+// "audio/L16;codec=pcm;rate=24000" — 24000 par défaut si absent/inattendu.
+function tauxDepuisMimeType(mimeType) {
+  const m = /rate=(\d+)/.exec(mimeType || '');
+  return m ? parseInt(m[1], 10) : 24000;
+}
+
+// Gemini TTS renvoie du PCM brut (pas de conteneur audio) — il faut lui
+// coller un en-tête WAV minimal pour que le navigateur puisse le lire.
+function pcmBase64VersUrlWav(base64, sampleRate, canaux = 1, bitsParEchantillon = 16) {
+  const bin = atob(base64);
+  const len = bin.length;
+  const pcm = new Uint8Array(len);
+  for (let i = 0; i < len; i++) pcm[i] = bin.charCodeAt(i);
+
+  const blockAlign = canaux * bitsParEchantillon / 8;
+  const byteRate = sampleRate * blockAlign;
+  const buffer = new ArrayBuffer(44 + len);
+  const view = new DataView(buffer);
+
+  function ecrireChaine(offset, str) {
+    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+  }
+
+  ecrireChaine(0, 'RIFF');
+  view.setUint32(4, 36 + len, true);
+  ecrireChaine(8, 'WAVE');
+  ecrireChaine(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); // format PCM
+  view.setUint16(22, canaux, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, byteRate, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, bitsParEchantillon, true);
+  ecrireChaine(36, 'data');
+  view.setUint32(40, len, true);
+
+  new Uint8Array(buffer, 44).set(pcm);
+
+  const blob = new Blob([buffer], { type: 'audio/wav' });
+  return URL.createObjectURL(blob);
+}
+
+// Génère (ou récupère du cache) un <audio> via Gemini TTS, pour une voix et
+// un ton explicites — ne dépend d'aucun réglage global, pour pouvoir servir
+// aussi bien à la lecture normale qu'au bouton "Tester" du panneau (sans
+// avoir à bidouiller un état global le temps de l'essai).
+async function genererAudioGemini(text, voixId, ton) {
+  const cle = ['gemini', voixId, ton, text].join('|');
+
+  const cache = await lireCacheTTS(cle);
+  let base64, taux;
+  if (cache) {
+    console.log('[Alfred Voice] Audio Gemini depuis le cache (pas d\'appel API).');
+    const parsed = JSON.parse(cache);
+    base64 = parsed.base64; taux = parsed.rate;
+  } else {
+    const res = await fetch(ALFRED_CONFIG.API_GEMINI_TTS, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: ton + '\n\n' + text }] }],
+        generationConfig: {
+          responseModalities: ['AUDIO'],
+          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voixId } } }
+        }
+      })
+    });
+    const data = await res.json();
+    const part = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+    if (!part || !part.data) throw new Error('Pas audio (Gemini) — ' + JSON.stringify(data?.error || data));
+    base64 = part.data;
+    taux = tauxDepuisMimeType(part.mimeType);
+    ecrireCacheTTS(cle, JSON.stringify({ base64, rate: taux })); // en tâche de fond
+  }
+  return new Audio(pcmBase64VersUrlWav(base64, taux));
+}
+
+// Équivalent Cloud TTS — même logique, voix explicite (objet du même
+// format que VOIX_CONFIG.fr/.nl), pour les mêmes raisons.
+async function genererAudioCloud(text, voix) {
+  const cle = cleTTS(voix, text);
+
+  let audioContent = await lireCacheTTS(cle);
+  if (audioContent) {
+    console.log('[Alfred Voice] Audio Cloud TTS depuis le cache (pas d\'appel API).');
+  } else {
+    const res = await fetch(ALFRED_CONFIG.API_TTS, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        input:       { text },
+        voice:       { languageCode: voix.languageCode, name: voix.name, ssmlGender: voix.ssmlGender },
+        audioConfig: { audioEncoding: 'MP3', speakingRate: voix.speakingRate, pitch: voix.pitch }
+      })
+    });
+    const data = await res.json();
+    if (!data.audioContent) throw new Error('Pas audio');
+    audioContent = data.audioContent;
+    ecrireCacheTTS(cle, audioContent);
+  }
+  return new Audio('data:audio/mp3;base64,' + audioContent);
+}
+
+// Prépare un élément <audio> prêt à jouer, via le moteur (Gemini/Cloud) et
+// les réglages actuellement enregistrés pour la langue donnée.
+async function obtenirAudio(text, langue) {
+  if (moteurVoixActuel() === 'gemini') {
+    return genererAudioGemini(text, voixGeminiActuelle(langue), tonGemini(langue));
+  }
+  return genererAudioCloud(text, VOIX_CONFIG[langue] || VOIX_CONFIG.fr);
+}
+
 // ── Anime la bouche selon amplitude ──────────────────────
 function animateMouth(amp) {
   const mt = document.getElementById('alfred-mouth-talk');
@@ -198,32 +365,8 @@ async function speak(text, langue, sousTitre) {
   setAlfredState('talk');
   animateMouth(0.3);
 
-  const voix = VOIX_CONFIG[langue] || VOIX_CONFIG.fr;
-  const cle = cleTTS(voix, text);
-
   try {
-    let audioContent = await lireCacheTTS(cle);
-
-    if (audioContent) {
-      console.log('[Alfred Voice] Audio depuis le cache (pas d\'appel API).');
-    } else {
-      const res = await fetch(ALFRED_CONFIG.API_TTS, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          input:       { text },
-          voice:       { languageCode: voix.languageCode, name: voix.name, ssmlGender: voix.ssmlGender },
-          audioConfig: { audioEncoding: 'MP3', speakingRate: voix.speakingRate, pitch: voix.pitch }
-        })
-      });
-
-      const data = await res.json();
-      if (!data.audioContent) throw new Error('Pas audio');
-      audioContent = data.audioContent;
-      ecrireCacheTTS(cle, audioContent); // en tâche de fond, ne bloque pas la lecture
-    }
-
-    const audio = new Audio('data:audio/mp3;base64,' + audioContent);
+    const audio = await obtenirAudio(text, langue);
     currentAudio = audio;
 
     // Sous-titres synchronisés sur la durée audio
