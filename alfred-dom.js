@@ -101,8 +101,15 @@ async function defilerVersElement(el) {
   const r = el.getBoundingClientRect();
   const dejaVisible = r.top >= 0 && r.bottom <= window.innerHeight;
   if (dejaVisible) return;
+  // La vitesse du défilement natif "smooth" n'est pas réglable (pas de
+  // paramètre de durée) — remonté comme un peu trop rapide en démo live.
+  // On ne peut pas la ralentir sans réimplémenter le défilement à la main
+  // (risqué : on ne sait pas si le site utilise la fenêtre ou un conteneur
+  // interne comme zone de défilement, et le deviner mal casserait le
+  // défilement). On laisse donc un peu plus de temps après, pour que
+  // l'écran ait fini de bouger avant que le curseur clique juste après.
   el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  await attendre(500);
+  await attendre(900);
 }
 
 function curseurVers(el, callback) {
@@ -849,7 +856,21 @@ async function essayerAjouterBienParCadastre(bien) {
   }
 
   await curseurVersAsync(li, () => simulerClic(li));
-  await attendre(2200); // laisse le temps à une éventuelle auto-complétion de la parcelle
+  await attendre(1500); // laisse le temps à la 2e liste (parcelle/adresse) d'apparaître
+
+  // Une seconde liste apparaît après la sélection de la commune — un seul
+  // élément disponible à choisir (confirmé en test live), avant que la
+  // parcelle ne se pré-remplisse réellement. Sans ce clic, la parcelle
+  // restait vide et on basculait à tort sur la saisie manuelle alors que
+  // le cadastre avait en fait fonctionné jusque-là.
+  const liSuivantes = Array.from(document.querySelectorAll('li')).filter(el => el.getBoundingClientRect().width > 0);
+  if (liSuivantes.length === 1) {
+    await curseurVersAsync(liSuivantes[0], () => simulerClic(liSuivantes[0]));
+    await attendre(700);
+  } else if (liSuivantes.length > 1) {
+    console.warn('[Alfred DOM] CADASTRE : plusieurs options inattendues dans la 2e liste (une seule attendue), aucune sélectionnée automatiquement:', liSuivantes.map(el => el.textContent.trim()));
+  }
+  await attendre(700); // laisse le temps à l'auto-complétion de la parcelle
 
   const champParcelle = document.getElementById(SELECTEURS.champs.bienParcelle);
   if (!champParcelle || !champParcelle.value || !champParcelle.value.trim()) {
@@ -1033,8 +1054,9 @@ async function seq_creationDossier_parties_acquereur() {
   await ajouterPartieParRN('Acquéreur', cfg.acquereur_rn);
   // Petite pause volontaire : sans elle, le clic sur "Suivant" arrivait
   // presque immédiatement après l'ajout de l'acquéreur — remonté en test
-  // live ("on a à peine le temps de voir il appuie Suivant").
-  await attendre(500);
+  // live ("on a à peine le temps de voir il appuie Suivant"), encore un
+  // peu allongée (500 → 900ms) sur un nouveau retour du même type.
+  await attendre(900);
   // "Suivant" reste désactivé tant que le vendeur n'a pas été ajouté avec succès.
   if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.suivant)) {
     console.warn('[Alfred DOM] Étape "parties" bloquée — arrêt de la séquence.');
