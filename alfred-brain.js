@@ -230,7 +230,29 @@ function startListening() {
 }
 
 // ── Répliques de secours ──────────────────────────────────
+// Verrou anti-double-déclenchement : jouerSecours() est asynchrone et
+// secoursIdx n'avance qu'à la toute fin, donc un second appui sur → (ou un
+// double-clic) pendant qu'une réplique tourne encore relançait la MÊME
+// réplique en parallèle de la première — les deux voix se chevauchaient et
+// les deux séquences DOM se marchaient dessus sur le même formulaire. Vu en
+// test live sur CreationOuvrir, dont la durée totale (3 segments + clics)
+// rend ce double-appui bien plus facile à déclencher par erreur.
+let jouerSecoursEnCours = false;
+
 async function jouerSecours() {
+  if (jouerSecoursEnCours) {
+    console.warn('[Alfred] Réplique déjà en cours — appui ignoré.');
+    return;
+  }
+  jouerSecoursEnCours = true;
+  try {
+    await jouerSecoursInterne();
+  } finally {
+    jouerSecoursEnCours = false;
+  }
+}
+
+async function jouerSecoursInterne() {
   const list = currentLangue === 'nl'
     ? ALFRED_CONFIG.REPLIQUES_NL
     : ALFRED_CONFIG.REPLIQUES_FR;
