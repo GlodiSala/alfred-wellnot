@@ -160,7 +160,13 @@ const GEMINI_VOIX_CATALOGUE = [
 // Alfred est un candidat qui passe un entretien d'embauche devant une
 // salle de notaires) et par le guide de style d'ALFRED_CONFIG.SYSTEM_PROMPT
 // (naturel, direct, confiant, humour discret, jamais "excellente question").
-const TON_GEMINI_DEFAUT = "Tu es Alfred : un outsider sans parcours classique qui passe un entretien d'embauche devant une salle de notaires exigeants, et qui a vraiment envie de les convaincre. Parle avec assurance, chaleur et une pointe d'humour malicieux, toujours direct, jamais théâtral.";
+// Formulation volontairement calme/courte : les versions précédentes,
+// plus chargées en émotion ("outsider", "envie de convaincre", "humour
+// malicieux"), poussaient le modèle vers un rendu trop théâtral en
+// pratique — même en demandant explicitement "jamais théâtral" juste
+// après. Un prompt court et posé donne un résultat plus naturel qu'un
+// prompt qui décrit beaucoup d'émotion à la fois.
+const TON_GEMINI_DEFAUT = "Ton calme, posé et naturel, comme dans une conversation professionnelle normale. Assurance tranquille, sans emphase.";
 
 const ALFRED_VOIX_MOTEUR_KEY = 'alfred_voix_moteur'; // 'gemini' | 'cloud' (cloud = repli automatique, pas de choix utilisateur)
 const ALFRED_GEMINI_TON_KEY  = 'alfred_gemini_ton';  // chaîne simple, partagée FR/NL
