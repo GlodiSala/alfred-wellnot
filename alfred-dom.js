@@ -1065,16 +1065,34 @@ async function seq_creationDossier_bien() {
 }
 
 // Étape 4 — Rattacher les notaires (vendeur et acquéreur) depuis l'onglet Parties.
-async function seq_creationDossier_notaires() {
+// Découpée en deux sous-étapes (comme CreationOuvrir/CreationParties) pour
+// un calage sur deux segments : le notaire du vendeur (BIMBIMMO) pendant
+// qu'on en parle, celui de l'acquéreur pendant qu'on parle de lui — donne
+// aussi plus de temps réel entre les deux tentatives pour que la section
+// "REPRÉSENTE" ait le temps de s'afficher (remonté comme parfois pas
+// trouvée, probablement un problème de timing plutôt qu'un vrai bug).
+async function seq_creationDossier_notaires_vendeur() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) return;
   await naviguerOnglet(SELECTEURS.onglets.parties);
   await attendre(900);
   if (cfg.vendeur_notaire) await rattacherNotaire(cfg.vendeur_notaire, 'Vendeur');
+}
+
+async function seq_creationDossier_notaires_acquereur() {
+  const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
+  if (!cfg) return;
   if (cfg.acquereur_notaire && cfg.acquereur_notaire !== cfg.vendeur_notaire) {
-    await attendre(600);
     await rattacherNotaire(cfg.acquereur_notaire, 'Acquéreur');
   }
+}
+
+// Rétrocompatibilité — enchaîne les deux sous-étapes (test manuel en
+// console ; le script normal déclenche chaque sous-étape à part).
+async function seq_creationDossier_notaires() {
+  await seq_creationDossier_notaires_vendeur();
+  await attendre(600);
+  await seq_creationDossier_notaires_acquereur();
 }
 
 // Étape 5 — Lancer la rédaction du compromis.
@@ -1133,6 +1151,8 @@ const DOM_ACTIONS = {
   'CreationParties_Acquereur': seq_creationDossier_parties_acquereur,
   'CreationBien':      seq_creationDossier_bien,
   'CreationNotaires':  seq_creationDossier_notaires,
+  'CreationNotaires_Vendeur':   seq_creationDossier_notaires_vendeur,
+  'CreationNotaires_Acquereur': seq_creationDossier_notaires_acquereur,
   'CreationRedaction': seq_creationDossier_redaction,
   'CreationEmail':     seq_creationDossier_email,
 };

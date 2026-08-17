@@ -259,7 +259,10 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { texte: "L'acquéreur est une personne physique : Alain Caprasse. Je récupère : nom, adresse, date de naissance, nationalité, état civil, régime matrimonial. Tout remonte, prêt pour la rédaction du compromis.", action: 'CreationParties_Acquereur' },
     ] },
     { acte: 2, label: 'CreationBien',      texte: "Pour le bien, vous sélectionnez le bon, et je récupère automatiquement la matrice cadastrale. Il se situe en Flandre, à 8670 Coxyde. Matrice cadastrale récupérée. Parties, notaires, cadastre — tout est déjà là.", action: 'CreationBien' },
-    { acte: 2, label: 'CreationNotaires',  texte: "Chaque partie doit être représentée par un notaire. BIMBIMMO, c'est nous. Pour l'acquéreur, j'ajoute Maxime Van der Straten — je le retrouve dans la base de tous les notaires belges et je le rattache à l'acquéreur. Chaque partie a son notaire.", action: 'CreationNotaires' },
+    { acte: 2, label: 'CreationNotaires', segments: [
+      { texte: "Chaque partie doit être représentée par un notaire. BIMBIMMO, c'est nous.", action: 'CreationNotaires_Vendeur' },
+      { texte: "Pour l'acquéreur, j'ajoute Maxime Van der Straten — je le retrouve dans la base de tous les notaires belges et je le rattache à l'acquéreur. Chaque partie a son notaire.", action: 'CreationNotaires_Acquereur' },
+    ] },
     { acte: 2, label: 'CreationRedaction', texte: "Rien n'est encore chargé côté pièces — on enregistre le dossier tel quel. Et maintenant le moment qu'on attend : la rédaction. Un clic. Je réunis les parties, les notaires et le cadastre, et je génère le compromis de vente. À gauche, toutes les données collectées. À droite, le compromis qui se construit en direct.", action: 'CreationRedaction' },
     { acte: 2, label: 'CreationEmail',     texte: "Il manque encore les pièces du vendeur — j'ai préparé un projet de mail à BIMBIMMO, en lui demandant le PEB, le contrôle électrique et l'attestation du sol. Une seule demande, jamais deux fois la même question. Vous validez l'envoi ?", action: 'CreationEmail' },
 
@@ -296,7 +299,10 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { texte: "De koper is een natuurlijke persoon: Alain Caprasse. Ik haal op: naam, adres, geboortedatum, nationaliteit, burgerlijke staat, huwelijksvermogensstelsel. Alles is klaar voor de opstelling van de verkoopbelofte.", action: 'CreationParties_Acquereur' },
     ] },
     { acte: 2, label: 'CreationBien',      texte: "Voor het onroerend goed selecteert u gewoon het juiste, en ik haal automatisch de kadastrale matrix op. Het bevindt zich in Vlaanderen, in 8670 Koksijde. Kadastrale matrix opgehaald. Partijen, notarissen, kadaster — alles staat er al.", action: 'CreationBien' },
-    { acte: 2, label: 'CreationNotaires',  texte: "Elke partij moet vertegenwoordigd worden door een notaris. BIMBIMMO, dat zijn wij. Voor de koper voeg ik Maxime Van der Straten toe — ik vind hem in de databank van alle Belgische notarissen en koppel hem aan de koper. Elke partij heeft haar notaris.", action: 'CreationNotaires' },
+    { acte: 2, label: 'CreationNotaires', segments: [
+      { texte: "Elke partij moet vertegenwoordigd worden door een notaris. BIMBIMMO, dat zijn wij.", action: 'CreationNotaires_Vendeur' },
+      { texte: "Voor de koper voeg ik Maxime Van der Straten toe — ik vind hem in de databank van alle Belgische notarissen en koppel hem aan de koper. Elke partij heeft haar notaris.", action: 'CreationNotaires_Acquereur' },
+    ] },
     { acte: 2, label: 'CreationRedaction', texte: "Er is nog niets geüpload aan stukken — we registreren het dossier zoals het is. En nu het moment waar we op wachten: de opstelling. Eén klik. Ik verzamel de partijen, de notarissen en het kadaster, en ik genereer de verkoopbelofte. Links, alle verzamelde gegevens. Rechts, de akte die live wordt opgebouwd.", action: 'CreationRedaction' },
     { acte: 2, label: 'CreationEmail',     texte: "De stukken van de verkoper ontbreken nog — ik heb een e-mailontwerp klaargemaakt voor BIMBIMMO, met de vraag naar het EPC, de elektrische keuring en het bodemattest. Eén enkele vraag, nooit twee keer dezelfde. Bevestigt u de verzending?", action: 'CreationEmail' },
 
