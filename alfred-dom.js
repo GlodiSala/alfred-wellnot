@@ -250,6 +250,46 @@ function trouverOnglet(texte) {
     .find(el => el.textContent.trim() === texte && el.getBoundingClientRect().width > 0);
 }
 
+// Le panneau Alfred (Conversation / Événements) n'existe dans le DOM que
+// s'il a déjà été ouvert via l'icône ronde en haut à droite de l'écran —
+// sans ça, trouverOnglet('Événements') échoue en silence, l'appelant ne
+// s'en rend même pas compte (if (onglet) ... sans branche else). Remonté
+// en test live : "on doit cliquer sur son logo". PREMIÈRE VERSION : je
+// devine la position de cette icône (coin haut-droit, petite, ronde) faute
+// de sélecteur exact — à vérifier en live.
+function trouverAvatarAlfred() {
+  const candidats = Array.from(document.querySelectorAll('img, button, [role="button"], div, span'))
+    .filter(el => {
+      const r = el.getBoundingClientRect();
+      return r.width > 0 && r.width < 70 && r.height < 70;
+    });
+  let trouve = candidats.find(el => {
+    const attr = (el.getAttribute('alt') || el.getAttribute('aria-label') || el.getAttribute('title') || '').toLowerCase();
+    return attr.includes('alfred');
+  });
+  if (trouve) return trouve;
+  // Repli : plus petit élément situé dans le coin haut-droit de l'écran.
+  return candidats
+    .filter(el => {
+      const r = el.getBoundingClientRect();
+      return r.top < 100 && r.right > window.innerWidth - 120;
+    })
+    .sort((a, b) => b.getBoundingClientRect().right - a.getBoundingClientRect().right)[0] || null;
+}
+
+// Ouvre le panneau Alfred si "Événements"/"Conversation" n'y est pas déjà
+// visible — sans effet s'il est déjà ouvert.
+async function ouvrirPanneauAlfred() {
+  if (trouverOnglet(SELECTEURS.onglets.evenements)) return true;
+  const avatar = trouverAvatarAlfred();
+  if (!avatar) { console.warn('[Alfred DOM] Icône Alfred (pour ouvrir le panneau Événements) introuvable.'); return false; }
+  await curseurVersAsync(avatar, () => simulerClic(avatar));
+  await attendre(800);
+  const ouvert = !!trouverOnglet(SELECTEURS.onglets.evenements);
+  if (!ouvert) console.warn('[Alfred DOM] Panneau Alfred toujours pas ouvert après le clic sur l\'icône.');
+  return ouvert;
+}
+
 // ── Trouver un élément de navigation par texte ────────────
 function trouverNav(textes) {
   const candidats = Array.from(document.querySelectorAll(
@@ -837,6 +877,7 @@ async function lancerRedactionCompromis() {
 // notre contrôle. Voir seq_creationDossier_attenteReponseVendeur (étape
 // séparée, juste après celle-ci) pour l'attente + la suite.
 async function montrerPropositionEmail() {
+  await ouvrirPanneauAlfred();
   const onglet = trouverOnglet(SELECTEURS.onglets.evenements);
   if (onglet) curseurVers(onglet, () => onglet.click());
   await attendre(1200);
@@ -1265,6 +1306,7 @@ async function seq_creationDossier_email() {
 // notification côté appli — cette fonction compte juste l'apparition d'un
 // nouvel élément dans "Événements", à affiner après un premier essai réel.
 async function seq_creationDossier_attenteReponseVendeur() {
+  await ouvrirPanneauAlfred();
   const onglet = trouverOnglet(SELECTEURS.onglets.evenements);
   if (onglet) curseurVers(onglet, () => onglet.click());
   await attendre(1200);
