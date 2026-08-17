@@ -142,7 +142,8 @@ function creerPanneauRepliques() {
       <span id="alfred-script-reset" title="Réinitialiser le script par défaut" style="color:rgba(255,255,255,.35);font-size:11px;cursor:pointer;">↺</span>
     </div>
     <button id="alfred-donnees-ouvrir" style="width:100%;margin-bottom:8px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:rgba(255,255,255,.85);font-size:11px;font-weight:600;cursor:pointer;">📋 Données du dossier démo</button>
-    <button id="alfred-voix-ouvrir" style="width:100%;margin-bottom:14px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:rgba(255,255,255,.85);font-size:11px;font-weight:600;cursor:pointer;">🔊 Voix d'Alfred</button>
+    <button id="alfred-voix-ouvrir" style="width:100%;margin-bottom:6px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:rgba(255,255,255,.85);font-size:11px;font-weight:600;cursor:pointer;">🔊 Voix d'Alfred</button>
+    <div id="alfred-reglages-reset" style="text-align:center;color:rgba(255,255,255,.35);font-size:9px;margin-bottom:14px;cursor:pointer;">↺ Réinitialiser voix + données démo</div>
     <div style="display:flex;gap:20px;align-items:flex-start;">
       <div id="alfred-col-1" style="flex:1;"></div>
       <div id="alfred-col-2" style="flex:1.2;"></div>
@@ -174,6 +175,21 @@ function creerPanneauRepliques() {
     // Pousse aussi la remise à zéro en ligne, sinon la prochaine synchro
     // ré-appliquerait l'ancienne version partagée par-dessus le reset local.
     if (typeof sauvegarderAvecGestionConflit === 'function') afficherStatutSauvegarde(sauvegarderAvecGestionConflit());
+  };
+
+  // Réinitialisation groupée voix + données démo — volontairement séparée
+  // du reset du script (qui contient du texte écrit à la main, plus
+  // risqué à effacer par erreur). Évite d'avoir à rouvrir chaque
+  // sous-panneau juste pour cliquer son propre ↺ quand on veut juste
+  // repartir des réglages par défaut.
+  const btnReglagesReset = panel.querySelector('#alfred-reglages-reset');
+  btnReglagesReset.onmouseover = () => { btnReglagesReset.style.color = '#fff'; };
+  btnReglagesReset.onmouseout  = () => { btnReglagesReset.style.color = 'rgba(255,255,255,.35)'; };
+  btnReglagesReset.onclick = () => {
+    if (!confirm('Réinitialiser la voix, le ton et les données du dossier démo aux valeurs par défaut, pour tout le monde ? Le script (texte des répliques) n\'est pas touché.')) return;
+    if (typeof reinitialiserReglages === 'function') reinitialiserReglages();
+    if (typeof sauvegarderAvecGestionConflit === 'function') afficherStatutSauvegarde(sauvegarderAvecGestionConflit());
+    if (typeof sauvegarderDonneesCreationAvecGestionConflit === 'function') sauvegarderDonneesCreationAvecGestionConflit();
   };
 
   const svgEl = document.getElementById('alfred-svg');

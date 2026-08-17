@@ -586,5 +586,18 @@ function reinitialiserDonneesCreation() {
   localStorage.removeItem(ALFRED_CREATION_STORAGE_KEY);
 }
 
+// Réinitialise voix/ton + données démo en un seul geste — volontairement
+// SANS le script : le script contient du texte écrit/ajusté à la main
+// (créatif), le réinitialiser par erreur en même temps que de simples
+// réglages techniques ferait perdre du travail. Voix/ton et données démo,
+// eux, ne sont que des valeurs de configuration — moins risqué de les
+// regrouper.
+function reinitialiserReglages() {
+  localStorage.removeItem(ALFRED_GEMINI_TON_KEY);
+  localStorage.removeItem(ALFRED_GEMINI_VOIX_KEY);
+  localStorage.removeItem(ALFRED_VOIX_MOTEUR_KEY);
+  reinitialiserDonneesCreation();
+}
+
 chargerDonneesCreationPersonnalisees();
 rafraichirDonneesCreationDepuisServeur();
