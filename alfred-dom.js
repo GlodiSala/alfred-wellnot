@@ -17,6 +17,7 @@ const SELECTEURS = {
   boutons: {
     ajouter:             'Ajouter',
     ajouterManuellement: 'Ajouter manuellement',
+    ajouterBienCadastre: 'Ajouter un bien via le CADASTRE',
     ajouterNotaire:      'Ajouter un notaire',
     creerDossier:        'Créer un dossier',
     enregistrer:         'Enregistrer',
@@ -721,9 +722,20 @@ async function essayerAjouterBienParCadastre(bien) {
     return false;
   }
 
-  // Laisse la page de l'étape "Biens" finir de se charger avant de
-  // chercher le champ — sinon on peut cliquer/taper trop tôt.
-  await attendre(1500);
+  // Le champ de recherche commune n'existe pas tant qu'on n'a pas cliqué
+  // sur "Ajouter un bien via le CADASTRE" — l'écran "Biens" affiche
+  // d'abord un choix entre ce bouton et "Ajouter manuellement". Ce clic
+  // manquait totalement : la fonction cherchait le champ directement,
+  // sans jamais l'avoir fait apparaître — d'où le passage systématique en
+  // manuel, confirmé en test live ("Champ de recherche commune introuvable").
+  if (!await cliquerBouton(SELECTEURS.boutons.ajouterBienCadastre)) {
+    console.warn('[Alfred DOM] Bouton "Ajouter un bien via le CADASTRE" introuvable — bascule sur la saisie manuelle.');
+    return false;
+  }
+
+  // Laisse la page finir de se charger avant de chercher le champ —
+  // sinon on peut cliquer/taper trop tôt.
+  await attendre(1200);
 
   let input = null;
   for (let i = 0; i < 10; i++) {
@@ -789,34 +801,38 @@ async function ajouterBien(bien) {
 }
 
 // Ajoute un bien manuellement (plus fiable en démo que la recherche CADASTRE).
+// Frappe accélérée (35ms/lettre) sur tous les champs, comme pour le code
+// dossier : ce sont des références cadastrales/adresses, personne n'a
+// besoin de voir chaque lettre s'afficher une à une — remonté en test
+// live comme un des points les plus lents de toute la démo.
 async function ajouterBienManuel(bien) {
   await cliquerBouton(SELECTEURS.boutons.ajouterManuellement);
-  await attendre(900);
+  await attendre(600);
   const typeSpan = document.getElementById(SELECTEURS.champs.bienType);
   if (typeSpan) {
     // Clique le span directement (même correctif que choisirDansDropdown —
     // closest('div,button') sauterait le <p-select> et attraperait un
     // conteneur trop large qui ne réagit pas au clic).
     await curseurVersAsync(typeSpan, () => simulerClic(typeSpan));
-    await attendre(300);
+    await attendre(250);
     for (let i = 0; i < 15; i++) {
       const opt = Array.from(document.querySelectorAll('li'))
         .find(li => li.textContent.trim() === bien.type && li.getBoundingClientRect().width > 0);
-      if (opt) { await curseurVersAsync(opt, () => simulerClic(opt)); await attendre(300); break; }
+      if (opt) { await curseurVersAsync(opt, () => simulerClic(opt)); await attendre(200); break; }
       await attendre(200);
     }
   }
-  await taperDansChamp(SELECTEURS.champs.bienParcelle, bien.parcelle);
-  await taperDansChamp(SELECTEURS.champs.bienSection, bien.section);
-  await taperDansChamp(SELECTEURS.champs.bienDivision, bien.division);
-  await taperDansChamp(SELECTEURS.champs.bienSurface, bien.surface);
-  await taperDansChamp(SELECTEURS.champs.bienRevenuCadastral, bien.revenu_cadastral);
-  await taperDansChamp(SELECTEURS.champs.bienRue, bien.rue);
-  await taperDansChamp(SELECTEURS.champs.bienNumero, bien.numero);
-  await taperDansChamp(SELECTEURS.champs.bienCommune, bien.commune);
-  await attendre(500);
+  await taperDansChamp(SELECTEURS.champs.bienParcelle, bien.parcelle, 15, 35);
+  await taperDansChamp(SELECTEURS.champs.bienSection, bien.section, 15, 35);
+  await taperDansChamp(SELECTEURS.champs.bienDivision, bien.division, 15, 35);
+  await taperDansChamp(SELECTEURS.champs.bienSurface, bien.surface, 15, 35);
+  await taperDansChamp(SELECTEURS.champs.bienRevenuCadastral, bien.revenu_cadastral, 15, 35);
+  await taperDansChamp(SELECTEURS.champs.bienRue, bien.rue, 15, 35);
+  await taperDansChamp(SELECTEURS.champs.bienNumero, bien.numero, 15, 35);
+  await taperDansChamp(SELECTEURS.champs.bienCommune, bien.commune, 15, 35);
+  await attendre(300);
   await cliquerBouton(SELECTEURS.boutons.enregistrer);
-  await attendre(1000);
+  await attendre(700);
 }
 
 // ── Répliques dédiées — Création live d'un dossier de démo ──

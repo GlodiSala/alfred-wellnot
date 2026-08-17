@@ -480,6 +480,11 @@ function afficherSousTitresSync(sousTitre, audio) {
 
   const phrases = sousTitre.match(/[^.!?]+[.!?]+/g) || [sousTitre];
 
+  // Annule un effacement en retard programmé par cacherSousTitres() (voir
+  // alfred-ui.js) — sinon, avec plusieurs répliques enchaînées, celui de la
+  // réplique précédente efface le sous-titre qu'on vient tout juste
+  // d'afficher ici.
+  if (typeof masquageSousTitresTimer !== 'undefined') clearTimeout(masquageSousTitresTimer);
   sub.style.opacity = '1';
   sub.textContent = phrases[0].trim();
 

@@ -82,11 +82,20 @@ function creerSousTitres() {
 
 let subtitleInterval = null;
 let subtitleText = '';
+// cacherSousTitres() efface le texte 300ms APRÈS avoir baissé l'opacité (le
+// temps que le fondu CSS se termine) — avec plusieurs répliques enchaînées
+// (voir jouerSecours), la réplique suivante affiche déjà son propre
+// sous-titre quand ce minuteur en retard se déclenche, et l'efface par
+// erreur : "les sous-titres s'affichent au début, plus rien ensuite".
+// masquageSousTitresTimer permet de l'annuler dès qu'un nouveau sous-titre
+// est affiché.
+let masquageSousTitresTimer = null;
 
 function afficherSousTitres(text) {
   const sub = document.getElementById('alfred-subtitles');
   if (!sub || !text) return;
   clearInterval(subtitleInterval);
+  clearTimeout(masquageSousTitresTimer);
   subtitleText = text;
   sub.textContent = text;
   sub.style.opacity = '1';
@@ -117,7 +126,8 @@ function cacherSousTitres() {
   const sub = document.getElementById('alfred-subtitles');
   if (sub) {
     sub.style.opacity = '0';
-    setTimeout(() => { sub.textContent = ''; }, 300);
+    clearTimeout(masquageSousTitresTimer);
+    masquageSousTitresTimer = setTimeout(() => { sub.textContent = ''; }, 300);
   }
 }
 
