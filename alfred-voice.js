@@ -153,7 +153,7 @@ const GEMINI_VOIX_CATALOGUE = [
 // Alfred est un candidat qui passe un entretien d'embauche devant une
 // salle de notaires) et par le guide de style d'ALFRED_CONFIG.SYSTEM_PROMPT
 // (naturel, direct, confiant, humour discret, jamais "excellente question").
-const TON_GEMINI_DEFAUT = "Tu es Alfred, un candidat qui passe un entretien d'embauche devant une salle de notaires — pas un lecteur de script. Parle avec assurance et chaleur, avec un humour discret par moments, sans jamais devenir théâtral.";
+const TON_GEMINI_DEFAUT = "Tu es Alfred, un candidat qui passe un entretien d'embauche devant une salle de notaires — pas un lecteur de script. Parle avec assurance, chaleur et un humour discret par moments, toujours direct et sans détour, jamais théâtral.";
 
 // Séparateur entre l'instruction de ton et le texte à prononcer — sans lui,
 // le modèle lit parfois l'instruction elle-même à voix haute au lieu de
@@ -168,12 +168,41 @@ function moteurVoixActuel() {
   return localStorage.getItem(ALFRED_VOIX_MOTEUR_KEY) || 'gemini';
 }
 
+// Ces deux réglages ont eu, au fil des itérations, un ancien format par
+// langue ({ fr: '...', nl: '...' }) avant d'être simplifiés en une valeur
+// unique — un navigateur qui avait déjà enregistré l'ancien format continue
+// de le renvoyer tel quel sinon (JSON brut affiché à l'écran au lieu d'une
+// phrase lisible). On migre silencieusement au premier accès.
 function tonGemini() {
-  return localStorage.getItem(ALFRED_GEMINI_TON_KEY) || TON_GEMINI_DEFAUT;
+  const raw = localStorage.getItem(ALFRED_GEMINI_TON_KEY);
+  if (!raw) return TON_GEMINI_DEFAUT;
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') {
+      const migre = parsed.fr || parsed.nl || TON_GEMINI_DEFAUT;
+      localStorage.setItem(ALFRED_GEMINI_TON_KEY, migre);
+      return migre;
+    }
+  } catch (e) {
+    // Pas du JSON : c'est déjà le nouveau format (texte simple), on le garde tel quel.
+  }
+  return raw;
 }
 
 function voixGeminiActuelle() {
-  return localStorage.getItem(ALFRED_GEMINI_VOIX_KEY) || 'Algenib';
+  const raw = localStorage.getItem(ALFRED_GEMINI_VOIX_KEY);
+  if (!raw) return 'Algenib';
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') {
+      const migre = parsed.fr || parsed.nl || 'Algenib';
+      localStorage.setItem(ALFRED_GEMINI_VOIX_KEY, migre);
+      return migre;
+    }
+  } catch (e) {
+    // Pas du JSON : c'est déjà le nouveau format (id de voix simple).
+  }
+  return raw;
 }
 
 // Extrait le taux d'échantillonnage d'un mimeType du type
