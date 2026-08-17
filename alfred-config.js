@@ -246,28 +246,6 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'CreationRedaction', texte: "Rien n'est encore chargé côté pièces — on enregistre le dossier tel quel. Et maintenant le moment qu'on attend : la rédaction. Un clic. Je réunis les parties, les notaires et le cadastre, et je génère le compromis de vente. À gauche, toutes les données collectées. À droite, le compromis qui se construit en direct.", action: 'CreationRedaction' },
     { acte: 2, label: 'CreationEmail',     texte: "Il manque encore les pièces du vendeur — j'ai préparé un projet de mail à BIMBIMMO, en lui demandant le PEB, le contrôle électrique et l'attestation du sol. Une seule demande, jamais deux fois la même question. Vous validez l'envoi ?", action: 'CreationEmail' },
 
-    // ACTE 2 — SÉQUENCE 1
-    // REPLIQUES_FR Dashboard
-    { acte: 2, label: 'Dashboard',     texte: "Tu vois ici le tableau de bord de l'étude — tous les dossiers en cours, les collaborateurs assignés, l'état d'avancement de chaque dossier. On ouvre un dossier existant." },
-    { acte: 2, label: 'Formulaire',    texte: "Tu renseignes le numéro de dossier, tu choisis la langue, tu assignes un collaborateur et un notaire responsable. Et on passe à l'étape suivante." },
-    { acte: 2, label: 'Parties',       texte: "Maintenant les parties. Et c'est là que je commence vraiment à travailler. Je suis connecté directement aux différents organes du notariat. Tu me donnes le numéro de registre national de l'acquéreur — et je te sors instantanément toutes ses informations. Nom, prénom, adresse, date de naissance, nationalité, état civil, régime matrimonial. Tout." },
-    { acte: 2, label: 'Notaires',      texte: "Le régime matrimonial aussi. Et même chose pour le vendeur. Et pour le notaire de la partie adverse — j'ai une base de données à jour de tous les notaires belges. Tu me donnes juste le nom du notaire choisi, et je m'occupe du reste." },
-    { acte: 2, label: 'Biens',         texte: "Et pour le bien immobilier — tu sélectionnes simplement le bon bien de la personne concernée, et je vais chercher automatiquement la bonne matrice cadastrale." },
-    { acte: 2, label: 'Complet',       texte: "Tout est déjà dans le dossier." },
-
-    // ACTE 2 — SÉQUENCE 2
-    { acte: 2, label: 'Documents',     texte: "Tous les documents que je ne vais pas chercher moi-même, tu peux les uploader directement dans Alfred. Je les analyse seul et je les catégorise automatiquement. Tu vois ici le statut En attente — c'est moi qui traite. Quand c'est terminé, le statut passe au vert. Et si un document manque parce que c'est le client qui l'a — pas de problème. Je rédige le mail à la bonne partie, tu l'approuves, je l'envoie. Dès que le client répond, je récupère le document et je l'intègre dans le dossier. Que ce soit maintenant ou à vingt-trois heures un dimanche soir." },
-    { acte: 2, label: 'Analysé',       texte: "Analysé, classé, et les informations sont prêtes à être utilisées dans la rédaction." },
-    { acte: 2, label: 'Pendant',       texte: "Pendant qu'on parlait." },
-
-    // ACTE 2 — SÉQUENCE 3
-    { acte: 2, label: 'Rédaction',    texte: "Sur base de tout ce que j'ai collecté — les parties, la matrice cadastrale, les documents analysés — je génère le projet de compromis. Tu vois à gauche toutes les informations que j'ai rassemblées. À droite, le projet d'acte qui se construit en temps réel. Chaque information est positionnée au bon endroit, dans la bonne section. La rédaction est vérifiée par notre système de règles métier intégré — donc tu ne pars pas d'une page blanche, tu pars d'un projet solide. Tu relis, tu ajustes, tu valides." },
-
-    // ACTE 2 — SÉQUENCE 4
-    { acte: 2, label: 'Chatbot',       texte: "À n'importe quel moment, sur n'importe quel dossier, tu peux me poser une question et j'y réponds instantanément. Où en est telle pièce, quelle clause a été intégrée, quelle est la situation matrimoniale de l'acquéreur. Mais je ne me contente pas de répondre aux questions. Si je détecte qu'une information manque pour avancer sur le dossier, j'identifie à qui il faut écrire, je rédige le mail, et je le soumets pour validation." },
-    { acte: 2, label: 'Événements',    texte: "Regarde ici — une pièce manquait au dossier. J'ai rédigé le mail à la partie concernée avec un lien vers un formulaire. Elle clique, elle remplit, elle renvoie. Et dès que j'ai reçu sa réponse, je l'intègre directement dans le dossier. Automatiquement. Peu importe l'heure à laquelle elle a répondu." },
-    { acte: 2, label: 'Exactement',    texte: "C'est exactement ça." },
-
     // ACTE 3
     { acte: 3, label: 'Sécurité',      texte: "Toutes les données sont hébergées en Europe, sur des serveurs sécurisés. Je suis RGPD compliant. Et je suis certifié par Privanot — la profession notariale belge elle-même a validé le niveau de sécurité. Vos données ne quittent jamais le cadre européen." },
     { acte: 3, label: 'Stand',         texte: "J'ai un stand dans la salle d'à côté. Je t'invite à passer, on pourra répondre à tes dernières questions. Et si tu veux, on peut aussi organiser une démonstration directement dans ton étude." },
@@ -297,28 +275,6 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'CreationNotaires',  texte: "Elke partij moet vertegenwoordigd worden door een notaris. BIMBIMMO, dat zijn wij. Voor de koper voeg ik Maxime Van der Straten toe — ik vind hem in de databank van alle Belgische notarissen en koppel hem aan de koper. Elke partij heeft haar notaris.", action: 'CreationNotaires' },
     { acte: 2, label: 'CreationRedaction', texte: "Er is nog niets geüpload aan stukken — we registreren het dossier zoals het is. En nu het moment waar we op wachten: de opstelling. Eén klik. Ik verzamel de partijen, de notarissen en het kadaster, en ik genereer de verkoopbelofte. Links, alle verzamelde gegevens. Rechts, de akte die live wordt opgebouwd.", action: 'CreationRedaction' },
     { acte: 2, label: 'CreationEmail',     texte: "De stukken van de verkoper ontbreken nog — ik heb een e-mailontwerp klaargemaakt voor BIMBIMMO, met de vraag naar het EPC, de elektrische keuring en het bodemattest. Eén enkele vraag, nooit twee keer dezelfde. Bevestigt u de verzending?", action: 'CreationEmail' },
-
-    // ACTE 2 — SÉQUENCE 1
-    // REPLIQUES_NL Dashboard
-    { acte: 2, label: 'Dashboard',     texte: "U ziet hier het dashboard van het kantoor — alle lopende dossiers, de toegewezen medewerkers, de voortgang van elk dossier. We openen een bestaand dossier." },
-    { acte: 2, label: 'Formulaire',    texte: "U vult het dossiernummer in, u kiest de taal, u wijst een medewerker en een verantwoordelijke notaris toe. En we gaan naar de volgende stap." },
-    { acte: 2, label: 'Parties',       texte: "Nu de partijen. En dat is waar ik echt aan het werk ga. Ik ben rechtstreeks verbonden met de verschillende organen van het notariaat. U geeft me het rijksregisternummer van de koper — en ik haal onmiddellijk alle informatie op. Naam, voornaam, adres, geboortedatum, nationaliteit, burgerlijke staat, huwelijksvermogensstelsel. Alles." },
-    { acte: 2, label: 'Notaires',      texte: "Het huwelijksvermogensstelsel ook. En hetzelfde voor de verkoper. En voor de notaris van de tegenpartij — ik heb een bijgewerkte databank van alle Belgische notarissen. U geeft me gewoon de naam van de gekozen notaris, en ik regel de rest." },
-    { acte: 2, label: 'Biens',         texte: "En voor het onroerend goed — u selecteert gewoon het juiste goed van de betrokken persoon, en ik zoek automatisch de juiste kadastrale matrix op." },
-    { acte: 2, label: 'Complet',       texte: "Alles staat al in het dossier." },
-
-    // ACTE 2 — SÉQUENCE 2
-    { acte: 2, label: 'Documents',     texte: "Alle documenten die ik niet zelf ophaal, kunt u rechtstreeks uploaden in Alfred. Ik analyseer ze zelfstandig en categoriseer ze automatisch. U ziet hier de status In behandeling — dat ben ik die verwerkt. Wanneer het klaar is, wordt de status groen. En als een document ontbreekt omdat de cliënt het heeft — geen probleem. Ik stel de e-mail op aan de juiste partij, u keurt goed, ik verzend. Zodra de cliënt antwoordt, haal ik het document op en verwerk ik het in het dossier. Of dat nu nu is of om drieëntwintig uur op zondagavond." },
-    { acte: 2, label: 'Analysé',       texte: "Geanalyseerd, geclassificeerd, en de informatie is klaar om te gebruiken in de redactie." },
-    { acte: 2, label: 'Pendant',       texte: "Terwijl we spraken." },
-
-    // ACTE 2 — SÉQUENCE 3
-    { acte: 2, label: 'Rédaction',    texte: "Op basis van alles wat ik heb verzameld — de partijen, de kadastrale matrix, de geanalyseerde documenten — genereer ik het ontwerp van de verkoopbelofte. U ziet links alle informatie die ik heb verzameld. Rechts het ontwerpakte dat in realtime wordt opgebouwd. Elke informatie staat op de juiste plaats, in de juiste sectie. De redactie wordt geverifieerd door ons geïntegreerd systeem van beroepsregels — dus u begint niet met een blanco pagina, u begint met een solide ontwerp. U herleest, u past aan, u valideert." },
-
-    // ACTE 2 — SÉQUENCE 4
-    { acte: 2, label: 'Chatbot',       texte: "Op elk moment, voor elk dossier, kunt u mij een vraag stellen en ik antwoord onmiddellijk. Waar staat dat stuk, welke clausule is opgenomen, wat is de huwelijkse staat van de koper. Maar ik beperk me niet tot het beantwoorden van vragen. Als ik merk dat informatie ontbreekt om het dossier vooruit te helpen, identificeer ik aan wie geschreven moet worden, stel ik de e-mail op en dien ik die ter validatie in." },
-    { acte: 2, label: 'Événements',    texte: "Kijk hier — een stuk ontbrak in het dossier. Ik heb de e-mail opgesteld aan de betrokken partij met een link naar een formulier. Ze klikt, ze vult in, ze stuurt terug. En zodra ik haar antwoord heb ontvangen, verwerk ik het rechtstreeks in het dossier. Automatisch. Ongeacht het uur waarop ze heeft geantwoord." },
-    { acte: 2, label: 'Exactement',    texte: "Dat is precies wat er gebeurt." },
 
     // ACTE 3
     { acte: 3, label: 'Sécurité',      texte: "Alle gegevens worden in Europa opgeslagen op beveiligde servers. Ik ben GDPR-compliant. En ik ben gecertificeerd door Privanot — het Belgische notariaat zelf heeft het beveiligingsniveau gevalideerd. Uw gegevens verlaten nooit het Europese kader." },

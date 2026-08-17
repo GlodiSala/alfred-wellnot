@@ -422,16 +422,16 @@ async function taperDansChamp(id, texte, tentatives = 15) {
 // formulaire se remplit alors automatiquement, il ne reste qu'à enregistrer.
 async function ajouterPartieParRN(qualite, rn) {
   await choisirDansDropdown('Sélectionnez une qualité', qualite);
-  await attendre(700);
+  await attendre(900);
   await cliquerBouton('Ajouter');
-  await attendre(900);
+  await attendre(1200);
   await cliquerBouton('Personne physique');
-  await attendre(900);
+  await attendre(1200);
   await taperDansChamp('search-rn', rn);
   await cliquerBouton('Rechercher');
-  await attendre(2200); // laisse le temps à la recherche e-notariat de remplir le formulaire
+  await attendre(3200); // laisse largement le temps à la recherche e-notariat de remplir le formulaire
   await cliquerBouton('Enregistrer');
-  await attendre(1400);
+  await attendre(1800);
 }
 
 // Ajoute une partie (Vendeur/Acquéreur) via recherche par numéro BCE — pour
@@ -439,16 +439,16 @@ async function ajouterPartieParRN(qualite, rn) {
 // cible "Personne morale" puis le champ de recherche BCE.
 async function ajouterPartieParBCE(qualite, bce) {
   await choisirDansDropdown('Sélectionnez une qualité', qualite);
-  await attendre(700);
+  await attendre(900);
   await cliquerBouton('Ajouter');
-  await attendre(900);
+  await attendre(1200);
   await cliquerBouton('Personne morale');
-  await attendre(900);
+  await attendre(1200);
   await taperDansChamp('search-company-number', bce);
   await cliquerBouton('Rechercher');
-  await attendre(2200); // laisse le temps à la recherche BCE de remplir le formulaire
+  await attendre(3200); // laisse largement le temps à la recherche BCE de remplir le formulaire
   await cliquerBouton('Enregistrer');
-  await attendre(1400);
+  await attendre(1800);
 }
 
 // Coche la case sous "REPRÉSENTE" pour associer le notaire qu'on vient
