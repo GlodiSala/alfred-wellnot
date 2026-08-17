@@ -312,21 +312,29 @@ function creerPanneauEdition() {
 async function afficherStatutSauvegarde(resultatPromise, statusId) {
   const status = document.getElementById(statusId || 'alfred-script-status');
   const resultat = await resultatPromise;
-  if (!status) return resultat;
   if (resultat.ok) {
-    status.textContent = '✓ Synchronisé';
-    status.style.color = 'rgba(120,255,150,.8)';
-  } else if (resultat.wrongPassword) {
-    status.textContent = '✗ Mot de passe incorrect';
-    status.style.color = 'rgba(255,120,120,.8)';
-  } else if (resultat.conflict && resultat.annule) {
-    status.textContent = '⚠ Annulé (gardé en local seulement)';
-    status.style.color = 'rgba(255,200,120,.8)';
-  } else {
-    status.textContent = '⚠ Enregistré localement (hors-ligne)';
-    status.style.color = 'rgba(255,200,120,.8)';
+    if (status) {
+      status.textContent = '✓ Synchronisé';
+      status.style.color = 'rgba(120,255,150,.8)';
+      setTimeout(() => { if (status) status.textContent = ''; }, 4000);
+    }
+    return resultat;
   }
-  setTimeout(() => { if (status) status.textContent = ''; }, 4000);
+  // Échec de synchro en ligne : un petit texte de quelques secondes est trop
+  // facile à manquer (le panneau se ferme souvent au même moment) — alerte
+  // bloquante en plus, pour que ça ne passe jamais inaperçu. C'est ce qui
+  // manquait probablement quand une modification "semblait" enregistrée
+  // (mise à jour locale immédiate) sans être réellement partagée en ligne.
+  if (resultat.wrongPassword) {
+    if (status) { status.textContent = '✗ Mot de passe incorrect'; status.style.color = 'rgba(255,120,120,.8)'; }
+    alert('Mot de passe incorrect : la modification N\'A PAS été partagée en ligne (gardée en local sur cet appareil seulement). Réessaie pour ressaisir le bon mot de passe.');
+  } else if (resultat.conflict && resultat.annule) {
+    if (status) { status.textContent = '⚠ Annulé (gardé en local seulement)'; status.style.color = 'rgba(255,200,120,.8)'; }
+  } else {
+    if (status) { status.textContent = '⚠ Enregistré localement (hors-ligne)'; status.style.color = 'rgba(255,200,120,.8)'; }
+    alert('La modification N\'A PAS pu être partagée en ligne (réseau indisponible ou mot de passe non fourni) — elle reste seulement enregistrée sur cet appareil.');
+  }
+  if (status) setTimeout(() => { if (status) status.textContent = ''; }, 4000);
   return resultat;
 }
 
