@@ -68,6 +68,7 @@ const SELECTEURS = {
   },
   textes: {
     represente: 'REPRÉSENTE',
+    mesClients: 'Mes clients',
     optionCompromis: 'Compromis',
     propositionEmail: "Proposition d'e-mail",
     lienDossiers: 'Dossiers',
@@ -614,7 +615,14 @@ async function ajouterPartieParBCE(qualite, bce) {
 // affiche une liste de parties du dossier avec une case à cocher et un
 // badge de qualité (Vendeur/Acquéreur) à côté de chaque nom. Ciblage par
 // texte du badge, dans le même esprit que trouverDeclencheurProcheLabel.
-async function cocherRepresentation(qualitePartie) {
+// Coche une case sous un titre de section donné ("Représente" sur la fiche
+// d'un notaire externe qu'on vient d'ajouter, ou "Mes clients" sur la
+// fiche du notaire de votre étude, déjà présent sur le dossier) — même
+// mécanique dans les deux cas, seul le titre de section change.
+// Le badge de qualité n'est pas toujours le mot exact ("Acquéreur") : sous
+// "Mes clients" il est suivi de "représenté(e) par votre étude" — d'où une
+// comparaison "contient" plutôt qu'une égalité stricte.
+async function cocherBadgeSousSection(titreSection, qualitePartie) {
   let titre = null;
   // Cause réelle trouvée en inspectant le DOM en direct : "REPRÉSENTE"
   // affiché en majuscules à l'écran n'est que du CSS (text-transform), le
@@ -623,20 +631,20 @@ async function cocherRepresentation(qualitePartie) {
   // un problème de timing, malgré le budget élargi ci-dessous).
   for (let i = 0; i < 16; i++) {
     titre = Array.from(document.querySelectorAll('*'))
-      .find(el => el.children.length === 0 && el.textContent.trim().toLowerCase() === SELECTEURS.textes.represente.toLowerCase() && el.getBoundingClientRect().width > 0);
+      .find(el => el.children.length === 0 && el.textContent.trim().toLowerCase() === titreSection.toLowerCase() && el.getBoundingClientRect().width > 0);
     if (titre) break;
     await attendre(500);
   }
-  if (!titre) { console.warn('[Alfred DOM] Section "REPRÉSENTE" introuvable'); return false; }
+  if (!titre) { console.warn('[Alfred DOM] Section introuvable:', titreSection); return false; }
   titre.scrollIntoView({ block: 'center' });
   await attendre(300);
 
   const tr = titre.getBoundingClientRect();
   const badge = Array.from(document.querySelectorAll('*'))
-    .filter(el => el.children.length === 0 && el.textContent.trim() === qualitePartie && el.getBoundingClientRect().width > 0)
+    .filter(el => el.children.length === 0 && el.textContent.trim().toLowerCase().includes(qualitePartie.toLowerCase()) && el.getBoundingClientRect().width > 0)
     .filter(el => el.getBoundingClientRect().top >= tr.bottom - 5)
     .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top)[0];
-  if (!badge) { console.warn('[Alfred DOM] Badge de partie introuvable sous REPRÉSENTE:', qualitePartie); return false; }
+  if (!badge) { console.warn('[Alfred DOM] Badge de partie introuvable sous', titreSection, ':', qualitePartie); return false; }
 
   // Remonte de quelques ancêtres pour trouver la ligne complète (nom +
   // badge + case à cocher), plutôt que de dépendre d'une structure DOM
@@ -667,6 +675,17 @@ async function cocherRepresentation(qualitePartie) {
     console.warn('[Alfred DOM] La case à cocher ne semble toujours pas cochée après le clic pour:', qualitePartie, '— composant peut-être différent de ce qui était attendu.');
   }
   return true;
+}
+
+async function cocherRepresentation(qualitePartie) {
+  return cocherBadgeSousSection(SELECTEURS.textes.represente, qualitePartie);
+}
+
+// "Mes clients" apparaît sur la fiche du notaire DE VOTRE ÉTUDE, déjà
+// présent sur le dossier (pas besoin de le chercher/l'ajouter comme un
+// notaire externe) — coche directement la partie qu'il représente.
+async function cocherMesClients(qualitePartie) {
+  return cocherBadgeSousSection(SELECTEURS.textes.mesClients, qualitePartie);
 }
 
 // Rattache un notaire (recherche dans la liste de l'étude) via la modale
@@ -1143,6 +1162,12 @@ async function seq_creationDossier_notaires_vendeur() {
   if (!cfg) return;
   await naviguerOnglet(SELECTEURS.onglets.parties);
   await attendre(900);
+  // EN SUSPENS : incertitude sur si le vendeur (BIMBIMMO) doit être
+  // représenté par un notaire externe cherché/ajouté (Ghigny, comportement
+  // actuel) ou coché directement sous "Mes clients" sur la fiche d'Alain
+  // Caprasse — deux indices contradictoires trouvés en commentaire (voir
+  // alfred-config.js autour de DOSSIER_CREATION_DEMO). Laissé inchangé en
+  // attendant confirmation du texte exact du script Word d'origine.
   if (cfg.vendeur_notaire) await rattacherNotaire(cfg.vendeur_notaire, 'Vendeur');
 }
 
