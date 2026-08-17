@@ -1198,7 +1198,33 @@ async function seq_creationDossier_email() {
   await montrerPropositionEmail();
 }
 
-// Séquence complète (rétrocompatibilité — enchaîne les 6 étapes).
+// Étape 7 (nouvelle, A20-A21 du séquencier) — Attendre la réponse du
+// vendeur et l'afficher. Contrairement à toutes les autres étapes,
+// celle-ci dépend d'une action HUMAINE externe hors de notre contrôle :
+// Cyril doit répondre manuellement au mail depuis une vraie boîte mail
+// pour que l'appli reçoive quoi que ce soit. Le délai est donc
+// volontairement long (jusqu'à ~4 min). PREMIÈRE VERSION, jamais testée en
+// live : on ne sait pas encore à quoi ressemble concrètement la
+// notification côté appli — cette fonction compte juste l'apparition d'un
+// nouvel élément dans "Événements", à affiner après un premier essai réel.
+async function seq_creationDossier_attenteReponseVendeur() {
+  const onglet = trouverOnglet(SELECTEURS.onglets.evenements);
+  if (onglet) curseurVers(onglet, () => onglet.click());
+  await attendre(1200);
+
+  const nombreAvant = document.querySelectorAll('li').length;
+  for (let i = 0; i < 240; i++) {
+    if (document.querySelectorAll('li').length > nombreAvant) {
+      console.log('[Alfred DOM] Nouvel élément détecté dans "Événements" — réponse du vendeur probablement arrivée.');
+      return true;
+    }
+    await attendre(1000);
+  }
+  console.warn('[Alfred DOM] Aucune nouvelle notification détectée dans "Événements" après 4 minutes — la réponse du vendeur a-t-elle bien été envoyée ?');
+  return false;
+}
+
+// Séquence complète (rétrocompatibilité — enchaîne les 7 étapes).
 async function seq_creerDossierDemo() {
   await seq_creationDossier_ouvrir();
   await seq_creationDossier_parties();
@@ -1206,6 +1232,7 @@ async function seq_creerDossierDemo() {
   await seq_creationDossier_notaires();
   await seq_creationDossier_redaction();
   await seq_creationDossier_email();
+  await seq_creationDossier_attenteReponseVendeur();
 }
 
 // ── Mapping label → séquence ──────────────────────────────
@@ -1248,6 +1275,7 @@ const DOM_ACTIONS = {
   'CreationNotaires_Acquereur': seq_creationDossier_notaires_acquereur,
   'CreationRedaction': seq_creationDossier_redaction,
   'CreationEmail':     seq_creationDossier_email,
+  'CreationReponseVendeur': seq_creationDossier_attenteReponseVendeur,
 };
 
 async function executerActionDOM(label) {
