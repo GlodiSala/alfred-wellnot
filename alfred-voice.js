@@ -132,27 +132,29 @@ async function ecrireCacheTTS(cle, base64) {
 // Gemini TTS utilise les mêmes voix quelle que soit la langue du texte
 // (contrairement à Google Cloud TTS où chaque locale a son propre
 // sous-catalogue, parfois très limité — nl-BE par exemple n'a aucune voix
-// "HD"). Il permet aussi une instruction de ton en langage naturel, une
-// seule pour les deux langues puisque c'est une intention, pas du texte à
-// prononcer. Noms techniques (Puck, Charon...) volontairement cachés à
-// l'écran — remplacés par une description claire, pour quelqu'un qui n'a
-// aucune raison de connaître le nom interne d'une voix Google.
+// "HD"). Il permet aussi une instruction de ton en langage naturel — une
+// seule pour les deux langues, puisque c'est une intention de jeu, pas du
+// texte à prononcer. Le nom technique reste affiché entre parenthèses (ça
+// aide à s'y référer/comparer), mais la description passe en premier.
 const GEMINI_VOIX_CATALOGUE = [
-  { id: 'Algenib',    label: 'Grave et posée (recommandé)' },
-  { id: 'Charon',     label: 'Chaleureuse et posée' },
-  { id: 'Orus',       label: 'Assurée et directe' },
-  { id: 'Iapetus',    label: 'Claire et nette' },
+  { id: 'Algenib',    label: 'Grave et posée (Algenib) — recommandé' },
+  { id: 'Charon',     label: 'Chaleureuse et posée (Charon)' },
+  { id: 'Orus',       label: 'Assurée et directe (Orus)' },
+  { id: 'Iapetus',    label: 'Claire et nette (Iapetus)' },
 ];
 
-// Instruction de ton par défaut, éditable dans le panneau "Voix" — ce que
-// demande explicitement Glodi : convaincu, naturel, pas théâtral, pas une
-// simple lecture de script. Une seule instruction pour les deux langues
-// (c'est une intention de jeu, pas du texte prononcé).
-const TON_GEMINI_DEFAUT = "Instruction de ton : lis ce texte avec assurance et conviction, comme si tu y croyais vraiment — pas comme une lecture de script. Reste naturel et chaleureux, jamais théâtral ni exagéré.";
+// Instruction de ton par défaut, éditable dans le panneau "Voix" — informée
+// par le personnage établi dans le script officiel (section "Acte 1 —
+// L'entretien" : Alfred est un candidat qui passe un entretien d'embauche
+// théâtral devant une salle de notaires, pas un lecteur de script) et par
+// le guide de style d'ALFRED_CONFIG.SYSTEM_PROMPT ("naturel, direct,
+// confiant, humour discret, jamais 'excellente question'"). Une seule
+// instruction pour les deux langues (intention de jeu, pas texte prononcé).
+const TON_GEMINI_DEFAUT = "Instruction de ton : tu es Alfred, un candidat qui passe un entretien d'embauche devant une salle de notaires — pas un assistant vocal qui lit un texte. Parle avec l'assurance tranquille de quelqu'un qui maîtrise parfaitement son sujet et qui a vraiment envie de convaincre, avec un humour discret quand ça se prête. Jamais théâtral, jamais exagéré, jamais une lecture neutre : tu crois sincèrement à ce que tu dis.";
 
 const ALFRED_VOIX_MOTEUR_KEY = 'alfred_voix_moteur'; // 'gemini' | 'cloud' (cloud = repli automatique, pas de choix utilisateur)
 const ALFRED_GEMINI_TON_KEY  = 'alfred_gemini_ton';  // chaîne simple, partagée FR/NL
-const ALFRED_GEMINI_VOIX_KEY = 'alfred_gemini_voix'; // id de voix, partagé FR/NL
+const ALFRED_GEMINI_VOIX_KEY = 'alfred_gemini_voix'; // { fr: 'Algenib', nl: 'Charon' }
 
 function moteurVoixActuel() {
   return localStorage.getItem(ALFRED_VOIX_MOTEUR_KEY) || 'gemini';
@@ -162,8 +164,13 @@ function tonGemini() {
   return localStorage.getItem(ALFRED_GEMINI_TON_KEY) || TON_GEMINI_DEFAUT;
 }
 
-function voixGeminiActuelle() {
-  return localStorage.getItem(ALFRED_GEMINI_VOIX_KEY) || 'Algenib';
+function voixGeminiActuelle(langue) {
+  try {
+    const raw = localStorage.getItem(ALFRED_GEMINI_VOIX_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    if (parsed[langue]) return parsed[langue];
+  } catch (e) {}
+  return 'Algenib';
 }
 
 // Extrait le taux d'échantillonnage d'un mimeType du type
@@ -279,12 +286,42 @@ async function genererAudioCloud(text, voix) {
 async function obtenirAudio(text, langue) {
   if (moteurVoixActuel() === 'gemini') {
     try {
-      return await genererAudioGemini(text, voixGeminiActuelle(), tonGemini());
+      return await genererAudioGemini(text, voixGeminiActuelle(langue), tonGemini());
     } catch (e) {
       console.warn('[Alfred Voice] Gemini TTS indisponible, repli sur Cloud TTS:', e);
     }
   }
   return genererAudioCloud(text, VOIX_CONFIG[langue] || VOIX_CONFIG.fr);
+}
+
+// Pré-génère l'audio de toutes les répliques du script (FR + NL) avec la
+// voix/le ton donnés, et les dépose dans le cache IndexedDB. Gemini TTS est
+// nettement plus lent qu'un TTS classique (c'est un modèle de langage, pas
+// un moteur de synthèse optimisé pour la vitesse) — mais le script d'une
+// démo est connu à l'avance : autant payer cette lenteur une fois, avant la
+// démo, plutôt que ligne par ligne pendant qu'on est en direct devant la
+// salle. Après un préchargement complet, toute lecture scriptée ressort du
+// cache, instantanément, quel que soit le moteur choisi.
+async function prechargerScript(voixFr, voixNl, ton, onProgress) {
+  const lignes = [
+    ...(ALFRED_CONFIG.REPLIQUES_FR || []).map(r => ({ texte: r.texte, voix: voixFr })),
+    ...(ALFRED_CONFIG.REPLIQUES_NL || []).map(r => ({ texte: r.texte, voix: voixNl })),
+  ];
+  let fait = 0;
+  let echecs = 0;
+  for (const ligne of lignes) {
+    if (ligne.texte) {
+      try {
+        await genererAudioGemini(ligne.texte, ligne.voix, ton);
+      } catch (e) {
+        echecs++;
+        console.warn('[Alfred Voice] Préchargement échoué pour une réplique:', ligne.texte.slice(0, 40), e);
+      }
+    }
+    fait++;
+    if (onProgress) onProgress(fait, lignes.length, echecs);
+  }
+  return { total: lignes.length, echecs };
 }
 
 // ── Anime la bouche selon amplitude ──────────────────────

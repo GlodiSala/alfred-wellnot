@@ -387,12 +387,11 @@ function creerPanneauVoix() {
   document.body.appendChild(panel);
 }
 
-// Panneau volontairement simple : une seule voix, un seul ton, aucun terme
-// technique visible (pas de "Chirp3 HD", "Wavenet", "moteur"...) — pensé
-// pour quelqu'un qui n'a aucune raison de comprendre ce vocabulaire.
-// Cloud TTS existe toujours dans le code comme repli automatique et
-// silencieux si Gemini échoue (voir obtenirAudio dans alfred-voice.js),
-// mais n'est plus un choix proposé à l'écran.
+// Panneau volontairement simple : peu de jargon visible (pas de "Chirp3
+// HD", "Wavenet", "moteur"...) — pensé pour quelqu'un qui n'a aucune
+// raison de connaître ce vocabulaire. Cloud TTS existe toujours dans le
+// code comme repli automatique et silencieux si Gemini échoue (voir
+// obtenirAudio dans alfred-voice.js), mais n'est plus un choix à l'écran.
 function ouvrirPanneauVoix() {
   const panel = document.getElementById('alfred-voix-panel');
   if (!panel || typeof GEMINI_VOIX_CATALOGUE === 'undefined') return;
@@ -403,22 +402,26 @@ function ouvrirPanneauVoix() {
   titre.style.cssText = 'color:rgba(255,255,255,.4);font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;';
   panel.appendChild(titre);
 
-  panel.appendChild(champLabel('Voix'));
-  const selectVoix = document.createElement('select');
-  selectVoix.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:#0a3b52;color:#fff;font-size:12px;margin-bottom:14px;';
-  GEMINI_VOIX_CATALOGUE.forEach(v => {
-    const opt = document.createElement('option');
-    opt.value = v.id; opt.textContent = v.label;
-    opt.style.cssText = 'background:#0a3b52;color:#fff;';
-    selectVoix.appendChild(opt);
+  const selectsVoix = {};
+  ['fr', 'nl'].forEach(langue => {
+    panel.appendChild(champLabel(langue === 'fr' ? 'Voix française' : 'Voix néerlandaise'));
+    const select = document.createElement('select');
+    select.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:#0a3b52;color:#fff;font-size:12px;margin-bottom:12px;';
+    GEMINI_VOIX_CATALOGUE.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v.id; opt.textContent = v.label;
+      opt.style.cssText = 'background:#0a3b52;color:#fff;';
+      select.appendChild(opt);
+    });
+    select.value = voixGeminiActuelle(langue);
+    selectsVoix[langue] = select;
+    panel.appendChild(select);
   });
-  selectVoix.value = voixGeminiActuelle();
-  panel.appendChild(selectVoix);
 
   panel.appendChild(champLabel('Ton (comment Alfred doit sonner)'));
   const taTon = document.createElement('textarea');
   taTon.value = tonGemini();
-  taTon.rows = 4;
+  taTon.rows = 5;
   taTon.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:11px;font-family:sans-serif;resize:vertical;margin-bottom:6px;';
   panel.appendChild(taTon);
 
@@ -428,15 +431,15 @@ function ouvrirPanneauVoix() {
   panel.appendChild(aide);
 
   const btnTester = document.createElement('button');
-  btnTester.textContent = '▶ Tester';
-  btnTester.style.cssText = 'width:100%;margin-bottom:14px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:12px;cursor:pointer;';
+  btnTester.textContent = '▶ Tester (FR)';
+  btnTester.style.cssText = 'width:100%;margin-bottom:8px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:12px;cursor:pointer;';
   btnTester.onclick = async () => {
     btnTester.disabled = true;
     btnTester.textContent = '… génération';
     try {
       const audio = await genererAudioGemini(
         "Bonjour, je suis Alfred. Voici un exemple de ma voix.",
-        selectVoix.value,
+        selectsVoix.fr.value,
         taTon.value
       );
       await audio.play();
@@ -445,10 +448,34 @@ function ouvrirPanneauVoix() {
       alert('Cette voix n\'a pas pu être générée (réseau, ou clé API pas encore active côté serveur). Regarde la console pour le détail.');
     } finally {
       btnTester.disabled = false;
-      btnTester.textContent = '▶ Tester';
+      btnTester.textContent = '▶ Tester (FR)';
     }
   };
   panel.appendChild(btnTester);
+
+  // Préchargement : Gemini TTS est plus lent qu'un TTS classique (c'est un
+  // modèle de langage) — pas gênant pour un script connu à l'avance, à
+  // condition de le générer une fois avant la démo plutôt que ligne par
+  // ligne en direct. Ce bouton fait tourner tout le script (FR + NL) une
+  // fois et remplit le cache — la démo live ne rappelle plus jamais l'API.
+  const btnPrecharger = document.createElement('button');
+  btnPrecharger.textContent = '⏳ Précharger tout le script (avant la démo)';
+  btnPrecharger.style.cssText = 'width:100%;margin-bottom:14px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:12px;cursor:pointer;';
+  btnPrecharger.onclick = async () => {
+    btnPrecharger.disabled = true;
+    const original = btnPrecharger.textContent;
+    const resultat = await prechargerScript(selectsVoix.fr.value, selectsVoix.nl.value, taTon.value, (fait, total) => {
+      btnPrecharger.textContent = `⏳ ${fait}/${total}…`;
+    });
+    btnPrecharger.disabled = false;
+    btnPrecharger.textContent = original;
+    if (resultat.echecs > 0) {
+      alert(`Préchargement terminé avec ${resultat.echecs} échec(s) sur ${resultat.total} répliques — regarde la console pour le détail. Le reste est en cache et sortira instantanément.`);
+    } else {
+      alert(`Préchargement terminé : les ${resultat.total} répliques sont en cache, la démo live n'appellera plus l'API.`);
+    }
+  };
+  panel.appendChild(btnPrecharger);
 
   const boutons = document.createElement('div');
   boutons.style.cssText = 'display:flex;gap:8px;';
@@ -458,7 +485,7 @@ function ouvrirPanneauVoix() {
   btnSave.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:none;background:#14b0bd;color:#fff;font-size:12px;font-weight:600;cursor:pointer;';
   btnSave.onclick = () => {
     localStorage.setItem(ALFRED_VOIX_MOTEUR_KEY, 'gemini');
-    localStorage.setItem(ALFRED_GEMINI_VOIX_KEY, selectVoix.value);
+    localStorage.setItem(ALFRED_GEMINI_VOIX_KEY, JSON.stringify({ fr: selectsVoix.fr.value, nl: selectsVoix.nl.value }));
     localStorage.setItem(ALFRED_GEMINI_TON_KEY, taTon.value);
     panel.style.display = 'none';
     document.getElementById('alfred-repliques-panel').style.display = 'block';
