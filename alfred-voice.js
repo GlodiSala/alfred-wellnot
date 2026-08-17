@@ -256,63 +256,117 @@ function pcmBase64VersUrlWav(base64, sampleRate, canaux = 1, bitsParEchantillon 
   return URL.createObjectURL(blob);
 }
 
-// Génère (ou récupère du cache) un <audio> via Gemini TTS, pour une voix et
-// un ton explicites — ne dépend d'aucun réglage global, pour pouvoir servir
-// aussi bien à la lecture normale qu'au bouton "Tester" du panneau (sans
-// avoir à bidouiller un état global le temps de l'essai).
+// Hache une clé de cache en SHA-256 hexadécimal — nécessaire pour le cache
+// partagé (api/tts-cache.js) : la clé brute contient le texte complet de la
+// réplique et l'instruction de ton, trop longue/à caractères spéciaux pour
+// servir de clé KV telle quelle.
+async function hacherCle(texte) {
+  const donnees = new TextEncoder().encode(texte);
+  const empreinte = await crypto.subtle.digest('SHA-256', donnees);
+  return Array.from(new Uint8Array(empreinte)).map(o => o.toString(16).padStart(2, '0')).join('');
+}
+
+// Cache partagé (serveur, commun à tous les appareils et à toutes les pages
+// où tourne le bookmarklet) — voir api/tts-cache.js pour le pourquoi. Ne
+// bloque jamais la génération si indisponible (réseau, etc.) : c'est une
+// accélération, pas une dépendance.
+async function lireCachePartage(cleBrute) {
+  try {
+    const cle = await hacherCle(cleBrute);
+    const res = await fetch(ALFRED_CONFIG.API_TTS_CACHE + '?cle=' + cle);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (e) {
+    return null;
+  }
+}
+async function ecrireCachePartage(cleBrute, donnees) {
+  try {
+    const cle = await hacherCle(cleBrute);
+    await fetch(ALFRED_CONFIG.API_TTS_CACHE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ cle }, donnees)),
+    });
+  } catch (e) {
+    console.warn('[Alfred Voice] Écriture cache partagé échouée (non bloquant).', e);
+  }
+}
+
+// Génère (ou récupère du cache, local puis partagé) un <audio> via Gemini
+// TTS, pour une voix et un ton explicites — ne dépend d'aucun réglage
+// global, pour pouvoir servir aussi bien à la lecture normale qu'au bouton
+// "Tester" du panneau (sans avoir à bidouiller un état global le temps de
+// l'essai).
 async function genererAudioGemini(text, voixId, ton) {
   const cle = ['gemini', voixId, ton, text].join('|');
 
-  const cache = await lireCacheTTS(cle);
   let base64, taux;
-  if (cache) {
-    console.log('[Alfred Voice] Audio Gemini depuis le cache (pas d\'appel API).');
-    const parsed = JSON.parse(cache);
+  const cacheLocal = await lireCacheTTS(cle);
+  if (cacheLocal) {
+    console.log('[Alfred Voice] Audio Gemini depuis le cache local (pas d\'appel API).');
+    const parsed = JSON.parse(cacheLocal);
     base64 = parsed.base64; taux = parsed.rate;
   } else {
-    const res = await fetch(ALFRED_CONFIG.API_GEMINI_TTS, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: ton + GEMINI_TTS_DELIMITEUR + text }] }],
-        generationConfig: {
-          responseModalities: ['AUDIO'],
-          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voixId } } }
-        }
-      })
-    });
-    const data = await res.json();
-    const part = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData;
-    if (!part || !part.data) throw new Error('Pas audio (Gemini) — ' + JSON.stringify(data?.error || data));
-    base64 = part.data;
-    taux = tauxDepuisMimeType(part.mimeType);
-    ecrireCacheTTS(cle, JSON.stringify({ base64, rate: taux })); // en tâche de fond
+    const partage = await lireCachePartage(cle);
+    if (partage && partage.base64) {
+      console.log('[Alfred Voice] Audio Gemini depuis le cache partagé (généré ailleurs, pas d\'appel API).');
+      base64 = partage.base64; taux = partage.rate || 24000;
+      ecrireCacheTTS(cle, JSON.stringify({ base64, rate: taux })); // copie en local pour la prochaine fois
+    } else {
+      const res = await fetch(ALFRED_CONFIG.API_GEMINI_TTS, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: ton + GEMINI_TTS_DELIMITEUR + text }] }],
+          generationConfig: {
+            responseModalities: ['AUDIO'],
+            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voixId } } }
+          }
+        })
+      });
+      const data = await res.json();
+      const part = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+      if (!part || !part.data) throw new Error('Pas audio (Gemini) — ' + JSON.stringify(data?.error || data));
+      base64 = part.data;
+      taux = tauxDepuisMimeType(part.mimeType);
+      ecrireCacheTTS(cle, JSON.stringify({ base64, rate: taux })); // local, en tâche de fond
+      ecrireCachePartage(cle, { base64, rate: taux, format: 'pcm' }); // partagé, en tâche de fond
+    }
   }
   return new Audio(pcmBase64VersUrlWav(base64, taux));
 }
 
-// Équivalent Cloud TTS — même logique, voix explicite (objet du même
-// format que VOIX_CONFIG.fr/.nl), pour les mêmes raisons.
+// Équivalent Cloud TTS — même logique (cache local puis partagé), voix
+// explicite (objet du même format que VOIX_CONFIG.fr/.nl).
 async function genererAudioCloud(text, voix) {
   const cle = cleTTS(voix, text);
 
   let audioContent = await lireCacheTTS(cle);
   if (audioContent) {
-    console.log('[Alfred Voice] Audio Cloud TTS depuis le cache (pas d\'appel API).');
+    console.log('[Alfred Voice] Audio Cloud TTS depuis le cache local (pas d\'appel API).');
   } else {
-    const res = await fetch(ALFRED_CONFIG.API_TTS, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        input:       { text },
-        voice:       { languageCode: voix.languageCode, name: voix.name, ssmlGender: voix.ssmlGender },
-        audioConfig: { audioEncoding: 'MP3', speakingRate: voix.speakingRate, pitch: voix.pitch }
-      })
-    });
-    const data = await res.json();
-    if (!data.audioContent) throw new Error('Pas audio');
-    audioContent = data.audioContent;
-    ecrireCacheTTS(cle, audioContent);
+    const partage = await lireCachePartage(cle);
+    if (partage && partage.base64) {
+      console.log('[Alfred Voice] Audio Cloud TTS depuis le cache partagé (généré ailleurs, pas d\'appel API).');
+      audioContent = partage.base64;
+      ecrireCacheTTS(cle, audioContent);
+    } else {
+      const res = await fetch(ALFRED_CONFIG.API_TTS, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          input:       { text },
+          voice:       { languageCode: voix.languageCode, name: voix.name, ssmlGender: voix.ssmlGender },
+          audioConfig: { audioEncoding: 'MP3', speakingRate: voix.speakingRate, pitch: voix.pitch }
+        })
+      });
+      const data = await res.json();
+      if (!data.audioContent) throw new Error('Pas audio');
+      audioContent = data.audioContent;
+      ecrireCacheTTS(cle, audioContent);
+      ecrireCachePartage(cle, { base64: audioContent, format: 'mp3' });
+    }
   }
   return new Audio('data:audio/mp3;base64,' + audioContent);
 }
@@ -347,25 +401,39 @@ async function obtenirAudio(text, langue, moteurForce) {
 // démo, plutôt que ligne par ligne pendant qu'on est en direct devant la
 // salle. Après un préchargement complet, toute lecture scriptée ressort du
 // cache, instantanément, quel que soit le moteur choisi.
+// CONCURRENCE : nombre de répliques générées en parallèle. Un simple `for`
+// séquentiel sur ~64 lignes à 2-5s chacune prenait plusieurs minutes —
+// quelques requêtes en vol en même temps réduit ça d'autant (÷4 environ),
+// sans survolter l'API.
+const PRECHARGEMENT_CONCURRENCE = 4;
+
 async function prechargerScript(voixFr, voixNl, ton, onProgress) {
   const lignes = [
     ...(ALFRED_CONFIG.REPLIQUES_FR || []).map(r => ({ texte: r.texte, voix: voixFr })),
     ...(ALFRED_CONFIG.REPLIQUES_NL || []).map(r => ({ texte: r.texte, voix: voixNl })),
-  ];
+  ].filter(l => l.texte);
+
   let fait = 0;
   let echecs = 0;
-  for (const ligne of lignes) {
-    if (ligne.texte) {
+  let indexSuivant = 0;
+
+  async function travailleur() {
+    while (indexSuivant < lignes.length) {
+      const ligne = lignes[indexSuivant++];
       try {
         await genererAudioGemini(ligne.texte, ligne.voix, ton);
       } catch (e) {
         echecs++;
         console.warn('[Alfred Voice] Préchargement échoué pour une réplique:', ligne.texte.slice(0, 40), e);
       }
+      fait++;
+      if (onProgress) onProgress(fait, lignes.length, echecs);
     }
-    fait++;
-    if (onProgress) onProgress(fait, lignes.length, echecs);
   }
+
+  const travailleurs = Array.from({ length: Math.min(PRECHARGEMENT_CONCURRENCE, lignes.length) }, travailleur);
+  await Promise.all(travailleurs);
+
   return { total: lignes.length, echecs };
 }
 

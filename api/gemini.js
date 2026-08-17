@@ -1,6 +1,9 @@
 export default async function handler(req, res) {
-  // Autorise les requêtes depuis app.alfred.be
-  res.setHeader('Access-Control-Allow-Origin', 'https://app.alfred.be');
+  // Comme les autres endpoints (tts.js, gemini-tts.js, script.js...) : le
+  // bookmarklet s'injecte dans n'importe quelle page, pas seulement
+  // app.alfred.be (tests, répétitions, autre onglet...) — restreindre le
+  // CORS à un seul host cassait silencieusement le chat partout ailleurs.
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
