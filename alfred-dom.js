@@ -403,7 +403,7 @@ function trouverDeclencheurProcheLabel(labelTexte) {
 // Sélectionne une option dans le menu déroulant situé juste sous un libellé
 // donné. Utile quand le champ est vide et n'a donc aucun texte de
 // déclencheur fiable pour être ciblé autrement.
-async function choisirDansDropdownParLabelProche(labelTexte, texteOption) {
+async function choisirDansDropdownParLabelProche(labelTexte, texteOption, dejaReessaye) {
   let declencheur = null;
   for (let i = 0; i < 15; i++) {
     declencheur = trouverDeclencheurProcheLabel(labelTexte);
@@ -430,6 +430,17 @@ async function choisirDansDropdownParLabelProche(labelTexte, texteOption) {
   }
   const liVisibles = Array.from(document.querySelectorAll('li')).filter(li => li.getBoundingClientRect().width > 0).map(li => li.textContent.trim());
   console.warn('[Alfred DOM] Option introuvable dans le menu:', texteOption, '— li visibles actuellement:', liVisibles);
+
+  // Aucun <li> visible du tout (pas juste l'option manquante) : le menu ne
+  // s'est probablement jamais ouvert — cas classique d'un clic enchaîné
+  // trop vite après la fermeture d'un menu précédent, intercepté comme un
+  // "clic à l'extérieur" plutôt que comme l'ouverture de celui-ci. Un
+  // second essai, avec une pause avant de recliquer, résout ça en général.
+  if (liVisibles.length === 0 && !dejaReessaye) {
+    console.warn('[Alfred DOM] Menu probablement jamais ouvert — nouvel essai pour', labelTexte);
+    await attendre(600);
+    return choisirDansDropdownParLabelProche(labelTexte, texteOption, true);
+  }
   return false;
 }
 

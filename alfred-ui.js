@@ -940,10 +940,12 @@ function initAlfredUI() {
   resetSleepTimer();
   trackMouse();
 
-  setTimeout(async () => {
+  setTimeout(() => {
     setAlfredState('idle');
-    const msg = "Bonjour. Alfred est en ligne.";
-    if (typeof speak === 'function') await speak(msg, 'fr');
+    // Pas de message vocal ici — la vraie première réplique du script
+    // commence déjà par "Bonjour", en dire un second à froid au chargement
+    // sonnait comme une répétition avant même le début du script.
+    console.log('[Alfred] Prêt.');
   }, 700);
 }
 
