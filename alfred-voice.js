@@ -489,7 +489,17 @@ function afficherSousTitresSync(sousTitre, audio) {
 
   audio.onloadedmetadata = () => {
     const totalMots = phrases.reduce((acc, p) => acc + p.trim().split(' ').length, 0);
-    const msParMot = (audio.duration * 1000) / totalMots;
+    // audio.duration n'est pas fiable pour un MP3 encodé en base64 (data:
+    // URI) — certains navigateurs renvoient Infinity ou NaN tant que la
+    // lecture n'a pas commencé (bug connu, pas spécifique à ce projet).
+    // Résultat observé en test live : délai NaN/Infinity → setTimeout
+    // traité comme 0 → tous les sous-titres s'affichent d'un coup,
+    // instantanément. Repli sur une estimation (~150 mots/min, un débit de
+    // parole normal) si la durée réelle n'est pas exploitable.
+    const dureeSecondes = isFinite(audio.duration) && audio.duration > 0
+      ? audio.duration
+      : totalMots * 0.4;
+    const msParMot = (dureeSecondes * 1000) / totalMots;
 
     let i = 0;
 

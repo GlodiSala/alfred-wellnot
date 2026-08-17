@@ -471,13 +471,13 @@ async function choisirDansDropdown(texteDeclencheur, texteOption) {
     .find(s => s.textContent.trim() === texteDeclencheur && s.getBoundingClientRect().width > 0);
   if (!declencheur) { console.warn('[Alfred DOM] Menu déroulant introuvable:', texteDeclencheur); return false; }
   await curseurVersAsync(declencheur, () => simulerClic(declencheur));
-  await attendre(800); // laisse le menu visible un instant, plus lisible en démo live
+  await attendre(400); // laisse le menu visible un instant, plus lisible en démo live (raccourci, 800 → 400)
   for (let i = 0; i < 15; i++) {
     const opt = Array.from(document.querySelectorAll('li'))
       .find(li => optionCorrespond(li, texteOption) && li.getBoundingClientRect().width > 0);
     if (opt) {
       await curseurVersAsync(opt, () => simulerClic(opt));
-      await attendre(300);
+      await attendre(200);
       return true;
     }
     await attendre(200);
@@ -510,16 +510,16 @@ async function taperDansChamp(id, texte, tentatives = 15, delaiParLettre) {
 // formulaire se remplit alors automatiquement, il ne reste qu'à enregistrer.
 async function ajouterPartieParRN(qualite, rn) {
   await choisirDansDropdown(SELECTEURS.menus.qualitePartie, qualite);
-  await attendre(900);
+  await attendre(500);
   await cliquerBouton(SELECTEURS.boutons.ajouter);
-  await attendre(1200);
+  await attendre(700);
   await cliquerBouton(SELECTEURS.boutons.personnePhysique);
-  await attendre(1200);
+  await attendre(700);
   await taperDansChamp(SELECTEURS.champs.rechercheRN, rn);
   await cliquerBouton(SELECTEURS.boutons.rechercher);
-  await attendre(3200); // laisse largement le temps à la recherche e-notariat de remplir le formulaire
+  await attendre(3200); // laisse largement le temps à la recherche e-notariat de remplir le formulaire (attente réseau réelle, pas juste cosmétique — non raccourcie)
   await cliquerBouton(SELECTEURS.boutons.enregistrer);
-  await attendre(1800);
+  await attendre(1000);
 }
 
 // Ajoute une partie (Vendeur/Acquéreur) via recherche par numéro BCE — pour
@@ -527,16 +527,16 @@ async function ajouterPartieParRN(qualite, rn) {
 // cible "Personne morale" puis le champ de recherche BCE.
 async function ajouterPartieParBCE(qualite, bce) {
   await choisirDansDropdown(SELECTEURS.menus.qualitePartie, qualite);
-  await attendre(900);
+  await attendre(500);
   await cliquerBouton(SELECTEURS.boutons.ajouter);
-  await attendre(1200);
+  await attendre(700);
   await cliquerBouton(SELECTEURS.boutons.personneMorale);
-  await attendre(1200);
+  await attendre(700);
   await taperDansChamp(SELECTEURS.champs.rechercheBCE, bce);
   await cliquerBouton(SELECTEURS.boutons.rechercher);
-  await attendre(3200); // laisse largement le temps à la recherche BCE de remplir le formulaire
+  await attendre(3200); // laisse largement le temps à la recherche BCE de remplir le formulaire (attente réseau réelle, pas juste cosmétique — non raccourcie)
   await cliquerBouton(SELECTEURS.boutons.enregistrer);
-  await attendre(1800);
+  await attendre(1000);
 }
 
 // Coche la case sous "REPRÉSENTE" pour associer le notaire qu'on vient
@@ -555,7 +555,7 @@ async function cocherRepresentation(qualitePartie) {
   }
   if (!titre) { console.warn('[Alfred DOM] Section "REPRÉSENTE" introuvable'); return false; }
   titre.scrollIntoView({ block: 'center' });
-  await attendre(500);
+  await attendre(300);
 
   const tr = titre.getBoundingClientRect();
   const badge = Array.from(document.querySelectorAll('*'))
@@ -575,7 +575,7 @@ async function cocherRepresentation(qualitePartie) {
   }
   if (!checkbox) { console.warn('[Alfred DOM] Case à cocher introuvable pour:', qualitePartie); return false; }
   await curseurVersAsync(checkbox, () => simulerClic(checkbox));
-  await attendre(600);
+  await attendre(400);
   return true;
 }
 
@@ -586,7 +586,7 @@ async function cocherRepresentation(qualitePartie) {
 async function rattacherNotaire(nomNotaire, qualitePartie) {
   if (!nomNotaire) return false;
   if (!await cliquerBouton(SELECTEURS.boutons.ajouterNotaire)) return false;
-  await attendre(900);
+  await attendre(600);
   let input = null;
   for (let i = 0; i < 15; i++) {
     input = document.querySelector(`input[placeholder="${SELECTEURS.placeholders.rechercheNotaire}"]`);
@@ -633,7 +633,7 @@ async function rattacherNotaire(nomNotaire, qualitePartie) {
   // fiche ; s'il n'existe pas ici, cliquerBouton échoue silencieusement
   // (averti en console) sans bloquer la suite.
   await cliquerBouton(SELECTEURS.boutons.ajouter, 6);
-  await attendre(1200);
+  await attendre(800);
 
   if (qualitePartie) await cocherRepresentation(qualitePartie);
   return true;
