@@ -252,36 +252,17 @@ async function jouerSecours() {
   }
 }
 
-// ── Rattrapage Acte 2 (création de dossier) ────────────────
-// Contrairement aux Actes 1 et 3 (indépendants, chaque réplique peut être
-// jouée seule), l'Acte 2 est un vrai enchaînement d'écrans dans l'appli :
-// "CreationBien" suppose que "CreationOuvrir" et "CreationParties" ont déjà
-// tourné (dossier créé, parties ajoutées), sinon ça échoue sur le mauvais
-// écran. Plutôt que de détecter l'état réel de l'appli (fragile — on ne
-// contrôle pas ce site), on rejoue simplement, sans les parler, les
-// actions des étapes de création précédentes à chaque clic individuel :
-// plus lent qu'un vrai "reprendre où on en était", mais fiable, puisque ce
-// sont ces actions elles-mêmes qui construisent l'état nécessaire.
-async function rattraperActe2SiBesoin(indexCible) {
+// Essayé puis retiré à la demande (trop long/imprévisible de rejouer les
+// étapes précédentes à chaque clic individuel sur l'Acte 2). Il reste
+// juste ce point : sans lui, jouerSecoursInterne() ne déclenche l'action
+// DOM que si currentActe >= 2 — donc cliquer directement sur une réplique
+// de l'Acte 2 avant d'être jamais passé par l'Acte 1 la ferait parler
+// sans jamais agir, en silence. Appelée depuis le clic individuel dans
+// alfred-ui.js, sans rejouer quoi que ce soit d'autre.
+function activerActe2SiBesoin(indexCible) {
   const list = currentLangue === 'nl' ? ALFRED_CONFIG.REPLIQUES_NL : ALFRED_CONFIG.REPLIQUES_FR;
   const cible = list[indexCible];
-  if (!cible || cible.acte !== 2 || !cible.label.startsWith('Creation')) return;
-
-  const etapesPrecedentes = list
-    .slice(0, indexCible)
-    .filter(r => r.acte === 2 && r.label.startsWith('Creation'));
-  if (!etapesPrecedentes.length) return; // déjà la première étape — rien à rattraper
-
-  console.log('[Alfred] Rattrapage silencieux avant', cible.label, ':', etapesPrecedentes.map(r => r.label));
-  currentActe = 2; // sinon executerActionDOM refuserait de jouer (voir jouerSecoursInterne)
-  for (const r of etapesPrecedentes) {
-    const segments = r.segments || [{ action: r.action }];
-    for (const seg of segments) {
-      if (seg.action && typeof executerActionDOM === 'function') {
-        await executerActionDOM(seg.action);
-      }
-    }
-  }
+  if (cible && cible.acte >= 2) currentActe = 2;
 }
 
 // ── Lecture automatique (« Jouer tout ») ───────────────────

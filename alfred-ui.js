@@ -332,15 +332,15 @@ function remplirPanneauRepliques() {
       btn.style.cssText = 'flex:1;color:rgba(255,255,255,.75);font-size:11px;padding:5px 8px;border-radius:6px;cursor:pointer;transition:background .15s,color .15s;';
       btn.onmouseover = () => { btn.style.background='rgba(255,255,255,.12)'; btn.style.color='#fff'; };
       btn.onmouseout  = () => { btn.style.background='transparent'; btn.style.color='rgba(255,255,255,.75)'; };
-      btn.onclick = async () => {
+      btn.onclick = () => {
+        // Pas de rattrapage automatique des étapes précédentes (essayé,
+        // puis retiré à la demande — trop long/imprévisible). On tente
+        // juste l'action cliquée telle quelle : si l'écran actuel
+        // correspond déjà, ça marche ; sinon, tant pis, ça échoue avec
+        // l'avertissement habituel en console plutôt que de tout rejouer.
         if (typeof secoursIdx !== 'undefined') secoursIdx = idx;
         document.getElementById('alfred-repliques-panel').style.display = 'none';
-        // La création de dossier (Acte 2) est un vrai enchaînement d'écrans —
-        // cliquer directement sur une étape du milieu (ex: "CreationBien")
-        // sans être passé par les précédentes échouerait sur le mauvais
-        // écran. On rejoue d'abord les actions (sans les parler) des étapes
-        // manquantes avant de jouer normalement celle cliquée.
-        if (typeof rattraperActe2SiBesoin === 'function') await rattraperActe2SiBesoin(idx);
+        if (typeof activerActe2SiBesoin === 'function') activerActe2SiBesoin(idx);
         if (typeof jouerSecours === 'function') jouerSecours();
       };
 
