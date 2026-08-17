@@ -453,42 +453,37 @@ function ouvrirPanneauVoix() {
   };
   panel.appendChild(btnTester);
 
-  // Préchargement : Gemini TTS est plus lent qu'un TTS classique (c'est un
-  // modèle de langage) — pas gênant pour un script connu à l'avance, à
-  // condition de le générer une fois avant la démo plutôt que ligne par
-  // ligne en direct. Ce bouton fait tourner tout le script (FR + NL) une
-  // fois et remplit le cache — la démo live ne rappelle plus jamais l'API.
-  const btnPrecharger = document.createElement('button');
-  btnPrecharger.textContent = '⏳ Précharger tout le script (avant la démo)';
-  btnPrecharger.style.cssText = 'width:100%;margin-bottom:14px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:12px;cursor:pointer;';
-  btnPrecharger.onclick = async () => {
-    btnPrecharger.disabled = true;
-    const original = btnPrecharger.textContent;
-    const resultat = await prechargerScript(selectsVoix.fr.value, selectsVoix.nl.value, taTon.value, (fait, total) => {
-      btnPrecharger.textContent = `⏳ ${fait}/${total}…`;
-    });
-    btnPrecharger.disabled = false;
-    btnPrecharger.textContent = original;
-    if (resultat.echecs > 0) {
-      alert(`Préchargement terminé avec ${resultat.echecs} échec(s) sur ${resultat.total} répliques — regarde la console pour le détail. Le reste est en cache et sortira instantanément.`);
-    } else {
-      alert(`Préchargement terminé : les ${resultat.total} répliques sont en cache, la démo live n'appellera plus l'API.`);
-    }
-  };
-  panel.appendChild(btnPrecharger);
-
   const boutons = document.createElement('div');
   boutons.style.cssText = 'display:flex;gap:8px;';
 
+  // "Enregistrer" fait tout en une seule action : sauvegarde le choix, puis
+  // précharge automatiquement tout le script (FR + NL) avec la nouvelle
+  // voix/le nouveau ton, pour que la démo live ne rappelle plus jamais
+  // l'API (Gemini TTS est plus lent qu'un TTS classique — pas gênant pour
+  // un script connu à l'avance, tant que c'est généré une fois avant,
+  // jamais ligne par ligne en direct). Coût négligeable même à chaque
+  // sauvegarde : quelques dizaines de centimes pour tout le script, et
+  // presque rien si la voix/le ton n'ont pas changé (déjà en cache).
   const btnSave = document.createElement('button');
   btnSave.textContent = 'Enregistrer';
   btnSave.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:none;background:#14b0bd;color:#fff;font-size:12px;font-weight:600;cursor:pointer;';
-  btnSave.onclick = () => {
+  btnSave.onclick = async () => {
     localStorage.setItem(ALFRED_VOIX_MOTEUR_KEY, 'gemini');
     localStorage.setItem(ALFRED_GEMINI_VOIX_KEY, JSON.stringify({ fr: selectsVoix.fr.value, nl: selectsVoix.nl.value }));
     localStorage.setItem(ALFRED_GEMINI_TON_KEY, taTon.value);
+
+    btnSave.disabled = true;
+    btnCancel.style.display = 'none';
+    const resultat = await prechargerScript(selectsVoix.fr.value, selectsVoix.nl.value, taTon.value, (fait, total) => {
+      btnSave.textContent = `⏳ Préchargement ${fait}/${total}…`;
+    });
+    btnSave.disabled = false;
+
     panel.style.display = 'none';
     document.getElementById('alfred-repliques-panel').style.display = 'block';
+    if (resultat.echecs > 0) {
+      alert(`Enregistré. Préchargement terminé avec ${resultat.echecs} échec(s) sur ${resultat.total} répliques — regarde la console pour le détail.`);
+    }
   };
 
   const btnCancel = document.createElement('button');
