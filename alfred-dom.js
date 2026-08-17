@@ -272,7 +272,10 @@ async function seq_ouvrirDossier() {
   } else {
     console.warn('[Alfred DOM] Ligne R426 non trouvée');
   }
-  await attendre(1500);
+  // Laisse le dossier ouvert à l'écran assez longtemps pour être vu en
+  // démo live avant d'enchaîner sur la réplique/action suivante (remonté
+  // en test : 1500ms passait trop vite pour être visible).
+  await attendre(2800);
 }
 // Réplique 13 — Onglet Parties
 async function seq_montrerParties() {
@@ -425,10 +428,12 @@ async function choisirDansDropdownParLabelProche(labelTexte, texteOption, dejaRe
   if (!declencheur) { console.warn('[Alfred DOM] Dropdown introuvable près du label:', labelTexte); return false; }
   console.log('[Alfred DOM] Déclencheur trouvé pour', labelTexte, '— rect:', declencheur.getBoundingClientRect(), 'texte actuel:', JSON.stringify(declencheur.textContent.trim()));
   await curseurVersAsync(declencheur, () => simulerClic(declencheur));
-  // Pause volontairement plus longue : laisse le menu visible à l'écran un
-  // instant avant de sélectionner, pour que ce soit lisible en démo live
-  // plutôt qu'une valeur qui semble s'écrire "toute seule".
-  await attendre(800);
+  // Pause volontairement un peu plus longue que zéro : laisse le menu
+  // visible à l'écran un instant avant de sélectionner, pour que ce soit
+  // lisible en démo live plutôt qu'une valeur qui semble s'écrire "toute
+  // seule" (raccourcie de 800 à 500ms — trois menus à la suite rendaient
+  // l'étape plus longue que la réplique parlée).
+  await attendre(500);
   for (let i = 0; i < 15; i++) {
     const opt = Array.from(document.querySelectorAll('li'))
       .find(li => optionCorrespond(li, texteOption) && li.getBoundingClientRect().width > 0);
@@ -835,16 +840,20 @@ async function seq_creationDossier_ouvrir() {
   // la frappe seule.
   const champCode = document.getElementById(SELECTEURS.champs.dossierCode);
   if (champCode) validerChamp(champCode);
-  await attendre(800);
+  await attendre(600);
+  // Pauses raccourcies (900ms → 500ms) : avec trois menus déroulants à la
+  // suite, l'ancien réglage faisait durer la sélection nettement plus
+  // longtemps que la réplique parlée — remonté en test live (narration
+  // terminée, sélection du notaire encore en cours).
   await choisirDansDropdownParLabelProche(SELECTEURS.menus.collaborateurEnCharge, cfg.collaborateur);
-  await attendre(900);
+  await attendre(500);
   if (cfg.collaborateur_administratif) {
     await choisirDansDropdownParLabelProche(SELECTEURS.menus.collaborateurAdministratif, cfg.collaborateur_administratif);
-    await attendre(900);
+    await attendre(500);
   }
   if (cfg.notaire) {
     await choisirDansDropdownParLabelProche(SELECTEURS.menus.notaireEnCharge, cfg.notaire);
-    await attendre(900);
+    await attendre(500);
   }
   // "Suivant" reste désactivé tant que les champs requis ne sont pas valides —
   // on attend qu'il s'active plutôt que de cliquer trop tôt sur un bouton inactif.
