@@ -431,9 +431,8 @@ async function choisirDansDropdownParLabelProche(labelTexte, texteOption, dejaRe
   // Pause volontairement un peu plus longue que zéro : laisse le menu
   // visible à l'écran un instant avant de sélectionner, pour que ce soit
   // lisible en démo live plutôt qu'une valeur qui semble s'écrire "toute
-  // seule" (raccourcie de 800 à 500ms — trois menus à la suite rendaient
-  // l'étape plus longue que la réplique parlée).
-  await attendre(500);
+  // seule" (encore raccourcie, 800 → 500 → 400ms).
+  await attendre(400);
   for (let i = 0; i < 15; i++) {
     const opt = Array.from(document.querySelectorAll('li'))
       .find(li => optionCorrespond(li, texteOption) && li.getBoundingClientRect().width > 0);
@@ -488,7 +487,7 @@ async function choisirDansDropdown(texteDeclencheur, texteOption) {
 }
 
 // Tape dans un champ identifié par son id, avec attente qu'il apparaisse.
-async function taperDansChamp(id, texte, tentatives = 15) {
+async function taperDansChamp(id, texte, tentatives = 15, delaiParLettre) {
   let champ = null;
   for (let i = 0; i < tentatives; i++) {
     champ = document.getElementById(id);
@@ -502,7 +501,7 @@ async function taperDansChamp(id, texte, tentatives = 15) {
   // bloqué même une fois la valeur saisie).
   await curseurVersAsync(champ, () => champ.focus());
   await attendre(200);
-  await taper(champ, String(texte));
+  await taper(champ, String(texte), delaiParLettre);
   return true;
 }
 
@@ -826,8 +825,10 @@ async function ajouterBienManuel(bien) {
 // alfred-brain.js : le clic sur "Créer un dossier" se fait pendant qu'Alfred
 // en parle, pas pendant qu'il parle déjà du numéro de dossier.
 
-// 1a. Ouvrir l'écran de création (clic "Dossiers" puis "Créer un dossier").
-async function seq_creationDossier_ouvrir_ecran() {
+// 1a. Cliquer sur "Dossiers" — calé sur le tout premier segment parlé
+// ("Voici d'abord le tableau de bord..."), pas sur celui qui parle du
+// clic sur "Créer un dossier".
+async function seq_creationDossier_ouvrir_dossiers() {
   // Même sélecteur fiable que seq_ouvrirDossier, plutôt que
   // naviguerVers/trouverNav qui est trop large et peut cliquer sur le
   // mauvais élément.
@@ -839,8 +840,20 @@ async function seq_creationDossier_ouvrir_ecran() {
     console.warn('[Alfred DOM] Lien "Dossiers" introuvable');
   }
   await attendre(1800);
+}
+
+// 1b. Cliquer sur "Créer un dossier" — calé sur le segment qui en parle.
+async function seq_creationDossier_ouvrir_creerBouton() {
   await cliquerBouton(SELECTEURS.boutons.creerDossier);
   await attendre(2200);
+}
+
+// Rétrocompatibilité — enchaîne les deux clics (utile pour un test manuel
+// en console ; le script normal déclenche chaque clic à part, un par
+// segment — voir DOM_ACTIONS et alfred-config.js).
+async function seq_creationDossier_ouvrir_ecran() {
+  await seq_creationDossier_ouvrir_dossiers();
+  await seq_creationDossier_ouvrir_creerBouton();
 }
 
 // 1b. Remplir le numéro de dossier, les collaborateurs et le notaire, puis
@@ -861,26 +874,32 @@ async function seq_creationDossier_ouvrir_champs() {
   // ancien dossier déjà créé.
   const horodatage = new Date().toTimeString().slice(0, 8).replace(/:/g, '');
   const codeUnique = `${cfg.code}-${horodatage}`;
-  await taperDansChamp(SELECTEURS.champs.dossierCode, codeUnique);
+  // Frappe accélérée (35ms/lettre au lieu de 90) : le suffixe d'horodatage
+  // rallonge le code, et voir chaque lettre s'afficher une à une n'apporte
+  // rien ici — contrairement à un champ où le "tapé en direct" fait partie
+  // de la démo, personne ne lit le numéro de dossier lettre par lettre.
+  await taperDansChamp(SELECTEURS.champs.dossierCode, codeUnique, 15, 35);
   // Entrée + blur : certains champs Angular ne valident/rafraîchissent leur
   // état (dont l'activation de "Suivant") que sur ces événements, pas sur
   // la frappe seule.
   const champCode = document.getElementById(SELECTEURS.champs.dossierCode);
   if (champCode) validerChamp(champCode);
-  await attendre(600);
-  // Pauses raccourcies (900ms → 500ms) : avec trois menus déroulants à la
-  // suite, l'ancien réglage faisait durer la sélection nettement plus
-  // longtemps que la réplique parlée — remonté en test live (narration
-  // terminée, sélection du notaire encore en cours).
+  await attendre(400);
+  // Pauses encore raccourcies (500ms → 300ms, et 800ms → 400ms côté
+  // choisirDansDropdownParLabelProche) : une fois speak() corrigé pour
+  // attendre la vraie fin de l'audio (voir alfred-voice.js), la comparaison
+  // réelle entre durée de la réplique et durée de cette étape est apparue
+  // beaucoup plus tardive que prévu — remonté en test live (la parole était
+  // términée depuis un moment, la sélection tournait encore).
   await choisirDansDropdownParLabelProche(SELECTEURS.menus.collaborateurEnCharge, cfg.collaborateur);
-  await attendre(500);
+  await attendre(300);
   if (cfg.collaborateur_administratif) {
     await choisirDansDropdownParLabelProche(SELECTEURS.menus.collaborateurAdministratif, cfg.collaborateur_administratif);
-    await attendre(500);
+    await attendre(300);
   }
   if (cfg.notaire) {
     await choisirDansDropdownParLabelProche(SELECTEURS.menus.notaireEnCharge, cfg.notaire);
-    await attendre(500);
+    await attendre(300);
   }
   // "Suivant" reste désactivé tant que les champs requis ne sont pas valides —
   // on attend qu'il s'active plutôt que de cliquer trop tôt sur un bouton inactif.
@@ -990,9 +1009,13 @@ const DOM_ACTIONS = {
   'CreationOuvrir':       seq_creationDossier_ouvrir,
   // Sous-étapes de CreationOuvrir, pour les répliques "groupées" (voir
   // alfred-brain.js) — un segment de texte plus court, calé sur son
-  // propre bout d'action.
-  'CreationOuvrir_Ecran':  seq_creationDossier_ouvrir_ecran,
-  'CreationOuvrir_Champs': seq_creationDossier_ouvrir_champs,
+  // propre bout d'action. Un clic par segment (au lieu d'"Ecran" qui en
+  // faisait deux à la fois), pour que le clic sur "Dossiers" tombe pile
+  // sur le 1er segment (qui en parle) et pas sur le 2e (qui parle du clic
+  // sur "Créer un dossier").
+  'CreationOuvrir_Dossiers':    seq_creationDossier_ouvrir_dossiers,
+  'CreationOuvrir_CreerBouton': seq_creationDossier_ouvrir_creerBouton,
+  'CreationOuvrir_Champs':      seq_creationDossier_ouvrir_champs,
   'CreationParties':   seq_creationDossier_parties,
   'CreationBien':      seq_creationDossier_bien,
   'CreationNotaires':  seq_creationDossier_notaires,

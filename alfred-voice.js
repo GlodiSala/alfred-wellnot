@@ -169,7 +169,15 @@ const GEMINI_VOIX_CATALOGUE = [
 // référence concrète (une scène, un type d'orateur) plutôt que des
 // adjectifs abstraits, sans reprendre les mots à forte charge dramatique
 // qui posaient problème la première fois.
-const TON_GEMINI_DEFAUT = "Scène : un entretien d'embauche professionnel, face à un public de notaires. Parle avec l'assurance calme d'un bon orateur — engageant et naturel, jamais monocorde, jamais théâtral.";
+// "Consigne de style" en préfixe + formulation à l'impératif plutôt qu'un
+// cadre narratif ("Scène : ...") : remonté en test live, Gemini-TTS a
+// littéralement prononcé ce champ à voix haute avant la vraie réplique
+// (comportement connu des TTS pilotés par prompt — rien ne garantit à
+// 100% qu'un modèle traite tout le champ comme pure consigne plutôt que
+// comme texte à dire, surtout s'il ressemble à une phrase qu'on pourrait
+// prononcer). Formulation resserrée pour réduire ce risque, en gardant la
+// référence concrète qui évitait le ton plat/monocorde.
+const TON_GEMINI_DEFAUT = "Consigne de style, à ne jamais lire à voix haute — l'appliquer seulement : voix assurée et chaleureuse d'un bon orateur face à des notaires, jamais monocorde, jamais théâtrale.";
 
 const ALFRED_VOIX_MOTEUR_KEY = 'alfred_voix_moteur'; // 'gemini' | 'cloud' (cloud = repli automatique, pas de choix utilisateur)
 const ALFRED_GEMINI_TON_KEY  = 'alfred_gemini_ton';  // chaîne simple, partagée FR/NL
@@ -505,6 +513,18 @@ function afficherSousTitresSync(sousTitre, audio) {
 }
 
 // ── Parler ────────────────────────────────────────────────
+let audioCtxPartage = null;
+function obtenirAudioContextPartage() {
+  if (!audioCtxPartage) {
+    audioCtxPartage = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  // Certains navigateurs suspendent le contexte s'il reste inactif un
+  // moment (ex: entre deux étapes du script) — le relancer est sans effet
+  // s'il tournait déjà.
+  if (audioCtxPartage.state === 'suspended') audioCtxPartage.resume();
+  return audioCtxPartage;
+}
+
 // moteurForce: 'cloud' pour forcer Cloud TTS (voir obtenirAudio) — utilisé
 // pour les réponses libres du chatbot, jamais pour les répliques scriptées.
 async function speak(text, langue, sousTitre, moteurForce) {
@@ -521,8 +541,13 @@ async function speak(text, langue, sousTitre, moteurForce) {
     // Sous-titres synchronisés sur la durée audio
     let phraseTimer = afficherSousTitresSync(sousTitre || text, audio);
 
-    // Analyseur volume → bouche
-    const ctx      = new (window.AudioContext || window.webkitAudioContext)();
+    // Analyseur volume → bouche. Un seul AudioContext partagé, créé une
+    // fois puis réutilisé (voir obtenirAudioContextPartage) : en recréer
+    // un à chaque réplique (et le fermer juste après) coûte du temps et
+    // provoque un micro-silence audible entre deux répliques enchaînées
+    // (voir jouerSecours) — remonté en test live ("ça s'entend qu'il y a
+    // un coupage").
+    const ctx      = obtenirAudioContextPartage();
     const src      = ctx.createMediaElementSource(audio);
     const analyser = ctx.createAnalyser();
     analyser.fftSize = 256;
@@ -563,7 +588,6 @@ async function speak(text, langue, sousTitre, moteurForce) {
         currentAudio = null;
         resetSleepTimer();
         cacherSousTitres();
-        ctx.close().catch(() => {});
         resolve();
       };
       audio.play().catch(reject);

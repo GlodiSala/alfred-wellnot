@@ -245,8 +245,8 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // segment déclenche son action au bon moment, plutôt que tout le DOM
     // d'un coup dès le premier mot de la réplique complète.
     { acte: 2, label: 'CreationOuvrir', segments: [
-      { texte: "Voici d'abord le tableau de bord : tous les dossiers en cours, les collaborateurs, les statuts." },
-      { texte: "Pour créer un dossier, rien de plus simple : je clique sur « Créer un dossier » et j'arrive sur la fiche de création.", action: 'CreationOuvrir_Ecran' },
+      { texte: "Voici d'abord le tableau de bord : tous les dossiers en cours, les collaborateurs, les statuts.", action: 'CreationOuvrir_Dossiers' },
+      { texte: "Pour créer un dossier, rien de plus simple : je clique sur « Créer un dossier » et j'arrive sur la fiche de création.", action: 'CreationOuvrir_CreerBouton' },
       { texte: "Donnez-moi le numéro de dossier, la langue de rédaction, le collaborateur en charge et le notaire en charge, et on passe à la création des parties.", action: 'CreationOuvrir_Champs' },
     ] },
     { acte: 2, label: 'CreationParties',   texte: "Le vendeur est une société : BIMBIMMO. Je récupère : dénomination, siège, forme juridique, représentants. Rattaché au dossier. L'acquéreur est une personne physique : Alain Caprasse. Je récupère : nom, adresse, date de naissance, nationalité, état civil, régime matrimonial. Tout remonte, prêt pour la rédaction du compromis.", action: 'CreationParties' },
@@ -279,8 +279,8 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // "Script_scene_Wellnot_InsideAI26" — niet herformuleren zonder ook
     // Cyrils papieren script bij te werken.
     { acte: 2, label: 'CreationOuvrir', segments: [
-      { texte: "Hier eerst het dashboard: alle lopende dossiers, de medewerkers, de statussen." },
-      { texte: "Om een dossier aan te maken, niets eenvoudiger: ik klik op « Dossier aanmaken » en ik kom op de aanmaakfiche.", action: 'CreationOuvrir_Ecran' },
+      { texte: "Hier eerst het dashboard: alle lopende dossiers, de medewerkers, de statussen.", action: 'CreationOuvrir_Dossiers' },
+      { texte: "Om een dossier aan te maken, niets eenvoudiger: ik klik op « Dossier aanmaken » en ik kom op de aanmaakfiche.", action: 'CreationOuvrir_CreerBouton' },
       { texte: "Geef me het dossiernummer, de opstellingstaal, de verantwoordelijke medewerker en de verantwoordelijke notaris, en we gaan naar de aanmaak van de partijen.", action: 'CreationOuvrir_Champs' },
     ] },
     { acte: 2, label: 'CreationParties',   texte: "De verkoper is een vennootschap: BIMBIMMO. Ik haal op: benaming, zetel, rechtsvorm, vertegenwoordigers. Gekoppeld aan het dossier. De koper is een natuurlijke persoon: Alain Caprasse. Ik haal op: naam, adres, geboortedatum, nationaliteit, burgerlijke staat, huwelijksvermogensstelsel. Alles is klaar voor de opstelling van de verkoopbelofte.", action: 'CreationParties' },
