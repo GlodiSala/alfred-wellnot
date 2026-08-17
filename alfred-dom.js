@@ -542,6 +542,24 @@ async function taperDansChamp(id, texte, tentatives = 15, delaiParLettre) {
 // Ajoute une partie (Vendeur/Acquéreur) via recherche par registre national.
 // Suppose un RN réel et valide (recherche e-notariat en direct) : le
 // formulaire se remplit alors automatiquement, il ne reste qu'à enregistrer.
+// Vérifie qu'un badge de qualité (ex: "Acquéreur") est bien visible quelque
+// part sur l'écran après un ajout de partie — sans ça, un échec silencieux
+// de la recherche RN/BCE (ex: RN sans résultat, timing réseau) passait
+// inaperçu : la séquence continuait, "Suivant" restait cliquable (il ne
+// bloque que sur le vendeur manquant, pas l'acquéreur), et l'échec ne se
+// découvrait qu'à l'étape des notaires, plusieurs minutes plus tard — vu en
+// test live (acquéreur jamais ajouté, section REPRÉSENTE sans case
+// "Acquéreur" à cocher pour son notaire).
+async function partieAjouteeAvecSucces(qualite) {
+  for (let i = 0; i < 6; i++) {
+    const trouve = Array.from(document.querySelectorAll('*'))
+      .some(el => el.children.length === 0 && el.textContent.trim() === qualite && el.getBoundingClientRect().width > 0);
+    if (trouve) return true;
+    await attendre(500);
+  }
+  return false;
+}
+
 async function ajouterPartieParRN(qualite, rn) {
   await choisirDansDropdown(SELECTEURS.menus.qualitePartie, qualite);
   await attendre(500);
@@ -554,6 +572,11 @@ async function ajouterPartieParRN(qualite, rn) {
   await attendre(3200); // laisse largement le temps à la recherche e-notariat de remplir le formulaire (attente réseau réelle, pas juste cosmétique — non raccourcie)
   await cliquerBouton(SELECTEURS.boutons.enregistrer);
   await attendre(600);
+  if (!await partieAjouteeAvecSucces(qualite)) {
+    console.warn(`[Alfred DOM] "${qualite}" ne semble pas avoir été ajouté (recherche RN sans résultat ou échec de l'enregistrement ?) — RN utilisé: ${rn}. Les étapes suivantes (notaire, REPRÉSENTE) vont probablement échouer en cascade.`);
+    return false;
+  }
+  return true;
 }
 
 // Ajoute une partie (Vendeur/Acquéreur) via recherche par numéro BCE — pour
@@ -571,6 +594,11 @@ async function ajouterPartieParBCE(qualite, bce) {
   await attendre(3200); // laisse largement le temps à la recherche BCE de remplir le formulaire (attente réseau réelle, pas juste cosmétique — non raccourcie)
   await cliquerBouton(SELECTEURS.boutons.enregistrer);
   await attendre(600);
+  if (!await partieAjouteeAvecSucces(qualite)) {
+    console.warn(`[Alfred DOM] "${qualite}" ne semble pas avoir été ajouté (recherche BCE sans résultat ou échec de l'enregistrement ?) — BCE utilisé: ${bce}. Les étapes suivantes (notaire, REPRÉSENTE) vont probablement échouer en cascade.`);
+    return false;
+  }
+  return true;
 }
 
 // Coche la case sous "REPRÉSENTE" pour associer le notaire qu'on vient
