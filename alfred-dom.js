@@ -400,6 +400,15 @@ function trouverDeclencheurProcheLabel(labelTexte) {
   return meilleur;
 }
 
+// Une option de menu correspond si son texte est exactement celui attendu,
+// ou le contient (ex: "Alain Caprasse — Charleroi" ou un texte avec un
+// espace insécable/en trop) — l'égalité stricte s'est révélée trop rigide
+// en test live (option visible à l'écran mais jamais sélectionnée).
+function optionCorrespond(li, texteOption) {
+  const texte = li.textContent.trim();
+  return texte === texteOption || texte.includes(texteOption);
+}
+
 // Sélectionne une option dans le menu déroulant situé juste sous un libellé
 // donné. Utile quand le champ est vide et n'a donc aucun texte de
 // déclencheur fiable pour être ciblé autrement.
@@ -419,7 +428,7 @@ async function choisirDansDropdownParLabelProche(labelTexte, texteOption, dejaRe
   await attendre(800);
   for (let i = 0; i < 15; i++) {
     const opt = Array.from(document.querySelectorAll('li'))
-      .find(li => li.textContent.trim() === texteOption && li.getBoundingClientRect().width > 0);
+      .find(li => optionCorrespond(li, texteOption) && li.getBoundingClientRect().width > 0);
     if (opt) {
       await curseurVersAsync(opt, () => simulerClic(opt));
       await attendre(300);
@@ -458,7 +467,7 @@ async function choisirDansDropdown(texteDeclencheur, texteOption) {
   await attendre(800); // laisse le menu visible un instant, plus lisible en démo live
   for (let i = 0; i < 15; i++) {
     const opt = Array.from(document.querySelectorAll('li'))
-      .find(li => li.textContent.trim() === texteOption && li.getBoundingClientRect().width > 0);
+      .find(li => optionCorrespond(li, texteOption) && li.getBoundingClientRect().width > 0);
     if (opt) {
       await curseurVersAsync(opt, () => simulerClic(opt));
       await attendre(300);
