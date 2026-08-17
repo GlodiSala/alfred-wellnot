@@ -162,11 +162,6 @@ const GEMINI_VOIX_CATALOGUE = [
 // (naturel, direct, confiant, humour discret, jamais "excellente question").
 const TON_GEMINI_DEFAUT = "Tu es Alfred : un outsider sans parcours classique qui passe un entretien d'embauche devant une salle de notaires exigeants, et qui a vraiment envie de les convaincre. Parle avec assurance, chaleur et une pointe d'humour malicieux, toujours direct, jamais théâtral.";
 
-// Séparateur entre l'instruction de ton et le texte à prononcer — sans lui,
-// le modèle lit parfois l'instruction elle-même à voix haute au lieu de
-// l'appliquer silencieusement (piège documenté des prompts Gemini TTS).
-const GEMINI_TTS_DELIMITEUR = '\n\n#### TRANSCRIPT\n';
-
 const ALFRED_VOIX_MOTEUR_KEY = 'alfred_voix_moteur'; // 'gemini' | 'cloud' (cloud = repli automatique, pas de choix utilisateur)
 const ALFRED_GEMINI_TON_KEY  = 'alfred_gemini_ton';  // chaîne simple, partagée FR/NL
 const ALFRED_GEMINI_VOIX_KEY = 'alfred_gemini_voix'; // id de voix, unique, partagé FR/NL
@@ -212,50 +207,6 @@ function voixGeminiActuelle() {
   return raw;
 }
 
-// Extrait le taux d'échantillonnage d'un mimeType du type
-// "audio/L16;codec=pcm;rate=24000" — 24000 par défaut si absent/inattendu.
-function tauxDepuisMimeType(mimeType) {
-  const m = /rate=(\d+)/.exec(mimeType || '');
-  return m ? parseInt(m[1], 10) : 24000;
-}
-
-// Gemini TTS renvoie du PCM brut (pas de conteneur audio) — il faut lui
-// coller un en-tête WAV minimal pour que le navigateur puisse le lire.
-function pcmBase64VersUrlWav(base64, sampleRate, canaux = 1, bitsParEchantillon = 16) {
-  const bin = atob(base64);
-  const len = bin.length;
-  const pcm = new Uint8Array(len);
-  for (let i = 0; i < len; i++) pcm[i] = bin.charCodeAt(i);
-
-  const blockAlign = canaux * bitsParEchantillon / 8;
-  const byteRate = sampleRate * blockAlign;
-  const buffer = new ArrayBuffer(44 + len);
-  const view = new DataView(buffer);
-
-  function ecrireChaine(offset, str) {
-    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
-  }
-
-  ecrireChaine(0, 'RIFF');
-  view.setUint32(4, 36 + len, true);
-  ecrireChaine(8, 'WAVE');
-  ecrireChaine(12, 'fmt ');
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true); // format PCM
-  view.setUint16(22, canaux, true);
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, byteRate, true);
-  view.setUint16(32, blockAlign, true);
-  view.setUint16(34, bitsParEchantillon, true);
-  ecrireChaine(36, 'data');
-  view.setUint32(40, len, true);
-
-  new Uint8Array(buffer, 44).set(pcm);
-
-  const blob = new Blob([buffer], { type: 'audio/wav' });
-  return URL.createObjectURL(blob);
-}
-
 // Hache une clé de cache en SHA-256 hexadécimal — nécessaire pour le cache
 // partagé (api/tts-cache.js) : la clé brute contient le texte complet de la
 // réplique et l'instruction de ton, trop longue/à caractères spéciaux pour
@@ -293,59 +244,50 @@ async function ecrireCachePartage(cleBrute, donnees) {
   }
 }
 
-// Génère (ou récupère du cache, local puis partagé) un <audio> via Gemini
-// TTS, pour une voix et un ton explicites — ne dépend d'aucun réglage
-// global, pour pouvoir servir aussi bien à la lecture normale qu'au bouton
-// "Tester" du panneau (sans avoir à bidouiller un état global le temps de
-// l'essai).
-async function genererAudioGemini(text, voixId, ton) {
-  const cle = ['gemini', voixId, ton, text].join('|');
+// Génère (ou récupère du cache, local puis partagé) un <audio> via
+// Gemini-TTS — PAS l'API Gemini "brute" (generativelanguage.googleapis.com,
+// modèle preview, plafonnée à 100 requêtes/jour même avec facturation
+// active, confirmé par plusieurs fils du forum officiel Google :
+// développeurs bloqués sur ce même chiffre malgré une facturation Tier 2).
+// Gemini-TTS est intégré à Cloud Text-to-Speech (texttospeech.googleapis.com,
+// même infra que Chirp3 HD, même clé TTS_KEY, facturation à l'usage sans
+// plafond journalier arbitraire) — mêmes voix expressives, même contrôle du
+// ton via un champ "prompt" dédié (donc plus besoin du bricolage de
+// délimiteur "#### TRANSCRIPT"), et réponse MP3 directe (donc plus besoin
+// de reconstruire un en-tête WAV à partir de PCM brut). Langue explicite
+// nécessaire (contrairement à l'API Gemini brute, réellement multilingue
+// sans le préciser) : Cloud TTS reste un produit par locale.
+async function genererAudioGemini(text, voixId, ton, langue) {
+  const languageCode = langue === 'nl' ? 'nl-BE' : 'fr-FR';
+  const cle = ['gemini-tts', voixId, ton, languageCode, text].join('|');
 
-  let base64, taux;
-  const cacheLocal = await lireCacheTTS(cle);
-  if (cacheLocal) {
-    console.log('[Alfred Voice] Audio Gemini depuis le cache local (pas d\'appel API).');
-    const parsed = JSON.parse(cacheLocal);
-    base64 = parsed.base64; taux = parsed.rate;
+  let audioContent = await lireCacheTTS(cle);
+  if (audioContent) {
+    console.log('[Alfred Voice] Audio Gemini-TTS depuis le cache local (pas d\'appel API).');
   } else {
     const partage = await lireCachePartage(cle);
     if (partage && partage.base64) {
-      console.log('[Alfred Voice] Audio Gemini depuis le cache partagé (généré ailleurs, pas d\'appel API).');
-      base64 = partage.base64; taux = partage.rate || 24000;
-      ecrireCacheTTS(cle, JSON.stringify({ base64, rate: taux })); // copie en local pour la prochaine fois
+      console.log('[Alfred Voice] Audio Gemini-TTS depuis le cache partagé (généré ailleurs, pas d\'appel API).');
+      audioContent = partage.base64;
+      ecrireCacheTTS(cle, audioContent); // copie en local pour la prochaine fois
     } else {
-      const res = await fetch(ALFRED_CONFIG.API_GEMINI_TTS, {
+      const res = await fetch(ALFRED_CONFIG.API_TTS, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: ton + GEMINI_TTS_DELIMITEUR + text }] }],
-          generationConfig: {
-            responseModalities: ['AUDIO'],
-            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voixId } } }
-          }
+          input:       { text, prompt: ton },
+          voice:       { languageCode, name: voixId, modelName: 'gemini-2.5-flash-tts' },
+          audioConfig: { audioEncoding: 'MP3' }
         })
       });
       const data = await res.json();
-      const part = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData;
-      if (!part || !part.data) {
-        // Quota gratuit journalier dépassé (100 requêtes/jour sur le
-        // compte Gemini gratuit) : message clair plutôt que du JSON brut —
-        // la solution est d'activer la facturation sur ce compte Google
-        // (aistudio.google.com), pas un bug côté code.
-        if (data?.error?.code === 429 || data?.error?.status === 'RESOURCE_EXHAUSTED') {
-          const err = new Error('Quota Gemini gratuit dépassé pour aujourd\'hui (100 requêtes/jour) — active la facturation sur le compte Google associé à la clé API (aistudio.google.com) pour lever cette limite.');
-          err.quotaExceeded = true;
-          throw err;
-        }
-        throw new Error('Pas audio (Gemini) — ' + JSON.stringify(data?.error || data));
-      }
-      base64 = part.data;
-      taux = tauxDepuisMimeType(part.mimeType);
-      ecrireCacheTTS(cle, JSON.stringify({ base64, rate: taux })); // local, en tâche de fond
-      ecrireCachePartage(cle, { base64, rate: taux, format: 'pcm' }); // partagé, en tâche de fond
+      if (!data.audioContent) throw new Error('Pas audio (Gemini-TTS) — ' + JSON.stringify(data?.error || data));
+      audioContent = data.audioContent;
+      ecrireCacheTTS(cle, audioContent); // local, en tâche de fond
+      ecrireCachePartage(cle, { base64: audioContent, format: 'mp3' }); // partagé, en tâche de fond
     }
   }
-  return new Audio(pcmBase64VersUrlWav(base64, taux));
+  return new Audio('data:audio/mp3;base64,' + audioContent);
 }
 
 // Équivalent Cloud TTS — même logique (cache local puis partagé), voix
@@ -396,7 +338,7 @@ async function genererAudioCloud(text, voix) {
 async function obtenirAudio(text, langue, moteurForce) {
   if (moteurForce !== 'cloud' && moteurVoixActuel() === 'gemini') {
     try {
-      return await genererAudioGemini(text, voixGeminiActuelle(), tonGemini());
+      return await genererAudioGemini(text, voixGeminiActuelle(), tonGemini(), langue);
     } catch (e) {
       console.warn('[Alfred Voice] Gemini TTS indisponible, repli sur Cloud TTS:', e);
     }
@@ -420,8 +362,8 @@ const PRECHARGEMENT_CONCURRENCE = 4;
 
 async function prechargerScript(voixFr, voixNl, ton, onProgress) {
   const lignes = [
-    ...(ALFRED_CONFIG.REPLIQUES_FR || []).map(r => ({ texte: r.texte, voix: voixFr })),
-    ...(ALFRED_CONFIG.REPLIQUES_NL || []).map(r => ({ texte: r.texte, voix: voixNl })),
+    ...(ALFRED_CONFIG.REPLIQUES_FR || []).map(r => ({ texte: r.texte, voix: voixFr, langue: 'fr' })),
+    ...(ALFRED_CONFIG.REPLIQUES_NL || []).map(r => ({ texte: r.texte, voix: voixNl, langue: 'nl' })),
   ].filter(l => l.texte);
 
   let fait = 0;
@@ -433,7 +375,7 @@ async function prechargerScript(voixFr, voixNl, ton, onProgress) {
     while (indexSuivant < lignes.length) {
       const ligne = lignes[indexSuivant++];
       try {
-        await genererAudioGemini(ligne.texte, ligne.voix, ton);
+        await genererAudioGemini(ligne.texte, ligne.voix, ton, ligne.langue);
       } catch (e) {
         echecs++;
         if (e && e.quotaExceeded) quotaDepasse = true;

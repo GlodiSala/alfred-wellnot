@@ -468,13 +468,13 @@ function ouvrirPanneauVoix() {
   [btnTesterFR, btnTesterNL].forEach(btn => {
     btn.style.cssText = 'flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:12px;cursor:pointer;';
   });
-  function testerVoix(btn, texte) {
+  function testerVoix(btn, texte, langue) {
     return async () => {
       const original = btn.textContent;
       btn.disabled = true;
       btn.textContent = '… génération';
       try {
-        const audio = await genererAudioGemini(texte, selectVoix.value, taTon.value);
+        const audio = await genererAudioGemini(texte, selectVoix.value, taTon.value, langue);
         await audio.play();
       } catch (e) {
         console.warn('[Alfred Voice] Test de voix échoué:', e);
@@ -487,8 +487,8 @@ function ouvrirPanneauVoix() {
       }
     };
   }
-  btnTesterFR.onclick = testerVoix(btnTesterFR, "Bonjour, je suis Alfred. Voici un exemple de ma voix.");
-  btnTesterNL.onclick = testerVoix(btnTesterNL, "Goeiedag, ik ben Alfred. Dit is een voorbeeld van mijn stem.");
+  btnTesterFR.onclick = testerVoix(btnTesterFR, "Bonjour, je suis Alfred. Voici un exemple de ma voix.", 'fr');
+  btnTesterNL.onclick = testerVoix(btnTesterNL, "Goeiedag, ik ben Alfred. Dit is een voorbeeld van mijn stem.", 'nl');
   zoneTest.appendChild(btnTesterFR);
   zoneTest.appendChild(btnTesterNL);
   panel.appendChild(zoneTest);
