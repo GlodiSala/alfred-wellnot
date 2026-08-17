@@ -48,7 +48,10 @@ const ALFRED_CONFIG = {
   DOSSIER_CREATION_DEMO: {
     code:                       '2026/18-09',
     collaborateur:              'Cyril Cabuy', // "Collaborateur en charge du dossier"
-    collaborateur_administratif: 'Jean-François Ghigny', // "Collaborateur administratif"
+    // Jean-François Ghigny n'existe pas dans la liste "Collaborateur
+    // administratif" (confirmé en test live — c'est un notaire, pas un
+    // collaborateur dans l'appli) ; Cyril Cabuy, lui, y figure bien.
+    collaborateur_administratif: 'Cyril Cabuy', // "Collaborateur administratif"
     notaire:                    'Alain Caprasse', // "Notaire en charge du dossier" — voir note ci-dessus
     vendeur_type:      'morale',            // 'physique' (RN) ou 'morale' (BCE)
     vendeur_rn:        '84.06.28-314.70',    // utilisé si vendeur_type === 'physique'
@@ -249,7 +252,12 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { texte: "Pour créer un dossier, rien de plus simple : je clique sur « Créer un dossier » et j'arrive sur la fiche de création.", action: 'CreationOuvrir_CreerBouton' },
       { texte: "Donnez-moi le numéro de dossier, la langue de rédaction, le collaborateur en charge et le notaire en charge, et on passe à la création des parties.", action: 'CreationOuvrir_Champs' },
     ] },
-    { acte: 2, label: 'CreationParties',   texte: "Le vendeur est une société : BIMBIMMO. Je récupère : dénomination, siège, forme juridique, représentants. Rattaché au dossier. L'acquéreur est une personne physique : Alain Caprasse. Je récupère : nom, adresse, date de naissance, nationalité, état civil, régime matrimonial. Tout remonte, prêt pour la rédaction du compromis.", action: 'CreationParties' },
+    // Même texte que la version à plat (aucun mot changé), redécoupé en 2
+    // segments — vendeur / acquéreur — chacun calé sur sa propre action.
+    { acte: 2, label: 'CreationParties', segments: [
+      { texte: "Le vendeur est une société : BIMBIMMO. Je récupère : dénomination, siège, forme juridique, représentants. Rattaché au dossier.", action: 'CreationParties_Vendeur' },
+      { texte: "L'acquéreur est une personne physique : Alain Caprasse. Je récupère : nom, adresse, date de naissance, nationalité, état civil, régime matrimonial. Tout remonte, prêt pour la rédaction du compromis.", action: 'CreationParties_Acquereur' },
+    ] },
     { acte: 2, label: 'CreationBien',      texte: "Pour le bien, vous sélectionnez le bon, et je récupère automatiquement la matrice cadastrale. Il se situe en Flandre, à 8670 Coxyde. Matrice cadastrale récupérée. Parties, notaires, cadastre — tout est déjà là.", action: 'CreationBien' },
     { acte: 2, label: 'CreationNotaires',  texte: "Chaque partie doit être représentée par un notaire. BIMBIMMO, c'est nous. Pour l'acquéreur, j'ajoute Maxime Van der Straten — je le retrouve dans la base de tous les notaires belges et je le rattache à l'acquéreur. Chaque partie a son notaire.", action: 'CreationNotaires' },
     { acte: 2, label: 'CreationRedaction', texte: "Rien n'est encore chargé côté pièces — on enregistre le dossier tel quel. Et maintenant le moment qu'on attend : la rédaction. Un clic. Je réunis les parties, les notaires et le cadastre, et je génère le compromis de vente. À gauche, toutes les données collectées. À droite, le compromis qui se construit en direct.", action: 'CreationRedaction' },
@@ -283,7 +291,10 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { texte: "Om een dossier aan te maken, niets eenvoudiger: ik klik op « Dossier aanmaken » en ik kom op de aanmaakfiche.", action: 'CreationOuvrir_CreerBouton' },
       { texte: "Geef me het dossiernummer, de opstellingstaal, de verantwoordelijke medewerker en de verantwoordelijke notaris, en we gaan naar de aanmaak van de partijen.", action: 'CreationOuvrir_Champs' },
     ] },
-    { acte: 2, label: 'CreationParties',   texte: "De verkoper is een vennootschap: BIMBIMMO. Ik haal op: benaming, zetel, rechtsvorm, vertegenwoordigers. Gekoppeld aan het dossier. De koper is een natuurlijke persoon: Alain Caprasse. Ik haal op: naam, adres, geboortedatum, nationaliteit, burgerlijke staat, huwelijksvermogensstelsel. Alles is klaar voor de opstelling van de verkoopbelofte.", action: 'CreationParties' },
+    { acte: 2, label: 'CreationParties', segments: [
+      { texte: "De verkoper is een vennootschap: BIMBIMMO. Ik haal op: benaming, zetel, rechtsvorm, vertegenwoordigers. Gekoppeld aan het dossier.", action: 'CreationParties_Vendeur' },
+      { texte: "De koper is een natuurlijke persoon: Alain Caprasse. Ik haal op: naam, adres, geboortedatum, nationaliteit, burgerlijke staat, huwelijksvermogensstelsel. Alles is klaar voor de opstelling van de verkoopbelofte.", action: 'CreationParties_Acquereur' },
+    ] },
     { acte: 2, label: 'CreationBien',      texte: "Voor het onroerend goed selecteert u gewoon het juiste, en ik haal automatisch de kadastrale matrix op. Het bevindt zich in Vlaanderen, in 8670 Koksijde. Kadastrale matrix opgehaald. Partijen, notarissen, kadaster — alles staat er al.", action: 'CreationBien' },
     { acte: 2, label: 'CreationNotaires',  texte: "Elke partij moet vertegenwoordigd worden door een notaris. BIMBIMMO, dat zijn wij. Voor de koper voeg ik Maxime Van der Straten toe — ik vind hem in de databank van alle Belgische notarissen en koppel hem aan de koper. Elke partij heeft haar notaris.", action: 'CreationNotaires' },
     { acte: 2, label: 'CreationRedaction', texte: "Er is nog niets geüpload aan stukken — we registreren het dossier zoals het is. En nu het moment waar we op wachten: de opstelling. Eén klik. Ik verzamel de partijen, de notarissen en het kadaster, en ik genereer de verkoopbelofte. Links, alle verzamelde gegevens. Rechts, de akte die live wordt opgebouwd.", action: 'CreationRedaction' },

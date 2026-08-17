@@ -3,7 +3,14 @@
 // Facteur global de ralentissement des actions démo (curseur, frappe,
 // pauses entre étapes). Un seul endroit à ajuster si le retour "trop
 // rapide" revient — évite de devoir retoucher chaque délai un par un.
-const ALFRED_RALENTI = 1.4;
+// Remis à 1 (au lieu de 1.4) : remonté en test live comme le principal
+// responsable de la lenteur perçue sur les sélections dans les listes —
+// ce facteur multiplie aussi l'animation du curseur (voir curseurVers),
+// pas seulement les pauses. Les délais qui attendent une vraie réponse
+// réseau (recherche e-notariat/BCE/CADASTRE, chargement de l'éditeur...)
+// ne sont volontairement pas raccourcis avec ce chiffre, seulement les
+// pauses cosmétiques et l'animation.
+const ALFRED_RALENTI = 1;
 
 // ── Sélecteurs de l'interface app.alfred.be ───────────────
 // Textes de boutons/menus et identifiants de champs, centralisés ici plutôt
@@ -85,6 +92,19 @@ function creerCurseur() {
   document.body.appendChild(c);
 }
 
+// Défile doucement jusqu'à un élément s'il n'est pas déjà visible dans la
+// fenêtre — sans effet (donc sans pause) s'il l'est déjà. Utilisé avant de
+// cliquer un bouton en bas d'un long formulaire (ex: "Enregistrer" pour un
+// bien ou une partie), pour que les champs remplis juste avant restent
+// visibles en démo live au lieu d'un clic "invisible" hors-écran.
+async function defilerVersElement(el) {
+  const r = el.getBoundingClientRect();
+  const dejaVisible = r.top >= 0 && r.bottom <= window.innerHeight;
+  if (dejaVisible) return;
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  await attendre(500);
+}
+
 function curseurVers(el, callback) {
   const c = document.getElementById('alfred-cursor');
   if (!c || !el) { if (callback) callback(); return; }
@@ -103,7 +123,7 @@ function curseurVers(el, callback) {
 
   c.style.opacity = '1';
 
-  const dureeDeplacement = (0.8 * ALFRED_RALENTI).toFixed(2);
+  const dureeDeplacement = (0.5 * ALFRED_RALENTI).toFixed(2);
   setTimeout(() => {
     c.style.transition = `left ${dureeDeplacement}s cubic-bezier(.25,.46,.45,.94),
                           top  ${dureeDeplacement}s cubic-bezier(.25,.46,.45,.94),
@@ -111,15 +131,21 @@ function curseurVers(el, callback) {
     c.style.left = x + 'px';
     c.style.top  = y + 'px';
 
+    // Ce délai doit rester proche de dureeDeplacement (converti en ms, +
+    // une petite marge) pour attendre que le déplacement CSS soit bien
+    // fini avant de "cliquer" — sinon le curseur cliquerait encore en
+    // plein trajet. Rapproché de 820 à 520ms en même temps que la
+    // transition (0.8s → 0.5s) : c'était l'un des principaux facteurs de
+    // lenteur perçue sur les sélections (chaque clic simulé passe par là).
     setTimeout(() => {
       c.style.transform = 'translate(-50%,-50%) scale(0.6)';
       setTimeout(() => {
         c.style.transform = 'translate(-50%,-50%) scale(1)';
         if (callback) callback();
-        setTimeout(() => { c.style.opacity = '0'; }, 500 * ALFRED_RALENTI);
-      }, 250 * ALFRED_RALENTI);
-    }, 820 * ALFRED_RALENTI);
-  }, 100 * ALFRED_RALENTI);
+        setTimeout(() => { c.style.opacity = '0'; }, 300 * ALFRED_RALENTI);
+      }, 150 * ALFRED_RALENTI);
+    }, 520 * ALFRED_RALENTI);
+  }, 60 * ALFRED_RALENTI);
 }
 
 // Tous les délais explicites du script (pauses entre étapes, attentes de
@@ -333,6 +359,12 @@ async function cliquerBouton(texte, tentatives = 15) {
     await attendre(300);
   }
   if (!btn) { console.warn('[Alfred DOM] Bouton introuvable:', texte); return false; }
+  // Défile doucement jusqu'au bouton avant de cliquer — utile pour
+  // "Enregistrer" en bas d'un long formulaire (bien, vendeur...), qui
+  // était cliqué directement en JS sans jamais être visible à l'écran :
+  // en démo live, on ne voyait ni les champs remplis juste avant, ni le
+  // clic lui-même. Sans effet si le bouton est déjà visible.
+  await defilerVersElement(btn);
   return new Promise(resolve => curseurVers(btn, () => { btn.click(); resolve(true); }));
 }
 
@@ -366,6 +398,7 @@ async function cliquerBoutonQuandActif(texte, tentatives = 40, delai = 400) {
     }
     return false;
   }
+  await defilerVersElement(btn);
   await curseurVersAsync(btn, () => btn.click());
   return true;
 }
@@ -520,7 +553,7 @@ async function ajouterPartieParRN(qualite, rn) {
   await cliquerBouton(SELECTEURS.boutons.rechercher);
   await attendre(3200); // laisse largement le temps à la recherche e-notariat de remplir le formulaire (attente réseau réelle, pas juste cosmétique — non raccourcie)
   await cliquerBouton(SELECTEURS.boutons.enregistrer);
-  await attendre(1000);
+  await attendre(600);
 }
 
 // Ajoute une partie (Vendeur/Acquéreur) via recherche par numéro BCE — pour
@@ -537,7 +570,7 @@ async function ajouterPartieParBCE(qualite, bce) {
   await cliquerBouton(SELECTEURS.boutons.rechercher);
   await attendre(3200); // laisse largement le temps à la recherche BCE de remplir le formulaire (attente réseau réelle, pas juste cosmétique — non raccourcie)
   await cliquerBouton(SELECTEURS.boutons.enregistrer);
-  await attendre(1000);
+  await attendre(600);
 }
 
 // Coche la case sous "REPRÉSENTE" pour associer le notaire qu'on vient
@@ -945,7 +978,10 @@ async function seq_creationDossier_ouvrir() {
 
 // Étape 2 — Parties : vendeur (morale via BCE, ou physique via RN) puis
 // acquéreur (physique via RN).
-async function seq_creationDossier_parties() {
+// Découpée en deux sous-étapes (comme CreationOuvrir) pour un calage sur
+// deux segments : "vendeur" pendant qu'on parle du vendeur, "acquéreur"
+// pendant qu'on parle de l'acquéreur.
+async function seq_creationDossier_parties_vendeur() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) return;
   if (cfg.vendeur_type === 'morale' && cfg.vendeur_bce) {
@@ -953,6 +989,11 @@ async function seq_creationDossier_parties() {
   } else {
     await ajouterPartieParRN('Vendeur', cfg.vendeur_rn);
   }
+}
+
+async function seq_creationDossier_parties_acquereur() {
+  const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
+  if (!cfg) return;
   await ajouterPartieParRN('Acquéreur', cfg.acquereur_rn);
   // "Suivant" reste désactivé tant que le vendeur n'a pas été ajouté avec succès.
   if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.suivant)) {
@@ -960,6 +1001,13 @@ async function seq_creationDossier_parties() {
     return;
   }
   await attendre(2200);
+}
+
+// Rétrocompatibilité — enchaîne les deux sous-étapes (test manuel en
+// console ; le script normal déclenche chaque sous-étape à part).
+async function seq_creationDossier_parties() {
+  await seq_creationDossier_parties_vendeur();
+  await seq_creationDossier_parties_acquereur();
 }
 
 // Étape 3 — Bien, puis finalisation (Documents : rien à joindre en démo).
@@ -1041,6 +1089,8 @@ const DOM_ACTIONS = {
   'CreationOuvrir_CreerBouton': seq_creationDossier_ouvrir_creerBouton,
   'CreationOuvrir_Champs':      seq_creationDossier_ouvrir_champs,
   'CreationParties':   seq_creationDossier_parties,
+  'CreationParties_Vendeur':   seq_creationDossier_parties_vendeur,
+  'CreationParties_Acquereur': seq_creationDossier_parties_acquereur,
   'CreationBien':      seq_creationDossier_bien,
   'CreationNotaires':  seq_creationDossier_notaires,
   'CreationRedaction': seq_creationDossier_redaction,
