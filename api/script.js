@@ -42,7 +42,9 @@ export default async function handler(req, res) {
 
     try {
       const updatedAt = new Date().toISOString();
-      const value = JSON.stringify({ fr: body.fr, nl: body.nl, updatedAt });
+      // voix (préférence de voix/ton Gemini) est optionnel — présent une
+      // fois que le panneau "Voix" a été enregistré au moins une fois.
+      const value = JSON.stringify({ fr: body.fr, nl: body.nl, voix: body.voix || null, updatedAt });
       const r = await fetch(`${KV_URL}/set/${KEY}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${KV_TOKEN}`, 'Content-Type': 'text/plain' },

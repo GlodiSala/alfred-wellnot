@@ -314,10 +314,21 @@ const ALFRED_SCRIPT_SYNC_KEY      = 'alfred_script_last_sync'; // horodatage de 
 ALFRED_CONFIG.REPLIQUES_FR_DEFAUT = JSON.parse(JSON.stringify(ALFRED_CONFIG.REPLIQUES_FR));
 ALFRED_CONFIG.REPLIQUES_NL_DEFAUT = JSON.parse(JSON.stringify(ALFRED_CONFIG.REPLIQUES_NL));
 
-function appliquerScript(fr, nl) {
+function appliquerScript(fr, nl, voix) {
   ALFRED_CONFIG.REPLIQUES_FR = fr;
   ALFRED_CONFIG.REPLIQUES_NL = nl;
-  localStorage.setItem(ALFRED_SCRIPT_STORAGE_KEY, JSON.stringify({ fr, nl }));
+  localStorage.setItem(ALFRED_SCRIPT_STORAGE_KEY, JSON.stringify({ fr, nl, voix }));
+  appliquerVoixSynchronisee(voix);
+}
+
+// Écrit une préférence de voix/ton reçue du serveur dans les clés
+// localStorage lues par alfred-voice.js (littérales ici : ce fichier se
+// charge avant alfred-voice.js, ses constantes ALFRED_GEMINI_*_KEY
+// n'existent pas encore à ce stade — même chaînes des deux côtés).
+function appliquerVoixSynchronisee(voix) {
+  if (!voix) return;
+  if (voix.id)  localStorage.setItem('alfred_gemini_voix', voix.id);
+  if (voix.ton) localStorage.setItem('alfred_gemini_ton',  voix.ton);
 }
 
 // Chargement immédiat depuis le cache local — évite un flash de contenu
@@ -330,6 +341,7 @@ function chargerScriptPersonnalise() {
     if (Array.isArray(data.fr) && Array.isArray(data.nl) && data.fr.length === data.nl.length) {
       ALFRED_CONFIG.REPLIQUES_FR = data.fr;
       ALFRED_CONFIG.REPLIQUES_NL = data.nl;
+      appliquerVoixSynchronisee(data.voix);
     }
   } catch (e) {
     console.warn('[Alfred Config] Script local illisible, valeurs par défaut utilisées.', e);
@@ -344,7 +356,7 @@ async function rafraichirScriptDepuisServeur() {
     if (!res.ok) return;
     const data = await res.json();
     if (data && Array.isArray(data.fr) && Array.isArray(data.nl) && data.fr.length === data.nl.length) {
-      appliquerScript(data.fr, data.nl);
+      appliquerScript(data.fr, data.nl, data.voix);
       if (data.updatedAt) localStorage.setItem(ALFRED_SCRIPT_SYNC_KEY, data.updatedAt);
       if (typeof remplirPanneauRepliques === 'function') remplirPanneauRepliques();
     }
@@ -360,9 +372,18 @@ async function rafraichirScriptDepuisServeur() {
 // Retourne { ok, offlineOnly?, wrongPassword?, conflict? } pour permettre
 // à l'UI d'afficher un retour clair.
 async function sauvegarderScriptPersonnalise(forcerEcrasement) {
+  // La préférence de voix/ton (panneau "Voix") vit dans ses propres clés
+  // localStorage (lues par alfred-voice.js) — on la récupère ici pour la
+  // partager en même temps que le script, sur le même mot de passe.
+  const voix = {
+    id:  localStorage.getItem('alfred_gemini_voix') || undefined,
+    ton: localStorage.getItem('alfred_gemini_ton')  || undefined,
+  };
+
   localStorage.setItem(ALFRED_SCRIPT_STORAGE_KEY, JSON.stringify({
     fr: ALFRED_CONFIG.REPLIQUES_FR,
     nl: ALFRED_CONFIG.REPLIQUES_NL,
+    voix,
   }));
 
   let mdp = localStorage.getItem(ALFRED_SCRIPT_PASSWORD_KEY);
@@ -392,7 +413,7 @@ async function sauvegarderScriptPersonnalise(forcerEcrasement) {
     const res = await fetch(ALFRED_CONFIG.API_SCRIPT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Alfred-Password': mdp },
-      body: JSON.stringify({ fr: ALFRED_CONFIG.REPLIQUES_FR, nl: ALFRED_CONFIG.REPLIQUES_NL }),
+      body: JSON.stringify({ fr: ALFRED_CONFIG.REPLIQUES_FR, nl: ALFRED_CONFIG.REPLIQUES_NL, voix }),
     });
     if (res.status === 401) {
       localStorage.removeItem(ALFRED_SCRIPT_PASSWORD_KEY);

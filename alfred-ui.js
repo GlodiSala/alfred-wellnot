@@ -398,28 +398,42 @@ function ouvrirPanneauVoix() {
   panel.innerHTML = '';
 
   const enTete = document.createElement('div');
-  enTete.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;';
+  enTete.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;';
   const titre = document.createElement('div');
-  titre.textContent = 'Voix d\'Alfred (préférence sur cet appareil)';
+  titre.textContent = 'Voix d\'Alfred (partagée — comme le script)';
   titre.style.cssText = 'color:rgba(255,255,255,.4);font-size:9px;letter-spacing:2px;text-transform:uppercase;';
   enTete.appendChild(titre);
-  // Une fois un ton/une voix enregistrés sur cet appareil, les mises à
-  // jour du ton par défaut poussées dans le code (ex: affinages successifs
-  // suite aux retours) ne s'appliquent plus jamais tant que ce bouton n'a
-  // pas été utilisé — c'est ce qui causait "pourquoi ça affiche encore
-  // l'ancien texte ?" après plusieurs itérations du prompt.
+  const statutVoix = document.createElement('div');
+  statutVoix.id = 'alfred-voix-status';
+  statutVoix.style.cssText = 'color:rgba(255,255,255,.4);font-size:9px;';
+  enTete.appendChild(statutVoix);
+  // Une fois un ton/une voix enregistrés, les mises à jour du ton par
+  // défaut poussées dans le code (ex: affinages successifs suite aux
+  // retours) ne s'appliquent plus jamais tant que ce bouton n'a pas été
+  // utilisé — c'est ce qui causait "pourquoi ça affiche encore l'ancien
+  // texte ?" après plusieurs itérations du prompt. Republie aussi le reset
+  // en ligne, sinon la prochaine synchro ré-appliquerait l'ancienne
+  // version par-dessus (même bug que celui corrigé sur le script).
   const btnReset = document.createElement('span');
   btnReset.textContent = '↺';
-  btnReset.title = 'Revenir à la voix/au ton par défaut (les plus récents)';
+  btnReset.title = 'Revenir à la voix/au ton par défaut (les plus récents), pour tout le monde';
   btnReset.style.cssText = 'color:rgba(255,255,255,.35);font-size:13px;cursor:pointer;';
   btnReset.onclick = () => {
     localStorage.removeItem(ALFRED_GEMINI_TON_KEY);
     localStorage.removeItem(ALFRED_GEMINI_VOIX_KEY);
     localStorage.removeItem(ALFRED_VOIX_MOTEUR_KEY);
     ouvrirPanneauVoix();
+    if (typeof sauvegarderAvecGestionConflit === 'function') {
+      afficherStatutSauvegarde(sauvegarderAvecGestionConflit(), 'alfred-voix-status');
+    }
   };
   enTete.appendChild(btnReset);
   panel.appendChild(enTete);
+
+  const sousTitre = document.createElement('div');
+  sousTitre.textContent = 'Un changement ici s\'applique à tout le monde dès "Enregistrer" — pas besoin que chacun le refasse.';
+  sousTitre.style.cssText = 'color:rgba(255,255,255,.35);font-size:9px;margin-bottom:12px;line-height:1.3;';
+  panel.appendChild(sousTitre);
 
   panel.appendChild(champLabel('Voix (une seule, valable en FR et en NL)'));
   const selectVoix = document.createElement('select');
@@ -495,6 +509,13 @@ function ouvrirPanneauVoix() {
     localStorage.setItem(ALFRED_VOIX_MOTEUR_KEY, 'gemini');
     localStorage.setItem(ALFRED_GEMINI_VOIX_KEY, selectVoix.value);
     localStorage.setItem(ALFRED_GEMINI_TON_KEY, taTon.value);
+
+    // Partage en ligne (même mot de passe que le script) — pour que Cyril
+    // (ou n'importe qui d'autre) reçoive ce réglage automatiquement à sa
+    // prochaine ouverture, sans devoir refaire les mêmes réglages.
+    if (typeof sauvegarderAvecGestionConflit === 'function') {
+      afficherStatutSauvegarde(sauvegarderAvecGestionConflit(), 'alfred-voix-status');
+    }
 
     btnSave.disabled = true;
     btnCancel.style.display = 'none';
