@@ -72,7 +72,7 @@ function creerSousTitres() {
     max-width:70%; background:rgba(0,0,0,0.72); color:#fff;
     font-size:20px; font-weight:500; line-height:1.5;
     padding:12px 28px; border-radius:10px;
-    text-align:center; z-index:450;
+    text-align:center; z-index:2147483647;
     opacity:0; transition:opacity .3s ease;
     pointer-events:none; font-family:sans-serif;
     letter-spacing:0.01em;
@@ -131,6 +131,21 @@ function cacherSousTitres() {
   }
 }
 
+// Reflète l'état de lectureAutomatique() sur le bouton "Jouer tout".
+function majBoutonLectureAuto(active) {
+  const btn = document.getElementById('alfred-lecture-auto');
+  if (!btn) return;
+  if (active) {
+    btn.textContent = '⏸ Arrêter la lecture automatique';
+    btn.style.background = 'rgba(220,80,80,.15)';
+    btn.style.borderColor = 'rgba(220,80,80,.4)';
+  } else {
+    btn.textContent = '▶ Jouer tout (les 3 actes)';
+    btn.style.background = 'rgba(20,176,189,.12)';
+    btn.style.borderColor = 'rgba(20,176,189,.4)';
+  }
+}
+
 // ── Panneau répliques (lecture + édition FR/NL) ───────────
 function creerPanneauRepliques() {
   if (document.getElementById('alfred-repliques-panel')) return;
@@ -154,6 +169,7 @@ function creerPanneauRepliques() {
     <button id="alfred-donnees-ouvrir" style="width:100%;margin-bottom:8px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:rgba(255,255,255,.85);font-size:11px;font-weight:600;cursor:pointer;">📋 Données du dossier démo</button>
     <button id="alfred-voix-ouvrir" style="width:100%;margin-bottom:6px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:rgba(255,255,255,.85);font-size:11px;font-weight:600;cursor:pointer;">🔊 Voix d'Alfred</button>
     <div id="alfred-reglages-reset" style="text-align:center;color:rgba(255,255,255,.35);font-size:9px;margin-bottom:14px;cursor:pointer;">↺ Réinitialiser voix + données démo</div>
+    <button id="alfred-lecture-auto" style="width:100%;margin-bottom:14px;padding:8px;border-radius:8px;border:1px solid rgba(20,176,189,.4);background:rgba(20,176,189,.12);color:#fff;font-size:11px;font-weight:600;cursor:pointer;">▶ Jouer tout (les 3 actes)</button>
     <div style="display:flex;gap:20px;align-items:flex-start;">
       <div id="alfred-col-1" style="flex:1;"></div>
       <div id="alfred-col-2" style="flex:1.2;"></div>
@@ -168,6 +184,11 @@ function creerPanneauRepliques() {
   btnDonnees.onclick = () => {
     panel.style.display = 'none';
     ouvrirPanneauDonneesCreation();
+  };
+
+  const btnLectureAuto = panel.querySelector('#alfred-lecture-auto');
+  btnLectureAuto.onclick = () => {
+    if (typeof lectureAutomatique === 'function') lectureAutomatique();
   };
 
   const btnVoix = panel.querySelector('#alfred-voix-ouvrir');
@@ -245,10 +266,23 @@ function remplirPanneauRepliques() {
     const col = document.getElementById(colId);
     if (!col) return;
     col.innerHTML = '';
-    const titre = document.createElement('div');
+    const ligneTitre = document.createElement('div');
+    ligneTitre.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;';
+    const titre = document.createElement('span');
     titre.textContent = 'Acte ' + acteNum;
-    titre.style.cssText = 'color:rgba(255,255,255,.3);font-size:8px;letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;';
-    col.appendChild(titre);
+    titre.style.cssText = 'color:rgba(255,255,255,.3);font-size:8px;letter-spacing:2px;text-transform:uppercase;';
+    ligneTitre.appendChild(titre);
+    const btnJouerActe = document.createElement('span');
+    btnJouerActe.textContent = '▶';
+    btnJouerActe.title = 'Jouer tout l\'acte ' + acteNum;
+    btnJouerActe.style.cssText = 'color:rgba(20,176,189,.7);font-size:10px;cursor:pointer;padding:2px 4px;';
+    btnJouerActe.onmouseover = () => { btnJouerActe.style.color = '#14b0bd'; };
+    btnJouerActe.onmouseout  = () => { btnJouerActe.style.color = 'rgba(20,176,189,.7)'; };
+    btnJouerActe.onclick = () => {
+      if (typeof lectureAutomatique === 'function') lectureAutomatique({ acte: acteNum });
+    };
+    ligneTitre.appendChild(btnJouerActe);
+    col.appendChild(ligneTitre);
 
     list.forEach((r, idx) => {
       if (r.acte !== acteNum) return;
@@ -291,9 +325,15 @@ function remplirPanneauRepliques() {
       btn.style.cssText = 'flex:1;color:rgba(255,255,255,.75);font-size:11px;padding:5px 8px;border-radius:6px;cursor:pointer;transition:background .15s,color .15s;';
       btn.onmouseover = () => { btn.style.background='rgba(255,255,255,.12)'; btn.style.color='#fff'; };
       btn.onmouseout  = () => { btn.style.background='transparent'; btn.style.color='rgba(255,255,255,.75)'; };
-      btn.onclick = () => {
+      btn.onclick = async () => {
         if (typeof secoursIdx !== 'undefined') secoursIdx = idx;
         document.getElementById('alfred-repliques-panel').style.display = 'none';
+        // La création de dossier (Acte 2) est un vrai enchaînement d'écrans —
+        // cliquer directement sur une étape du milieu (ex: "CreationBien")
+        // sans être passé par les précédentes échouerait sur le mauvais
+        // écran. On rejoue d'abord les actions (sans les parler) des étapes
+        // manquantes avant de jouer normalement celle cliquée.
+        if (typeof rattraperActe2SiBesoin === 'function') await rattraperActe2SiBesoin(idx);
         if (typeof jouerSecours === 'function') jouerSecours();
       };
 
