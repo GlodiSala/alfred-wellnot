@@ -400,7 +400,7 @@ function ouvrirPanneauVoix() {
   const enTete = document.createElement('div');
   enTete.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;';
   const titre = document.createElement('div');
-  titre.textContent = 'Voix d\'Alfred (partagée — comme le script)';
+  titre.textContent = 'Voix d\'Alfred';
   titre.style.cssText = 'color:rgba(255,255,255,.4);font-size:9px;letter-spacing:2px;text-transform:uppercase;';
   enTete.appendChild(titre);
   const statutVoix = document.createElement('div');
@@ -430,12 +430,7 @@ function ouvrirPanneauVoix() {
   enTete.appendChild(btnReset);
   panel.appendChild(enTete);
 
-  const sousTitre = document.createElement('div');
-  sousTitre.textContent = 'Un changement ici s\'applique à tout le monde dès "Enregistrer" — pas besoin que chacun le refasse.';
-  sousTitre.style.cssText = 'color:rgba(255,255,255,.35);font-size:9px;margin-bottom:12px;line-height:1.3;';
-  panel.appendChild(sousTitre);
-
-  panel.appendChild(champLabel('Voix (une seule, valable en FR et en NL)'));
+  panel.appendChild(champLabel('Voix'));
   const selectVoix = document.createElement('select');
   selectVoix.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:#0a3b52;color:#fff;font-size:12px;margin-bottom:14px;';
   GEMINI_VOIX_CATALOGUE.forEach(v => {
@@ -447,17 +442,12 @@ function ouvrirPanneauVoix() {
   selectVoix.value = voixGeminiActuelle();
   panel.appendChild(selectVoix);
 
-  panel.appendChild(champLabel('Ton (comment Alfred doit sonner)'));
+  panel.appendChild(champLabel('Ton'));
   const taTon = document.createElement('textarea');
   taTon.value = tonGemini();
   taTon.rows = 4;
-  taTon.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:11px;font-family:sans-serif;resize:vertical;margin-bottom:6px;';
+  taTon.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:11px;font-family:sans-serif;resize:vertical;margin-bottom:14px;';
   panel.appendChild(taTon);
-
-  const aideTon = document.createElement('div');
-  aideTon.textContent = 'Écris-le comme une phrase normale, en français (pas besoin de le traduire, c\'est une consigne de jeu, pas du texte à prononcer). Pour ajuster : ajoute juste quelques mots, ex. "plus d\'humour", "plus sérieux", "parle plus lentement".';
-  aideTon.style.cssText = 'color:rgba(255,255,255,.4);font-size:10px;margin-bottom:14px;line-height:1.4;';
-  panel.appendChild(aideTon);
 
   const zoneTest = document.createElement('div');
   zoneTest.style.cssText = 'display:flex;gap:6px;margin-bottom:8px;';
