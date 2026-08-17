@@ -397,10 +397,17 @@ async function obtenirAudio(text, langue, moteurForce) {
 // ponctuels si ça arrive quand même.
 const PRECHARGEMENT_CONCURRENCE = 2;
 
+// Une réplique "groupée" (r.segments) contient plusieurs textes à
+// précharger séparément, un par segment, plutôt qu'un seul r.texte.
+function textesAPrecharger(replique) {
+  if (replique.segments) return replique.segments.map(s => s.texte);
+  return [replique.texte];
+}
+
 async function prechargerScript(voixFr, voixNl, ton, onProgress) {
   const lignes = [
-    ...(ALFRED_CONFIG.REPLIQUES_FR || []).map(r => ({ texte: r.texte, voix: voixFr, langue: 'fr' })),
-    ...(ALFRED_CONFIG.REPLIQUES_NL || []).map(r => ({ texte: r.texte, voix: voixNl, langue: 'nl' })),
+    ...(ALFRED_CONFIG.REPLIQUES_FR || []).flatMap(r => textesAPrecharger(r).map(texte => ({ texte, voix: voixFr, langue: 'fr' }))),
+    ...(ALFRED_CONFIG.REPLIQUES_NL || []).flatMap(r => textesAPrecharger(r).map(texte => ({ texte, voix: voixNl, langue: 'nl' }))),
   ].filter(l => l.texte);
 
   let fait = 0;
