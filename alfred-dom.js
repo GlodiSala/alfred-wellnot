@@ -578,8 +578,17 @@ async function lancerRedactionCompromis() {
   return true;
 }
 
-// Ouvre l'onglet Événements et affiche la proposition d'e-mail générée
-// automatiquement (pièces manquantes détectées après rédaction du compromis).
+// Ouvre l'onglet Événements, affiche la proposition d'e-mail générée
+// automatiquement (pièces manquantes détectées après rédaction du
+// compromis), et clique "Valider et envoyer" (A18/A19 du séquencier).
+//
+// Ce que cette fonction NE fait PAS, volontairement : attendre/simuler la
+// réponse du vendeur (A20 « le vendeur dépose les documents » — le
+// séquencier de Cyril dit "simuler la réception", mais on ignore par quel
+// mécanisme côté app — bouton de debug ? second dossier déjà préparé avec
+// les pièces ? à clarifier avec lui). Tant que ce n'est pas su, la
+// séquence s'arrête après l'envoi du mail — la suite (A20-A22 : réception,
+// analyse, questions au chat) reste à faire manuellement en démo.
 async function montrerPropositionEmail() {
   const onglet = trouverOnglet('Événements');
   if (onglet) curseurVers(onglet, () => onglet.click());
@@ -596,6 +605,13 @@ async function montrerPropositionEmail() {
     || trouverBoutonParTexte('Consulter');
   if (consulter) await curseurVersAsync(consulter, () => consulter.click());
   await attendre(1200);
+
+  if (!await cliquerBoutonQuandActif('Valider et envoyer', 10, 500)) {
+    console.warn('[Alfred DOM] Bouton "Valider et envoyer" introuvable ou inactif — mail non envoyé.');
+    return false;
+  }
+  await attendre(1200);
+  console.log('[Alfred DOM] Mail envoyé au vendeur. Suite (réception/analyse des pièces, questions au chat) non automatisée — voir commentaire de montrerPropositionEmail.');
   return true;
 }
 
@@ -821,7 +837,12 @@ const DOM_ACTIONS = {
   'Chatbot':     seq_montrerNotifications,
   'Événements':  seq_montrerEvenements,
   'Notifications': seq_montrerEvenements,
-  'CreationDossier':   seq_creerDossierDemo, // séquence complète (rétrocompat)
+  // Pas d'entrée 'CreationDossier' (chaîne complète) ici volontairement :
+  // chaque étape de la création doit être déclenchée par sa propre réplique
+  // (CreationOuvrir/Parties/Bien/Notaires/Redaction/Email), jamais toutes
+  // d'un coup sur une seule réplique. seq_creerDossierDemo() reste
+  // disponible dans le code pour du débogage/test manuel en console, mais
+  // n'apparaît plus dans la liste d'actions sélectionnables du script.
   'CreationOuvrir':    seq_creationDossier_ouvrir,
   'CreationParties':   seq_creationDossier_parties,
   'CreationBien':      seq_creationDossier_bien,

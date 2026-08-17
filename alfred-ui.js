@@ -454,9 +454,15 @@ function ouvrirPanneauDonneesCreation() {
   btnReset.onmouseover = () => { btnReset.style.color = '#fff'; };
   btnReset.onmouseout  = () => { btnReset.style.color = 'rgba(255,255,255,.4)'; };
   btnReset.onclick = () => {
-    if (!confirm('Réinitialiser les données du dossier démo ?')) return;
+    if (!confirm('Réinitialiser les données du dossier démo, pour tout le monde ? Les modifications seront perdues.')) return;
     if (typeof reinitialiserDonneesCreation === 'function') reinitialiserDonneesCreation();
     ouvrirPanneauDonneesCreation();
+    // Pousse aussi la remise à zéro en ligne, sinon la prochaine synchro
+    // ré-appliquerait par-dessus l'ancienne version partagée (même bug que
+    // celui corrigé sur le reset du script).
+    if (typeof sauvegarderDonneesCreationAvecGestionConflit === 'function') {
+      afficherStatutSauvegarde(sauvegarderDonneesCreationAvecGestionConflit(), 'alfred-script-status');
+    }
   };
   panel.appendChild(btnReset);
 
