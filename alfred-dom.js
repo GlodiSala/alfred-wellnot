@@ -101,19 +101,47 @@ function creerCurseur() {
 // cliquer un bouton en bas d'un long formulaire (ex: "Enregistrer" pour un
 // bien ou une partie), pour que les champs remplis juste avant restent
 // visibles en démo live au lieu d'un clic "invisible" hors-écran.
-async function defilerVersElement(el) {
+// Trouve le vrai conteneur qui défile pour cet élément — peut être une div
+// interne à hauteur fixe (overflow:auto/scroll), pas forcément la fenêtre.
+// Deviner "toujours la fenêtre" cassait le défilement quand ce n'est pas
+// le cas (ex: panneaux/listes internes à l'appli).
+function trouverConteneurDefilant(el) {
+  let p = el.parentElement;
+  while (p) {
+    const style = getComputedStyle(p);
+    if (/(auto|scroll)/.test(style.overflowY) && p.scrollHeight > p.clientHeight + 1) return p;
+    p = p.parentElement;
+  }
+  return null; // null = c'est la fenêtre elle-même qui défile
+}
+
+// Défilement animé "maison", avec une durée réglable — remplace
+// scrollIntoView({behavior:'smooth'}) dont la vitesse native n'est pas
+// réglable (pas de paramètre de durée), remonté plusieurs fois comme trop
+// rapide en démo live.
+async function defilerVersElement(el, dureeMs = 900) {
   const r = el.getBoundingClientRect();
   const dejaVisible = r.top >= 0 && r.bottom <= window.innerHeight;
   if (dejaVisible) return;
-  // La vitesse du défilement natif "smooth" n'est pas réglable (pas de
-  // paramètre de durée) — remonté comme un peu trop rapide en démo live.
-  // On ne peut pas la ralentir sans réimplémenter le défilement à la main
-  // (risqué : on ne sait pas si le site utilise la fenêtre ou un conteneur
-  // interne comme zone de défilement, et le deviner mal casserait le
-  // défilement). On laisse donc un peu plus de temps après, pour que
-  // l'écran ait fini de bouger avant que le curseur clique juste après.
-  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  await attendre(900);
+
+  const conteneur = trouverConteneurDefilant(el);
+  const rectRef = conteneur ? conteneur.getBoundingClientRect() : { top: 0, height: window.innerHeight };
+  const decalage = r.top - rectRef.top - (rectRef.height / 2) + (r.height / 2);
+  const depart = conteneur ? conteneur.scrollTop : window.scrollY;
+  const cible  = depart + decalage;
+
+  await new Promise(resolve => {
+    const debut = performance.now();
+    function etape(maintenant) {
+      const t = Math.min((maintenant - debut) / dureeMs, 1);
+      const t2 = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; // ease-in-out
+      const y = depart + (cible - depart) * t2;
+      if (conteneur) conteneur.scrollTop = y; else window.scrollTo(0, y);
+      if (t < 1) requestAnimationFrame(etape); else resolve();
+    }
+    requestAnimationFrame(etape);
+  });
+  await attendre(200);
 }
 
 function curseurVers(el, callback) {
@@ -774,7 +802,28 @@ async function lancerRedactionCompromis() {
   }
   if (!opt) { console.warn('[Alfred DOM] Option "Compromis" introuvable'); return false; }
   await curseurVersAsync(opt, () => simulerClic(opt));
-  await attendre(2500); // chargement de l'éditeur, champs fusionnés depuis parties/bien
+  await attendre(400);
+
+  // Remonté en test live (capture d'écran) : le clic sur le <li> ne ferme
+  // pas le menu, celui-ci reste ouvert. Même famille de bug que les cases
+  // à cocher REPRÉSENTE : le vrai gestionnaire de clic écoute parfois un
+  // élément interne (lien/texte), pas le <li> lui-même.
+  if (opt.getBoundingClientRect().width > 0) {
+    const cible = opt.querySelector('a, span') || opt;
+    await curseurVersAsync(cible, () => simulerClic(cible));
+    await attendre(400);
+    if (opt.getBoundingClientRect().width > 0) {
+      console.warn('[Alfred DOM] Le menu "Compromis" semble toujours ouvert après le clic — a-t-il vraiment fonctionné ?');
+    }
+  }
+  // Rallongé (2.5s → 6s) : remonté en test live comme trop court, le
+  // chargement de l'éditeur (fusion des données parties/bien/notaires)
+  // prend du temps. Reste une attente fixe faute de savoir précisément à
+  // quoi ressemble "c'est prêt" sur cet écran (pas de repère identifié
+  // pour l'instant, contrairement à "Email à valider") — dis-moi ce qui
+  // change à l'écran une fois chargé (ex: un texte, une icône qui
+  // disparaît) et je peux remplacer ça par une vraie attente active.
+  await attendre(6000);
   return true;
 }
 
