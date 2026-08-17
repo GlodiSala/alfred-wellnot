@@ -37,17 +37,24 @@ const VOIX_CATALOGUE = {
   ],
 };
 
+// Voix Cloud TTS les plus naturelles disponibles (Chirp3 HD) — utilisées
+// pour le repli automatique si Gemini échoue, et pour les réponses libres
+// du chatbot (texte généré à la volée, impossible à précharger : la
+// vitesse de Cloud TTS y compte plus que le contrôle du ton de Gemini).
+// nl-BE n'a pas de Chirp3 HD chez Google — nl-NL (Pays-Bas) l'a, accepté
+// ici malgré l'accent légèrement différent, pour rester sur la meilleure
+// qualité disponible plutôt que de redescendre en Wavenet par défaut.
 const VOIX_CONFIG = {
   fr: {
     languageCode: 'fr-FR',
-    name:         'fr-FR-Wavenet-D',
+    name:         'fr-FR-Chirp3-HD-Charon',
     ssmlGender:   'MALE',
     speakingRate:  0.82,
     pitch:        -1.5
   },
   nl: {
-    languageCode: 'nl-BE',
-    name:         'nl-BE-Wavenet-A',
+    languageCode: 'nl-NL',
+    name:         'nl-NL-Chirp3-HD-Charon',
     ssmlGender:   'MALE',
     speakingRate:  0.80,
     pitch:        -1.0
@@ -315,8 +322,14 @@ async function genererAudioCloud(text, voix) {
 // silencieux sur Cloud TTS avant d'abandonner — l'utilisateur n'a pas à
 // gérer ça lui-même, seul le résultat final (silence complet) doit être
 // évité autant que possible pendant une démo live.
-async function obtenirAudio(text, langue) {
-  if (moteurVoixActuel() === 'gemini') {
+//
+// moteurForce: 'cloud' force Cloud TTS directement, sans passer par Gemini
+// — utilisé pour les réponses libres du chatbot (texte généré à la volée,
+// jamais préchargeable, où la vitesse de Cloud TTS compte plus que le
+// contrôle du ton). Les répliques scriptées, elles, restent sur Gemini
+// (préchargeables, donc la lenteur ne se voit jamais en direct).
+async function obtenirAudio(text, langue, moteurForce) {
+  if (moteurForce !== 'cloud' && moteurVoixActuel() === 'gemini') {
     try {
       return await genererAudioGemini(text, voixGeminiActuelle(), tonGemini());
     } catch (e) {
@@ -419,7 +432,9 @@ function afficherSousTitresSync(sousTitre, audio) {
 }
 
 // ── Parler ────────────────────────────────────────────────
-async function speak(text, langue, sousTitre) {
+// moteurForce: 'cloud' pour forcer Cloud TTS (voir obtenirAudio) — utilisé
+// pour les réponses libres du chatbot, jamais pour les répliques scriptées.
+async function speak(text, langue, sousTitre, moteurForce) {
   if (!text || text === '...') return;
   langue = langue || currentLangue || 'fr';
 
@@ -427,7 +442,7 @@ async function speak(text, langue, sousTitre) {
   animateMouth(0.3);
 
   try {
-    const audio = await obtenirAudio(text, langue);
+    const audio = await obtenirAudio(text, langue, moteurForce);
     currentAudio = audio;
 
     // Sous-titres synchronisés sur la durée audio

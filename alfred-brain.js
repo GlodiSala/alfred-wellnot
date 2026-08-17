@@ -141,7 +141,9 @@ async function askAlfred(text, retries = 2) {
         : 'Posez votre prochaine question.';
       const autreLangue = langue === 'nl' ? 'fr' : 'nl';
       const trad = await traduire(fb, autreLangue);
-      await speak(naturaliserTexte(fb), langue, trad || fb);
+      // 'cloud' : texte libre généré à la volée, jamais préchargeable —
+      // Cloud TTS répond plus vite que Gemini pour ce cas précis.
+      await speak(naturaliserTexte(fb), langue, trad || fb, 'cloud');
       return;
     }
 
@@ -167,7 +169,9 @@ async function askAlfred(text, retries = 2) {
 
     const autreLangue = langue === 'nl' ? 'fr' : 'nl';
     const trad = await traduire(replyClean, autreLangue);
-    await speak(naturaliserTexte(replyClean), langue, trad || replyClean);
+    // 'cloud' : réponse libre générée à la volée, jamais préchargeable —
+    // Cloud TTS répond plus vite que Gemini pour ce cas précis.
+    await speak(naturaliserTexte(replyClean), langue, trad || replyClean, 'cloud');
 
   } catch(e) {
     console.error('askAlfred:', e);

@@ -397,10 +397,29 @@ function ouvrirPanneauVoix() {
   if (!panel || typeof GEMINI_VOIX_CATALOGUE === 'undefined') return;
   panel.innerHTML = '';
 
+  const enTete = document.createElement('div');
+  enTete.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;';
   const titre = document.createElement('div');
   titre.textContent = 'Voix d\'Alfred (préférence sur cet appareil)';
-  titre.style.cssText = 'color:rgba(255,255,255,.4);font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;';
-  panel.appendChild(titre);
+  titre.style.cssText = 'color:rgba(255,255,255,.4);font-size:9px;letter-spacing:2px;text-transform:uppercase;';
+  enTete.appendChild(titre);
+  // Une fois un ton/une voix enregistrés sur cet appareil, les mises à
+  // jour du ton par défaut poussées dans le code (ex: affinages successifs
+  // suite aux retours) ne s'appliquent plus jamais tant que ce bouton n'a
+  // pas été utilisé — c'est ce qui causait "pourquoi ça affiche encore
+  // l'ancien texte ?" après plusieurs itérations du prompt.
+  const btnReset = document.createElement('span');
+  btnReset.textContent = '↺';
+  btnReset.title = 'Revenir à la voix/au ton par défaut (les plus récents)';
+  btnReset.style.cssText = 'color:rgba(255,255,255,.35);font-size:13px;cursor:pointer;';
+  btnReset.onclick = () => {
+    localStorage.removeItem(ALFRED_GEMINI_TON_KEY);
+    localStorage.removeItem(ALFRED_GEMINI_VOIX_KEY);
+    localStorage.removeItem(ALFRED_VOIX_MOTEUR_KEY);
+    ouvrirPanneauVoix();
+  };
+  enTete.appendChild(btnReset);
+  panel.appendChild(enTete);
 
   panel.appendChild(champLabel('Voix (une seule, valable en FR et en NL)'));
   const selectVoix = document.createElement('select');
