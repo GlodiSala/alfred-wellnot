@@ -792,18 +792,20 @@ async function montrerPropositionEmail() {
   if (onglet) curseurVers(onglet, () => onglet.click());
   await attendre(1200);
   let li = null;
-  // Budget large (20s → 90s) : la génération réelle du compromis côté
+  // Budget large (90s → 3 min) : la génération réelle du compromis côté
   // backend (juste avant, voir lancerRedactionCompromis) peut prendre du
   // temps avant que l'événement "Email à valider" n'apparaisse — remonté
   // par l'utilisatrice ("il faut du temps... Alfred fait une notif quand
-  // il est prêt").
-  for (let i = 0; i < 90; i++) {
+  // il est prêt"). Ce n'est qu'un plafond de sécurité : dès que
+  // l'événement apparaît, on continue immédiatement, pas besoin d'attendre
+  // le plafond.
+  for (let i = 0; i < 180; i++) {
     li = Array.from(document.querySelectorAll('li'))
       .find(el => el.textContent.includes(SELECTEURS.textes.propositionEmail));
     if (li) break;
     await attendre(1000);
   }
-  if (!li) { console.warn("[Alfred DOM] \"Email à valider\" non trouvé après 90s"); return false; }
+  if (!li) { console.warn("[Alfred DOM] \"Email à valider\" non trouvé après 3 min"); return false; }
   const consulter = Array.from(li.querySelectorAll('button')).find(b => b.textContent.trim() === SELECTEURS.boutons.consulter)
     || trouverBoutonParTexte(SELECTEURS.boutons.consulter);
   if (consulter) await curseurVersAsync(consulter, () => consulter.click());
@@ -1218,15 +1220,19 @@ async function seq_creationDossier_attenteReponseVendeur() {
   if (onglet) curseurVers(onglet, () => onglet.click());
   await attendre(1200);
 
+  // Plafond de sécurité (4 min → 8 min) : dépend d'une vraie réponse
+  // envoyée manuellement par Cyril, le temps peut varier. Comme pour
+  // l'attente ci-dessus, ce n'est qu'un maximum — on continue dès que
+  // détecté, pas besoin d'attendre le plafond.
   const nombreAvant = document.querySelectorAll('li').length;
-  for (let i = 0; i < 240; i++) {
+  for (let i = 0; i < 480; i++) {
     if (document.querySelectorAll('li').length > nombreAvant) {
       console.log('[Alfred DOM] Nouvel élément détecté dans "Événements" — réponse du vendeur probablement arrivée.');
       return true;
     }
     await attendre(1000);
   }
-  console.warn('[Alfred DOM] Aucune nouvelle notification détectée dans "Événements" après 4 minutes — la réponse du vendeur a-t-elle bien été envoyée ?');
+  console.warn('[Alfred DOM] Aucune nouvelle notification détectée dans "Événements" après 8 minutes — la réponse du vendeur a-t-elle bien été envoyée ? Reclique sur cette réplique pour réessayer.');
   return false;
 }
 
