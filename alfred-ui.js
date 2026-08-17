@@ -387,9 +387,15 @@ function creerPanneauVoix() {
   document.body.appendChild(panel);
 }
 
+// Panneau volontairement simple : une seule voix, un seul ton, aucun terme
+// technique visible (pas de "Chirp3 HD", "Wavenet", "moteur"...) — pensé
+// pour quelqu'un qui n'a aucune raison de comprendre ce vocabulaire.
+// Cloud TTS existe toujours dans le code comme repli automatique et
+// silencieux si Gemini échoue (voir obtenirAudio dans alfred-voice.js),
+// mais n'est plus un choix proposé à l'écran.
 function ouvrirPanneauVoix() {
   const panel = document.getElementById('alfred-voix-panel');
-  if (!panel || typeof VOIX_CATALOGUE === 'undefined' || typeof VOIX_CONFIG === 'undefined') return;
+  if (!panel || typeof GEMINI_VOIX_CATALOGUE === 'undefined') return;
   panel.innerHTML = '';
 
   const titre = document.createElement('div');
@@ -397,140 +403,63 @@ function ouvrirPanneauVoix() {
   titre.style.cssText = 'color:rgba(255,255,255,.4);font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;';
   panel.appendChild(titre);
 
-  // ── Choix du moteur ────────────────────────────────────
-  panel.appendChild(champLabel('Moteur'));
-  const selectMoteur = document.createElement('select');
-  selectMoteur.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:#0a3b52;color:#fff;font-size:12px;margin-bottom:6px;';
-  [
-    { id: 'gemini', label: 'Gemini TTS — expressif, ton réglable (recommandé)' },
-    { id: 'cloud',  label: 'Cloud TTS — Wavenet/Neural2/Chirp3 HD' },
-  ].forEach(m => {
+  panel.appendChild(champLabel('Voix'));
+  const selectVoix = document.createElement('select');
+  selectVoix.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:#0a3b52;color:#fff;font-size:12px;margin-bottom:14px;';
+  GEMINI_VOIX_CATALOGUE.forEach(v => {
     const opt = document.createElement('option');
-    opt.value = m.id; opt.textContent = m.label;
+    opt.value = v.id; opt.textContent = v.label;
     opt.style.cssText = 'background:#0a3b52;color:#fff;';
-    selectMoteur.appendChild(opt);
+    selectVoix.appendChild(opt);
   });
-  selectMoteur.value = moteurVoixActuel();
-  panel.appendChild(selectMoteur);
+  selectVoix.value = voixGeminiActuelle();
+  panel.appendChild(selectVoix);
 
-  const avertissement = document.createElement('div');
-  avertissement.style.cssText = 'color:rgba(255,255,255,.45);font-size:10px;margin-bottom:14px;line-height:1.4;';
-  panel.appendChild(avertissement);
+  panel.appendChild(champLabel('Ton (comment Alfred doit sonner)'));
+  const taTon = document.createElement('textarea');
+  taTon.value = tonGemini();
+  taTon.rows = 4;
+  taTon.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:11px;font-family:sans-serif;resize:vertical;margin-bottom:6px;';
+  panel.appendChild(taTon);
 
-  const zoneLangues = document.createElement('div');
-  panel.appendChild(zoneLangues);
+  const aide = document.createElement('div');
+  aide.textContent = 'Une seule instruction, valable en français comme en néerlandais.';
+  aide.style.cssText = 'color:rgba(255,255,255,.4);font-size:10px;margin-bottom:14px;';
+  panel.appendChild(aide);
 
-  const selects = {};
-  const zonesTon = {};
-
-  function rendreZoneLangues() {
-    zoneLangues.innerHTML = '';
-    const moteur = selectMoteur.value;
-    avertissement.textContent = moteur === 'gemini'
-      ? 'Les mêmes voix marchent en FR et en NL (Gemini ne dépend pas de la langue). Le ton ci-dessous est une instruction en langage naturel envoyée au modèle — modifiable librement.'
-      : 'Les voix "Chirp3 HD" ne sont pas garanties disponibles pour cette langue chez Google — le bouton "Tester" te le dira tout de suite. nl-BE n\'a pas de Chirp3 HD, seul nl-NL (accent différent) en propose.';
-
-    ['fr', 'nl'].forEach(langue => {
-      zoneLangues.appendChild(champLabel(langue === 'fr' ? 'Voix française' : 'Voix néerlandaise'));
-
-      const ligne = document.createElement('div');
-      ligne.style.cssText = 'display:flex;gap:6px;margin-bottom:8px;';
-
-      const select = document.createElement('select');
-      select.style.cssText = 'flex:1;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:#0a3b52;color:#fff;font-size:12px;';
-
-      if (moteur === 'gemini') {
-        GEMINI_VOIX_CATALOGUE.forEach(v => {
-          const opt = document.createElement('option');
-          opt.value = v.id; opt.textContent = v.label;
-          opt.style.cssText = 'background:#0a3b52;color:#fff;';
-          select.appendChild(opt);
-        });
-        select.value = voixGeminiActuelle(langue);
-      } else {
-        (VOIX_CATALOGUE[langue] || []).forEach(v => {
-          const opt = document.createElement('option');
-          opt.value = v.id; opt.textContent = v.label;
-          opt.style.cssText = 'background:#0a3b52;color:#fff;';
-          select.appendChild(opt);
-        });
-        select.value = (VOIX_CATALOGUE[langue] || []).find(v => v.name === VOIX_CONFIG[langue].name)?.id
-          || (VOIX_CATALOGUE[langue][0] && VOIX_CATALOGUE[langue][0].id);
-      }
-      selects[langue] = select;
-      ligne.appendChild(select);
-
-      const btnTester = document.createElement('button');
-      btnTester.textContent = '▶';
-      btnTester.title = 'Tester cette voix';
-      btnTester.style.cssText = 'padding:8px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:12px;cursor:pointer;';
-      btnTester.onclick = async () => {
-        const texteTest = langue === 'fr'
-          ? "Bonjour, je suis Alfred. Voici un exemple de ma voix."
-          : "Goeiedag, ik ben Alfred. Dit is een voorbeeld van mijn stem.";
-        btnTester.disabled = true;
-        try {
-          let audio;
-          if (moteur === 'gemini') {
-            const ton = zonesTon[langue] ? zonesTon[langue].value : tonGemini(langue);
-            audio = await genererAudioGemini(texteTest, select.value, ton);
-          } else {
-            const v = (VOIX_CATALOGUE[langue] || []).find(x => x.id === select.value);
-            if (!v) return;
-            const voixTest = Object.assign({}, VOIX_CONFIG[langue], { name: v.name, ssmlGender: v.gender });
-            if (v.languageCode) voixTest.languageCode = v.languageCode;
-            audio = await genererAudioCloud(texteTest, voixTest);
-          }
-          await audio.play();
-        } catch (e) {
-          console.warn('[Alfred Voice] Test de voix échoué:', e);
-          alert('Cette voix n\'a pas pu être générée (indisponible, ou erreur réseau/clé API). Regarde la console pour le détail, ou choisis-en une autre.');
-        } finally {
-          btnTester.disabled = false;
-        }
-      };
-      ligne.appendChild(btnTester);
-
-      zoneLangues.appendChild(ligne);
-
-      if (moteur === 'gemini') {
-        zoneLangues.appendChild(champLabel('Ton (' + (langue === 'fr' ? 'FR' : 'NL') + ')'));
-        const taTon = document.createElement('textarea');
-        taTon.value = tonGemini(langue);
-        taTon.rows = 3;
-        taTon.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:11px;font-family:sans-serif;resize:vertical;margin-bottom:14px;';
-        zonesTon[langue] = taTon;
-        zoneLangues.appendChild(taTon);
-      }
-    });
-  }
-
-  selectMoteur.onchange = rendreZoneLangues;
-  rendreZoneLangues();
+  const btnTester = document.createElement('button');
+  btnTester.textContent = '▶ Tester';
+  btnTester.style.cssText = 'width:100%;margin-bottom:14px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:12px;cursor:pointer;';
+  btnTester.onclick = async () => {
+    btnTester.disabled = true;
+    btnTester.textContent = '… génération';
+    try {
+      const audio = await genererAudioGemini(
+        "Bonjour, je suis Alfred. Voici un exemple de ma voix.",
+        selectVoix.value,
+        taTon.value
+      );
+      await audio.play();
+    } catch (e) {
+      console.warn('[Alfred Voice] Test de voix échoué:', e);
+      alert('Cette voix n\'a pas pu être générée (réseau, ou clé API pas encore active côté serveur). Regarde la console pour le détail.');
+    } finally {
+      btnTester.disabled = false;
+      btnTester.textContent = '▶ Tester';
+    }
+  };
+  panel.appendChild(btnTester);
 
   const boutons = document.createElement('div');
-  boutons.style.cssText = 'display:flex;gap:8px;margin-top:6px;';
+  boutons.style.cssText = 'display:flex;gap:8px;';
 
   const btnSave = document.createElement('button');
   btnSave.textContent = 'Enregistrer';
   btnSave.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:none;background:#14b0bd;color:#fff;font-size:12px;font-weight:600;cursor:pointer;';
   btnSave.onclick = () => {
-    localStorage.setItem(ALFRED_VOIX_MOTEUR_KEY, selectMoteur.value);
-    if (selectMoteur.value === 'gemini') {
-      const choixExistant = JSON.parse(localStorage.getItem(ALFRED_VOIX_CHOIX_KEY) || '{}');
-      choixExistant.gemini = { fr: selects.fr.value, nl: selects.nl.value };
-      localStorage.setItem(ALFRED_VOIX_CHOIX_KEY, JSON.stringify(choixExistant));
-      localStorage.setItem(ALFRED_GEMINI_TON_KEY, JSON.stringify({
-        fr: zonesTon.fr ? zonesTon.fr.value : tonGemini('fr'),
-        nl: zonesTon.nl ? zonesTon.nl.value : tonGemini('nl'),
-      }));
-    } else {
-      const choixExistant = JSON.parse(localStorage.getItem(ALFRED_VOIX_CHOIX_KEY) || '{}');
-      choixExistant.fr = selects.fr.value;
-      choixExistant.nl = selects.nl.value;
-      localStorage.setItem(ALFRED_VOIX_CHOIX_KEY, JSON.stringify(choixExistant));
-      if (typeof appliquerChoixVoix === 'function') appliquerChoixVoix();
-    }
+    localStorage.setItem(ALFRED_VOIX_MOTEUR_KEY, 'gemini');
+    localStorage.setItem(ALFRED_GEMINI_VOIX_KEY, selectVoix.value);
+    localStorage.setItem(ALFRED_GEMINI_TON_KEY, taTon.value);
     panel.style.display = 'none';
     document.getElementById('alfred-repliques-panel').style.display = 'block';
   };

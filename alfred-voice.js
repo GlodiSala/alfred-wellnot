@@ -128,57 +128,42 @@ async function ecrireCacheTTS(cle, base64) {
   }
 }
 
-// ── Moteur vocal : Google Cloud TTS ou Gemini TTS ─────────
-// Gemini TTS utilise les mêmes ~30 voix ("personæ") quelle que soit la
-// langue du texte — contrairement à Cloud TTS où chaque locale (fr-FR,
-// nl-BE...) a son propre sous-catalogue, parfois très limité (nl-BE n'a
-// par exemple aucune voix Chirp3 HD). Avantage supplémentaire : le prompt
-// peut inclure une instruction de ton en langage naturel, appliquée par le
-// modèle à la lecture — pas juste "lire le texte", une vraie intention.
-// Genre indicatif seulement (Google ne documente pas le genre par nom) —
-// à confirmer à l'oreille avec "Tester". Seules des voix à consonance
-// masculine/neutre sont listées ici, pour rester cohérent avec le
-// personnage d'Alfred.
+// ── Voix par défaut : Gemini TTS ──────────────────────────
+// Gemini TTS utilise les mêmes voix quelle que soit la langue du texte
+// (contrairement à Google Cloud TTS où chaque locale a son propre
+// sous-catalogue, parfois très limité — nl-BE par exemple n'a aucune voix
+// "HD"). Il permet aussi une instruction de ton en langage naturel, une
+// seule pour les deux langues puisque c'est une intention, pas du texte à
+// prononcer. Noms techniques (Puck, Charon...) volontairement cachés à
+// l'écran — remplacés par une description claire, pour quelqu'un qui n'a
+// aucune raison de connaître le nom interne d'une voix Google.
 const GEMINI_VOIX_CATALOGUE = [
-  { id: 'Puck',        label: 'Puck — enjoué' },
-  { id: 'Charon',      label: 'Charon — posé, informatif' },
-  { id: 'Fenrir',      label: 'Fenrir — énergique' },
-  { id: 'Orus',        label: 'Orus — assuré' },
-  { id: 'Algenib',     label: 'Algenib — grave' },
-  { id: 'Iapetus',     label: 'Iapetus — clair' },
-  { id: 'Schedar',     label: 'Schedar — posé, régulier' },
-  { id: 'Rasalgethi',  label: 'Rasalgethi — informatif' },
+  { id: 'Algenib',    label: 'Grave et posée (recommandé)' },
+  { id: 'Charon',     label: 'Chaleureuse et posée' },
+  { id: 'Orus',       label: 'Assurée et directe' },
+  { id: 'Iapetus',    label: 'Claire et nette' },
 ];
 
 // Instruction de ton par défaut, éditable dans le panneau "Voix" — ce que
 // demande explicitement Glodi : convaincu, naturel, pas théâtral, pas une
-// simple lecture de script.
-const TON_GEMINI_DEFAUT_FR = "Instruction de ton : lis ce texte avec assurance et conviction, comme si tu y croyais vraiment — pas comme une lecture de script. Reste naturel et chaleureux, jamais théâtral ni exagéré.";
-const TON_GEMINI_DEFAUT_NL = "Toon-instructie: lees deze tekst met overtuiging en zelfvertrouwen, alsof je er echt in gelooft — niet als het oplezen van een script. Blijf natuurlijk en warm, nooit theatraal of overdreven.";
+// simple lecture de script. Une seule instruction pour les deux langues
+// (c'est une intention de jeu, pas du texte prononcé).
+const TON_GEMINI_DEFAUT = "Instruction de ton : lis ce texte avec assurance et conviction, comme si tu y croyais vraiment — pas comme une lecture de script. Reste naturel et chaleureux, jamais théâtral ni exagéré.";
 
-const ALFRED_VOIX_MOTEUR_KEY = 'alfred_voix_moteur'; // 'gemini' | 'cloud'
-const ALFRED_GEMINI_TON_KEY  = 'alfred_gemini_ton';  // { fr: '...', nl: '...' }
+const ALFRED_VOIX_MOTEUR_KEY = 'alfred_voix_moteur'; // 'gemini' | 'cloud' (cloud = repli automatique, pas de choix utilisateur)
+const ALFRED_GEMINI_TON_KEY  = 'alfred_gemini_ton';  // chaîne simple, partagée FR/NL
+const ALFRED_GEMINI_VOIX_KEY = 'alfred_gemini_voix'; // id de voix, partagé FR/NL
 
 function moteurVoixActuel() {
   return localStorage.getItem(ALFRED_VOIX_MOTEUR_KEY) || 'gemini';
 }
 
-function tonGemini(langue) {
-  try {
-    const raw = localStorage.getItem(ALFRED_GEMINI_TON_KEY);
-    const parsed = raw ? JSON.parse(raw) : {};
-    if (parsed[langue]) return parsed[langue];
-  } catch (e) {}
-  return langue === 'nl' ? TON_GEMINI_DEFAUT_NL : TON_GEMINI_DEFAUT_FR;
+function tonGemini() {
+  return localStorage.getItem(ALFRED_GEMINI_TON_KEY) || TON_GEMINI_DEFAUT;
 }
 
-function voixGeminiActuelle(langue) {
-  try {
-    const raw = localStorage.getItem(ALFRED_VOIX_CHOIX_KEY);
-    const parsed = raw ? JSON.parse(raw) : {};
-    if (parsed.gemini && parsed.gemini[langue]) return parsed.gemini[langue];
-  } catch (e) {}
-  return 'Puck';
+function voixGeminiActuelle() {
+  return localStorage.getItem(ALFRED_GEMINI_VOIX_KEY) || 'Algenib';
 }
 
 // Extrait le taux d'échantillonnage d'un mimeType du type
@@ -286,11 +271,18 @@ async function genererAudioCloud(text, voix) {
   return new Audio('data:audio/mp3;base64,' + audioContent);
 }
 
-// Prépare un élément <audio> prêt à jouer, via le moteur (Gemini/Cloud) et
-// les réglages actuellement enregistrés pour la langue donnée.
+// Prépare un élément <audio> prêt à jouer. Gemini TTS par défaut ; si ça
+// échoue (quota, réseau, voix indisponible...), repli automatique et
+// silencieux sur Cloud TTS avant d'abandonner — l'utilisateur n'a pas à
+// gérer ça lui-même, seul le résultat final (silence complet) doit être
+// évité autant que possible pendant une démo live.
 async function obtenirAudio(text, langue) {
   if (moteurVoixActuel() === 'gemini') {
-    return genererAudioGemini(text, voixGeminiActuelle(langue), tonGemini(langue));
+    try {
+      return await genererAudioGemini(text, voixGeminiActuelle(), tonGemini());
+    } catch (e) {
+      console.warn('[Alfred Voice] Gemini TTS indisponible, repli sur Cloud TTS:', e);
+    }
   }
   return genererAudioCloud(text, VOIX_CONFIG[langue] || VOIX_CONFIG.fr);
 }
