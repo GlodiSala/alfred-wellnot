@@ -395,7 +395,6 @@ function ouvrirPanneauDonneesCreation() {
   ligne('Notaire du vendeur', 'vendeur_notaire', cfg.vendeur_notaire);
   ligne('Registre national — Acquéreur', 'acquereur_rn', cfg.acquereur_rn, '__.__.__-___.__');
   ligne('Notaire de l’acquéreur', 'acquereur_notaire', cfg.acquereur_notaire);
-  ligne('Notaire de la partie adverse', 'notaire_adverse', cfg.notaire_adverse);
 
   const sousTitreBien = document.createElement('div');
   sousTitreBien.textContent = 'Bien immobilier';

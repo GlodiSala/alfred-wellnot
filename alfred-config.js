@@ -31,17 +31,30 @@ const ALFRED_CONFIG = {
   // commune (CADASTRE) — mais cette dernière recherche ne remplit pas les
   // champs de la parcelle automatiquement (bug confirmé par capture DOM en
   // direct), donc le bien reste saisi manuellement, avec la vraie commune.
+  //
+  // 17/08 — Données alignées sur le séquencier officiel de Cyril
+  // ("Alfred_sequencier_actions.docx" + "Script_scene_Wellnot_InsideAI26")  :
+  // dossier 2026/18-09, vendeur BIMBIMMO représenté par "nous" (l'étude —
+  // Jean-François Ghigny), acquéreur Alain Caprasse représenté par Maxime
+  // Van der Straten. ATTENTION : le champ "Notaire en charge du dossier"
+  // (cfg.notaire, sur la fiche de création) reste Alain Caprasse — en test
+  // live, JF Ghigny n'apparaissait pas comme option dans ce dropdown précis,
+  // contrairement au script qui l'indique. Le rattachement des notaires aux
+  // parties (cfg.vendeur_notaire / cfg.acquereur_notaire), lui, passe par
+  // une recherche plus large (base de tous les notaires belges) où JF
+  // Ghigny et Maxime Van der Straten sont bien trouvables — à revérifier en
+  // live si ce dropdown de la fiche de création est corrigé côté app.
   DOSSIER_CREATION_DEMO: {
-    code:                       'DEMO01',
+    code:                       '2026/18-09',
     collaborateur:              'Cyril Cabuy', // "Collaborateur en charge du dossier"
     collaborateur_administratif: 'Jean-François Ghigny', // "Collaborateur administratif"
-    notaire:                    'Alain Caprasse', // "Notaire en charge du dossier"
+    notaire:                    'Alain Caprasse', // "Notaire en charge du dossier" — voir note ci-dessus
     vendeur_type:      'morale',            // 'physique' (RN) ou 'morale' (BCE)
     vendeur_rn:        '84.06.28-314.70',    // utilisé si vendeur_type === 'physique'
     vendeur_bce:       '0653.910.157',       // utilisé si vendeur_type === 'morale' (BIMBIMMO)
-    vendeur_notaire:   'Alain Caprasse',
-    acquereur_rn:      '84.02.13-307.14',
-    acquereur_notaire: 'Jean-François Ghigny',
+    vendeur_notaire:   'Jean-François Ghigny', // "BIMBIMMO, c'est nous"
+    acquereur_rn:      '84.02.13-307.14',      // Alain Caprasse, personne physique
+    acquereur_notaire: 'Maxime Van der Straten',
     bien: {
       type:             'Maison',
       parcelle:         '0419XP0000',
@@ -53,7 +66,6 @@ const ALFRED_CONFIG = {
       numero:           '42',
       commune:          '8670 — Coxyde',
     },
-    notaire_adverse: 'Jean-François Ghigny',
   },
 
   SYSTEM_PROMPT: `Tu es Alfred, le premier collaborateur d'une étude notariale qui ne dort jamais.
@@ -224,12 +236,15 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // ACTE 2 — CRÉATION LIVE (démonstration séparée, avant l'ouverture de R426)
     // Décomposée en 6 répliques qui suivent le processus décrit par Cyril :
     // ouverture → parties → bien → notaires → rédaction → e-mail généré.
-    { acte: 2, label: 'CreationOuvrir',    texte: "Avant d'ouvrir un dossier existant, je vais vous montrer comment j'en crée un de A à Z, en direct. Je crée le dossier et j'assigne un collaborateur responsable.", action: 'CreationOuvrir' },
-    { acte: 2, label: 'CreationParties',   texte: "Maintenant les parties. Le vendeur ici est une société — je le retrouve directement via son numéro BCE, toutes ses informations légales arrivent automatiquement. Et pour l'acquéreur, le numéro de registre national suffit.", action: 'CreationParties' },
-    { acte: 2, label: 'CreationBien',      texte: "Le bien immobilier, ensuite. J'intègre les données cadastrales et j'enregistre le dossier.", action: 'CreationBien' },
-    { acte: 2, label: 'CreationNotaires',  texte: "Il ne reste plus qu'à rattacher les notaires des deux parties. J'ai une base de données à jour de tous les notaires belges — je les retrouve en quelques secondes.", action: 'CreationNotaires' },
-    { acte: 2, label: 'CreationRedaction', texte: "Le dossier est complet. Je peux déjà lancer la rédaction du compromis de vente — regardez, tout se remplit automatiquement à partir de ce que je viens de collecter.", action: 'CreationRedaction' },
-    { acte: 2, label: 'CreationEmail',     texte: "Et pendant que le projet se construit, j'ai déjà détecté qu'il manque certaines pièces. J'ai rédigé le mail à envoyer au client pour les récupérer — il ne reste plus qu'à le valider.", action: 'CreationEmail' },
+    // Texte aligné sur les répliques exactes d'Alfred dans le script officiel
+    // "Script_scene_Wellnot_InsideAI26" (section 4, étapes 6 à 11) — ne pas
+    // reformuler sans mettre à jour aussi le script papier de Cyril.
+    { acte: 2, label: 'CreationOuvrir',    texte: "Voici d'abord le tableau de bord : tous les dossiers en cours, les collaborateurs, les statuts. Pour créer un dossier, rien de plus simple : je clique sur « Créer un dossier » et j'arrive sur la fiche de création. Donnez-moi le numéro de dossier, la langue de rédaction, le collaborateur en charge et le notaire en charge, et on passe à la création des parties.", action: 'CreationOuvrir' },
+    { acte: 2, label: 'CreationParties',   texte: "Le vendeur est une société : BIMBIMMO. Je récupère : dénomination, siège, forme juridique, représentants. Rattaché au dossier. L'acquéreur est une personne physique : Alain Caprasse. Je récupère : nom, adresse, date de naissance, nationalité, état civil, régime matrimonial. Tout remonte, prêt pour la rédaction du compromis.", action: 'CreationParties' },
+    { acte: 2, label: 'CreationBien',      texte: "Pour le bien, vous sélectionnez le bon, et je récupère automatiquement la matrice cadastrale. Il se situe en Flandre, à 8670 Coxyde. Matrice cadastrale récupérée. Parties, notaires, cadastre — tout est déjà là.", action: 'CreationBien' },
+    { acte: 2, label: 'CreationNotaires',  texte: "Chaque partie doit être représentée par un notaire. BIMBIMMO, c'est nous. Pour l'acquéreur, j'ajoute Maxime Van der Straten — je le retrouve dans la base de tous les notaires belges et je le rattache à l'acquéreur. Chaque partie a son notaire.", action: 'CreationNotaires' },
+    { acte: 2, label: 'CreationRedaction', texte: "Rien n'est encore chargé côté pièces — on enregistre le dossier tel quel. Et maintenant le moment qu'on attend : la rédaction. Un clic. Je réunis les parties, les notaires et le cadastre, et je génère le compromis de vente. À gauche, toutes les données collectées. À droite, le compromis qui se construit en direct.", action: 'CreationRedaction' },
+    { acte: 2, label: 'CreationEmail',     texte: "Il manque encore les pièces du vendeur — j'ai préparé un projet de mail à BIMBIMMO, en lui demandant le PEB, le contrôle électrique et l'attestation du sol. Une seule demande, jamais deux fois la même question. Vous validez l'envoi ?", action: 'CreationEmail' },
 
     // ACTE 2 — SÉQUENCE 1
     // REPLIQUES_FR Dashboard
@@ -273,12 +288,15 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 1, label: 'Montrer',       texte: "Met plezier. Kijk maar." },
 
     // ACTE 2 — CRÉATION LIVE (démonstration séparée, avant l'ouverture van R426)
-    { acte: 2, label: 'CreationOuvrir',    texte: "Voordat ik een bestaand dossier open, toon ik u hoe ik er een van nul opbouw, live. Ik maak het dossier aan en ik wijs een verantwoordelijke medewerker toe.", action: 'CreationOuvrir' },
-    { acte: 2, label: 'CreationParties',   texte: "Nu de partijen. De verkoper hier is een vennootschap — ik vind ze rechtstreeks via haar KBO-nummer, alle wettelijke gegevens komen automatisch binnen. En voor de koper volstaat het rijksregisternummer.", action: 'CreationParties' },
-    { acte: 2, label: 'CreationBien',      texte: "Het onroerend goed, vervolgens. Ik voeg de kadastrale gegevens toe en ik registreer het dossier.", action: 'CreationBien' },
-    { acte: 2, label: 'CreationNotaires',  texte: "Nu nog de notarissen van beide partijen koppelen. Ik heb een actuele databank van alle Belgische notarissen — ik vind ze in enkele seconden.", action: 'CreationNotaires' },
-    { acte: 2, label: 'CreationRedaction', texte: "Het dossier is compleet. Ik kan meteen de opstelling van de verkoopbelofte starten — kijk, alles wordt automatisch ingevuld op basis van wat ik net verzameld heb.", action: 'CreationRedaction' },
-    { acte: 2, label: 'CreationEmail',     texte: "En terwijl het ontwerp wordt opgebouwd, heb ik al gedetecteerd dat er stukken ontbreken. Ik heb de e-mail opgesteld die naar de klant moet, om ze op te vragen — die hoeft nu enkel nog gevalideerd te worden.", action: 'CreationEmail' },
+    // Tekst afgestemd op Alfreds exacte repliek in het officiële script
+    // "Script_scene_Wellnot_InsideAI26" — niet herformuleren zonder ook
+    // Cyrils papieren script bij te werken.
+    { acte: 2, label: 'CreationOuvrir',    texte: "Hier eerst het dashboard: alle lopende dossiers, de medewerkers, de statussen. Om een dossier aan te maken, niets eenvoudiger: ik klik op « Dossier aanmaken » en ik kom op de aanmaakfiche. Geef me het dossiernummer, de opstellingstaal, de verantwoordelijke medewerker en de verantwoordelijke notaris, en we gaan naar de aanmaak van de partijen.", action: 'CreationOuvrir' },
+    { acte: 2, label: 'CreationParties',   texte: "De verkoper is een vennootschap: BIMBIMMO. Ik haal op: benaming, zetel, rechtsvorm, vertegenwoordigers. Gekoppeld aan het dossier. De koper is een natuurlijke persoon: Alain Caprasse. Ik haal op: naam, adres, geboortedatum, nationaliteit, burgerlijke staat, huwelijksvermogensstelsel. Alles is klaar voor de opstelling van de verkoopbelofte.", action: 'CreationParties' },
+    { acte: 2, label: 'CreationBien',      texte: "Voor het onroerend goed selecteert u gewoon het juiste, en ik haal automatisch de kadastrale matrix op. Het bevindt zich in Vlaanderen, in 8670 Koksijde. Kadastrale matrix opgehaald. Partijen, notarissen, kadaster — alles staat er al.", action: 'CreationBien' },
+    { acte: 2, label: 'CreationNotaires',  texte: "Elke partij moet vertegenwoordigd worden door een notaris. BIMBIMMO, dat zijn wij. Voor de koper voeg ik Maxime Van der Straten toe — ik vind hem in de databank van alle Belgische notarissen en koppel hem aan de koper. Elke partij heeft haar notaris.", action: 'CreationNotaires' },
+    { acte: 2, label: 'CreationRedaction', texte: "Er is nog niets geüpload aan stukken — we registreren het dossier zoals het is. En nu het moment waar we op wachten: de opstelling. Eén klik. Ik verzamel de partijen, de notarissen en het kadaster, en ik genereer de verkoopbelofte. Links, alle verzamelde gegevens. Rechts, de akte die live wordt opgebouwd.", action: 'CreationRedaction' },
+    { acte: 2, label: 'CreationEmail',     texte: "De stukken van de verkoper ontbreken nog — ik heb een e-mailontwerp klaargemaakt voor BIMBIMMO, met de vraag naar het EPC, de elektrische keuring en het bodemattest. Eén enkele vraag, nooit twee keer dezelfde. Bevestigt u de verzending?", action: 'CreationEmail' },
 
     // ACTE 2 — SÉQUENCE 1
     // REPLIQUES_NL Dashboard

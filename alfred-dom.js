@@ -554,9 +554,16 @@ async function rattacherNotaire(nomNotaire, qualitePartie) {
 // Lance la rédaction du compromis de vente à partir du dossier tout juste créé.
 // Le bouton peut rester indisponible un long moment après la création du
 // dossier (traitement backend des parties/bien) — on attend activement
-// plutôt que d'abandonner après quelques secondes.
+// plutôt que d'abandonner après quelques secondes. Le libellé exact observé
+// en live ("Rédiger un document" → option "Compromis") diffère de celui du
+// script de Cyril ("Générer le compromis") — on essaie les deux.
 async function lancerRedactionCompromis() {
-  if (!await cliquerBoutonQuandActif('Rédiger un document', 60, 1000)) return false;
+  const viaMenu = await cliquerBoutonQuandActif('Rédiger un document', 60, 1000);
+  if (!viaMenu) {
+    // Repli sur le libellé du script de Cyril : ce bouton lance
+    // vraisemblablement directement la génération, sans sous-menu.
+    return await cliquerBoutonQuandActif('Générer le compromis', 6, 1000);
+  }
   await attendre(900);
   let opt = null;
   for (let i = 0; i < 15; i++) {
