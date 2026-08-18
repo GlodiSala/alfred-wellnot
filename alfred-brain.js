@@ -308,6 +308,11 @@ async function lectureAutomatique(options = {}) {
 }
 
 async function jouerSecoursInterne() {
+  // Remet à zéro une annulation demandée précédemment (Échap pendant une
+  // attente longue) — sinon toute NOUVELLE réplique jouée après serait
+  // annulée dès sa première vérification, sans même avoir commencé.
+  if (typeof reinitialiserAnnulation === 'function') reinitialiserAnnulation();
+
   const list = currentLangue === 'nl'
     ? ALFRED_CONFIG.REPLIQUES_NL
     : ALFRED_CONFIG.REPLIQUES_FR;
@@ -386,6 +391,12 @@ document.addEventListener('keydown', e => {
     // automatique sans le rouvrir. Échap l'arrête aussi maintenant, comme
     // il arrête déjà l'audio.
     if (lectureAutoActive) lectureAutomatique();
+    // Interrompt aussi une attente longue déjà en cours (jusqu'à 3-8 min
+    // pour "Email à valider" / la réponse du vendeur) — sans ça, Échap
+    // n'empêchait que les PROCHAINES étapes, celle en cours continuait de
+    // tourner et bloquait tout ("Réplique déjà en cours") jusqu'à son
+    // propre délai. Remonté en test live.
+    if (typeof demanderAnnulation === 'function') demanderAnnulation();
     setAlfredState('idle');
   }
   if (e.key === 'l' || e.key === 'L') {

@@ -12,6 +12,18 @@
 // pauses cosmétiques et l'animation.
 const ALFRED_RALENTI = 1;
 
+// Annulation des attentes longues (jusqu'à 3-8 min pour "Email à valider" /
+// la réponse du vendeur) — sans ça, arrêter la lecture auto (Échap) ne
+// stoppait que les PROCHAINES étapes : l'attente déjà en cours continuait
+// de tourner jusqu'à son propre délai, bloquant "Réplique déjà en cours"
+// pendant tout ce temps. Remonté en test live : "même quand j'annule le
+// script je ne peux pas reprendre ici". Vérifiée dans les boucles
+// d'attente les plus longues ; remise à zéro au début de chaque nouvelle
+// réplique jouée (voir jouerSecoursInterne).
+let annulationDemandee = false;
+function demanderAnnulation() { annulationDemandee = true; }
+function reinitialiserAnnulation() { annulationDemandee = false; }
+
 // ── Sélecteurs de l'interface app.alfred.be ───────────────
 // Textes de boutons/menus et identifiants de champs, centralisés ici plutôt
 // qu'éparpillés dans chaque fonction. On ne contrôle pas cette interface
@@ -119,7 +131,7 @@ function trouverConteneurDefilant(el) {
 // scrollIntoView({behavior:'smooth'}) dont la vitesse native n'est pas
 // réglable (pas de paramètre de durée), remonté plusieurs fois comme trop
 // rapide en démo live.
-async function defilerVersElement(el, dureeMs = 1800) {
+async function defilerVersElement(el, dureeMs = 3000) {
   const r = el.getBoundingClientRect();
   const dejaVisible = r.top >= 0 && r.bottom <= window.innerHeight;
   if (dejaVisible) return;
@@ -460,6 +472,7 @@ async function cliquerBoutonQuandActif(texte, tentatives = 40, delai = 400) {
   let btn = null;
   let dernierCandidat = null;
   for (let i = 0; i < tentatives; i++) {
+    if (annulationDemandee) { console.warn('[Alfred DOM] Attente du bouton annulée:', texte); return false; }
     const candidat = trouverBoutonParTexte(texte);
     dernierCandidat = candidat;
     if (candidat && boutonEstActif(candidat)) { btn = candidat; break; }
@@ -890,6 +903,7 @@ async function montrerPropositionEmail() {
   // l'événement apparaît, on continue immédiatement, pas besoin d'attendre
   // le plafond.
   for (let i = 0; i < 180; i++) {
+    if (annulationDemandee) { console.warn('[Alfred DOM] Attente "Email à valider" annulée.'); return false; }
     li = Array.from(document.querySelectorAll('li'))
       .find(el => el.textContent.includes(SELECTEURS.textes.propositionEmail));
     if (li) break;
@@ -1318,6 +1332,7 @@ async function seq_creationDossier_attenteReponseVendeur() {
   const nombreAvant = document.querySelectorAll('li').length;
   let detecte = false;
   for (let i = 0; i < 480; i++) {
+    if (annulationDemandee) { console.warn('[Alfred DOM] Attente de la réponse du vendeur annulée.'); return false; }
     if (document.querySelectorAll('li').length > nombreAvant) {
       console.log('[Alfred DOM] Nouvel élément détecté dans "Événements" — réponse du vendeur probablement arrivée.');
       detecte = true;
