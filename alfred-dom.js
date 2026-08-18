@@ -289,6 +289,40 @@ function trouverAvatarAlfred() {
     .sort((a, b) => b.getBoundingClientRect().right - a.getBoundingClientRect().right)[0] || null;
 }
 
+// Un petit point rouge apparaît sur l'icône Alfred quand une notification
+// est prête (confirmé en test live, avec un pop-up en plus — pas de texte
+// fiable à cibler pour ce dernier). PREMIÈRE VERSION, jamais testée en
+// live : je devine son apparence (petit, rougeâtre, coin haut-droit) faute
+// de sélecteur exact.
+function badgeNotificationVisible() {
+  return Array.from(document.querySelectorAll('*')).some(el => {
+    const r = el.getBoundingClientRect();
+    if (r.width < 1 || r.width > 20 || r.height < 1 || r.height > 20) return false;
+    if (r.top > 120 || r.right < window.innerWidth - 150) return false;
+    const bg = getComputedStyle(el).backgroundColor;
+    const m = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    if (!m) return false;
+    const [, rr, gg, bb] = m.slice(1).map(Number);
+    return rr > 150 && rr - gg > 40 && rr - bb > 40;
+  });
+}
+
+// Attend le badge de notification AVANT de cliquer le logo — remonté en
+// test live comme important : cliquer trop tôt (avant que la notification
+// existe) se comporte différemment que d'ouvrir le panneau et attendre
+// dedans. Si le badge n'est jamais détecté (sélecteur deviné, pourrait
+// être imparfait), on continue quand même après le délai plutôt que de
+// bloquer pour de bon.
+async function attendreBadgeNotification(tentatives) {
+  for (let i = 0; i < tentatives; i++) {
+    if (annulationDemandee) { console.warn('[Alfred DOM] Attente du badge de notification annulée.'); return false; }
+    if (badgeNotificationVisible()) { console.log('[Alfred DOM] Badge de notification détecté.'); return true; }
+    await attendre(1000);
+  }
+  console.warn('[Alfred DOM] Badge de notification jamais détecté après', tentatives, 's — on tente quand même d\'ouvrir le panneau.');
+  return false;
+}
+
 // Ouvre le panneau Alfred si "Événements"/"Conversation" n'y est pas déjà
 // visible — sans effet s'il est déjà ouvert.
 async function ouvrirPanneauAlfred() {
@@ -893,6 +927,7 @@ async function lancerRedactionCompromis() {
 // notre contrôle. Voir seq_creationDossier_attenteReponseVendeur (étape
 // séparée, juste après celle-ci) pour l'attente + la suite.
 async function montrerPropositionEmail() {
+  await attendreBadgeNotification(180); // jusqu'à 3 min, avant même de cliquer le logo
   await ouvrirPanneauAlfred();
   const onglet = trouverOnglet(SELECTEURS.onglets.evenements);
   if (onglet) curseurVers(onglet, () => onglet.click());
@@ -1385,6 +1420,7 @@ async function seq_creationDossier_email() {
 // notification côté appli — cette fonction compte juste l'apparition d'un
 // nouvel élément dans "Événements", à affiner après un premier essai réel.
 async function seq_creationDossier_attenteReponseVendeur() {
+  await attendreBadgeNotification(480); // jusqu'à 8 min, avant même de cliquer le logo
   await ouvrirPanneauAlfred();
   const onglet = trouverOnglet(SELECTEURS.onglets.evenements);
   if (onglet) curseurVers(onglet, () => onglet.click());
