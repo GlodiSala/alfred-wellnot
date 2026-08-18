@@ -870,17 +870,16 @@ async function lancerRedactionCompromis() {
     }
   }
   // Vraie attente active plutôt qu'un délai fixe deviné (6s ne suffisait
-  // pas toujours) : on sait maintenant à quoi ressemble l'écran chargé
-  // (capture d'écran) — repère sur "Éléments principaux de la vente",
-  // visible uniquement une fois l'éditeur de rédaction réellement affiché.
+  // pas toujours). Confirmé en test live : un nouvel onglet "Compromis"
+  // apparaît (à côté de "Notifications") une fois la rédaction lancée —
+  // c'est ce nouvel onglet qui sert de repère, pas un texte précis dans
+  // la page.
   for (let i = 0; i < 60; i++) {
     if (annulationDemandee) { console.warn('[Alfred DOM] Attente du chargement du compromis annulée.'); return false; }
-    const pret = Array.from(document.querySelectorAll('*'))
-      .some(el => el.children.length === 0 && el.textContent.trim() === 'Éléments principaux de la vente' && el.getBoundingClientRect().width > 0);
-    if (pret) { console.log('[Alfred DOM] Éditeur de rédaction chargé.'); return true; }
+    if (trouverOnglet(SELECTEURS.textes.optionCompromis)) { console.log('[Alfred DOM] Onglet "Compromis" apparu — rédaction chargée.'); return true; }
     await attendre(1000);
   }
-  console.warn('[Alfred DOM] Éditeur de rédaction toujours pas détecté comme chargé après 60s.');
+  console.warn('[Alfred DOM] Onglet "Compromis" toujours pas apparu après 60s.');
   return false;
 }
 
