@@ -869,15 +869,19 @@ async function lancerRedactionCompromis() {
       console.warn('[Alfred DOM] Le menu "Compromis" semble toujours ouvert après le clic — a-t-il vraiment fonctionné ?');
     }
   }
-  // Rallongé (2.5s → 6s) : remonté en test live comme trop court, le
-  // chargement de l'éditeur (fusion des données parties/bien/notaires)
-  // prend du temps. Reste une attente fixe faute de savoir précisément à
-  // quoi ressemble "c'est prêt" sur cet écran (pas de repère identifié
-  // pour l'instant, contrairement à "Email à valider") — dis-moi ce qui
-  // change à l'écran une fois chargé (ex: un texte, une icône qui
-  // disparaît) et je peux remplacer ça par une vraie attente active.
-  await attendre(6000);
-  return true;
+  // Vraie attente active plutôt qu'un délai fixe deviné (6s ne suffisait
+  // pas toujours) : on sait maintenant à quoi ressemble l'écran chargé
+  // (capture d'écran) — repère sur "Éléments principaux de la vente",
+  // visible uniquement une fois l'éditeur de rédaction réellement affiché.
+  for (let i = 0; i < 60; i++) {
+    if (annulationDemandee) { console.warn('[Alfred DOM] Attente du chargement du compromis annulée.'); return false; }
+    const pret = Array.from(document.querySelectorAll('*'))
+      .some(el => el.children.length === 0 && el.textContent.trim() === 'Éléments principaux de la vente' && el.getBoundingClientRect().width > 0);
+    if (pret) { console.log('[Alfred DOM] Éditeur de rédaction chargé.'); return true; }
+    await attendre(1000);
+  }
+  console.warn('[Alfred DOM] Éditeur de rédaction toujours pas détecté comme chargé après 60s.');
+  return false;
 }
 
 // Ouvre l'onglet Événements, affiche la proposition d'e-mail générée
