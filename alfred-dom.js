@@ -131,7 +131,7 @@ function trouverConteneurDefilant(el) {
 // scrollIntoView({behavior:'smooth'}) dont la vitesse native n'est pas
 // réglable (pas de paramètre de durée), remonté plusieurs fois comme trop
 // rapide en démo live.
-async function defilerVersElement(el, dureeMs = 3000) {
+async function defilerVersElement(el, dureeMs = 4500) {
   const r = el.getBoundingClientRect();
   const dejaVisible = r.top >= 0 && r.bottom <= window.innerHeight;
   if (dejaVisible) return;
@@ -1056,6 +1056,9 @@ async function essayerAjouterBienParCadastre(bien) {
     await attendre(500);
     return false;
   }
+  // Laisse le temps de lire la matrice cadastrale récupérée avant
+  // d'enregistrer (même demande que pour la saisie manuelle).
+  await attendre(1800);
   await cliquerBoutonQuandActif(SELECTEURS.boutons.enregistrer);
   await attendre(1000);
   return true;
@@ -1099,7 +1102,9 @@ async function ajouterBienManuel(bien) {
   await taperDansChamp(SELECTEURS.champs.bienRue, bien.rue, 15, 35);
   await taperDansChamp(SELECTEURS.champs.bienNumero, bien.numero, 15, 35);
   await taperDansChamp(SELECTEURS.champs.bienCommune, bien.commune, 15, 35);
-  await attendre(300);
+  // Laisse le temps de lire les champs remplis avant d'enregistrer
+  // (demandé explicitement — pas juste une pause technique).
+  await attendre(1800);
   await cliquerBouton(SELECTEURS.boutons.enregistrer);
   await attendre(700);
 }
