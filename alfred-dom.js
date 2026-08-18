@@ -1265,7 +1265,11 @@ async function seq_creationDossier_bien() {
     console.warn('[Alfred DOM] Étape "bien" bloquée — arrêt de la séquence.');
     return;
   }
-  await attendre(2200);
+  // Rallongé (2200 → 4500ms) : l'écran qui suit "Suivant" (liste de
+  // documents pour tous les biens) passait trop vite pour être lu —
+  // demandé explicitement, que ce soit après le cadastre ou la saisie
+  // manuelle (même écran dans les deux cas).
+  await attendre(4500);
   await cliquerBoutonQuandActif(SELECTEURS.boutons.enregistrer);
   await attendre(2200);
 }
@@ -1311,6 +1315,59 @@ async function seq_creationDossier_notaires() {
 // Étape 5 — Lancer la rédaction du compromis.
 async function seq_creationDossier_redaction() {
   await lancerRedactionCompromis();
+}
+
+// Trouve le plus grand conteneur qui défile, situé dans la moitié gauche
+// ou droite de l'écran — utilisé pour faire défiler chaque colonne du
+// compromis (données collectées à gauche, texte généré à droite).
+// PREMIÈRE VERSION, jamais testée en live : je devine "le plus grand
+// conteneur scrollable de ce côté de l'écran" faute de sélecteur exact.
+function trouverColonneDefilante(cote) {
+  const milieu = window.innerWidth / 2;
+  const candidats = Array.from(document.querySelectorAll('*')).filter(el => {
+    const style = getComputedStyle(el);
+    if (!/(auto|scroll)/.test(style.overflowY)) return false;
+    if (el.scrollHeight <= el.clientHeight + 20) return false;
+    const r = el.getBoundingClientRect();
+    if (r.width < 100 || r.height < 100) return false;
+    const centreX = r.left + r.width / 2;
+    return cote === 'gauche' ? centreX < milieu : centreX >= milieu;
+  });
+  return candidats.sort((a, b) => {
+    const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+    return (rb.width * rb.height) - (ra.width * ra.height);
+  })[0] || null;
+}
+
+// Défile lentement du haut vers le bas dans une colonne (pas jusqu'au bout
+// — juste assez pour donner le temps de lire), remonté comme "super
+// important" en test live.
+async function defilerColonneLentement(cote, dureeMs) {
+  const conteneur = trouverColonneDefilante(cote);
+  if (!conteneur) { console.warn('[Alfred DOM] Colonne', cote, 'du compromis introuvable pour le défilement.'); return; }
+  conteneur.scrollTop = 0;
+  await attendre(300);
+  const max = conteneur.scrollHeight - conteneur.clientHeight;
+  const cible = Math.min(max, conteneur.clientHeight * 1.5);
+  await new Promise(resolve => {
+    const debut = performance.now();
+    function etape(m) {
+      if (annulationDemandee) { resolve(); return; }
+      const t = Math.min((m - debut) / dureeMs, 1);
+      conteneur.scrollTop = 0 + (cible - 0) * t;
+      if (t < 1) requestAnimationFrame(etape); else resolve();
+    }
+    requestAnimationFrame(etape);
+  });
+}
+
+// "à gauche" : défilement lent. "à droite" : encore plus lent (demandé
+// explicitement — "c'est super important de lire").
+async function seq_creationDossier_redaction_scrollGauche() {
+  await defilerColonneLentement('gauche', 3500);
+}
+async function seq_creationDossier_redaction_scrollDroite() {
+  await defilerColonneLentement('droite', 5500);
 }
 
 // Étape 6 — Attendre/montrer l'e-mail généré automatiquement.
@@ -1411,6 +1468,8 @@ const DOM_ACTIONS = {
   'CreationNotaires_Vendeur':   seq_creationDossier_notaires_vendeur,
   'CreationNotaires_Acquereur': seq_creationDossier_notaires_acquereur,
   'CreationRedaction': seq_creationDossier_redaction,
+  'CreationRedaction_ScrollGauche': seq_creationDossier_redaction_scrollGauche,
+  'CreationRedaction_ScrollDroite': seq_creationDossier_redaction_scrollDroite,
   'CreationEmail':     seq_creationDossier_email,
   'CreationReponseVendeur': seq_creationDossier_attenteReponseVendeur,
 };

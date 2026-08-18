@@ -272,7 +272,8 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // narration décrivait un écran qui n'était pas encore affiché.
     { acte: 2, label: 'CreationRedaction', segments: [
       { texte: "Rien n'est encore chargé côté pièces — on enregistre le dossier tel quel. Et maintenant le moment qu'on attend : la rédaction. Un clic. Je réunis les parties, les notaires et le cadastre, et je génère le compromis de vente.", action: 'CreationRedaction' },
-      { texte: "À gauche, toutes les données collectées. À droite, le compromis qui se construit en direct." },
+      { texte: "À gauche, toutes les données collectées.", action: 'CreationRedaction_ScrollGauche' },
+      { texte: "À droite, le compromis qui se construit en direct.", action: 'CreationRedaction_ScrollDroite' },
     ] },
     { acte: 2, label: 'CreationEmail',     texte: "Il manque encore les pièces du vendeur — j'ai préparé un projet de mail à BIMBIMMO, en lui demandant le PEB, le contrôle électrique et l'attestation du sol. Une seule demande, jamais deux fois la même question. Vous validez l'envoi ?", action: 'CreationEmail' },
     // Nouvelle étape (A20-A21 du séquencier) — dépend d'une vraie réponse
@@ -325,7 +326,8 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     ] },
     { acte: 2, label: 'CreationRedaction', segments: [
       { texte: "Er is nog niets geüpload aan stukken — we registreren het dossier zoals het is. En nu het moment waar we op wachten: de opstelling. Eén klik. Ik verzamel de partijen, de notarissen en het kadaster, en ik genereer de verkoopbelofte.", action: 'CreationRedaction' },
-      { texte: "Links, alle verzamelde gegevens. Rechts, de akte die live wordt opgebouwd." },
+      { texte: "Links, alle verzamelde gegevens.", action: 'CreationRedaction_ScrollGauche' },
+      { texte: "Rechts, de akte die live wordt opgebouwd.", action: 'CreationRedaction_ScrollDroite' },
     ] },
     { acte: 2, label: 'CreationEmail',     texte: "De stukken van de verkoper ontbreken nog — ik heb een e-mailontwerp klaargemaakt voor BIMBIMMO, met de vraag naar het EPC, de elektrische keuring en het bodemattest. Eén enkele vraag, nooit twee keer dezelfde. Bevestigt u de verzending?", action: 'CreationEmail' },
     { acte: 2, label: 'CreationReponseVendeur', texte: "Verzonden. De verkoper heeft geantwoord — de documenten zijn geladen. Ontvangen, geanalyseerd, gerangschikt. Bekijk de verkoopbelofte: de gegevens uit de stukken staan in de juiste clausules. Het ontwerp is volledig.", action: 'CreationReponseVendeur' },
