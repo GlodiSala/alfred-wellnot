@@ -75,8 +75,9 @@ const SELECTEURS = {
     notaireEnCharge:            'Notaire en charge du dossier',
   },
   onglets: {
-    evenements: 'Événements',
-    parties:    'Parties',
+    evenements:   'Événements',
+    conversation: 'Conversation',
+    parties:      'Parties',
   },
   textes: {
     represente: 'REPRÉSENTE',
@@ -289,39 +290,11 @@ function trouverAvatarAlfred() {
     .sort((a, b) => b.getBoundingClientRect().right - a.getBoundingClientRect().right)[0] || null;
 }
 
-// Un petit point rouge apparaît sur l'icône Alfred quand une notification
-// est prête (confirmé en test live, avec un pop-up en plus — pas de texte
-// fiable à cibler pour ce dernier). PREMIÈRE VERSION, jamais testée en
-// live : je devine son apparence (petit, rougeâtre, coin haut-droit) faute
-// de sélecteur exact.
-function badgeNotificationVisible() {
-  return Array.from(document.querySelectorAll('*')).some(el => {
-    const r = el.getBoundingClientRect();
-    if (r.width < 1 || r.width > 20 || r.height < 1 || r.height > 20) return false;
-    if (r.top > 120 || r.right < window.innerWidth - 150) return false;
-    const bg = getComputedStyle(el).backgroundColor;
-    const m = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-    if (!m) return false;
-    const [, rr, gg, bb] = m.slice(1).map(Number);
-    return rr > 150 && rr - gg > 40 && rr - bb > 40;
-  });
-}
-
-// Attend le badge de notification AVANT de cliquer le logo — remonté en
-// test live comme important : cliquer trop tôt (avant que la notification
-// existe) se comporte différemment que d'ouvrir le panneau et attendre
-// dedans. Si le badge n'est jamais détecté (sélecteur deviné, pourrait
-// être imparfait), on continue quand même après le délai plutôt que de
-// bloquer pour de bon.
-async function attendreBadgeNotification(tentatives) {
-  for (let i = 0; i < tentatives; i++) {
-    if (annulationDemandee) { console.warn('[Alfred DOM] Attente du badge de notification annulée.'); return false; }
-    if (badgeNotificationVisible()) { console.log('[Alfred DOM] Badge de notification détecté.'); return true; }
-    await attendre(1000);
-  }
-  console.warn('[Alfred DOM] Badge de notification jamais détecté après', tentatives, 's — on tente quand même d\'ouvrir le panneau.');
-  return false;
-}
+// Détection du badge rouge de notification essayée puis retirée (ne
+// marchait pas en test live — le sélecteur deviné ne correspondait
+// probablement pas au vrai badge). Retour à l'ouverture directe du
+// panneau + poll à l'intérieur (voir montrerPropositionEmail), qui
+// fonctionnait déjà.
 
 // Ouvre le panneau Alfred si "Événements"/"Conversation" n'y est pas déjà
 // visible — sans effet s'il est déjà ouvert.
@@ -927,7 +900,9 @@ async function lancerRedactionCompromis() {
 // notre contrôle. Voir seq_creationDossier_attenteReponseVendeur (étape
 // séparée, juste après celle-ci) pour l'attente + la suite.
 async function montrerPropositionEmail() {
-  await attendreBadgeNotification(180); // jusqu'à 3 min, avant même de cliquer le logo
+  // Le badge rouge (attendreBadgeNotification) ne marchait pas en test
+  // live — retour à l'ouverture directe du panneau, qui fonctionnait déjà
+  // (le poll juste après suffit à attendre "Email à valider").
   await ouvrirPanneauAlfred();
   const onglet = trouverOnglet(SELECTEURS.onglets.evenements);
   if (onglet) curseurVers(onglet, () => onglet.click());
@@ -1358,32 +1333,31 @@ async function seq_creationDossier_redaction() {
 // PREMIÈRE VERSION, jamais testée en live : je devine "le plus grand
 // conteneur scrollable de ce côté de l'écran" faute de sélecteur exact.
 function trouverColonneDefilante(cote) {
-  const milieu = window.innerWidth / 2;
   const candidats = Array.from(document.querySelectorAll('*')).filter(el => {
     const style = getComputedStyle(el);
     if (!/(auto|scroll)/.test(style.overflowY)) return false;
     if (el.scrollHeight <= el.clientHeight + 20) return false;
     const r = el.getBoundingClientRect();
-    if (r.width < 100 || r.height < 100) return false;
-    const centreX = r.left + r.width / 2;
-    return cote === 'gauche' ? centreX < milieu : centreX >= milieu;
+    return r.width > 100 && r.height > 100;
   });
-  return candidats.sort((a, b) => {
-    const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
-    return (rb.width * rb.height) - (ra.width * ra.height);
-  })[0] || null;
+  if (!candidats.length) return null;
+  // Trié par position horizontale : le plus à gauche = colonne gauche, le
+  // plus à droite = colonne droite — plus robuste qu'exiger que le CENTRE
+  // tombe dans la bonne moitié de l'écran (un conteneur à cheval sur le
+  // milieu était ignoré à tort, remonté en test live : "à droite ça a pas
+  // scrollé" — probablement ce cas).
+  const tries = candidats.sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left);
+  return cote === 'gauche' ? tries[0] : tries[tries.length - 1];
 }
 
-// Défile lentement du haut vers le bas dans une colonne (pas jusqu'au bout
-// — juste assez pour donner le temps de lire), remonté comme "super
-// important" en test live.
+// Défile lentement du haut jusqu'au vrai bas de la colonne — remonté en
+// test live comme n'allant pas jusqu'au bout ("super important de lire").
 async function defilerColonneLentement(cote, dureeMs) {
   const conteneur = trouverColonneDefilante(cote);
   if (!conteneur) { console.warn('[Alfred DOM] Colonne', cote, 'du compromis introuvable pour le défilement.'); return; }
   conteneur.scrollTop = 0;
   await attendre(300);
-  const max = conteneur.scrollHeight - conteneur.clientHeight;
-  const cible = Math.min(max, conteneur.clientHeight * 1.5);
+  const cible = conteneur.scrollHeight - conteneur.clientHeight; // vrai bas, pas une portion
   await new Promise(resolve => {
     const debut = performance.now();
     function etape(m) {
@@ -1410,45 +1384,18 @@ async function seq_creationDossier_email() {
   await montrerPropositionEmail();
 }
 
-// Étape 7 (nouvelle, A20-A21 du séquencier) — Attendre la réponse du
-// vendeur et l'afficher. Contrairement à toutes les autres étapes,
-// celle-ci dépend d'une action HUMAINE externe hors de notre contrôle :
-// Cyril doit répondre manuellement au mail depuis une vraie boîte mail
-// pour que l'appli reçoive quoi que ce soit. Le délai est donc
-// volontairement long (jusqu'à ~4 min). PREMIÈRE VERSION, jamais testée en
-// live : on ne sait pas encore à quoi ressemble concrètement la
-// notification côté appli — cette fonction compte juste l'apparition d'un
-// nouvel élément dans "Événements", à affiner après un premier essai réel.
+// Étape 7 (nouvelle, A20-A21 du séquencier) — Montrer le compromis
+// complété une fois la réponse du vendeur reçue. SIMPLIFIÉ à la demande,
+// après plusieurs tentatives de détection automatique qui ne marchaient
+// pas en test live (badge rouge, comptage d'éléments dans Événements) :
+// Cyril répond manuellement au mail depuis une vraie boîte mail (hors de
+// notre contrôle), et la réponse arrive comme un nouveau message dans
+// l'onglet CONVERSATION, pas Événements — visible à l'œil. Plutôt que
+// deviner encore un mécanisme de détection peu fiable, l'attente se fait
+// à la main : on ne déclenche cette réplique (flèche) qu'une fois la
+// réponse vue dans la Conversation. L'action se contente donc de montrer
+// le résultat ("Regardez le compromis"), sans rien attendre elle-même.
 async function seq_creationDossier_attenteReponseVendeur() {
-  await attendreBadgeNotification(480); // jusqu'à 8 min, avant même de cliquer le logo
-  await ouvrirPanneauAlfred();
-  const onglet = trouverOnglet(SELECTEURS.onglets.evenements);
-  if (onglet) curseurVers(onglet, () => onglet.click());
-  await attendre(1200);
-
-  // Plafond de sécurité (4 min → 8 min) : dépend d'une vraie réponse
-  // envoyée manuellement par Cyril, le temps peut varier. Comme pour
-  // l'attente ci-dessus, ce n'est qu'un maximum — on continue dès que
-  // détecté, pas besoin d'attendre le plafond.
-  const nombreAvant = document.querySelectorAll('li').length;
-  let detecte = false;
-  for (let i = 0; i < 480; i++) {
-    if (annulationDemandee) { console.warn('[Alfred DOM] Attente de la réponse du vendeur annulée.'); return false; }
-    if (document.querySelectorAll('li').length > nombreAvant) {
-      console.log('[Alfred DOM] Nouvel élément détecté dans "Événements" — réponse du vendeur probablement arrivée.');
-      detecte = true;
-      break;
-    }
-    await attendre(1000);
-  }
-  if (!detecte) {
-    console.warn('[Alfred DOM] Aucune nouvelle notification détectée dans "Événements" après 8 minutes — la réponse du vendeur a-t-elle bien été envoyée ? Reclique sur cette réplique pour réessayer.');
-    return false;
-  }
-
-  // La réplique dit "Regardez le compromis" — il faut donc y retourner
-  // pour le montrer, pas rester sur Événements (trou trouvé : la fonction
-  // s'arrêtait juste après la détection, sans jamais y retourner).
   await naviguerOnglet('Compromis');
   await attendre(800);
   return true;
