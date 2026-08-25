@@ -1091,13 +1091,48 @@ async function essayerAjouterBienParCadastre(bien) {
   await attendre(700);
 
   // Coche le premier (et normalement seul) bien de la liste, confirmé par
-  // capture d'écran ("Lot privé (ancien)...").
-  let checkboxBien = null;
-  for (let i = 0; i < 10; i++) {
-    checkboxBien = Array.from(document.querySelectorAll('li input[type="checkbox"]'))
-      .find(el => el.getBoundingClientRect().width > 0);
-    if (checkboxBien) break;
-    await attendre(300);
+  // capture d'écran ("Lot privé (ancien)..."). "Aucun bien coché-able
+  // trouvé" remonté en test live : la case n'est probablement pas un vrai
+  // <input type="checkbox"> mais un élément personnalisé (même famille
+  // que REPRÉSENTE) — recherche élargie à [role="checkbox"], et repli sur
+  // la ligne <li> entière si rien de plus précis n'est trouvé.
+  async function chercherCheckboxBien() {
+    for (let i = 0; i < 8; i++) {
+      const trouve = Array.from(document.querySelectorAll('li input[type="checkbox"], li [role="checkbox"]'))
+        .find(el => el.getBoundingClientRect().width > 0);
+      if (trouve) return trouve;
+      await attendre(300);
+    }
+    return null;
+  }
+
+  let checkboxBien = await chercherCheckboxBien();
+  if (!checkboxBien) {
+    // Suspicion remontée en test live : le clic sur "Sélectionner des
+    // biens" n'a peut-être eu aucun effet réel (même famille de bug que
+    // partout ailleurs — le clic simulé ne déclenche pas toujours le
+    // gestionnaire réel). On retente le clic, sur le déclencheur lui-même
+    // puis sur son parent, en recherchant l'élément à nouveau au cas où
+    // il aurait été remplacé par le rendu Angular.
+    console.warn('[Alfred DOM] Rien trouvé après le clic sur "Sélectionner des biens" — le clic a peut-être échoué, nouvel essai.');
+    const cible = await trouverDeclencheurBiens();
+    if (cible) {
+      await curseurVersAsync(cible, () => simulerClic(cible));
+      await attendre(700);
+      checkboxBien = await chercherCheckboxBien();
+    }
+    if (!checkboxBien && cible && cible.parentElement) {
+      const parent = cible.parentElement;
+      await curseurVersAsync(parent, () => simulerClic(parent));
+      await attendre(700);
+      checkboxBien = await chercherCheckboxBien();
+    }
+  }
+  if (!checkboxBien) {
+    // Dernier repli : la ligne <li> elle-même, au cas où toute la ligne
+    // est cliquable pour sélectionner (pas de case distincte trouvable).
+    checkboxBien = Array.from(document.querySelectorAll('li'))
+      .find(el => el.getBoundingClientRect().width > 0 && el.textContent.trim().length > 0);
   }
   if (!checkboxBien) {
     console.warn('[Alfred DOM] Aucun bien coché-able trouvé dans "Sélectionner des biens" — bascule sur saisie manuelle.');
@@ -1107,14 +1142,14 @@ async function essayerAjouterBienParCadastre(bien) {
   }
   await curseurVersAsync(checkboxBien, () => simulerClic(checkboxBien));
   await attendre(400);
-  if (!checkboxBien.checked) {
+  if (checkboxBien.tagName === 'INPUT' && !checkboxBien.checked) {
     // Même repli que pour REPRÉSENTE : le clic direct sur l'input caché
     // ne suffit parfois pas, retente sur l'élément parent (ligne entière).
     const wrapper = checkboxBien.closest('li') || checkboxBien.parentElement;
     if (wrapper && wrapper !== checkboxBien) { await curseurVersAsync(wrapper, () => simulerClic(wrapper)); await attendre(400); }
-  }
-  if (!checkboxBien.checked) {
-    console.warn('[Alfred DOM] La case du bien ne semble toujours pas cochée après le clic.');
+    if (!checkboxBien.checked) {
+      console.warn('[Alfred DOM] La case du bien ne semble toujours pas cochée après le clic.');
+    }
   }
 
   if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.confirmerBien, 10, 400)) {
