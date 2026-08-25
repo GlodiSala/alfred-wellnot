@@ -164,7 +164,11 @@ function creerPanneauRepliques() {
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
       <div style="color:rgba(255,255,255,.35);font-size:8px;letter-spacing:2.5px;">SCRIPT · ALFRED</div>
       <div id="alfred-script-status" style="color:rgba(255,255,255,.4);font-size:9px;"></div>
-      <span id="alfred-script-reset" title="Réinitialiser le script par défaut" style="color:rgba(255,255,255,.35);font-size:11px;cursor:pointer;">↺</span>
+      <!-- Avant : ↺ seule, sans texte — la portée (script uniquement) n'était
+           lisible qu'en survolant l'infobulle. Les deux autres ↺ du panneau
+           (juste plus bas) ont déjà un libellé visible ; celui-ci était le
+           seul à ne pas en avoir. -->
+      <span id="alfred-script-reset" title="Réinitialiser le script par défaut" style="color:rgba(255,255,255,.35);font-size:9px;cursor:pointer;white-space:nowrap;">↺ Réinit. script</span>
     </div>
     <button id="alfred-donnees-ouvrir" style="width:100%;margin-bottom:8px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:rgba(255,255,255,.85);font-size:11px;font-weight:600;cursor:pointer;">📋 Données du dossier démo</button>
     <button id="alfred-voix-ouvrir" style="width:100%;margin-bottom:6px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:rgba(255,255,255,.85);font-size:11px;font-weight:600;cursor:pointer;">🔊 Voix d'Alfred</button>
@@ -723,7 +727,10 @@ function ouvrirPanneauDonneesCreation() {
   panel.appendChild(boutons);
 
   const btnReset = document.createElement('div');
-  btnReset.textContent = '↺ Réinitialiser aux valeurs par défaut';
+  // "aux valeurs par défaut" seul ne disait pas quoi précisément — cohérent
+  // maintenant avec le libellé explicite des deux autres ↺ du panneau
+  // principal ("Réinit. script" / "voix + données démo").
+  btnReset.textContent = '↺ Réinitialiser les données démo';
   btnReset.style.cssText = 'text-align:center;color:rgba(255,255,255,.4);font-size:10px;margin-top:12px;cursor:pointer;';
   btnReset.onmouseover = () => { btnReset.style.color = '#fff'; };
   btnReset.onmouseout  = () => { btnReset.style.color = 'rgba(255,255,255,.4)'; };
@@ -1103,15 +1110,15 @@ function setAlfredState(state) {
 
     case 'talk':
       if (wrap)   wrap.style.animation = 'alfred-talk-vib .12s ease-in-out infinite alternate';
-      if (mouth)  mouth.style.display  = 'none';
-      if (mouthT) mouthT.style.display = 'block';
+      // Remplissage transitoire, le temps que speak() (alfred-voice.js) ait
+      // l'audio prêt et prenne le relais avec l'amplitude réelle — passe par
+      // animateMouth() plutôt qu'une logique dupliquée ici, pour que la
+      // forme (largeur + hauteur) reste cohérente entre les deux, pas
+      // seulement la hauteur comme avant.
       clearInterval(talkTick);
-      talkTick = setInterval(() => {
-        if (!mouthT) return;
-        const open = Math.random() > 0.4;
-        mouthT.setAttribute('ry', open ? (3+Math.random()*9).toFixed(1) : '1');
-        mouthT.setAttribute('cy', open ? '130' : '128');
-      }, 120);
+      if (typeof animateMouth === 'function') {
+        talkTick = setInterval(() => animateMouth(0.3 + Math.random() * 0.5), 120);
+      }
       break;
 
     case 'sleep':

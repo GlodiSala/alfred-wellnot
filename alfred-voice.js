@@ -457,7 +457,15 @@ function animateMouth(amp) {
   if (!mt || !ms) return;
   ms.style.display = 'none';
   mt.style.display = 'block';
+  // La largeur (rx) variait jamais — l'ellipse ne faisait que s'étirer en
+  // hauteur, toujours à la même largeur (20 fixé dans le markup). Une vraie
+  // bouche qui parle change aussi de largeur (un "o" est plus étroit qu'un
+  // "ah" mi-ouvert) : rx varie maintenant un peu à l'inverse de ry, toujours
+  // piloté par le volume réel de l'audio (voir talkTick dans speak()), pas
+  // du hasard — juste une forme de sortie moins pauvre qu'un simple ovale
+  // qui respire.
   mt.setAttribute('ry', (amp * 12).toFixed(1));
+  mt.setAttribute('rx', (20 - amp * 5).toFixed(1));
   mt.setAttribute('cy', (128 + amp * 4).toFixed(1));
 }
 
@@ -468,6 +476,7 @@ function resetMouth() {
   if (mt) {
     mt.style.display = 'none';
     mt.setAttribute('ry', '0');
+    mt.setAttribute('rx', '20');
     mt.setAttribute('cy', '128');
   }
   if (ms) ms.style.display = 'block';
