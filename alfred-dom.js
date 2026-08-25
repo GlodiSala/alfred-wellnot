@@ -1190,14 +1190,14 @@ async function essayerAjouterBienParCadastre(bien) {
     await attendre(500);
     return false;
   }
-  // Laisse le temps de voir/lire le bien confirmé avant d'enregistrer
-  // (même demande que pour la saisie manuelle).
+  // Confirmé par l'utilisatrice : c'est ICI qu'il faut vraiment attendre —
+  // pas après "Suivant" (parties), qui peut s'enchaîner directement. Les
+  // documents cadastraux doivent charger avant que "Enregistrer" ne
+  // devienne réellement utile — attente allongée en conséquence (1800ms de
+  // pause de lecture + jusqu'à 16s d'attente active du bouton, comme au
+  // tout début).
   await attendre(1800);
-  // Budget réduit (au lieu des 40x400=16s par défaut) : la vraie cause du
-  // problème "l'étape suivante échoue" était ailleurs (l'acquéreur pas
-  // confirmé avant "Suivant" dans l'étape Parties, corrigé séparément) —
-  // confirmé en test live, ce budget réduit ici n'est pas la cause.
-  if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.enregistrer, 10, 400)) {
+  if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.enregistrer)) {
     console.warn('[Alfred DOM] Bouton "Enregistrer" (biens) introuvable après confirmation — l\'ajout du bien a peut-être échoué côté serveur (voir la console pour une éventuelle erreur réseau).');
   }
   await attendre(1000);
@@ -1387,12 +1387,12 @@ async function seq_creationDossier_parties_acquereur() {
   if (!ok) {
     console.warn('[Alfred DOM] Acquéreur toujours pas confirmé — on tente quand même "Suivant" (l\'ajout a peut-être réussi malgré la vérification).');
   }
-  // Pause avant "Suivant" encore allongée (900 → 3000 → 6000ms) : même
-  // confirmé par la vérification DOM, l'ajout de l'acquéreur peut encore
-  // être en cours d'enregistrement côté serveur (UI optimiste) — remonté
-  // en test live à deux reprises ("il va sur suivant trop vite... trop
-  // rapide encore").
-  await attendre(6000);
+  // Confirmé par l'utilisatrice : ce n'est PAS ici qu'il faut attendre —
+  // "Suivant" (parties) peut s'enchaîner directement, le vrai temps de
+  // chargement à respecter est plus loin, avant "Enregistrer" du bien
+  // (les documents cadastraux doivent charger). Petite pause cosmétique
+  // seulement.
+  await attendre(500);
   // "Suivant" reste désactivé tant que le vendeur n'a pas été ajouté avec succès.
   if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.suivant)) {
     console.warn('[Alfred DOM] Étape "parties" bloquée — arrêt de la séquence.');
