@@ -239,7 +239,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 1, label: 'CheckR',        texte: "Je travaille avec un système de vérification — Check_r — qui me permet de contrôler que les actes que je rédige respectent les règles en vigueur. Ce n'est pas une rédaction aveugle. C'est une rédaction vérifiée, cohérente avec ce que la profession exige." },
     { acte: 1, label: 'Communication', texte: "Je gère ça aussi. J'identifie les interlocuteurs concernés par le dossier, je rédige les projets de mails, et vous confirmez l'envoi. Et quand une réponse arrive — un document, une pièce manquante — je la lis, je l'analyse, et je l'intègre directement dans le dossier. Sans intervention humaine. À n'importe quelle heure." },
     { acte: 1, label: 'Résumé1',       texte: "C'est ça. Et en parallèle, chaque acteur du dossier — l'étude, le client, un confrère — peut travailler simultanément sur le même dossier. Et si quelqu'un a une question sur un dossier, à n'importe quelle heure, je réponds instantanément via le chatbot intégré." },
-    { acte: 1, label: 'Montrer',       texte: "Avec plaisir. Regardez." },
+    { acte: 1, label: 'Montrer',       texte: "Avec plaisir. Regardez.", action: 'Montrer' },
 
     // ACTE 2 — CRÉATION LIVE (démonstration séparée, avant l'ouverture de R426)
     // Décomposée en 6 répliques qui suivent le processus décrit par Cyril :
@@ -327,7 +327,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 1, label: 'CheckR',        texte: "Ik werk met een verificatiesysteem — Check_r — waarmee ik kan controleren of de akten die ik opstel voldoen aan de geldende regels. Het is geen blinde redactie. Het is een geverifieerde redactie, coherent met wat het beroep vereist." },
     { acte: 1, label: 'Communication', texte: "Dat beheer ik ook. Ik identificeer de betrokken gesprekspartners bij het dossier, ik stel de e-mailontwerpen op en u bevestigt de verzending. En wanneer een antwoord binnenkomt — een document, een ontbrekend stuk — lees ik het, analyseer ik het en verwerk ik het rechtstreeks in het dossier. Zonder menselijke tussenkomst. Op elk uur." },
     { acte: 1, label: 'Résumé1',       texte: "Dat klopt. En tegelijkertijd kan elke actor in het dossier — het kantoor, de cliënt, een confrater — gelijktijdig aan hetzelfde dossier werken. En als iemand een vraag heeft over een dossier, op elk uur, antwoord ik onmiddellijk via de geïntegreerde chatbot." },
-    { acte: 1, label: 'Montrer',       texte: "Met plezier. Kijk maar." },
+    { acte: 1, label: 'Montrer',       texte: "Met plezier. Kijk maar.", action: 'Montrer' },
 
     // ACTE 2 — CRÉATION LIVE (démonstration séparée, avant l'ouverture van R426)
     // Tekst afgestemd op Alfreds exacte repliek in het officiële script

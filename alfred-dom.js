@@ -1863,7 +1863,16 @@ const DOM_ACTIONS = {
   // Geste unique, purement visuel (voir clinDoeil dans alfred-ui.js) — pas
   // d'automatisation de l'appli, juste le clin d'œil de clôture.
   'ClosingWink': (typeof clinDoeil === 'function') ? clinDoeil : async () => {},
+  // Idem, purement visuel (voir gesteMontrer dans alfred-ui.js) — le pivot
+  // acte 1 → démo ("Avec plaisir. Regardez.").
+  'Montrer': (typeof gesteMontrer === 'function') ? gesteMontrer : async () => {},
 };
+
+// Labels d'action purement visuels (aucune automatisation de l'appli) —
+// autorisés à se déclencher même en acte 1, contrairement aux vraies
+// actions DOM qui restent bloquées avant le début de la démo (voir le
+// garde-fou currentActe >= 2 dans alfred-brain.js).
+const GESTES_VISUELS_SEULS = new Set(['ClosingWink', 'Montrer']);
 
 async function executerActionDOM(label) {
   const action = DOM_ACTIONS[label];

@@ -359,7 +359,12 @@ async function jouerSecoursInterne() {
       const sousTitre = segTrad?.texte || seg.texte;
       promises.push(speak(naturaliserTexte(seg.texte), currentLangue, sousTitre));
     }
-    if (currentActe >= 2 && seg.action && typeof executerActionDOM === 'function') {
+    // currentActe >= 2 : garde-fou pour ne jamais lancer d'automatisation
+    // réelle de l'appli avant que la démo n'ait commencé. Les gestes
+    // purement visuels (clin d'œil, "Montrer"...) ne touchent pas à
+    // l'appli — GESTES_VISUELS_SEULS les laisse passer même en acte 1.
+    const estGesteVisuel = typeof GESTES_VISUELS_SEULS !== 'undefined' && GESTES_VISUELS_SEULS.has(seg.action);
+    if ((currentActe >= 2 || estGesteVisuel) && seg.action && typeof executerActionDOM === 'function') {
       promises.push(executerActionDOM(seg.action));
     }
     await Promise.all(promises);
