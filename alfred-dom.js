@@ -43,6 +43,7 @@ const SELECTEURS = {
     personnePhysique:    'Personne physique',
     personneMorale:      'Personne morale',
     rechercher:          'Rechercher',
+    confirmerBien:       'Confirmer',
     rediger:             'Rédiger un document',
     genererCompromis:    'Générer le compromis',
     suivant:             'Suivant',
@@ -1008,7 +1009,7 @@ async function essayerAjouterBienParCadastre(bien) {
   // taper la recherche elle-même : le champ de recherche réel de l'appli
   // ne comprend PAS le format complet "8670 — Coxyde" (renvoie "Aucun
   // résultat"), seulement le nom ("Coxyde") — confirmé en test live.
-  const [codePostal, nomCommune] = bien.commune.split(/[—-]/).map(s => s && s.trim());
+  const [, nomCommune] = bien.commune.split(/[—-]/).map(s => s && s.trim());
 
   await curseurVersAsync(input, () => input.focus());
   await attendre(200);
@@ -1023,75 +1024,79 @@ async function essayerAjouterBienParCadastre(bien) {
   if (!rechercheTrouvee) console.warn('[Alfred DOM] Bouton "Rechercher" (CADASTRE) introuvable.');
   await attendre(2600); // laisse largement le temps à la recherche de répondre
 
-  // Comparaison stricte (===) trop fragile : le résultat de recherche réel
-  // ne s'affiche pas forcément avec le même séparateur/ordre (ex: "8670
-  // Koksijde", "Coxyde (8670)"...) — même famille de bug que pour le
-  // notaire (voir optionCorrespond). On vérifie plutôt que le code postal
-  // ET le nom de commune apparaissent tous les deux quelque part dans le
-  // texte de l'option, sans exiger un format précis.
-  function chercherLiCommune() {
-    return Array.from(document.querySelectorAll('li'))
-      .find(el => {
-        if (el.getBoundingClientRect().width <= 0) return false;
-        const texte = el.textContent.trim().toLowerCase();
-        return (!codePostal || texte.includes(codePostal.toLowerCase()))
-            && (!nomCommune  || texte.includes(nomCommune.toLowerCase()));
-      });
-  }
-  let li = null;
-  for (let i = 0; i < 10; i++) {
-    li = chercherLiCommune();
-    if (li) break;
-    await attendre(400);
-  }
-  if (!li) {
-    // Peut-être le premier clic sur "Rechercher" n'a eu aucun effet — on
-    // retente une fois avant d'abandonner, plutôt que de basculer
-    // directement en manuel sur un simple clic raté.
-    console.warn('[Alfred DOM] Commune introuvable — nouvel essai sur "Rechercher" avant d\'abandonner.');
-    await curseurVersAsync(trouverBoutonParTexte(SELECTEURS.boutons.rechercher) || input, () => {});
-    await cliquerBouton(SELECTEURS.boutons.rechercher);
-    await attendre(2600);
-    for (let i = 0; i < 10; i++) {
-      li = chercherLiCommune();
-      if (li) break;
+  // Réécrit d'après deux captures d'écran en direct : il n'y a PAS de
+  // liste de communes à choisir séparément — taper la commune puis
+  // cliquer "Rechercher" fait directement apparaître une section "Biens"
+  // avec un menu "Sélectionner des biens" (cases à cocher), sous le champ
+  // de recherche. Ancienne hypothèse (liste de communes, puis 2e liste
+  // pour la parcelle) confirmée fausse pour cette version de l'appli.
+  async function trouverDeclencheurBiens() {
+    for (let i = 0; i < 15; i++) {
+      const el = Array.from(document.querySelectorAll('span, div'))
+        .find(e => e.textContent.trim() === 'Sélectionner des biens' && e.getBoundingClientRect().width > 0);
+      if (el) return el;
       await attendre(400);
     }
+    return null;
   }
-  if (!li) {
-    const liVisibles = Array.from(document.querySelectorAll('li')).filter(el => el.getBoundingClientRect().width > 0).map(el => el.textContent.trim());
-    console.warn('[Alfred DOM] Commune introuvable dans les résultats CADASTRE:', bien.commune, '— li visibles actuellement:', liVisibles);
+
+  let declencheurBiens = await trouverDeclencheurBiens();
+  if (!declencheurBiens) {
+    // Peut-être le premier clic sur "Rechercher" n'a eu aucun effet — on
+    // retente une fois avant d'abandonner, plutôt que de basculer
+    // directement en manuel sur un simple clic raté (même famille de bug
+    // que "Compromis"/les cases REPRÉSENTE — le clic simulé n'a parfois
+    // aucun effet réel).
+    console.warn('[Alfred DOM] Menu "Sélectionner des biens" introuvable — nouvel essai sur "Rechercher" avant d\'abandonner.');
+    await cliquerBouton(SELECTEURS.boutons.rechercher);
+    await attendre(2600);
+    declencheurBiens = await trouverDeclencheurBiens();
+  }
+  if (!declencheurBiens) {
+    console.warn('[Alfred DOM] Menu "Sélectionner des biens" introuvable après la recherche CADASTRE — bascule sur saisie manuelle (Fednot non connecté, ou rien trouvé pour cette commune ?).');
     fermerFenetreOuverte();
     await attendre(500);
     return false;
   }
 
-  await curseurVersAsync(li, () => simulerClic(li));
-  await attendre(1500); // laisse le temps à la 2e liste (parcelle/adresse) d'apparaître
+  await curseurVersAsync(declencheurBiens, () => simulerClic(declencheurBiens));
+  await attendre(700);
 
-  // Une seconde liste apparaît après la sélection de la commune — un seul
-  // élément disponible à choisir (confirmé en test live), avant que la
-  // parcelle ne se pré-remplisse réellement. Sans ce clic, la parcelle
-  // restait vide et on basculait à tort sur la saisie manuelle alors que
-  // le cadastre avait en fait fonctionné jusque-là.
-  const liSuivantes = Array.from(document.querySelectorAll('li')).filter(el => el.getBoundingClientRect().width > 0);
-  if (liSuivantes.length === 1) {
-    await curseurVersAsync(liSuivantes[0], () => simulerClic(liSuivantes[0]));
-    await attendre(700);
-  } else if (liSuivantes.length > 1) {
-    console.warn('[Alfred DOM] CADASTRE : plusieurs options inattendues dans la 2e liste (une seule attendue), aucune sélectionnée automatiquement:', liSuivantes.map(el => el.textContent.trim()));
+  // Coche le premier (et normalement seul) bien de la liste, confirmé par
+  // capture d'écran ("Lot privé (ancien)...").
+  let checkboxBien = null;
+  for (let i = 0; i < 10; i++) {
+    checkboxBien = Array.from(document.querySelectorAll('li input[type="checkbox"]'))
+      .find(el => el.getBoundingClientRect().width > 0);
+    if (checkboxBien) break;
+    await attendre(300);
   }
-  await attendre(700); // laisse le temps à l'auto-complétion de la parcelle
-
-  const champParcelle = document.getElementById(SELECTEURS.champs.bienParcelle);
-  if (!champParcelle || !champParcelle.value || !champParcelle.value.trim()) {
-    console.warn('[Alfred DOM] Sélection CADASTRE effectuée mais parcelle non pré-remplie — bascule sur saisie manuelle.');
+  if (!checkboxBien) {
+    console.warn('[Alfred DOM] Aucun bien coché-able trouvé dans "Sélectionner des biens" — bascule sur saisie manuelle.');
     fermerFenetreOuverte();
     await attendre(500);
     return false;
   }
-  // Laisse le temps de lire la matrice cadastrale récupérée avant
-  // d'enregistrer (même demande que pour la saisie manuelle).
+  await curseurVersAsync(checkboxBien, () => simulerClic(checkboxBien));
+  await attendre(400);
+  if (!checkboxBien.checked) {
+    // Même repli que pour REPRÉSENTE : le clic direct sur l'input caché
+    // ne suffit parfois pas, retente sur l'élément parent (ligne entière).
+    const wrapper = checkboxBien.closest('li') || checkboxBien.parentElement;
+    if (wrapper && wrapper !== checkboxBien) { await curseurVersAsync(wrapper, () => simulerClic(wrapper)); await attendre(400); }
+  }
+  if (!checkboxBien.checked) {
+    console.warn('[Alfred DOM] La case du bien ne semble toujours pas cochée après le clic.');
+  }
+
+  if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.confirmerBien, 10, 400)) {
+    console.warn('[Alfred DOM] Bouton "Confirmer" (biens) introuvable ou inactif.');
+    fermerFenetreOuverte();
+    await attendre(500);
+    return false;
+  }
+  // Laisse le temps de voir/lire le bien confirmé avant d'enregistrer
+  // (même demande que pour la saisie manuelle).
   await attendre(1800);
   await cliquerBoutonQuandActif(SELECTEURS.boutons.enregistrer);
   await attendre(1000);
