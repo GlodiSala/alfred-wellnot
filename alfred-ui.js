@@ -887,71 +887,111 @@ function ouvrirEditionRéplique(index, nouvelActe) {
   titre.style.cssText = 'color:rgba(255,255,255,.4);font-size:9px;letter-spacing:2px;text-transform:uppercase;';
   panel.appendChild(titre);
 
-  panel.appendChild(champLabel('Nom (identifiant interne)'));
+  // Une réplique "groupée" (r.segments — plusieurs bouts de texte, chacun
+  // avec sa propre action) a son NOM verrouillé : alfred-dom.js retrouve
+  // certaines d'entre elles (CreationEmail, CreationReponseVendeur) par ce
+  // nom exact, codé en dur, pour savoir QUAND parler depuis l'action DOM
+  // (parlerDepuisAction) plutôt qu'au début du segment. Un renommage ici
+  // casserait ce lien silencieusement (l'action ne retrouverait plus rien,
+  // sans erreur visible) — le texte de chaque segment, lui, reste éditable
+  // librement, seul le nom est protégé.
+  const estGroupee = !!(rFR.segments || rNL.segments);
+
+  panel.appendChild(champLabel('Nom (identifiant interne)' + (estGroupee ? ' (réplique groupée — verrouillé)' : '')));
   const inputLabel = document.createElement('input');
   inputLabel.value = rFR.label;
+  inputLabel.disabled = estGroupee;
   inputLabel.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:12px;';
   panel.appendChild(inputLabel);
 
-  // Une réplique "groupée" (r.segments — plusieurs bouts de texte, chacun
-  // avec sa propre action) ne peut pas être éditée correctement dans ce
-  // panneau simple, pensé pour un texte + une action. On l'affiche quand
-  // même (segments recollés) pour référence, mais on bloque l'enregistrement
-  // pour ne pas écraser silencieusement les segments par un seul bloc.
-  const estGroupee = !!(rFR.segments || rNL.segments);
+  // Textes : un seul champ FR/NL pour une réplique classique, ou une paire
+  // par segment pour une réplique groupée — chaque segment reste éditable
+  // indépendamment (avant : tout était recollé en un bloc, verrouillé en
+  // lecture seule pour ne pas écraser les segments par erreur).
+  const taFRSegments = [];
+  const taNLSegments = [];
+  let taFR = null, taNL = null;
 
-  panel.appendChild(champLabel('Texte FR' + (estGroupee ? ' (réplique groupée — lecture seule)' : '')));
-  const taFR = document.createElement('textarea');
-  taFR.value = rFR.segments ? rFR.segments.map(s => s.texte).join('\n\n') : rFR.texte;
-  taFR.rows = 4;
-  taFR.disabled = estGroupee;
-  taFR.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:12px;font-family:sans-serif;resize:vertical;';
-  panel.appendChild(taFR);
+  if (estGroupee) {
+    const segsFR = rFR.segments || [];
+    const segsNL = rNL.segments || [];
+    segsFR.forEach((seg, i) => {
+      const segNL = segsNL[i] || segsNL[segsNL.length - 1] || {};
+      const suffixe = seg.action ? ` — action : ${seg.action}` : '';
+      panel.appendChild(champLabel(`Segment ${i + 1} · FR${suffixe}`));
+      const ta = document.createElement('textarea');
+      ta.value = seg.texte || '';
+      ta.rows = 3;
+      ta.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:12px;font-family:sans-serif;resize:vertical;margin-bottom:8px;';
+      panel.appendChild(ta);
+      taFRSegments.push(ta);
 
-  panel.appendChild(champLabel('Texte NL' + (estGroupee ? ' (réplique groupée — lecture seule)' : '')));
-  const taNL = document.createElement('textarea');
-  taNL.value = rNL.segments ? rNL.segments.map(s => s.texte).join('\n\n') : rNL.texte;
-  taNL.rows = 4;
-  taNL.disabled = estGroupee;
-  taNL.style.cssText = taFR.style.cssText;
-  panel.appendChild(taNL);
-
-  panel.appendChild(champLabel('Action déclenchée (optionnel)'));
-  const select = document.createElement('select');
-  select.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:#0a3b52;color:#fff;font-size:12px;';
-  const optNone = document.createElement('option');
-  optNone.value = ''; optNone.textContent = '— Aucune —';
-  optNone.style.cssText = 'background:#0a3b52;color:#fff;';
-  select.appendChild(optNone);
-  // Plusieurs noms (FR/NL, alias historiques) pointent parfois vers la même
-  // fonction d'action (ex: 'Parties' et 'Partijen' font la même chose) —
-  // on ne garde qu'un nom par action réelle pour éviter les doublons.
-  const actionsDispo = [];
-  if (typeof DOM_ACTIONS !== 'undefined') {
-    const dejaVues = new Set();
-    Object.keys(DOM_ACTIONS).forEach(cle => {
-      const fn = DOM_ACTIONS[cle];
-      if (dejaVues.has(fn)) return;
-      dejaVues.add(fn);
-      actionsDispo.push(cle);
+      panel.appendChild(champLabel(`Segment ${i + 1} · NL`));
+      const taN = document.createElement('textarea');
+      taN.value = segNL.texte || '';
+      taN.rows = 3;
+      taN.style.cssText = ta.style.cssText;
+      panel.appendChild(taN);
+      taNLSegments.push(taN);
     });
+  } else {
+    panel.appendChild(champLabel('Texte FR'));
+    taFR = document.createElement('textarea');
+    taFR.value = rFR.texte;
+    taFR.rows = 4;
+    taFR.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:12px;font-family:sans-serif;resize:vertical;';
+    panel.appendChild(taFR);
+
+    panel.appendChild(champLabel('Texte NL'));
+    taNL = document.createElement('textarea');
+    taNL.value = rNL.texte;
+    taNL.rows = 4;
+    taNL.style.cssText = taFR.style.cssText;
+    panel.appendChild(taNL);
   }
-  actionsDispo.forEach(a => {
-    const opt = document.createElement('option');
-    opt.value = a; opt.textContent = a;
-    opt.style.cssText = 'background:#0a3b52;color:#fff;';
-    select.appendChild(opt);
-  });
-  // Une réplique d'origine (sans champ `action` explicite) peut déjà être
-  // reliée à une action via son `label` — on l'affiche pour que ce ne soit
-  // pas invisible dans l'éditeur. Si ce label est un alias (ex: 'Partijen'),
-  // on retombe sur le nom canonique retenu ci-dessus.
-  const actionBrute = rFR.action || ((typeof DOM_ACTIONS !== 'undefined' && DOM_ACTIONS[rFR.label]) ? rFR.label : '');
-  const actionImplicite = (actionBrute && typeof DOM_ACTIONS !== 'undefined')
-    ? (actionsDispo.find(cle => DOM_ACTIONS[cle] === DOM_ACTIONS[actionBrute]) || actionBrute)
-    : actionBrute;
-  select.value = actionImplicite;
-  panel.appendChild(select);
+
+  // Le sélecteur "action unique" ne s'applique pas à une réplique groupée
+  // (chaque segment a déjà la sienne, affichée ci-dessus) — masqué dans ce
+  // cas plutôt que de proposer un choix qui n'aurait aucun effet clair.
+  let select = null;
+  if (!estGroupee) {
+    panel.appendChild(champLabel('Action déclenchée (optionnel)'));
+    select = document.createElement('select');
+    select.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:#0a3b52;color:#fff;font-size:12px;';
+    const optNone = document.createElement('option');
+    optNone.value = ''; optNone.textContent = '— Aucune —';
+    optNone.style.cssText = 'background:#0a3b52;color:#fff;';
+    select.appendChild(optNone);
+    // Plusieurs noms (FR/NL, alias historiques) pointent parfois vers la même
+    // fonction d'action (ex: 'Parties' et 'Partijen' font la même chose) —
+    // on ne garde qu'un nom par action réelle pour éviter les doublons.
+    const actionsDispo = [];
+    if (typeof DOM_ACTIONS !== 'undefined') {
+      const dejaVues = new Set();
+      Object.keys(DOM_ACTIONS).forEach(cle => {
+        const fn = DOM_ACTIONS[cle];
+        if (dejaVues.has(fn)) return;
+        dejaVues.add(fn);
+        actionsDispo.push(cle);
+      });
+    }
+    actionsDispo.forEach(a => {
+      const opt = document.createElement('option');
+      opt.value = a; opt.textContent = a;
+      opt.style.cssText = 'background:#0a3b52;color:#fff;';
+      select.appendChild(opt);
+    });
+    // Une réplique d'origine (sans champ `action` explicite) peut déjà être
+    // reliée à une action via son `label` — on l'affiche pour que ce ne soit
+    // pas invisible dans l'éditeur. Si ce label est un alias (ex: 'Partijen'),
+    // on retombe sur le nom canonique retenu ci-dessus.
+    const actionBrute = rFR.action || ((typeof DOM_ACTIONS !== 'undefined' && DOM_ACTIONS[rFR.label]) ? rFR.label : '');
+    const actionImplicite = (actionBrute && typeof DOM_ACTIONS !== 'undefined')
+      ? (actionsDispo.find(cle => DOM_ACTIONS[cle] === DOM_ACTIONS[actionBrute]) || actionBrute)
+      : actionBrute;
+    select.value = actionImplicite;
+    panel.appendChild(select);
+  }
 
   const boutons = document.createElement('div');
   boutons.style.cssText = 'display:flex;gap:8px;margin-top:16px;';
@@ -960,14 +1000,26 @@ function ouvrirEditionRéplique(index, nouvelActe) {
   btnSave.textContent = 'Enregistrer';
   btnSave.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:none;background:#14b0bd;color:#fff;font-size:12px;font-weight:600;cursor:pointer;';
   btnSave.onclick = () => {
-    if (estGroupee) { alert('Réplique groupée : modifiable uniquement dans le code (alfred-brain.js).'); return; }
+    // Le nom reste celui d'origine pour une réplique groupée (champ
+    // désactivé plus haut, valeur jamais modifiée) — pas besoin de le
+    // revalider différemment.
     const label = inputLabel.value.trim();
     if (!label) { alert('Le nom de la réplique est requis.'); return; }
-    const action = select.value || undefined;
-    const nouvelleFR = { acte: rFR.acte, label, texte: taFR.value.trim(), action };
-    const nouvelleNL = { acte: rNL.acte, label, texte: taNL.value.trim(), action };
-    if (!nouvelleFR.action) delete nouvelleFR.action;
-    if (!nouvelleNL.action) delete nouvelleNL.action;
+
+    let nouvelleFR, nouvelleNL;
+    if (estGroupee) {
+      // Ne remplace que le texte de chaque segment — action/parlerDepuisAction
+      // (et tout autre champ futur) restent ceux d'origine, jamais touchés
+      // par ce panneau.
+      nouvelleFR = { acte: rFR.acte, label, segments: rFR.segments.map((seg, i) => ({ ...seg, texte: taFRSegments[i].value.trim() })) };
+      nouvelleNL = { acte: rNL.acte, label, segments: (rNL.segments || []).map((seg, i) => ({ ...seg, texte: (taNLSegments[i] || taNLSegments[taNLSegments.length - 1]).value.trim() })) };
+    } else {
+      const action = select.value || undefined;
+      nouvelleFR = { acte: rFR.acte, label, texte: taFR.value.trim(), action };
+      nouvelleNL = { acte: rNL.acte, label, texte: taNL.value.trim(), action };
+      if (!nouvelleFR.action) delete nouvelleFR.action;
+      if (!nouvelleNL.action) delete nouvelleNL.action;
+    }
 
     if (estNouveau) {
       const idx = trouverIndexInsertion(ALFRED_CONFIG.REPLIQUES_FR, nouvelActe);
