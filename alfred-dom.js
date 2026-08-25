@@ -495,6 +495,7 @@ function trouverBoutonParTexte(texte) {
 async function cliquerBouton(texte, tentatives = 15) {
   let btn = null;
   for (let i = 0; i < tentatives; i++) {
+    if (annulationDemandee) { console.warn('[Alfred DOM] Attente du bouton annulée:', texte); return false; }
     btn = trouverBoutonParTexte(texte);
     if (btn) break;
     await attendre(300);
@@ -597,6 +598,7 @@ function optionCorrespond(li, texteOption) {
 async function choisirDansDropdownParLabelProche(labelTexte, texteOption, dejaReessaye) {
   let declencheur = null;
   for (let i = 0; i < 15; i++) {
+    if (annulationDemandee) { console.warn('[Alfred DOM] Attente du dropdown annulée:', labelTexte); return false; }
     declencheur = trouverDeclencheurProcheLabel(labelTexte);
     if (declencheur) break;
     await attendre(300);
@@ -610,6 +612,7 @@ async function choisirDansDropdownParLabelProche(labelTexte, texteOption, dejaRe
   // seule" (encore raccourcie, 800 → 500 → 400ms).
   await attendre(400);
   for (let i = 0; i < 15; i++) {
+    if (annulationDemandee) { console.warn('[Alfred DOM] Attente de l\'option annulée:', texteOption); return false; }
     const opt = Array.from(document.querySelectorAll('li'))
       .find(li => optionCorrespond(li, texteOption) && li.getBoundingClientRect().width > 0);
     if (opt) {
@@ -649,6 +652,7 @@ async function choisirDansDropdown(texteDeclencheur, texteOption) {
   await curseurVersAsync(declencheur, () => simulerClic(declencheur));
   await attendre(400); // laisse le menu visible un instant, plus lisible en démo live (raccourci, 800 → 400)
   for (let i = 0; i < 15; i++) {
+    if (annulationDemandee) { console.warn('[Alfred DOM] Attente de l\'option annulée:', texteOption); return false; }
     const opt = Array.from(document.querySelectorAll('li'))
       .find(li => optionCorrespond(li, texteOption) && li.getBoundingClientRect().width > 0);
     if (opt) {
@@ -666,6 +670,7 @@ async function choisirDansDropdown(texteDeclencheur, texteOption) {
 async function taperDansChamp(id, texte, tentatives = 15, delaiParLettre) {
   let champ = null;
   for (let i = 0; i < tentatives; i++) {
+    if (annulationDemandee) { console.warn('[Alfred DOM] Attente du champ annulée:', id); return false; }
     champ = document.getElementById(id);
     if (champ) break;
     await attendre(300);
@@ -711,6 +716,7 @@ function compterOccurrencesTexte(texte) {
 // ajoutée, en plus de l'étiquette du menu).
 async function partieAjouteeAvecSucces(qualite, occurrencesAvant) {
   for (let i = 0; i < 10; i++) {
+    if (annulationDemandee) return false;
     if (compterOccurrencesTexte(qualite) > occurrencesAvant) return true;
     await attendre(500);
   }
@@ -753,6 +759,9 @@ async function ajouterPartieParRN(qualite, rn) {
   await taperDansChamp(SELECTEURS.champs.rechercheRN, rn);
   await cliquerBouton(SELECTEURS.boutons.rechercher);
   await attendre(3200); // laisse largement le temps à la recherche e-notariat de remplir le formulaire (attente réseau réelle, pas juste cosmétique — non raccourcie)
+  // Plus gros délai fixe non-annulable de toute la séquence (3,2s) — vérifié
+  // ici pour ne pas continuer sur "Enregistrer" après une annulation.
+  if (annulationDemandee) return false;
   // Signal fiable plutôt qu'un délai deviné (demandé par l'utilisatrice,
   // le délai fixe précédent était trop variable) : on capture la fenêtre
   // "Ajouter une partie" avant de cliquer "Enregistrer", puis on attend
@@ -785,6 +794,9 @@ async function ajouterPartieParBCE(qualite, bce) {
   await taperDansChamp(SELECTEURS.champs.rechercheBCE, bce);
   await cliquerBouton(SELECTEURS.boutons.rechercher);
   await attendre(3200); // laisse largement le temps à la recherche BCE de remplir le formulaire (attente réseau réelle, pas juste cosmétique — non raccourcie)
+  // Plus gros délai fixe non-annulable de toute la séquence (3,2s) — vérifié
+  // ici pour ne pas continuer sur "Enregistrer" après une annulation.
+  if (annulationDemandee) return false;
   const dialogue = trouverDialogueOuvert();
   await cliquerBouton(SELECTEURS.boutons.enregistrer);
   if (!await attendreFermetureDialogue(dialogue, 30, 500)) {
