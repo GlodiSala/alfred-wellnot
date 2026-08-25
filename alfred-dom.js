@@ -1509,14 +1509,26 @@ function trouverColonneDefilante(cote) {
   return cote === 'gauche' ? tries[0] : tries[tries.length - 1];
 }
 
-// Défile lentement du haut jusqu'au vrai bas de la colonne — remonté en
-// test live comme n'allant pas jusqu'au bout ("super important de lire").
-async function defilerColonneLentement(cote, dureeMs) {
+// Vitesse cible du défilement, en pixels/seconde — remplace une durée
+// fixe. Bug trouvé en test live par capture DOM : la colonne de droite
+// (le compromis généré) peut être BEAUCOUP plus longue que la gauche
+// (ex. 57000px contre 11000px), or l'ancien code utilisait des durées
+// fixes presque identiques pour les deux — la droite défilait donc
+// plusieurs fois plus vite visuellement. Calibré sur le ressenti "lent,
+// lisible" déjà validé pour la gauche (~3500ms pour ~10800px).
+const VITESSE_SCROLL_COLONNE_PX_PAR_SEC = 3000;
+const DUREE_MIN_SCROLL_COLONNE_MS = 1500;
+
+// Défile lentement du haut jusqu'au vrai bas de la colonne, à vitesse
+// constante (donc plus long pour un document plus long) — remonté en test
+// live comme n'allant pas jusqu'au bout ("super important de lire").
+async function defilerColonneLentement(cote) {
   const conteneur = trouverColonneDefilante(cote);
   if (!conteneur) { console.warn('[Alfred DOM] Colonne', cote, 'du compromis introuvable pour le défilement.'); return; }
   conteneur.scrollTop = 0;
   await attendre(300);
   const cible = conteneur.scrollHeight - conteneur.clientHeight; // vrai bas, pas une portion
+  const dureeMs = Math.max(DUREE_MIN_SCROLL_COLONNE_MS, (cible / VITESSE_SCROLL_COLONNE_PX_PAR_SEC) * 1000);
   await new Promise(resolve => {
     const debut = performance.now();
     function etape(m) {
@@ -1529,13 +1541,11 @@ async function defilerColonneLentement(cote, dureeMs) {
   });
 }
 
-// "à gauche" : défilement lent. "à droite" : encore plus lent (demandé
-// explicitement — "c'est super important de lire").
 async function seq_creationDossier_redaction_scrollGauche() {
-  await defilerColonneLentement('gauche', 3500);
+  await defilerColonneLentement('gauche');
 }
 async function seq_creationDossier_redaction_scrollDroite() {
-  await defilerColonneLentement('droite', 5500);
+  await defilerColonneLentement('droite');
 }
 
 // Étape 6 — Attendre/montrer l'e-mail généré automatiquement.
