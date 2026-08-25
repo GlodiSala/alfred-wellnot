@@ -1514,16 +1514,29 @@ function trouverColonneDefilante(cote) {
 // (le compromis généré) peut être BEAUCOUP plus longue que la gauche
 // (ex. 57000px contre 11000px), or l'ancien code utilisait des durées
 // fixes presque identiques pour les deux — la droite défilait donc
-// plusieurs fois plus vite visuellement. Calibré sur le ressenti "lent,
-// lisible" déjà validé pour la gauche (~3500ms pour ~10800px).
-const VITESSE_SCROLL_COLONNE_PX_PAR_SEC = 3000;
+// plusieurs fois plus vite visuellement. Encore ralentie (3000 → 1200
+// px/s) : toujours "beaucoup beaucoup trop rapide" au retour du premier
+// essai en vitesse constante.
+const VITESSE_SCROLL_COLONNE_PX_PAR_SEC = 1200;
 const DUREE_MIN_SCROLL_COLONNE_MS = 1500;
 
 // Défile lentement du haut jusqu'au vrai bas de la colonne, à vitesse
 // constante (donc plus long pour un document plus long) — remonté en test
 // live comme n'allant pas jusqu'au bout ("super important de lire").
 async function defilerColonneLentement(cote) {
-  const conteneur = trouverColonneDefilante(cote);
+  // Le clic sur "Rédaction" vient de lancer la génération du compromis —
+  // les deux colonnes (et leur contenu réel, donc leur vraie hauteur) ne
+  // sont pas forcément déjà affichées au moment où ce segment démarre.
+  // Remonté en test live : le défilement à gauche échouait silencieusement
+  // juste après le clic, mais fonctionnait en relançant l'action après
+  // avoir attendu sur la page — donc un problème de timing, pas de
+  // sélecteur. On attend maintenant activement que la colonne apparaisse.
+  let conteneur = null;
+  for (let i = 0; i < 20; i++) {
+    conteneur = trouverColonneDefilante(cote);
+    if (conteneur) break;
+    await attendre(500);
+  }
   if (!conteneur) { console.warn('[Alfred DOM] Colonne', cote, 'du compromis introuvable pour le défilement.'); return; }
   conteneur.scrollTop = 0;
   await attendre(300);
