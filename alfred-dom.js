@@ -1190,15 +1190,14 @@ async function essayerAjouterBienParCadastre(bien) {
     await attendre(500);
     return false;
   }
-  // Laisse le temps de voir/lire le bien confirmé avant d'enregistrer
-  // (même demande que pour la saisie manuelle). Confirmé par
-  // l'utilisatrice : ce "Enregistrer" (juste après "Confirmer" dans le
-  // dialogue CADASTRE) n'est PAS celui qui doit vraiment attendre — le
-  // vrai temps de chargement des documents à respecter, c'est le second
-  // "Enregistrer" plus loin, après "Suivant" (voir
-  // seq_creationDossier_bien_finaliser, qui garde déjà le budget par
-  // défaut de 16s).
-  await attendre(1800);
+  // Confirmé par l'utilisatrice : pas besoin d'attendre ici, dès que
+  // "Confirmer" est fait c'est bon — ce "Enregistrer" (juste après
+  // "Confirmer" dans le dialogue CADASTRE) n'est PAS celui qui doit
+  // vraiment attendre. Le vrai temps de chargement des documents à
+  // respecter, c'est le second "Enregistrer" plus loin, après "Suivant"
+  // (voir seq_creationDossier_bien_finaliser, qui garde déjà le budget
+  // par défaut de 16s).
+  await attendre(400);
   if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.enregistrer, 10, 400)) {
     console.warn('[Alfred DOM] Bouton "Enregistrer" (biens) introuvable après confirmation — l\'ajout du bien a peut-être échoué côté serveur (voir la console pour une éventuelle erreur réseau).');
   }
