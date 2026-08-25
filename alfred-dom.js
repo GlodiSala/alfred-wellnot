@@ -1027,6 +1027,22 @@ async function montrerPropositionEmail_envoyer() {
     await attendre(1000);
   }
   if (!consulter) { console.warn("[Alfred DOM] \"Email à valider\" non trouvé après 3 min"); return false; }
+
+  // Segment marqué parlerDepuisAction (voir alfred-brain.js) : le texte
+  // n'est pas dit automatiquement au début de l'attente, c'est ICI qu'on
+  // le déclenche — l'événement vient vraiment d'apparaître à l'écran.
+  // Cherché dans la config plutôt que codé en dur, pour rester en phase
+  // avec le FR/NL et un futur changement de texte sans toucher au JS.
+  if (typeof speak === 'function' && typeof ALFRED_CONFIG !== 'undefined') {
+    const liste = (typeof currentLangue !== 'undefined' && currentLangue === 'nl') ? ALFRED_CONFIG.REPLIQUES_NL : ALFRED_CONFIG.REPLIQUES_FR;
+    const replique = liste?.find(r => r.label === 'CreationEmail');
+    const segment = replique?.segments?.find(s => s.action === 'CreationEmail_Envoyer');
+    if (segment?.texte) {
+      if (typeof addToHistory === 'function') addToHistory('alfred', segment.texte);
+      speak(typeof naturaliserTexte === 'function' ? naturaliserTexte(segment.texte) : segment.texte, currentLangue, segment.texte);
+    }
+  }
+
   await curseurVersAsync(consulter, () => consulter.click());
   await attendre(1200);
 

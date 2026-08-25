@@ -345,11 +345,20 @@ async function jouerSecoursInterne() {
 
   for (let i = 0; i < segmentsR.length; i++) {
     const seg = segmentsR[i];
-    if (!seg.texte) continue;
+    // parlerDepuisAction : segment dont le texte n'est PAS parlé
+    // automatiquement en même temps que l'action démarre — c'est l'action
+    // DOM elle-même (dans alfred-dom.js) qui appelle speak() au bon
+    // moment (ex. seulement quand un événement attendu apparaît enfin à
+    // l'écran, pas dès le début de l'attente). Demandé explicitement :
+    // "je préfère qu'il le dise quand c'est dispo et pas avant".
+    if (!seg.texte && !seg.parlerDepuisAction) continue;
     const segTrad = segmentsTrad[i] || segmentsTrad[segmentsTrad.length - 1];
-    addToHistory('alfred', seg.texte);
-    const sousTitre = segTrad?.texte || seg.texte;
-    const promises = [speak(naturaliserTexte(seg.texte), currentLangue, sousTitre)];
+    const promises = [];
+    if (!seg.parlerDepuisAction) {
+      addToHistory('alfred', seg.texte);
+      const sousTitre = segTrad?.texte || seg.texte;
+      promises.push(speak(naturaliserTexte(seg.texte), currentLangue, sousTitre));
+    }
     if (currentActe >= 2 && seg.action && typeof executerActionDOM === 'function') {
       promises.push(executerActionDOM(seg.action));
     }

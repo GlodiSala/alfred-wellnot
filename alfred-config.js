@@ -284,10 +284,15 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     ] },
     // Découpé en 2 segments (aucun mot changé sur le 1er) — avant, la
     // réplique parlait une fois puis tout le reste (attente de l'événement
-    // + Consulter + Valider et envoyer) se passait en silence total.
+    // + Consulter + Valider et envoyer) se passait en silence total. Le 2e
+    // segment est en parlerDepuisAction : demandé explicitement, le texte
+    // n'est PAS dit dès le début de l'attente, mais seulement quand
+    // l'événement "Email à valider" apparaît vraiment (voir
+    // montrerPropositionEmail_envoyer dans alfred-dom.js, qui appelle
+    // speak() lui-même au bon moment).
     { acte: 2, label: 'CreationEmail', segments: [
       { texte: "Il manque encore les pièces du vendeur — j'ai préparé un projet de mail à BIMBIMMO, en lui demandant le PEB, le contrôle électrique et l'attestation du sol. Une seule demande, jamais deux fois la même question. Vous validez l'envoi ?", action: 'CreationEmail_Ouverture' },
-      { texte: "Voilà, je consulte le projet de mail et je l'envoie.", action: 'CreationEmail_Envoyer' },
+      { texte: "Voilà, je consulte le projet de mail et je l'envoie.", action: 'CreationEmail_Envoyer', parlerDepuisAction: true },
     ] },
     // Nouvelle étape (A20-A21 du séquencier) — dépend d'une vraie réponse
     // envoyée manuellement par Cyril depuis une boîte mail, hors de notre
@@ -347,7 +352,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     ] },
     { acte: 2, label: 'CreationEmail', segments: [
       { texte: "De stukken van de verkoper ontbreken nog — ik heb een e-mailontwerp klaargemaakt voor BIMBIMMO, met de vraag naar het EPC, de elektrische keuring en het bodemattest. Eén enkele vraag, nooit twee keer dezelfde. Bevestigt u de verzending?", action: 'CreationEmail_Ouverture' },
-      { texte: "Daar is het, ik bekijk het e-mailontwerp en verstuur het.", action: 'CreationEmail_Envoyer' },
+      { texte: "Daar is het, ik bekijk het e-mailontwerp en verstuur het.", action: 'CreationEmail_Envoyer', parlerDepuisAction: true },
     ] },
     { acte: 2, label: 'CreationReponseVendeur', texte: "Verzonden. De verkoper heeft geantwoord — de documenten zijn geladen. Ontvangen, geanalyseerd, gerangschikt. Bekijk de verkoopbelofte: de gegevens uit de stukken staan in de juiste clausules. Het ontwerp is volledig.", action: 'CreationReponseVendeur' },
 
