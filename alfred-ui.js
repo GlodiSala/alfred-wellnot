@@ -20,9 +20,14 @@ const ALFRED_SVG = `
 
     <!-- Bords adoucis (flou léger) : avant, un duplicata plein à bords durs
          décalé de 8px donnait un effet "autocollant qui dépasse" plutôt
-         qu'une vraie ombre portée avec de la profondeur. -->
+         qu'une vraie ombre portée avec de la profondeur.
+         Deuxième couche ajoutée (drop-shadow chaîné, pas une nouvelle forme) :
+         une ombre plus large et plus diffuse en dessous de celle déjà
+         adoucie, comme une élévation à deux niveaux (proche + lointaine)
+         plutôt qu'une seule ombre plate — décalage aussi monté de 8 à 10px
+         pour accentuer la sensation qu'il flotte au-dessus. -->
     <svg id="alfred-extrusion" viewBox="0 0 379.79 383.47" xmlns="http://www.w3.org/2000/svg"
-         style="position:absolute;top:8px;left:8px;width:175px;height:175px;overflow:visible;pointer-events:none;opacity:1;filter:blur(2.5px);transition:opacity .4s ease;">
+         style="position:absolute;top:10px;left:10px;width:175px;height:175px;overflow:visible;pointer-events:none;opacity:1;filter:blur(2.5px) drop-shadow(3px 5px 7px rgba(5,45,58,.35));transition:opacity .4s ease;">
       <circle cx="189.9" cy="191.74" r="191" fill="#0a6b7a"/>
       <path fill="#0a6b7a" d="M246.68,12.44C230.03,4.47,211.1,0,189.28,0h-.53c-22.96.09-42.76,5.17-59.94,14.02C53.98,39.52,0,110.33,0,193.66c0,104.72,85.18,189.81,189.9,189.81s189.9-85.18,189.9-189.81c0-84.91-56-156.95-133.02-181.13l-.09-.09ZM126.63,30.06h.26c16.83-10.95,37.68-16.56,62.13-16.65h.7c32.16,0,58.01,9.64,77.03,28.66,35.32,35.32,35.49,92.1,35.49,92.89v.44s2.8,29.36-9.64,43.03c-4.29,4.73-9.9,7.01-17.18,7.01H107.44c-6.22.18-11.57-1.93-15.95-6.31-13.76-13.58-14.02-44.25-14.02-44.6,0-.53-.7-56.35,33.83-91.75,4.73-4.82,9.81-9.03,15.42-12.71h-.09ZM109.71,264.56l-3.07,2.1v81.58c-54.94-29.71-92.45-87.81-92.45-154.58,0-58.71,29.09-110.68,73.43-142.58-24.19,37.42-23.66,81.32-23.57,83.51,0,1.49.09,36.28,17.96,53.89,6.84,6.75,15.25,10.17,24.97,10.17h.53c10.95-.18,26.9-.18,44.69-.18-4.12,14.2-16.12,47.76-42.5,66.16v-.09ZM257.46,355.7c-20.86,8.76-43.64,13.58-67.56,13.58s-47.76-5.08-68.88-14.11v-81.15c30.85-23.49,42.94-63.09,46.09-75.63h15.07v93.06c-12.01,3.24-21.03,13.67-21.03,26.73,0,15.6,12.62,28.22,28.22,28.22s28.22-12.62,28.22-28.22c0-13.06-9.03-23.49-21.03-26.73v-93.06h15.07c3.15,12.53,15.25,52.05,46.09,75.54v81.67l-.26.09ZM271.74,348.86v-82.2l-3.07-2.1c-26.29-18.31-38.29-51.79-42.5-66.07h49.07c11.04,0,20.16-3.86,26.99-11.39,15.86-17.53,13.32-49.42,12.97-52.84,0-5.52-.96-48.64-25.5-84.91,45.66,31.72,75.63,84.48,75.63,144.15,0,67.3-38.03,125.75-93.77,155.19l.18.18Z"/>
     </svg>
