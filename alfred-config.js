@@ -5,6 +5,7 @@ const ALFRED_CONFIG = {
   API_TTS_CACHE: 'https://alfred-wellnot.vercel.app/api/tts-cache',
   API_SCRIPT: 'https://alfred-wellnot.vercel.app/api/script',
   API_DEMO_DATA: 'https://alfred-wellnot.vercel.app/api/demo-data',
+  API_VENDEUR_REPLY: 'https://alfred-wellnot.vercel.app/api/vendeur-reply',
 
   EVENEMENT: {
     nom:          'Congrès des Notaires belges',
@@ -666,6 +667,39 @@ function reinitialiserReglages() {
   localStorage.removeItem(ALFRED_GEMINI_VOIX_KEY);
   localStorage.removeItem(ALFRED_VOIX_MOTEUR_KEY);
   reinitialiserDonneesCreation();
+}
+
+// Déclenchée depuis alfred-dom.js juste après qu'Alfred ait réellement envoyé
+// le mail au vendeur (montrerPropositionEmail_envoyer) : répond à ce même
+// mail depuis la boîte du vendeur, avec les 8 pièces, via api/vendeur-reply
+// (IMAP + SMTP côté serveur — voir ce fichier pour le détail). Même mot de
+// passe partagé que la synchro du script, jamais redemandé si déjà stocké.
+async function envoyerReponseVendeurAutomatique() {
+  let mdp = localStorage.getItem(ALFRED_SCRIPT_PASSWORD_KEY);
+  if (!mdp) {
+    mdp = prompt('Mot de passe partagé (le même que pour la synchro du script) :');
+    if (!mdp) return { ok: false, offlineOnly: true };
+    localStorage.setItem(ALFRED_SCRIPT_PASSWORD_KEY, mdp);
+  }
+
+  try {
+    const res = await fetch(ALFRED_CONFIG.API_VENDEUR_REPLY, {
+      method: 'POST',
+      headers: { 'X-Alfred-Password': mdp },
+    });
+    if (res.status === 401) {
+      localStorage.removeItem(ALFRED_SCRIPT_PASSWORD_KEY);
+      return { ok: false, wrongPassword: true };
+    }
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+    return { ok: true, data };
+  } catch (e) {
+    // Ne bloque jamais l'étape DOM qui nous a appelés : un échec ici (réseau,
+    // token expiré...) est simplement loggé, l'envoi reste faisable à la main.
+    console.warn('[Alfred Config] Réponse automatique du vendeur impossible.', e);
+    return { ok: false, error: e.message };
+  }
 }
 
 chargerDonneesCreationPersonnalisees();

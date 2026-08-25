@@ -1051,7 +1051,25 @@ async function montrerPropositionEmail_envoyer() {
     return false;
   }
   await attendre(1200);
-  console.log('[Alfred DOM] Mail envoyé au vendeur. Suite (réception/analyse des pièces, questions au chat) non automatisée — voir commentaire de montrerPropositionEmail_envoyer.');
+
+  // Automatise la suite : répond tout de suite, depuis la boîte du vendeur,
+  // au mail qu'Alfred vient d'envoyer, avec les 8 pièces (voir
+  // envoyerReponseVendeurAutomatique dans alfred-config.js et
+  // api/vendeur-reply). Un échec ici (réseau, mot de passe...) n'empêche pas
+  // la démo de continuer : il reste possible de répondre à la main comme
+  // avant, seul l'avancement vers "Documents"/Compromis reste manuel (voir
+  // commentaire de seq_creationDossier_attenteReponseVendeur — détection
+  // auto déjà tentée et abandonnée, on garde l'avancement à la flèche).
+  if (typeof envoyerReponseVendeurAutomatique === 'function') {
+    const reponse = await envoyerReponseVendeurAutomatique();
+    if (reponse.ok) {
+      console.log('[Alfred DOM] Réponse automatique du vendeur envoyée.', reponse.data);
+    } else {
+      console.warn('[Alfred DOM] Réponse automatique du vendeur non envoyée — à faire à la main si besoin.', reponse);
+    }
+  }
+
+  console.log('[Alfred DOM] Mail envoyé au vendeur et réponse automatique tentée. Vérifier "Documents"/Compromis une fois le traitement terminé côté Alfred.');
   return true;
 }
 
