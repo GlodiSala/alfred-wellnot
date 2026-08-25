@@ -240,11 +240,6 @@ function startListening() {
 let jouerSecoursEnCours = false;
 
 async function jouerSecours() {
-  // Diagnostic temporaire : une réplique jouée deux fois d'affilée a été
-  // vue en test sans qu'on sache si c'est un double appui/clic réel ou un
-  // double appel interne — la trace dit qui a appelé, à quel moment.
-  console.log('[Alfred] jouerSecours() appelée à', Date.now(), '— secoursIdx:', secoursIdx);
-  console.trace();
   if (jouerSecoursEnCours) {
     console.warn('[Alfred] Réplique déjà en cours — appui ignoré.');
     return;
