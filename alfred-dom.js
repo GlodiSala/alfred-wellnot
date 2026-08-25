@@ -21,7 +21,15 @@ const ALFRED_RALENTI = 1;
 // d'attente les plus longues ; remise à zéro au début de chaque nouvelle
 // réplique jouée (voir jouerSecoursInterne).
 let annulationDemandee = false;
-function demanderAnnulation() { annulationDemandee = true; }
+function demanderAnnulation() {
+  annulationDemandee = true;
+  // Diagnostic temporaire : le bug "Confirmer" annulé pendant le CADASTRE
+  // (biens) est réapparu même après avoir supprimé notre propre envoi
+  // d'Échap — la source réelle de cette annulation n'est donc pas encore
+  // identifiée avec certitude. Cette trace dira précisément quel code
+  // appelle demanderAnnulation() la prochaine fois que ça se produit.
+  console.trace('[Alfred DOM] demanderAnnulation() appelée — voir la pile ci-dessus pour savoir depuis où.');
+}
 function reinitialiserAnnulation() { annulationDemandee = false; }
 
 // ── Sélecteurs de l'interface app.alfred.be ───────────────
