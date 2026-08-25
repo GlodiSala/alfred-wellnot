@@ -708,5 +708,48 @@ async function envoyerReponseVendeurAutomatique() {
   }
 }
 
+// Interroge seulement (IMAP, rapide, sans télécharger les pièces GitHub) quel
+// est le dernier mail d'Alfred actuellement dans la boîte — sert à repérer
+// un point de départ avant l'envoi, puis à détecter qu'un nouveau mail est
+// bien arrivé après (voir attendreNouveauMailPuisRepondre). Ne demande
+// jamais le mot de passe (silencieux si absent) : un échec ici ne doit pas
+// interrompre la démo avec une invite bloquante à un moment inattendu.
+async function obtenirDernierMailIdAlfred() {
+  const mdp = localStorage.getItem(ALFRED_SCRIPT_PASSWORD_KEY);
+  if (!mdp) return null;
+  try {
+    const res = await fetch(`${ALFRED_CONFIG.API_VENDEUR_REPLY}?check=1`, {
+      method: 'POST',
+      headers: { 'X-Alfred-Password': mdp },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.mailTrouve?.messageId || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Attend qu'un mail vraiment NOUVEAU (différent de baselineMessageId)
+// apparaisse dans la boîte avant de répondre. Sans cette attente, une démo
+// rejouée risque de répondre au mail d'une répétition précédente plutôt
+// qu'au nouveau qu'Alfred vient d'envoyer : la recherche IMAP prend toujours
+// "le dernier trouvé", qui peut être périmé de quelques secondes si la
+// livraison Gmail n'est pas instantanée (constaté : ~1,2s d'attente fixe
+// avant ne suffisait pas à le garantir).
+// Budget 2 min : la latence réelle de livraison n'a jamais été mesurée.
+async function attendreNouveauMailPuisRepondre(baselineMessageId) {
+  if (baselineMessageId) {
+    let trouve = false;
+    for (let i = 0; i < 40; i++) { // 40 x 3s = 2 min
+      const actuel = await obtenirDernierMailIdAlfred();
+      if (actuel && actuel !== baselineMessageId) { trouve = true; break; }
+      await new Promise((r) => setTimeout(r, 3000));
+    }
+    if (!trouve) console.warn('[Alfred Config] Aucun nouveau mail détecté après 2 min — envoi tenté quand même (risque de répondre à un mail périmé).');
+  }
+  return envoyerReponseVendeurAutomatique();
+}
+
 chargerDonneesCreationPersonnalisees();
 rafraichirDonneesCreationDepuisServeur();

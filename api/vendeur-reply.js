@@ -139,10 +139,17 @@ export default async function handler(req, res) {
   const pass = process.env.GMAIL_APP_PASSWORD;
   const tokenGithub = process.env.ASSETS_GITHUB_TOKEN;
 
+  // ?check=1 : ne fait QUE la recherche IMAP (rapide, pas de téléchargement
+  // GitHub) — utilisé côté bookmarklet pour attendre qu'un mail réellement
+  // nouveau apparaisse avant de déclencher l'envoi réel (voir
+  // attendreNouveauMailPuisRepondre dans alfred-config.js). Ne nécessite donc
+  // pas ASSETS_GITHUB_TOKEN.
+  const verifierSeulement = req.query?.check === '1' || req.query?.check === 'true';
+
   const manquantes = [
     !user && 'GMAIL_USER',
     !pass && 'GMAIL_APP_PASSWORD',
-    !tokenGithub && 'ASSETS_GITHUB_TOKEN',
+    !verifierSeulement && !tokenGithub && 'ASSETS_GITHUB_TOKEN',
   ].filter(Boolean);
   if (manquantes.length) {
     return res.status(500).json({ error: `Variables d'environnement manquantes : ${manquantes.join(', ')}` });
@@ -156,6 +163,10 @@ export default async function handler(req, res) {
 
   try {
     const mail = await trouverMailAlfred(user, pass);
+
+    if (verifierSeulement) {
+      return res.status(200).json({ verification: true, mailTrouve: mail });
+    }
 
     const entrees = await listerPieces(tokenGithub);
     if (entrees.length === 0) {

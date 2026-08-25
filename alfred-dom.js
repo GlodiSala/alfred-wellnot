@@ -1043,6 +1043,16 @@ async function montrerPropositionEmail_envoyer() {
     }
   }
 
+  // Capturé AVANT le clic : sert de point de référence pour reconnaître,
+  // après l'envoi, un mail vraiment nouveau plutôt que le dernier trouvé par
+  // hasard (qui pourrait être celui d'une répétition précédente — voir
+  // attendreNouveauMailPuisRepondre dans alfred-config.js). Best-effort :
+  // null si le mot de passe n'est pas encore stocké ou si l'appel échoue,
+  // auquel cas l'attente sera simplement sautée plus loin.
+  const baselineMailId = (typeof obtenirDernierMailIdAlfred === 'function')
+    ? await obtenirDernierMailIdAlfred()
+    : null;
+
   await curseurVersAsync(consulter, () => consulter.click());
   await attendre(1200);
 
@@ -1052,16 +1062,18 @@ async function montrerPropositionEmail_envoyer() {
   }
   await attendre(1200);
 
-  // Automatise la suite : répond tout de suite, depuis la boîte du vendeur,
-  // au mail qu'Alfred vient d'envoyer, avec les 8 pièces (voir
-  // envoyerReponseVendeurAutomatique dans alfred-config.js et
-  // api/vendeur-reply). Un échec ici (réseau, mot de passe...) n'empêche pas
-  // la démo de continuer : il reste possible de répondre à la main comme
-  // avant, seul l'avancement vers "Documents"/Compromis reste manuel (voir
-  // commentaire de seq_creationDossier_attenteReponseVendeur — détection
-  // auto déjà tentée et abandonnée, on garde l'avancement à la flèche).
-  if (typeof envoyerReponseVendeurAutomatique === 'function') {
-    const reponse = await envoyerReponseVendeurAutomatique();
+  // Automatise la suite : attend qu'un mail réellement nouveau soit arrivé
+  // (pas juste 1,2s fixes — la livraison Gmail n'est pas instantanée), puis
+  // répond depuis la boîte du vendeur avec les 8 pièces (voir
+  // attendreNouveauMailPuisRepondre / envoyerReponseVendeurAutomatique dans
+  // alfred-config.js et api/vendeur-reply). Un échec ici (réseau, mot de
+  // passe...) n'empêche pas la démo de continuer : il reste possible de
+  // répondre à la main comme avant, seul l'avancement vers "Documents"/
+  // Compromis reste manuel (voir commentaire de
+  // seq_creationDossier_attenteReponseVendeur — détection auto déjà tentée
+  // et abandonnée sur d'autres signaux, on garde l'avancement à la flèche).
+  if (typeof attendreNouveauMailPuisRepondre === 'function') {
+    const reponse = await attendreNouveauMailPuisRepondre(baselineMailId);
     if (reponse.ok) {
       console.log('[Alfred DOM] Réponse automatique du vendeur envoyée.', reponse.data);
     } else {
