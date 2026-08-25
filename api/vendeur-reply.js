@@ -203,6 +203,10 @@ export default async function handler(req, res) {
       totalOctets: octets,
     });
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    // imapflow ne met que "Command failed" dans error.message pour tout NO/BAD
+    // IMAP — le vrai motif (identifiants refusés, mailbox absente...) vit dans
+    // responseText. Sans ça, toute erreur IMAP est indiagnosticable à distance.
+    const detail = error.responseText ? ` (${error.responseStatus}: ${error.responseText})` : '';
+    return res.status(500).json({ error: error.message + detail });
   }
 }
