@@ -1684,18 +1684,72 @@ async function seq_creationDossier_email() {
   await montrerPropositionEmail();
 }
 
-// Étape 7 (nouvelle, A20-A21 du séquencier) — Montrer le compromis
-// complété une fois la réponse du vendeur reçue. SIMPLIFIÉ à la demande,
-// après plusieurs tentatives de détection automatique qui ne marchaient
-// pas en test live (badge rouge, comptage d'éléments dans Événements) :
-// Cyril répond manuellement au mail depuis une vraie boîte mail (hors de
-// notre contrôle), et la réponse arrive comme un nouveau message dans
-// l'onglet CONVERSATION, pas Événements — visible à l'œil. Plutôt que
-// deviner encore un mécanisme de détection peu fiable, l'attente se fait
-// à la main : on ne déclenche cette réplique (flèche) qu'une fois la
-// réponse vue dans la Conversation. L'action se contente donc de montrer
-// le résultat ("Regardez le compromis"), sans rien attendre elle-même.
+// Compte les lignes de la liste "Documents" encore en attente (cellule
+// placeholder "..." — capture live confirmée : tbody.p-datatable-tbody,
+// une ligne par type de document attendu, "..." tant que rien n'est reçu).
+// Ne suppose PAS quel type précis correspond à quelle pièce envoyée (mapping
+// incertain — ex. l'amiante a deux lignes possibles, "parties communes" ou
+// pas) : compte juste combien de lignes, parmi les types attendus, sont
+// encore vides. Nécessite l'affichage sur "50 lignes par page" côté appli —
+// sinon le DOM ne contient que la page courante (10 lignes sur 18).
+function compterDocumentsEnAttente() {
+  const tbody = document.querySelector('tbody.p-datatable-tbody');
+  if (!tbody) return null; // pas sur l'onglet Documents, ou pas encore chargé
+  const lignes = Array.from(tbody.querySelectorAll('tr'));
+  if (lignes.length === 0) return null;
+  return lignes.filter(tr => tr.textContent.includes('...')).length;
+}
+
+// Étape 7 (A20-A21 du séquencier) — attend qu'au moins un document
+// supplémentaire soit reçu et classé côté Alfred, en surveillant la baisse
+// du nombre de lignes en attente dans Documents (voir
+// compterDocumentsEnAttente). Remplace l'attente manuelle utilisée jusqu'ici
+// (Cyril répondait depuis une vraie boîte mail, hors de notre contrôle — la
+// réponse arrivait visible à l'œil dans Conversation) : la réponse est
+// maintenant envoyée automatiquement (voir montrerPropositionEmail_envoyer),
+// donc il y a enfin un signal DOM concret et spécifique à surveiller — les
+// tentatives précédentes de détection auto avaient échoué sur des signaux
+// génériques (badge, comptage dans Événements), pas sur celui-ci.
+// Budget large (5 min) : la durée réelle du traitement backend d'un mail
+// entrant n'a jamais été mesurée en conditions réelles.
 async function seq_creationDossier_attenteReponseVendeur() {
+  await naviguerOnglet('Documents');
+  await attendre(1000);
+
+  const baseline = compterDocumentsEnAttente();
+  let detecte = false;
+  if (baseline === null) {
+    console.warn('[Alfred DOM] Liste des documents introuvable — impossible de détecter l\'arrivée des pièces, réplique jouée sans confirmation.');
+  } else {
+    console.log(`[Alfred DOM] ${baseline} document(s) encore en attente — surveillance en cours.`);
+    for (let i = 0; i < 100; i++) { // 100 x 3s = 5 min
+      if (annulationDemandee) { console.warn('[Alfred DOM] Attente des documents annulée.'); break; }
+      await attendre(3000);
+      const actuel = compterDocumentsEnAttente();
+      if (actuel !== null && actuel < baseline) {
+        console.log(`[Alfred DOM] Nouveau(x) document(s) détecté(s) (${baseline} → ${actuel} en attente).`);
+        detecte = true;
+        break;
+      }
+    }
+    if (!detecte) console.warn('[Alfred DOM] Aucun nouveau document détecté après 5 min — réplique jouée quand même.');
+  }
+
+  // Segment marqué parlerDepuisAction (voir alfred-brain.js et
+  // montrerPropositionEmail_envoyer pour le même principe) : le texte n'est
+  // dit qu'ici, une fois la meilleure preuve possible obtenue — ou, à
+  // défaut (détection indisponible/budget écoulé), on continue quand même
+  // pour ne pas bloquer une démo en direct sur un détail d'affichage.
+  if (typeof speak === 'function' && typeof ALFRED_CONFIG !== 'undefined') {
+    const liste = (typeof currentLangue !== 'undefined' && currentLangue === 'nl') ? ALFRED_CONFIG.REPLIQUES_NL : ALFRED_CONFIG.REPLIQUES_FR;
+    const replique = liste?.find(r => r.label === 'CreationReponseVendeur');
+    const segment = replique?.segments?.find(s => s.action === 'CreationReponseVendeur');
+    if (segment?.texte) {
+      if (typeof addToHistory === 'function') addToHistory('alfred', segment.texte);
+      speak(typeof naturaliserTexte === 'function' ? naturaliserTexte(segment.texte) : segment.texte, currentLangue, segment.texte);
+    }
+  }
+
   await naviguerOnglet('Compromis');
   await attendre(800);
   return true;

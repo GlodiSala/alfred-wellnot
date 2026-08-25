@@ -295,12 +295,16 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { texte: "Il manque encore les pièces du vendeur — j'ai préparé un projet de mail à BIMBIMMO, en lui demandant le PEB, le contrôle électrique et l'attestation du sol. Une seule demande, jamais deux fois la même question. Vous validez l'envoi ?", action: 'CreationEmail_Ouverture' },
       { texte: "Voilà, je consulte le projet de mail et je l'envoie.", action: 'CreationEmail_Envoyer', parlerDepuisAction: true },
     ] },
-    // Nouvelle étape (A20-A21 du séquencier) — dépend d'une vraie réponse
-    // envoyée manuellement par Cyril depuis une boîte mail, hors de notre
-    // contrôle. Texte basé sur le script d'origine (séquence 11) : "Le
-    // vendeur a répondu — les documents sont chargés. [...] Réceptionnés,
-    // analysés, classés [...] Le projet est complet."
-    { acte: 2, label: 'CreationReponseVendeur', texte: "Envoyé. Le vendeur a répondu — les documents sont chargés. Réceptionnés, analysés, classés. Regardez le compromis : les données des pièces se sont placées dans les bonnes clauses. Le projet est complet.", action: 'CreationReponseVendeur' },
+    // Étape A20-A21 du séquencier. Texte basé sur le script d'origine
+    // (séquence 11) : "Le vendeur a répondu — les documents sont chargés.
+    // [...] Réceptionnés, analysés, classés [...] Le projet est complet."
+    // parlerDepuisAction : dit seulement une fois qu'un changement est
+    // réellement détecté dans la liste Documents (voir
+    // attendreNouveauxDocuments dans alfred-dom.js), pas avant — même
+    // principe que CreationEmail_Envoyer juste au-dessus.
+    { acte: 2, label: 'CreationReponseVendeur', segments: [
+      { texte: "Envoyé. Le vendeur a répondu — les documents sont chargés. Réceptionnés, analysés, classés. Regardez le compromis : les données des pièces se sont placées dans les bonnes clauses. Le projet est complet.", action: 'CreationReponseVendeur', parlerDepuisAction: true },
+    ] },
 
     // ACTE 3
     // "certifié [par Privanot]" corrigé en "évalué dans le cadre de
@@ -355,7 +359,9 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { texte: "De stukken van de verkoper ontbreken nog — ik heb een e-mailontwerp klaargemaakt voor BIMBIMMO, met de vraag naar het EPC, de elektrische keuring en het bodemattest. Eén enkele vraag, nooit twee keer dezelfde. Bevestigt u de verzending?", action: 'CreationEmail_Ouverture' },
       { texte: "Daar is het, ik bekijk het e-mailontwerp en verstuur het.", action: 'CreationEmail_Envoyer', parlerDepuisAction: true },
     ] },
-    { acte: 2, label: 'CreationReponseVendeur', texte: "Verzonden. De verkoper heeft geantwoord — de documenten zijn geladen. Ontvangen, geanalyseerd, gerangschikt. Bekijk de verkoopbelofte: de gegevens uit de stukken staan in de juiste clausules. Het ontwerp is volledig.", action: 'CreationReponseVendeur' },
+    { acte: 2, label: 'CreationReponseVendeur', segments: [
+      { texte: "Verzonden. De verkoper heeft geantwoord — de documenten zijn geladen. Ontvangen, geanalyseerd, gerangschikt. Bekijk de verkoopbelofte: de gegevens uit de stukken staan in de juiste clausules. Het ontwerp is volledig.", action: 'CreationReponseVendeur', parlerDepuisAction: true },
+    ] },
 
     // ACTE 3
     // "gecertificeerd door Privanot" corrigé (même note de prod que la
