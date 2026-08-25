@@ -172,7 +172,6 @@ function creerPanneauRepliques() {
     </div>
     <button id="alfred-donnees-ouvrir" style="width:100%;margin-bottom:8px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:rgba(255,255,255,.85);font-size:11px;font-weight:600;cursor:pointer;">📋 Données du dossier démo</button>
     <button id="alfred-voix-ouvrir" style="width:100%;margin-bottom:6px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:rgba(255,255,255,.85);font-size:11px;font-weight:600;cursor:pointer;">🔊 Voix d'Alfred</button>
-    <button id="alfred-test-anim-ouvrir" style="width:100%;margin-bottom:6px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:rgba(255,255,255,.85);font-size:11px;font-weight:600;cursor:pointer;">🎭 Tester les animations</button>
     <div id="alfred-reglages-reset" style="text-align:center;color:rgba(255,255,255,.35);font-size:9px;margin-bottom:14px;cursor:pointer;">↺ Réinitialiser voix + données démo</div>
     <button id="alfred-lecture-auto" style="width:100%;margin-bottom:14px;padding:8px;border-radius:8px;border:1px solid rgba(20,176,189,.4);background:rgba(20,176,189,.12);color:#fff;font-size:11px;font-weight:600;cursor:pointer;">▶ Jouer tout (les 3 actes)</button>
     <div style="display:flex;gap:20px;align-items:flex-start;">
@@ -205,14 +204,6 @@ function creerPanneauRepliques() {
   btnVoix.onclick = () => {
     panel.style.display = 'none';
     ouvrirPanneauVoix();
-  };
-
-  const btnTestAnim = panel.querySelector('#alfred-test-anim-ouvrir');
-  btnTestAnim.onmouseover = () => { btnTestAnim.style.background = 'rgba(255,255,255,.18)'; };
-  btnTestAnim.onmouseout  = () => { btnTestAnim.style.background = 'rgba(255,255,255,.08)'; };
-  btnTestAnim.onclick = () => {
-    panel.style.display = 'none';
-    if (typeof ouvrirPanneauTestAnimations === 'function') ouvrirPanneauTestAnimations();
   };
 
   panel.querySelector('#alfred-script-reset').onclick = () => {
@@ -532,7 +523,14 @@ function ouvrirPanneauVoix() {
   // écrit en local avant ce moment-là. "On doit enregistrer la voix à
   // part" remonté explicitement — ce bouton reste utile pour le partage en
   // ligne + le préchargement TTS, mais le choix local ne dépend plus de lui.
-  selectVoix.onchange = () => localStorage.setItem(ALFRED_GEMINI_VOIX_KEY, selectVoix.value);
+  selectVoix.onchange = () => {
+    localStorage.setItem(ALFRED_GEMINI_VOIX_KEY, selectVoix.value);
+    // Sans ça, le repli Cloud TTS (voir appliquerChoixVoix dans
+    // alfred-voice.js) ne se resynchronisait qu'au prochain rechargement
+    // complet du bookmarklet — un changement de voix en cours de session ne
+    // prenait effet nulle part avant ça.
+    if (typeof appliquerChoixVoix === 'function') appliquerChoixVoix();
+  };
   panel.appendChild(selectVoix);
 
   panel.appendChild(champLabel('Ton'));
@@ -630,111 +628,6 @@ function ouvrirPanneauVoix() {
   boutons.appendChild(btnSave);
   boutons.appendChild(btnCancel);
   panel.appendChild(boutons);
-
-  panel.style.display = 'block';
-}
-
-// ── Panneau « Tester les animations » ─────────────────────
-// Sert uniquement à prévisualiser les états du logo (idle/think/talk/sleep)
-// et la forme de la bouche sans devoir déclencher une vraie réplique ou
-// attendre le TTS — demandé pour pouvoir régler visuellement les animations
-// sans repasser par tout le flux de démo à chaque essai. Rien ici n'est
-// sauvegardé ni synchronisé : purement local, purement visuel.
-function creerPanneauTestAnimations() {
-  if (document.getElementById('alfred-test-anim-panel')) return;
-  const panel = document.createElement('div');
-  panel.id = 'alfred-test-anim-panel';
-  panel.style.cssText = `
-    display:none; position:fixed;
-    top:50%; left:50%; transform:translate(-50%,-50%);
-    background:rgba(5,69,97,0.99); border-radius:14px;
-    padding:20px; z-index:500; width:320px; max-width:90vw;
-    box-shadow:0 8px 48px rgba(0,0,0,0.6);
-    font-family:sans-serif;
-  `;
-  document.body.appendChild(panel);
-
-  // Enregistré ici (une seule fois, à la création) plutôt que dans
-  // ouvrirPanneauTestAnimations (appelée à chaque ouverture) — sinon chaque
-  // ouverture ajoutait un nouveau listener sans jamais retirer le précédent.
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && panel.style.display !== 'none') {
-      panel.style.display = 'none';
-      setAlfredState('idle');
-    }
-  });
-}
-
-function ouvrirPanneauTestAnimations() {
-  const panel = document.getElementById('alfred-test-anim-panel');
-  if (!panel) return;
-  panel.innerHTML = '';
-
-  // Le remplissage automatique de setAlfredState('talk') (aléatoire, le
-  // temps qu'un vrai audio soit prêt) n'a pas lieu d'être ici puisqu'il n'y
-  // a jamais d'audio réel dans ce panneau — coupé pour laisser le curseur
-  // ci-dessous seul maître de la bouche.
-  clearInterval(talkTick);
-
-  const titre = document.createElement('div');
-  titre.textContent = 'Tester les animations';
-  titre.style.cssText = 'color:rgba(255,255,255,.4);font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;';
-  panel.appendChild(titre);
-
-  const etats = [
-    { id: 'idle',  label: '🙂 Attente' },
-    { id: 'think', label: '🤔 Réflexion' },
-    { id: 'talk',  label: '🗣️ Parle' },
-    { id: 'sleep', label: '😴 Veille' },
-  ];
-  const grille = document.createElement('div');
-  grille.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;';
-  etats.forEach(({ id, label }) => {
-    const btn = document.createElement('button');
-    btn.textContent = label;
-    btn.style.cssText = 'padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:12px;cursor:pointer;';
-    btn.onmouseover = () => { btn.style.background = 'rgba(255,255,255,.18)'; };
-    btn.onmouseout  = () => { btn.style.background = 'rgba(255,255,255,.08)'; };
-    btn.onclick = () => {
-      setAlfredState(id);
-      if (id === 'talk') {
-        // setAlfredState a relancé son propre remplissage aléatoire — coupé
-        // à nouveau pour laisser le curseur juste en dessous seul maître.
-        clearInterval(talkTick);
-        curseurAmplitude.style.display = 'block';
-      } else {
-        curseurAmplitude.style.display = 'none';
-      }
-    };
-    grille.appendChild(btn);
-  });
-  panel.appendChild(grille);
-
-  const labelCurseur = document.createElement('div');
-  labelCurseur.textContent = 'Ouverture de la bouche (manuel, état "Parle" seulement)';
-  labelCurseur.style.cssText = 'color:rgba(255,255,255,.4);font-size:9px;margin-bottom:6px;';
-  panel.appendChild(labelCurseur);
-
-  const curseurAmplitude = document.createElement('input');
-  curseurAmplitude.type = 'range';
-  curseurAmplitude.min = '0';
-  curseurAmplitude.max = '100';
-  curseurAmplitude.value = '30';
-  curseurAmplitude.style.cssText = 'width:100%;display:none;margin-bottom:16px;';
-  curseurAmplitude.oninput = () => {
-    if (typeof animateMouth === 'function') animateMouth(curseurAmplitude.value / 100);
-  };
-  panel.appendChild(curseurAmplitude);
-
-  const btnFermer = document.createElement('button');
-  btnFermer.textContent = 'Fermer';
-  btnFermer.style.cssText = 'width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:transparent;color:rgba(255,255,255,.8);font-size:12px;cursor:pointer;';
-  btnFermer.onclick = () => {
-    panel.style.display = 'none';
-    setAlfredState('idle');
-    document.getElementById('alfred-repliques-panel').style.display = 'block';
-  };
-  panel.appendChild(btnFermer);
 
   panel.style.display = 'block';
 }
@@ -999,7 +892,7 @@ function ouvrirEditionRéplique(index, nouvelActe) {
   const btnSave = document.createElement('button');
   btnSave.textContent = 'Enregistrer';
   btnSave.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:none;background:#14b0bd;color:#fff;font-size:12px;font-weight:600;cursor:pointer;';
-  btnSave.onclick = () => {
+  btnSave.onclick = async () => {
     // Le nom reste celui d'origine pour une réplique groupée (champ
     // désactivé plus haut, valeur jamais modifiée) — pas besoin de le
     // revalider différemment.
@@ -1030,6 +923,26 @@ function ouvrirEditionRéplique(index, nouvelActe) {
       ALFRED_CONFIG.REPLIQUES_NL[index] = nouvelleNL;
     }
     if (typeof sauvegarderAvecGestionConflit === 'function') afficherStatutSauvegarde(sauvegarderAvecGestionConflit());
+
+    // Avant : modifier le texte ici ne régénérait jamais son audio — la
+    // réplique restait en cache sous l'ANCIEN texte jusqu'à ce que quelqu'un
+    // clique "Enregistrer" dans le panneau Voix (le seul endroit qui
+    // préchargeait). Résultat : soit l'ancien audio (texte périmé) jouait en
+    // démo, soit un appel TTS en direct se déclenchait (lent, à éviter).
+    // prechargerScript ne regénère que ce qui a vraiment changé (le cache
+    // est gardé pour tout le reste, par texte+voix) — coût négligeable ici,
+    // une ou deux répliques.
+    if (typeof prechargerScript === 'function' && typeof voixGeminiActuelle === 'function') {
+      btnSave.disabled = true;
+      const original = btnSave.textContent;
+      btnSave.textContent = '⏳ Mise à jour de l\'audio…';
+      await prechargerScript(voixGeminiActuelle(), voixGeminiActuelle(), tonGemini(), (fait, total) => {
+        btnSave.textContent = `⏳ Audio ${fait}/${total}…`;
+      });
+      btnSave.disabled = false;
+      btnSave.textContent = original;
+    }
+
     panel.style.display = 'none';
     remplirPanneauRepliques();
     document.getElementById('alfred-repliques-panel').style.display = 'block';
@@ -1202,7 +1115,6 @@ function initAlfredUI() {
   creerPanneauEdition();
   creerPanneauDonneesCreation();
   creerPanneauVoix();
-  creerPanneauTestAnimations();
   startBlinking();
   startEyeLerp();
   resetSleepTimer();

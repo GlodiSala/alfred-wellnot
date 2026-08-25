@@ -16,27 +16,6 @@
 //    pouvoir tester le rendu Chirp3 HD en néerlandais.
 // languageCode est repris par défaut du groupe (fr/nl) sauf override
 // explicite (utilisé justement pour ce repli nl-NL).
-const VOIX_CATALOGUE = {
-  fr: [
-    { id: 'fr-FR-Wavenet-D',        label: 'Wavenet D (actuel)',                name: 'fr-FR-Wavenet-D',        gender: 'MALE' },
-    { id: 'fr-FR-Neural2-B',        label: 'Neural2 B — plus naturel',          name: 'fr-FR-Neural2-B',        gender: 'MALE' },
-    { id: 'fr-FR-Neural2-A',        label: 'Neural2 A — plus naturel (féminin)',name: 'fr-FR-Neural2-A',        gender: 'FEMALE' },
-    { id: 'fr-FR-Chirp3-HD-Puck',   label: 'Chirp3 HD Puck — très naturel',     name: 'fr-FR-Chirp3-HD-Puck',   gender: 'MALE' },
-    { id: 'fr-FR-Chirp3-HD-Charon', label: 'Chirp3 HD Charon — très naturel',   name: 'fr-FR-Chirp3-HD-Charon', gender: 'MALE' },
-    { id: 'fr-FR-Chirp3-HD-Fenrir', label: 'Chirp3 HD Fenrir — très naturel',   name: 'fr-FR-Chirp3-HD-Fenrir', gender: 'MALE' },
-    { id: 'fr-FR-Chirp3-HD-Orus',   label: 'Chirp3 HD Orus — très naturel',     name: 'fr-FR-Chirp3-HD-Orus',   gender: 'MALE' },
-    { id: 'fr-FR-Chirp3-HD-Kore',   label: 'Chirp3 HD Kore — très naturel (féminin)', name: 'fr-FR-Chirp3-HD-Kore', gender: 'FEMALE' },
-  ],
-  nl: [
-    { id: 'nl-BE-Wavenet-A',        label: 'Wavenet A (actuel)',                name: 'nl-BE-Wavenet-A',        gender: 'MALE' },
-    { id: 'nl-BE-Wavenet-B',        label: 'Wavenet B',                         name: 'nl-BE-Wavenet-B',        gender: 'MALE' },
-    // nl-BE n'a pas de Chirp3 HD chez Google — repli sur nl-NL (Pays-Bas,
-    // accent différent) pour au moins pouvoir tester le rendu.
-    { id: 'nl-NL-Chirp3-HD-Puck',   label: 'Chirp3 HD Puck — nl-NL, accent différent', name: 'nl-NL-Chirp3-HD-Puck',   gender: 'MALE', languageCode: 'nl-NL' },
-    { id: 'nl-NL-Chirp3-HD-Charon', label: 'Chirp3 HD Charon — nl-NL, accent différent', name: 'nl-NL-Chirp3-HD-Charon', gender: 'MALE', languageCode: 'nl-NL' },
-  ],
-};
-
 // Voix Cloud TTS les plus naturelles disponibles (Chirp3 HD) — utilisées
 // pour le repli automatique si Gemini échoue, et pour les réponses libres
 // du chatbot (texte généré à la volée, impossible à précharger : la
@@ -61,26 +40,37 @@ const VOIX_CONFIG = {
   }
 };
 
-// Applique un choix de voix sauvegardé (panneau "Voix") par-dessus les
-// valeurs par défaut ci-dessus — persiste entre les sessions/rechargements
-// du bookmarklet, indépendamment du code poussé.
-const ALFRED_VOIX_CHOIX_KEY = 'alfred_voix_choix';
+// Synchronise la voix Cloud TTS (repli si Gemini échoue, réponses libres du
+// chatbot — voir moteurForce dans speak()) sur la voix Gemini actuellement
+// choisie dans le panneau "Voix". Avant : cette fonction lisait une clé
+// ('alfred_voix_choix') qu'aucun code n'écrivait plus nulle part — un reste
+// d'un ancien système de choix de voix. Le repli restait donc bloqué sur
+// "Charon" par défaut quel que soit le choix réel fait dans le panneau
+// actuel, ce qui pouvait sonner différemment une fois basculé dessus
+// (remonté comme "incohérent" — pas un problème de genre : les 8 voix
+// Gemini du catalogue sont toutes masculines, confirmé, tout comme ce
+// défaut Cloud TTS, mais le timbre change).
+// Chirp3 HD (la famille de voix Cloud TTS la plus naturelle) ne couvre pas
+// tous les noms de voix Gemini — seuls Puck/Charon/Fenrir/Orus existent
+// confirmés en fr, Puck/Charon en nl (nl-BE n'a pas de Chirp3 HD du tout,
+// voir VOIX_CONFIG.nl). Pour un autre choix, on garde le repli par défaut
+// plutôt que de deviner un nom de voix qui n'existe peut-être pas chez
+// Google Cloud TTS (ça déclencherait la même panne que celle qu'on corrige).
+const CHIRP3_HD_DISPONIBLES = { fr: ['Puck', 'Charon', 'Fenrir', 'Orus'], nl: ['Puck', 'Charon'] };
 function appliquerChoixVoix() {
   try {
-    const raw = localStorage.getItem(ALFRED_VOIX_CHOIX_KEY);
-    if (!raw) return;
-    const choix = JSON.parse(raw); // { fr: 'fr-FR-Neural2-D', nl: 'nl-BE-Wavenet-B' }
+    // Lu en dur ('alfred_gemini_voix', pas la constante ALFRED_GEMINI_VOIX_KEY)
+    // : ce fichier s'exécute avant que cette constante ne soit déclarée plus
+    // bas — même situation, déjà documentée ainsi, dans alfred-config.js.
+    const id = localStorage.getItem('alfred_gemini_voix');
+    if (!id) return;
     ['fr', 'nl'].forEach(langue => {
-      const id = choix[langue];
-      if (!id) return;
-      const voixCatalogue = (VOIX_CATALOGUE[langue] || []).find(v => v.id === id);
-      if (!voixCatalogue) return;
-      VOIX_CONFIG[langue].name = voixCatalogue.name;
-      VOIX_CONFIG[langue].ssmlGender = voixCatalogue.gender;
-      if (voixCatalogue.languageCode) VOIX_CONFIG[langue].languageCode = voixCatalogue.languageCode;
+      if (!CHIRP3_HD_DISPONIBLES[langue].includes(id)) return;
+      const base = langue === 'nl' ? 'nl-NL' : 'fr-FR'; // nl-BE exclu, voir commentaire ci-dessus
+      VOIX_CONFIG[langue].name = `${base}-Chirp3-HD-${id}`;
     });
   } catch (e) {
-    console.warn('[Alfred Voice] Choix de voix sauvegardé illisible, valeurs par défaut utilisées.', e);
+    console.warn('[Alfred Voice] Synchro voix Cloud TTS impossible, valeurs par défaut utilisées.', e);
   }
 }
 appliquerChoixVoix();
@@ -364,7 +354,12 @@ async function genererAudioCloud(text, voix) {
         })
       });
       const data = await res.json();
-      if (!data.audioContent) throw new Error('Pas audio');
+      // api/tts.js retransmet la réponse Google telle quelle, erreur incluse
+      // — sans ce contrôle, une vraie erreur Google (voix indisponible,
+      // permission manquante...) était masquée par un simple "Pas audio" qui
+      // ne dit rien du motif réel.
+      if (data.error) throw new Error(`Cloud TTS: ${data.error.message || JSON.stringify(data.error)}`);
+      if (!data.audioContent) throw new Error('Cloud TTS: réponse sans audioContent ni erreur — ' + JSON.stringify(data).slice(0, 200));
       audioContent = data.audioContent;
       ecrireCacheTTS(cle, audioContent);
       ecrireCachePartage(cle, { base64: audioContent, format: 'mp3' });
