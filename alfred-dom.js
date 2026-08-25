@@ -1055,9 +1055,22 @@ async function essayerAjouterBienParCadastre(bien) {
     // partout ailleurs — REPRÉSENTE, Compromis...) : le déclencheur peut
     // contenir une icône ou un espace en plus du texte attendu. On
     // vérifie plutôt que le texte CONTIENT "sélectionner des biens",
-    // insensible à la casse, sur le plus petit élément correspondant
-    // (pour éviter d'attraper un ancêtre bien trop large).
+    // insensible à la casse.
+    //
+    // Piège trouvé par capture DOM en direct : le texte "Sélectionner des
+    // biens" apparaît sur DEUX éléments imbriqués — le <div
+    // class="p-fieldset-content-container"> englobant (le fieldset/section
+    // "Biens") ET le vrai <div class="p-multiselect-label"> à l'intérieur.
+    // Les deux ont la même longueur de texte, donc trier par longueur ne
+    // suffit pas à départager — ça attrapait le fieldset (aucun effet au
+    // clic) au lieu du vrai multiselect. On cherche donc D'ABORD une classe
+    // PrimeNG de multiselect précise, et seulement en dernier recours un
+    // span/div générique.
     for (let i = 0; i < 15; i++) {
+      const precis = Array.from(document.querySelectorAll('.p-multiselect-label, .p-multiselect'))
+        .find(e => e.getBoundingClientRect().width > 0 && e.textContent.trim().toLowerCase().includes('sélectionner des biens'));
+      if (precis) return precis;
+
       const candidats = Array.from(document.querySelectorAll('span, div'))
         .filter(e => e.getBoundingClientRect().width > 0 && e.textContent.trim().toLowerCase().includes('sélectionner des biens'));
       if (candidats.length) {
