@@ -1013,7 +1013,14 @@ async function essayerAjouterBienParCadastre(bien) {
   await curseurVersAsync(input, () => input.focus());
   await attendre(200);
   await taper(input, nomCommune || bien.commune);
-  await cliquerBouton(SELECTEURS.boutons.rechercher);
+
+  // cliquerBouton() ne fait que TROUVER puis cliquer — un clic qui n'a
+  // aucun effet (bouton trouvé mais le vrai gestionnaire n'écoute pas cet
+  // événement, même famille de bug que "Compromis" et les cases à cocher
+  // REPRÉSENTE) n'était jamais détecté ni retenté. Remonté en test live :
+  // "il n'appuie pas sur rechercher... ou considère que c'est vide".
+  const rechercheTrouvee = await cliquerBouton(SELECTEURS.boutons.rechercher);
+  if (!rechercheTrouvee) console.warn('[Alfred DOM] Bouton "Rechercher" (CADASTRE) introuvable.');
   await attendre(2600); // laisse largement le temps à la recherche de répondre
 
   // Comparaison stricte (===) trop fragile : le résultat de recherche réel
@@ -1022,17 +1029,34 @@ async function essayerAjouterBienParCadastre(bien) {
   // notaire (voir optionCorrespond). On vérifie plutôt que le code postal
   // ET le nom de commune apparaissent tous les deux quelque part dans le
   // texte de l'option, sans exiger un format précis.
-  let li = null;
-  for (let i = 0; i < 10; i++) {
-    li = Array.from(document.querySelectorAll('li'))
+  function chercherLiCommune() {
+    return Array.from(document.querySelectorAll('li'))
       .find(el => {
         if (el.getBoundingClientRect().width <= 0) return false;
         const texte = el.textContent.trim().toLowerCase();
         return (!codePostal || texte.includes(codePostal.toLowerCase()))
             && (!nomCommune  || texte.includes(nomCommune.toLowerCase()));
       });
+  }
+  let li = null;
+  for (let i = 0; i < 10; i++) {
+    li = chercherLiCommune();
     if (li) break;
     await attendre(400);
+  }
+  if (!li) {
+    // Peut-être le premier clic sur "Rechercher" n'a eu aucun effet — on
+    // retente une fois avant d'abandonner, plutôt que de basculer
+    // directement en manuel sur un simple clic raté.
+    console.warn('[Alfred DOM] Commune introuvable — nouvel essai sur "Rechercher" avant d\'abandonner.');
+    await curseurVersAsync(trouverBoutonParTexte(SELECTEURS.boutons.rechercher) || input, () => {});
+    await cliquerBouton(SELECTEURS.boutons.rechercher);
+    await attendre(2600);
+    for (let i = 0; i < 10; i++) {
+      li = chercherLiCommune();
+      if (li) break;
+      await attendre(400);
+    }
   }
   if (!li) {
     const liVisibles = Array.from(document.querySelectorAll('li')).filter(el => el.getBoundingClientRect().width > 0).map(el => el.textContent.trim());
