@@ -1015,6 +1015,26 @@ async function essayerAjouterBienParCadastre(bien) {
   await attendre(200);
   await taper(input, nomCommune || bien.commune);
 
+  // Un menu d'auto-complétion s'ouvre PENDANT la frappe (avant même de
+  // cliquer "Rechercher") — il faut cliquer la bonne commune dedans pour
+  // la sélectionner réellement, sinon "Rechercher" reste sans effet
+  // (texte libre non reconnu). Remonté en test live : "avant il arrivait
+  // à taper Coxyde et à sélectionner la bonne commune, maintenant il
+  // écrit juste, sans sélectionner".
+  let optionCommune = null;
+  for (let i = 0; i < 10; i++) {
+    optionCommune = Array.from(document.querySelectorAll('li'))
+      .find(el => el.getBoundingClientRect().width > 0 && el.textContent.trim().toLowerCase().includes((nomCommune || bien.commune).toLowerCase()));
+    if (optionCommune) break;
+    await attendre(400);
+  }
+  if (optionCommune) {
+    await curseurVersAsync(optionCommune, () => simulerClic(optionCommune));
+    await attendre(600);
+  } else {
+    console.warn('[Alfred DOM] Aucune suggestion de commune trouvée en tapant — on tente "Rechercher" quand même.');
+  }
+
   // cliquerBouton() ne fait que TROUVER puis cliquer — un clic qui n'a
   // aucun effet (bouton trouvé mais le vrai gestionnaire n'écoute pas cet
   // événement, même famille de bug que "Compromis" et les cases à cocher
@@ -1031,10 +1051,18 @@ async function essayerAjouterBienParCadastre(bien) {
   // de recherche. Ancienne hypothèse (liste de communes, puis 2e liste
   // pour la parcelle) confirmée fausse pour cette version de l'appli.
   async function trouverDeclencheurBiens() {
+    // Comparaison stricte trop fragile (même famille de bug rencontrée
+    // partout ailleurs — REPRÉSENTE, Compromis...) : le déclencheur peut
+    // contenir une icône ou un espace en plus du texte attendu. On
+    // vérifie plutôt que le texte CONTIENT "sélectionner des biens",
+    // insensible à la casse, sur le plus petit élément correspondant
+    // (pour éviter d'attraper un ancêtre bien trop large).
     for (let i = 0; i < 15; i++) {
-      const el = Array.from(document.querySelectorAll('span, div'))
-        .find(e => e.textContent.trim() === 'Sélectionner des biens' && e.getBoundingClientRect().width > 0);
-      if (el) return el;
+      const candidats = Array.from(document.querySelectorAll('span, div'))
+        .filter(e => e.getBoundingClientRect().width > 0 && e.textContent.trim().toLowerCase().includes('sélectionner des biens'));
+      if (candidats.length) {
+        return candidats.sort((a, b) => a.textContent.length - b.textContent.length)[0];
+      }
       await attendre(400);
     }
     return null;
