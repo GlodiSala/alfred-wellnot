@@ -974,6 +974,28 @@ async function lancerRedactionCompromis() {
 // réponse envoyée manuellement par Cyril depuis une boîte mail, hors de
 // notre contrôle. Voir seq_creationDossier_attenteReponseVendeur (étape
 // séparée, juste après celle-ci) pour l'attente + la suite.
+// Trouve le bouton "Consulter" de LA carte d'événement dont le texte
+// contient titreEvenement — remonté en test live par capture d'écran : ce
+// ne sont PAS des <li> (comme l'ancien code le supposait, jamais vérifié),
+// mais des cartes (probablement des <div>), et il peut y avoir plusieurs
+// cartes avec chacune leur propre bouton "Consulter" en même temps (ex.
+// "Demande d'Alfred" ET "Email à valider" simultanément) — d'où le besoin
+// de remonter depuis CHAQUE bouton "Consulter" jusqu'à sa carte pour
+// vérifier laquelle correspond au bon titre, plutôt que de prendre le
+// premier bouton "Consulter" trouvé sur l'écran.
+function trouverConsulterPourEvenement(titreEvenement) {
+  const boutons = Array.from(document.querySelectorAll('button'))
+    .filter(b => b.textContent.trim() === SELECTEURS.boutons.consulter && b.getBoundingClientRect().width > 0);
+  for (const bouton of boutons) {
+    let ancetre = bouton.parentElement;
+    for (let i = 0; i < 8 && ancetre; i++) {
+      if (ancetre.textContent.includes(titreEvenement)) return bouton;
+      ancetre = ancetre.parentElement;
+    }
+  }
+  return null;
+}
+
 async function montrerPropositionEmail() {
   // Le badge rouge (attendreBadgeNotification) ne marchait pas en test
   // live — retour à l'ouverture directe du panneau, qui fonctionnait déjà
@@ -982,7 +1004,7 @@ async function montrerPropositionEmail() {
   const onglet = trouverOnglet(SELECTEURS.onglets.evenements);
   if (onglet) curseurVers(onglet, () => onglet.click());
   await attendre(1200);
-  let li = null;
+  let consulter = null;
   // Budget large (90s → 3 min) : la génération réelle du compromis côté
   // backend (juste avant, voir lancerRedactionCompromis) peut prendre du
   // temps avant que l'événement "Email à valider" n'apparaisse — remonté
@@ -992,15 +1014,12 @@ async function montrerPropositionEmail() {
   // le plafond.
   for (let i = 0; i < 180; i++) {
     if (annulationDemandee) { console.warn('[Alfred DOM] Attente "Email à valider" annulée.'); return false; }
-    li = Array.from(document.querySelectorAll('li'))
-      .find(el => el.textContent.includes(SELECTEURS.textes.propositionEmail));
-    if (li) break;
+    consulter = trouverConsulterPourEvenement(SELECTEURS.textes.propositionEmail);
+    if (consulter) break;
     await attendre(1000);
   }
-  if (!li) { console.warn("[Alfred DOM] \"Email à valider\" non trouvé après 3 min"); return false; }
-  const consulter = Array.from(li.querySelectorAll('button')).find(b => b.textContent.trim() === SELECTEURS.boutons.consulter)
-    || trouverBoutonParTexte(SELECTEURS.boutons.consulter);
-  if (consulter) await curseurVersAsync(consulter, () => consulter.click());
+  if (!consulter) { console.warn("[Alfred DOM] \"Email à valider\" non trouvé après 3 min"); return false; }
+  await curseurVersAsync(consulter, () => consulter.click());
   await attendre(1200);
 
   if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.validerEtEnvoyer, 10, 500)) {
