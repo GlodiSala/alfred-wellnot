@@ -741,12 +741,12 @@ async function obtenirDernierMailIdAlfred() {
 async function attendreNouveauMailPuisRepondre(baselineMessageId) {
   if (baselineMessageId) {
     let trouve = false;
-    for (let i = 0; i < 40; i++) { // 40 x 3s = 2 min
+    for (let i = 0; i < 60; i++) { // 60 x 3s = 3 min — marge large, coût nul (juste des appels légers ?check=1)
       const actuel = await obtenirDernierMailIdAlfred();
       if (actuel && actuel !== baselineMessageId) { trouve = true; break; }
       await new Promise((r) => setTimeout(r, 3000));
     }
-    if (!trouve) console.warn('[Alfred Config] Aucun nouveau mail détecté après 2 min — envoi tenté quand même (risque de répondre à un mail périmé).');
+    if (!trouve) console.warn('[Alfred Config] Aucun nouveau mail détecté après 3 min — envoi tenté quand même (risque de répondre à un mail périmé).');
   }
   return envoyerReponseVendeurAutomatique();
 }

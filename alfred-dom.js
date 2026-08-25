@@ -155,6 +155,12 @@ async function defilerVersElement(el, dureeMs = 4500) {
   await new Promise(resolve => {
     const debut = performance.now();
     function etape(maintenant) {
+      // Vérifié à chaque frame : sans ça, ce défilement (jusqu'à 4,5s) était
+      // le plus long délai non-annulable de tout le script — Échap devait
+      // attendre qu'il se termine avant que la moindre vérification
+      // d'annulation ait lieu. Remonté en test live ("Échap n'annule pas
+      // tout de suite").
+      if (annulationDemandee) { resolve(); return; }
       const t = Math.min((maintenant - debut) / dureeMs, 1);
       const t2 = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; // ease-in-out
       const y = depart + (cible - depart) * t2;
@@ -163,7 +169,7 @@ async function defilerVersElement(el, dureeMs = 4500) {
     }
     requestAnimationFrame(etape);
   });
-  await attendre(200);
+  if (!annulationDemandee) await attendre(200);
 }
 
 function curseurVers(el, callback) {
@@ -182,6 +188,13 @@ function curseurVers(el, callback) {
     c.style.top  = (ar.top  + ar.height / 2) + 'px';
   }
 
+  // Réactivée ici (pas seulement coupée juste au-dessus) pour que
+  // l'apparition profite bien du fondu ".2s ease" prévu à la création du
+  // curseur (creerCurseur) : en passant opacity à 1 pendant que la
+  // transition était encore à 'none', le fondu ne s'appliquait jamais — le
+  // curseur apparaissait d'un coup sec plutôt qu'en fondu, quel que soit le
+  // délai après.
+  c.style.transition = 'opacity .2s ease';
   c.style.opacity = '1';
 
   const dureeDeplacement = (0.5 * ALFRED_RALENTI).toFixed(2);

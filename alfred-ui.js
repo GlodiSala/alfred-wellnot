@@ -513,6 +513,13 @@ function ouvrirPanneauVoix() {
     selectVoix.appendChild(opt);
   });
   selectVoix.value = voixGeminiActuelle();
+  // Persisté dès le changement, pas seulement au clic sur "Enregistrer" plus
+  // bas : sans ça, choisir une voix puis aller directement éditer le script
+  // (autre panneau, autre bouton "Enregistrer") perdait le choix — jamais
+  // écrit en local avant ce moment-là. "On doit enregistrer la voix à
+  // part" remonté explicitement — ce bouton reste utile pour le partage en
+  // ligne + le préchargement TTS, mais le choix local ne dépend plus de lui.
+  selectVoix.onchange = () => localStorage.setItem(ALFRED_GEMINI_VOIX_KEY, selectVoix.value);
   panel.appendChild(selectVoix);
 
   panel.appendChild(champLabel('Ton'));
@@ -520,6 +527,7 @@ function ouvrirPanneauVoix() {
   taTon.value = tonGemini();
   taTon.rows = 4;
   taTon.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:11px;font-family:sans-serif;resize:vertical;margin-bottom:14px;';
+  taTon.oninput = () => localStorage.setItem(ALFRED_GEMINI_TON_KEY, taTon.value);
   panel.appendChild(taTon);
 
   const zoneTest = document.createElement('div');
@@ -1050,6 +1058,13 @@ function setAlfredState(state) {
   const lids   = document.getElementById('alfred-lids');
   const mouth  = document.getElementById('alfred-mouth');
   const mouthT = document.getElementById('alfred-mouth-talk');
+
+  // Coupé ici (pas seulement au début du case 'talk') : en quittant l'état
+  // 'talk' pour idle/think/sleep, cet intervalle continuait à tourner en
+  // arrière-plan pour rien (mouthT étant caché, invisible mais actif quand
+  // même) jusqu'à la prochaine fois où on repassait par 'talk' — accumulait
+  // un setInterval oublié à chaque réplique.
+  clearInterval(talkTick);
 
   if (wrap)   { wrap.style.animation='none'; void wrap.offsetWidth; }
   if (shadow) { shadow.style.animation='none'; shadow.style.width='160px'; shadow.style.opacity='1'; }
