@@ -1392,8 +1392,12 @@ async function seq_creationDossier_parties_acquereur() {
   // l'enregistrement de l'acquéreur se fasse (pas 16s — c'est le
   // "Enregistrer" final de l'étape Bien, dans
   // seq_creationDossier_bien_finaliser, qui a besoin du long budget, pour
-  // que les dossiers aient le temps de s'afficher).
-  await attendre(4000);
+  // que les dossiers aient le temps de s'afficher). Remonté en test live à
+  // nouveau après un rechargement propre (donc pas un problème de cache) :
+  // 4000ms encore insuffisant par moments — l'enregistrement réel côté
+  // serveur semble varier (parfois plus lent que la confirmation visible
+  // dans le DOM). Rallongé par sécurité (4000 → 8000ms).
+  await attendre(8000);
   // "Suivant" reste désactivé tant que le vendeur n'a pas été ajouté avec succès.
   if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.suivant)) {
     console.warn('[Alfred DOM] Étape "parties" bloquée — arrêt de la séquence.');
