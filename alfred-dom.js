@@ -1140,10 +1140,20 @@ async function essayerAjouterBienParCadastre(bien) {
   await curseurVersAsync(optionBien, () => simulerClic(optionBien));
   await attendre(500);
   // Le panneau du multiselect peut rester ouvert par-dessus le bouton
-  // "Confirmer" — on le referme avec Échap (comportement standard
-  // PrimeNG pour un overlay), sans toucher au reste du formulaire.
-  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-  await attendre(400);
+  // "Confirmer". BUG TROUVÉ EN TEST LIVE : envoyer un vrai événement
+  // clavier Échap déclenche AUSSI le raccourci global d'Alfred qui
+  // annule l'action en cours (annulationDemandee) — "Confirmer" se
+  // retrouvait annulé par Alfred lui-même ! On referme donc le panneau
+  // en recliquant simplement sur son déclencheur (comportement toggle
+  // standard d'un multiselect PrimeNG), sans passer par le clavier. Le
+  // texte du déclencheur a changé (il affiche maintenant le bien choisi,
+  // plus "Sélectionner des biens") — on le retrouve donc par sa classe,
+  // pas par son texte.
+  const declencheurFermeture = document.querySelector('.p-multiselect-label');
+  if (declencheurFermeture) {
+    await curseurVersAsync(declencheurFermeture, () => simulerClic(declencheurFermeture));
+    await attendre(400);
+  }
 
   if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.confirmerBien, 10, 400)) {
     console.warn('[Alfred DOM] Bouton "Confirmer" (biens) introuvable ou inactif.');
