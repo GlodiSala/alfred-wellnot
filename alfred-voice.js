@@ -544,11 +544,17 @@ function obtenirAudioContextPartage() {
   return audioCtxPartage;
 }
 
+// Incrémenté à chaque appel de speak() — sert à repérer, dans le handler
+// onended ci-dessous, un audio devenu périmé (voir le commentaire à cet
+// endroit : bug de course trouvé en traçant setAlfredState en direct).
+let audioGeneration = 0;
+
 // moteurForce: 'cloud' pour forcer Cloud TTS (voir obtenirAudio) — utilisé
 // pour les réponses libres du chatbot, jamais pour les répliques scriptées.
 async function speak(text, langue, sousTitre, moteurForce) {
   if (!text || text === '...') return;
   langue = langue || currentLangue || 'fr';
+  const maGeneration = ++audioGeneration;
 
   setAlfredState('talk');
   animateMouth(0.3);
@@ -603,7 +609,12 @@ async function speak(text, langue, sousTitre, moteurForce) {
         clearInterval(talkTick);
         updateVolBar(0);
         resetMouth();
-        setAlfredState('idle');
+        // Trouvé en traçant setAlfredState en direct : cet "ended" peut se
+        // déclencher EN RETARD, après qu'une réplique suivante ait déjà
+        // commencé (son propre speak() a déjà remis l'état à 'talk') — sans
+        // cette vérification, ce retour tardif écrasait cet état frais avec
+        // 'idle', gelant la bouche alors que l'audio suivant jouait déjà.
+        if (maGeneration === audioGeneration) setAlfredState('idle');
         currentAudio = null;
         resetSleepTimer();
         cacherSousTitres();
@@ -621,6 +632,10 @@ async function speak(text, langue, sousTitre, moteurForce) {
 // ── Fallback Web Speech ───────────────────────────────────
 function fallbackSpeak(text, langue, sousTitre) {
   langue = langue || 'fr';
+  // Même compteur que speak() (voir plus haut) : protège aussi ce chemin de
+  // secours contre un onend en retard qui écraserait l'état d'une réplique
+  // suivante déjà commencée.
+  const maGeneration = ++audioGeneration;
   setAlfredState('talk');
 
   const sub = document.getElementById('alfred-subtitles');
@@ -667,7 +682,7 @@ function fallbackSpeak(text, langue, sousTitre) {
     clearInterval(phraseTimer);
     updateVolBar(0);
     resetMouth();
-    setAlfredState('idle');
+    if (maGeneration === audioGeneration) setAlfredState('idle');
     resetSleepTimer();
     cacherSousTitres();
   };
