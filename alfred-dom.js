@@ -658,17 +658,37 @@ async function taperDansChamp(id, texte, tentatives = 15, delaiParLettre) {
 // découvrait qu'à l'étape des notaires, plusieurs minutes plus tard — vu en
 // test live (acquéreur jamais ajouté, section REPRÉSENTE sans case
 // "Acquéreur" à cocher pour son notaire).
-async function partieAjouteeAvecSucces(qualite) {
-  for (let i = 0; i < 6; i++) {
-    const trouve = Array.from(document.querySelectorAll('*'))
-      .some(el => el.children.length === 0 && el.textContent.trim() === qualite && el.getBoundingClientRect().width > 0);
-    if (trouve) return true;
+function compterOccurrencesTexte(texte) {
+  return Array.from(document.querySelectorAll('*'))
+    .filter(el => el.children.length === 0 && el.textContent.trim() === texte && el.getBoundingClientRect().width > 0)
+    .length;
+}
+
+// Bug trouvé en test live : au début de ajouterPartieParRN/BCE, on
+// sélectionne "Vendeur"/"Acquéreur" dans le menu QUALITÉ de la nouvelle
+// partie — ce qui fait déjà apparaître ce texte à l'écran (l'étiquette du
+// menu déroulant choisi) AVANT même que la partie ne soit réellement
+// enregistrée. L'ancienne vérification (chercher juste une occurrence du
+// texte) était donc positive quasi instantanément à cause de cette
+// étiquette, pas d'une vraie confirmation d'ajout — la suite (le bien)
+// démarrait alors que l'acquéreur n'était pas encore vraiment enregistré.
+// On compte maintenant les occurrences AVANT de commencer, et on exige
+// qu'il y en ait STRICTEMENT PLUS après (la nouvelle ligne de la partie
+// ajoutée, en plus de l'étiquette du menu).
+async function partieAjouteeAvecSucces(qualite, occurrencesAvant) {
+  for (let i = 0; i < 10; i++) {
+    if (compterOccurrencesTexte(qualite) > occurrencesAvant) return true;
     await attendre(500);
   }
   return false;
 }
 
 async function ajouterPartieParRN(qualite, rn) {
+  // Compté AVANT tout changement : le menu QUALITÉ choisi juste après
+  // (choisirDansDropdown) affiche déjà ce même texte à l'écran — sans
+  // cette référence, la vérification de succès plus bas serait faussée
+  // par cette étiquette de menu, pas par une vraie confirmation d'ajout.
+  const occurrencesAvant = compterOccurrencesTexte(qualite);
   await choisirDansDropdown(SELECTEURS.menus.qualitePartie, qualite);
   await attendre(500);
   await cliquerBouton(SELECTEURS.boutons.ajouter);
@@ -680,7 +700,7 @@ async function ajouterPartieParRN(qualite, rn) {
   await attendre(3200); // laisse largement le temps à la recherche e-notariat de remplir le formulaire (attente réseau réelle, pas juste cosmétique — non raccourcie)
   await cliquerBouton(SELECTEURS.boutons.enregistrer);
   await attendre(600);
-  if (!await partieAjouteeAvecSucces(qualite)) {
+  if (!await partieAjouteeAvecSucces(qualite, occurrencesAvant)) {
     console.warn(`[Alfred DOM] "${qualite}" ne semble pas avoir été ajouté (recherche RN sans résultat ou échec de l'enregistrement ?) — RN utilisé: ${rn}. Les étapes suivantes (notaire, REPRÉSENTE) vont probablement échouer en cascade.`);
     return false;
   }
@@ -691,6 +711,7 @@ async function ajouterPartieParRN(qualite, rn) {
 // une "Personne morale" (société). Même logique que ajouterPartieParRN, mais
 // cible "Personne morale" puis le champ de recherche BCE.
 async function ajouterPartieParBCE(qualite, bce) {
+  const occurrencesAvant = compterOccurrencesTexte(qualite);
   await choisirDansDropdown(SELECTEURS.menus.qualitePartie, qualite);
   await attendre(500);
   await cliquerBouton(SELECTEURS.boutons.ajouter);
@@ -702,7 +723,7 @@ async function ajouterPartieParBCE(qualite, bce) {
   await attendre(3200); // laisse largement le temps à la recherche BCE de remplir le formulaire (attente réseau réelle, pas juste cosmétique — non raccourcie)
   await cliquerBouton(SELECTEURS.boutons.enregistrer);
   await attendre(600);
-  if (!await partieAjouteeAvecSucces(qualite)) {
+  if (!await partieAjouteeAvecSucces(qualite, occurrencesAvant)) {
     console.warn(`[Alfred DOM] "${qualite}" ne semble pas avoir été ajouté (recherche BCE sans résultat ou échec de l'enregistrement ?) — BCE utilisé: ${bce}. Les étapes suivantes (notaire, REPRÉSENTE) vont probablement échouer en cascade.`);
     return false;
   }
@@ -1169,12 +1190,16 @@ async function essayerAjouterBienParCadastre(bien) {
     await attendre(500);
     return false;
   }
-  // Laisse le temps de voir/lire le bien confirmé avant d'enregistrer —
-  // demandé explicitement (revert du budget réduit : le bien a besoin de
-  // ce temps pour bien s'enregistrer côté serveur, sinon l'étape suivante
-  // échoue).
+  // Laisse le temps de voir/lire le bien confirmé avant d'enregistrer
+  // (même demande que pour la saisie manuelle).
   await attendre(1800);
-  await cliquerBoutonQuandActif(SELECTEURS.boutons.enregistrer);
+  // Budget réduit (au lieu des 40x400=16s par défaut) : la vraie cause du
+  // problème "l'étape suivante échoue" était ailleurs (l'acquéreur pas
+  // confirmé avant "Suivant" dans l'étape Parties, corrigé séparément) —
+  // confirmé en test live, ce budget réduit ici n'est pas la cause.
+  if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.enregistrer, 10, 400)) {
+    console.warn('[Alfred DOM] Bouton "Enregistrer" (biens) introuvable après confirmation — l\'ajout du bien a peut-être échoué côté serveur (voir la console pour une éventuelle erreur réseau).');
+  }
   await attendre(1000);
   return true;
 }
@@ -1350,7 +1375,18 @@ async function seq_creationDossier_parties_vendeur() {
 async function seq_creationDossier_parties_acquereur() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) return;
-  await ajouterPartieParRN('Acquéreur', cfg.acquereur_rn);
+  // Le résultat n'était pas vérifié ici avant — on avançait vers "Suivant"
+  // (donc vers l'étape "bien") même si l'acquéreur n'avait pas vraiment
+  // été enregistré, ce qui faisait échouer toute la suite en cascade
+  // (remonté en test live). Un seul nouvel essai avant d'abandonner.
+  let ok = await ajouterPartieParRN('Acquéreur', cfg.acquereur_rn);
+  if (!ok) {
+    console.warn('[Alfred DOM] Acquéreur pas confirmé après le premier essai — nouvelle tentative.');
+    ok = await ajouterPartieParRN('Acquéreur', cfg.acquereur_rn);
+  }
+  if (!ok) {
+    console.warn('[Alfred DOM] Acquéreur toujours pas confirmé — on tente quand même "Suivant" (l\'ajout a peut-être réussi malgré la vérification).');
+  }
   // Petite pause volontaire : sans elle, le clic sur "Suivant" arrivait
   // presque immédiatement après l'ajout de l'acquéreur — remonté en test
   // live ("on a à peine le temps de voir il appuie Suivant"), encore un
