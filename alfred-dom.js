@@ -1389,12 +1389,11 @@ async function seq_creationDossier_parties_acquereur() {
   if (!ok) {
     console.warn('[Alfred DOM] Acquéreur toujours pas confirmé — on tente quand même "Suivant" (l\'ajout a peut-être réussi malgré la vérification).');
   }
-  // Confirmé par l'utilisatrice : ce n'est PAS ici qu'il faut attendre —
-  // "Suivant" (parties) peut s'enchaîner directement, le vrai temps de
-  // chargement à respecter est plus loin, avant "Enregistrer" du bien
-  // (les documents cadastraux doivent charger). Petite pause cosmétique
-  // seulement.
-  await attendre(500);
+  // Clarifié en test live (à plusieurs reprises) : c'est bien ICI qu'il
+  // faut attendre — entre "Enregistrer" (acquéreur) et le clic sur
+  // "Suivant" qui fait passer à l'étape "Bien". Pas assez de temps avec
+  // 500ms ni même 6000ms essayés avant — budget nettement augmenté.
+  await attendre(16000);
   // "Suivant" reste désactivé tant que le vendeur n'a pas été ajouté avec succès.
   if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.suivant)) {
     console.warn('[Alfred DOM] Étape "parties" bloquée — arrêt de la séquence.');
