@@ -1544,15 +1544,16 @@ function trouverColonneDefilante(cote) {
 }
 
 // Vitesse cible du défilement, en pixels/seconde — remplace une durée
-// fixe. Bug trouvé en test live par capture DOM : la colonne de droite
-// (le compromis généré) peut être BEAUCOUP plus longue que la gauche
-// (ex. 57000px contre 11000px), or l'ancien code utilisait des durées
-// fixes presque identiques pour les deux — la droite défilait donc
-// plusieurs fois plus vite visuellement. Encore ralentie (3000 → 1200
-// px/s) : toujours "beaucoup beaucoup trop rapide" au retour du premier
-// essai en vitesse constante.
-const VITESSE_SCROLL_COLONNE_PX_PAR_SEC = 1200;
+// fixe. Ralentie pour être vraiment lisible (1200 → 200 px/s).
+const VITESSE_SCROLL_COLONNE_PX_PAR_SEC = 200;
 const DUREE_MIN_SCROLL_COLONNE_MS = 1500;
+// Aller jusqu'au vrai bas du document rendait la démo interminable pour
+// un long compromis (ex. la colonne de droite peut faire 5x la gauche —
+// jusqu'à 47s au ralenti). Demandé explicitement : scroller juste assez
+// pour montrer/lire le contenu, pas tout le document. On défile donc au
+// maximum quelques hauteurs d'écran, pas jusqu'au bout — durée prévisible
+// et identique des deux côtés, peu importe la longueur réelle du texte.
+const ECRANS_A_DEFILER = 4;
 
 // Défile lentement du haut jusqu'au vrai bas de la colonne, à vitesse
 // constante (donc plus long pour un document plus long) — remonté en test
@@ -1574,7 +1575,10 @@ async function defilerColonneLentement(cote) {
   if (!conteneur) { console.warn('[Alfred DOM] Colonne', cote, 'du compromis introuvable pour le défilement.'); return; }
   conteneur.scrollTop = 0;
   await attendre(300);
-  const cible = conteneur.scrollHeight - conteneur.clientHeight; // vrai bas, pas une portion
+  const veritableBas = conteneur.scrollHeight - conteneur.clientHeight;
+  // Quelques hauteurs d'écran seulement, pas le vrai bas du document (voir
+  // ECRANS_A_DEFILER) — sauf si le document est déjà plus court que ça.
+  const cible = Math.min(veritableBas, conteneur.clientHeight * ECRANS_A_DEFILER);
   const dureeMs = Math.max(DUREE_MIN_SCROLL_COLONNE_MS, (cible / VITESSE_SCROLL_COLONNE_PX_PAR_SEC) * 1000);
   await new Promise(resolve => {
     const debut = performance.now();
