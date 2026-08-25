@@ -447,6 +447,11 @@ async function prechargerScript(voixFr, voixNl, ton, onProgress) {
 
 // ── Anime la bouche selon amplitude ──────────────────────
 function animateMouth(amp) {
+  // Suspendu pendant clinDoeil() (alfred-ui.js) : sinon ce callback, encore
+  // déclenché par talkTick pendant que l'audio finit de jouer, réécrit la
+  // bouche "qui parle" à chaque frame et annule aussitôt le sourire forcé
+  // du clin d'œil.
+  if (typeof clinDoeilActif !== 'undefined' && clinDoeilActif) return;
   const mt = document.getElementById('alfred-mouth-talk');
   const ms = document.getElementById('alfred-mouth');
   if (!mt || !ms) return;

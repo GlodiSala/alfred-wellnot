@@ -1259,6 +1259,8 @@ async function clinDoeil() {
   const eyeR       = document.getElementById('alfred-eye-r');
   const eyeLCercle = document.getElementById('alfred-eye-l-cercle');
   const eyeLFerme  = document.getElementById('alfred-eye-l-ferme');
+  const mouth      = document.getElementById('alfred-mouth');
+  const mouthTalk  = document.getElementById('alfred-mouth-talk');
   if (!body || !eyeR || !eyeLCercle || !eyeLFerme || typeof attendre !== 'function') {
     console.warn('[Alfred UI] clinDoeil() interrompue — élément(s) introuvable(s):', { body: !!body, eyeR: !!eyeR, eyeLCercle: !!eyeLCercle, eyeLFerme: !!eyeLFerme, attendre: typeof attendre });
     return;
@@ -1273,6 +1275,14 @@ async function clinDoeil() {
   eyeLFerme.style.display  = 'block';
   eyeR.style.transition = 'transform .3s ease';
   eyeR.style.transform  = 'scaleY(.35)';
+  // Sourire forcé pendant le geste : la réplique est encore en train de
+  // parler (talkTick continue d'appeler animateMouth toutes les 120ms), donc
+  // sans ce forçage la bouche resterait l'ellipse "qui parle" pendant tout
+  // le clin d'œil. animateMouth() (alfred-voice.js) vérifie clinDoeilActif et
+  // ne réécrit plus la bouche tant qu'il est vrai — ici on affiche le
+  // sourire statique une bonne fois pour toutes pour la durée du geste.
+  if (mouth)     mouth.style.display     = 'block';
+  if (mouthTalk) mouthTalk.style.display = 'none';
 
   await attendre(1400);
 
