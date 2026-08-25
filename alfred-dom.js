@@ -1190,14 +1190,16 @@ async function essayerAjouterBienParCadastre(bien) {
     await attendre(500);
     return false;
   }
-  // Confirmé par l'utilisatrice : c'est ICI qu'il faut vraiment attendre —
-  // pas après "Suivant" (parties), qui peut s'enchaîner directement. Les
-  // documents cadastraux doivent charger avant que "Enregistrer" ne
-  // devienne réellement utile — attente allongée en conséquence (1800ms de
-  // pause de lecture + jusqu'à 16s d'attente active du bouton, comme au
-  // tout début).
+  // Laisse le temps de voir/lire le bien confirmé avant d'enregistrer
+  // (même demande que pour la saisie manuelle). Confirmé par
+  // l'utilisatrice : ce "Enregistrer" (juste après "Confirmer" dans le
+  // dialogue CADASTRE) n'est PAS celui qui doit vraiment attendre — le
+  // vrai temps de chargement des documents à respecter, c'est le second
+  // "Enregistrer" plus loin, après "Suivant" (voir
+  // seq_creationDossier_bien_finaliser, qui garde déjà le budget par
+  // défaut de 16s).
   await attendre(1800);
-  if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.enregistrer)) {
+  if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.enregistrer, 10, 400)) {
     console.warn('[Alfred DOM] Bouton "Enregistrer" (biens) introuvable après confirmation — l\'ajout du bien a peut-être échoué côté serveur (voir la console pour une éventuelle erreur réseau).');
   }
   await attendre(1000);
