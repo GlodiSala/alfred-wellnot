@@ -683,6 +683,27 @@ async function partieAjouteeAvecSucces(qualite, occurrencesAvant) {
   return false;
 }
 
+// Signal plus fiable qu'un délai deviné, demandé par l'utilisatrice : la
+// fenêtre "Ajouter une partie" (comme celle du CADASTRE) est un vrai
+// dialogue PrimeNG ([role="dialog"]) qui se referme tout seul une fois
+// l'enregistrement terminé côté serveur — plutôt que deviner combien de
+// temps ça prend, on attend simplement que ce dialogue disparaisse.
+function trouverDialogueOuvert() {
+  return Array.from(document.querySelectorAll('[role="dialog"]'))
+    .find(el => el.getBoundingClientRect().width > 0);
+}
+
+async function attendreFermetureDialogue(dialogue, tentatives = 30, delai = 500) {
+  if (!dialogue) return true;
+  for (let i = 0; i < tentatives; i++) {
+    if (annulationDemandee) return false;
+    const encoreVisible = dialogue.isConnected && dialogue.getBoundingClientRect().width > 0;
+    if (!encoreVisible) return true;
+    await attendre(delai);
+  }
+  return false;
+}
+
 async function ajouterPartieParRN(qualite, rn) {
   // Compté AVANT tout changement : le menu QUALITÉ choisi juste après
   // (choisirDansDropdown) affiche déjà ce même texte à l'écran — sans
@@ -698,8 +719,17 @@ async function ajouterPartieParRN(qualite, rn) {
   await taperDansChamp(SELECTEURS.champs.rechercheRN, rn);
   await cliquerBouton(SELECTEURS.boutons.rechercher);
   await attendre(3200); // laisse largement le temps à la recherche e-notariat de remplir le formulaire (attente réseau réelle, pas juste cosmétique — non raccourcie)
+  // Signal fiable plutôt qu'un délai deviné (demandé par l'utilisatrice,
+  // le délai fixe précédent était trop variable) : on capture la fenêtre
+  // "Ajouter une partie" avant de cliquer "Enregistrer", puis on attend
+  // qu'elle se referme vraiment (jusqu'à 15s) — c'est ce que fait l'appli
+  // elle-même une fois l'enregistrement terminé côté serveur.
+  const dialogue = trouverDialogueOuvert();
   await cliquerBouton(SELECTEURS.boutons.enregistrer);
-  await attendre(600);
+  if (!await attendreFermetureDialogue(dialogue, 30, 500)) {
+    console.warn(`[Alfred DOM] La fenêtre d'ajout de "${qualite}" ne s'est pas refermée après 15s — l'enregistrement a peut-être échoué ou pris trop de temps.`);
+  }
+  await attendre(300);
   if (!await partieAjouteeAvecSucces(qualite, occurrencesAvant)) {
     console.warn(`[Alfred DOM] "${qualite}" ne semble pas avoir été ajouté (recherche RN sans résultat ou échec de l'enregistrement ?) — RN utilisé: ${rn}. Les étapes suivantes (notaire, REPRÉSENTE) vont probablement échouer en cascade.`);
     return false;
@@ -721,8 +751,12 @@ async function ajouterPartieParBCE(qualite, bce) {
   await taperDansChamp(SELECTEURS.champs.rechercheBCE, bce);
   await cliquerBouton(SELECTEURS.boutons.rechercher);
   await attendre(3200); // laisse largement le temps à la recherche BCE de remplir le formulaire (attente réseau réelle, pas juste cosmétique — non raccourcie)
+  const dialogue = trouverDialogueOuvert();
   await cliquerBouton(SELECTEURS.boutons.enregistrer);
-  await attendre(600);
+  if (!await attendreFermetureDialogue(dialogue, 30, 500)) {
+    console.warn(`[Alfred DOM] La fenêtre d'ajout de "${qualite}" ne s'est pas refermée après 15s — l'enregistrement a peut-être échoué ou pris trop de temps.`);
+  }
+  await attendre(300);
   if (!await partieAjouteeAvecSucces(qualite, occurrencesAvant)) {
     console.warn(`[Alfred DOM] "${qualite}" ne semble pas avoir été ajouté (recherche BCE sans résultat ou échec de l'enregistrement ?) — BCE utilisé: ${bce}. Les étapes suivantes (notaire, REPRÉSENTE) vont probablement échouer en cascade.`);
     return false;
@@ -1388,16 +1422,12 @@ async function seq_creationDossier_parties_acquereur() {
   if (!ok) {
     console.warn('[Alfred DOM] Acquéreur toujours pas confirmé — on tente quand même "Suivant" (l\'ajout a peut-être réussi malgré la vérification).');
   }
-  // Clarifié en test live : ici il faut juste quelques secondes pour que
-  // l'enregistrement de l'acquéreur se fasse (pas 16s — c'est le
-  // "Enregistrer" final de l'étape Bien, dans
-  // seq_creationDossier_bien_finaliser, qui a besoin du long budget, pour
-  // que les dossiers aient le temps de s'afficher). Remonté en test live à
-  // nouveau après un rechargement propre (donc pas un problème de cache) :
-  // 4000ms encore insuffisant par moments — l'enregistrement réel côté
-  // serveur semble varier (parfois plus lent que la confirmation visible
-  // dans le DOM). Rallongé par sécurité (4000 → 8000ms).
-  await attendre(8000);
+  // Un délai fixe ici était trop variable (remonté plusieurs fois en test
+  // live, jamais fiable à 100%) — ajouterPartieParRN attend maintenant
+  // vraiment que la fenêtre d'ajout se referme (signal réel de fin
+  // d'enregistrement) avant de revenir, donc plus besoin de deviner un
+  // délai supplémentaire ici. Petite pause cosmétique seulement.
+  await attendre(500);
   // "Suivant" reste désactivé tant que le vendeur n'a pas été ajouté avec succès.
   if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.suivant)) {
     console.warn('[Alfred DOM] Étape "parties" bloquée — arrêt de la séquence.');
