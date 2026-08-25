@@ -1389,11 +1389,12 @@ async function seq_creationDossier_parties_acquereur() {
   if (!ok) {
     console.warn('[Alfred DOM] Acquéreur toujours pas confirmé — on tente quand même "Suivant" (l\'ajout a peut-être réussi malgré la vérification).');
   }
-  // Clarifié en test live (à plusieurs reprises) : c'est bien ICI qu'il
-  // faut attendre — entre "Enregistrer" (acquéreur) et le clic sur
-  // "Suivant" qui fait passer à l'étape "Bien". Pas assez de temps avec
-  // 500ms ni même 6000ms essayés avant — budget nettement augmenté.
-  await attendre(16000);
+  // Clarifié en test live : ici il faut juste quelques secondes pour que
+  // l'enregistrement de l'acquéreur se fasse (pas 16s — c'est le
+  // "Enregistrer" final de l'étape Bien, dans
+  // seq_creationDossier_bien_finaliser, qui a besoin du long budget, pour
+  // que les dossiers aient le temps de s'afficher).
+  await attendre(4000);
   // "Suivant" reste désactivé tant que le vendeur n'a pas été ajouté avec succès.
   if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.suivant)) {
     console.warn('[Alfred DOM] Étape "parties" bloquée — arrêt de la séquence.');
