@@ -996,7 +996,12 @@ function trouverConsulterPourEvenement(titreEvenement) {
   return null;
 }
 
-async function montrerPropositionEmail() {
+// Découpé en deux (ouverture / consultation+envoi) pour être calé sur deux
+// segments de réplique — demandé explicitement : avant, la réplique
+// parlait une fois puis tout le reste (attente + clic Consulter + clic
+// Valider et envoyer) se passait en silence total. La 2e phrase
+// accompagne maintenant le moment où on consulte/valide, plutôt que rien.
+async function montrerPropositionEmail_ouverture() {
   // Le badge rouge (attendreBadgeNotification) ne marchait pas en test
   // live — retour à l'ouverture directe du panneau, qui fonctionnait déjà
   // (le poll juste après suffit à attendre "Email à valider").
@@ -1004,6 +1009,9 @@ async function montrerPropositionEmail() {
   const onglet = trouverOnglet(SELECTEURS.onglets.evenements);
   if (onglet) curseurVers(onglet, () => onglet.click());
   await attendre(1200);
+}
+
+async function montrerPropositionEmail_envoyer() {
   let consulter = null;
   // Budget large (90s → 3 min) : la génération réelle du compromis côté
   // backend (juste avant, voir lancerRedactionCompromis) peut prendre du
@@ -1027,8 +1035,14 @@ async function montrerPropositionEmail() {
     return false;
   }
   await attendre(1200);
-  console.log('[Alfred DOM] Mail envoyé au vendeur. Suite (réception/analyse des pièces, questions au chat) non automatisée — voir commentaire de montrerPropositionEmail.');
+  console.log('[Alfred DOM] Mail envoyé au vendeur. Suite (réception/analyse des pièces, questions au chat) non automatisée — voir commentaire de montrerPropositionEmail_envoyer.');
   return true;
+}
+
+// Rétrocompatibilité — enchaîne les deux sous-étapes.
+async function montrerPropositionEmail() {
+  await montrerPropositionEmail_ouverture();
+  return montrerPropositionEmail_envoyer();
 }
 
 // Tente d'ajouter le bien via la recherche CADASTRE (par commune). Si la
@@ -1630,6 +1644,8 @@ async function seq_creationDossier_redaction_scrollDroite() {
 }
 
 // Étape 6 — Attendre/montrer l'e-mail généré automatiquement.
+// Découpée en 2 sous-étapes (ouverture / envoi) pour un calage sur 2
+// segments de réplique — voir montrerPropositionEmail_ouverture/_envoyer.
 async function seq_creationDossier_email() {
   await montrerPropositionEmail();
 }
@@ -1706,6 +1722,8 @@ const DOM_ACTIONS = {
   'CreationRedaction_ScrollGauche': seq_creationDossier_redaction_scrollGauche,
   'CreationRedaction_ScrollDroite': seq_creationDossier_redaction_scrollDroite,
   'CreationEmail':     seq_creationDossier_email,
+  'CreationEmail_Ouverture': montrerPropositionEmail_ouverture,
+  'CreationEmail_Envoyer':   montrerPropositionEmail_envoyer,
   'CreationReponseVendeur': seq_creationDossier_attenteReponseVendeur,
 };
 

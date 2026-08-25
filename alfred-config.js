@@ -282,7 +282,13 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { texte: "À gauche, toutes les données collectées.", action: 'CreationRedaction_ScrollGauche' },
       { texte: "À droite, le compromis qui se construit en direct.", action: 'CreationRedaction_ScrollDroite' },
     ] },
-    { acte: 2, label: 'CreationEmail',     texte: "Il manque encore les pièces du vendeur — j'ai préparé un projet de mail à BIMBIMMO, en lui demandant le PEB, le contrôle électrique et l'attestation du sol. Une seule demande, jamais deux fois la même question. Vous validez l'envoi ?", action: 'CreationEmail' },
+    // Découpé en 2 segments (aucun mot changé sur le 1er) — avant, la
+    // réplique parlait une fois puis tout le reste (attente de l'événement
+    // + Consulter + Valider et envoyer) se passait en silence total.
+    { acte: 2, label: 'CreationEmail', segments: [
+      { texte: "Il manque encore les pièces du vendeur — j'ai préparé un projet de mail à BIMBIMMO, en lui demandant le PEB, le contrôle électrique et l'attestation du sol. Une seule demande, jamais deux fois la même question. Vous validez l'envoi ?", action: 'CreationEmail_Ouverture' },
+      { texte: "Voilà, je consulte le projet de mail et je l'envoie.", action: 'CreationEmail_Envoyer' },
+    ] },
     // Nouvelle étape (A20-A21 du séquencier) — dépend d'une vraie réponse
     // envoyée manuellement par Cyril depuis une boîte mail, hors de notre
     // contrôle. Texte basé sur le script d'origine (séquence 11) : "Le
@@ -339,7 +345,10 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { texte: "Links, alle verzamelde gegevens.", action: 'CreationRedaction_ScrollGauche' },
       { texte: "Rechts, de akte die live wordt opgebouwd.", action: 'CreationRedaction_ScrollDroite' },
     ] },
-    { acte: 2, label: 'CreationEmail',     texte: "De stukken van de verkoper ontbreken nog — ik heb een e-mailontwerp klaargemaakt voor BIMBIMMO, met de vraag naar het EPC, de elektrische keuring en het bodemattest. Eén enkele vraag, nooit twee keer dezelfde. Bevestigt u de verzending?", action: 'CreationEmail' },
+    { acte: 2, label: 'CreationEmail', segments: [
+      { texte: "De stukken van de verkoper ontbreken nog — ik heb een e-mailontwerp klaargemaakt voor BIMBIMMO, met de vraag naar het EPC, de elektrische keuring en het bodemattest. Eén enkele vraag, nooit twee keer dezelfde. Bevestigt u de verzending?", action: 'CreationEmail_Ouverture' },
+      { texte: "Daar is het, ik bekijk het e-mailontwerp en verstuur het.", action: 'CreationEmail_Envoyer' },
+    ] },
     { acte: 2, label: 'CreationReponseVendeur', texte: "Verzonden. De verkoper heeft geantwoord — de documenten zijn geladen. Ontvangen, geanalyseerd, gerangschikt. Bekijk de verkoopbelofte: de gegevens uit de stukken staan in de juiste clausules. Het ontwerp is volledig.", action: 'CreationReponseVendeur' },
 
     // ACTE 3
