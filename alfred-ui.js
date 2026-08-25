@@ -1254,11 +1254,16 @@ let clinDoeilActif = false;
 // yeux qui portent l'émotion, pas de petits déplacements du corps (voir la
 // recherche sur les mascottes à formes géométriques simples, ex. Duolingo).
 async function clinDoeil() {
+  console.log('[Alfred UI] clinDoeil() appelée.');
   const body       = document.getElementById('alfred-body-main');
   const eyeR       = document.getElementById('alfred-eye-r');
   const eyeLCercle = document.getElementById('alfred-eye-l-cercle');
   const eyeLFerme  = document.getElementById('alfred-eye-l-ferme');
-  if (!body || !eyeR || !eyeLCercle || !eyeLFerme || typeof attendre !== 'function') return;
+  if (!body || !eyeR || !eyeLCercle || !eyeLFerme || typeof attendre !== 'function') {
+    console.warn('[Alfred UI] clinDoeil() interrompue — élément(s) introuvable(s):', { body: !!body, eyeR: !!eyeR, eyeLCercle: !!eyeLCercle, eyeLFerme: !!eyeLFerme, attendre: typeof attendre });
+    return;
+  }
+  console.log('[Alfred UI] clinDoeil() — tous les éléments trouvés, geste en cours.');
 
   clinDoeilActif = true;
 

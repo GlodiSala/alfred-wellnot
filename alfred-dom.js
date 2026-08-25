@@ -1870,6 +1870,10 @@ async function executerActionDOM(label) {
   if (action) {
     await attendre(600);
     await action();
+  } else {
+    // Échouait en silence total jusqu'ici — impossible de distinguer "action
+    // jamais appelée" de "appelée mais sans effet visible" depuis la console.
+    console.warn('[Alfred DOM] executerActionDOM : aucune action pour le label', JSON.stringify(label));
   }
 }
 
