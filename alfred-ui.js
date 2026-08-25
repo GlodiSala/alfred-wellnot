@@ -1245,50 +1245,42 @@ function setAlfredState(state) {
 // chaque frame et annule aussitôt le plissement.
 let clinDoeilActif = false;
 
-// true pendant le geste "Montrer" (voir gesteMontrer plus bas) — même
-// besoin que clinDoeilActif : suspendre startEyeLerp le temps du geste pour
-// que l'agrandissement des yeux ne soit pas écrasé à chaque frame.
+// true pendant le geste "Montrer" (voir gesteMontrer plus bas) — empêche
+// balayageRegardEnParlant de choisir une nouvelle cible de regard aléatoire
+// par-dessus celle du geste pendant qu'il est tenu.
 let gesteMontrerActif = false;
 
 // Geste d'invitation confiante sur "Avec plaisir. Regardez." (acte 1) — le
-// pivot où Alfred arrête d'expliquer et passe à la démo. Les yeux
-// s'ouvrent nettement plus grand (vrai changement de forme via scale, pas
-// un simple déplacement — même principe que le clin d'œil : sur un
-// personnage à formes simples, c'est la forme des yeux qui porte
-// l'émotion) + un léger lean-in du corps, tenu pendant toute la ligne puis
-// relâché.
+// pivot où Alfred arrête d'expliquer et passe à la démo.
+// Essayé d'abord en agrandissant les yeux (scale 1.25) : lu comme un
+// "gonflement" bizarre plutôt qu'une émotion (retour utilisateur, testé en
+// vrai). Remplacé par un regard dirigé — les yeux se tournent vers ce qu'il
+// s'apprête à montrer, comme s'il désignait l'écran — plus un léger lean-in
+// du corps, tenu pendant toute la ligne puis relâché. Le regard réutilise
+// simplement eyeTargetX/Y et le lissage déjà en place (startEyeLerp/
+// balayageRegardEnParlant) : aucun nouveau transform à gérer sur les yeux,
+// donc aucun risque de conflit avec le suivi du regard existant.
 async function gesteMontrer() {
-  // Diagnostics temporaires (même principe que clinDoeil) : la première
-  // tentative de test n'a rien montré de concluant en console, impossible
-  // de distinguer "jamais appelée" de "appelée mais sans effet visible".
   console.log('[Alfred UI] gesteMontrer() appelée.');
   const body = document.getElementById('alfred-body-main');
-  const eyeL = document.getElementById('alfred-eye-l');
-  const eyeR = document.getElementById('alfred-eye-r');
-  if (!body || !eyeL || !eyeR || typeof attendre !== 'function') {
-    console.warn('[Alfred UI] gesteMontrer() interrompue — élément(s) introuvable(s):', { body: !!body, eyeL: !!eyeL, eyeR: !!eyeR, attendre: typeof attendre });
+  if (!body || typeof attendre !== 'function') {
+    console.warn('[Alfred UI] gesteMontrer() interrompue — élément(s) introuvable(s):', { body: !!body, attendre: typeof attendre });
     return;
   }
-  console.log('[Alfred UI] gesteMontrer() — tous les éléments trouvés, geste en cours. état actuel:', { curState, gesteMontrerActif, clinDoeilActif });
+  console.log('[Alfred UI] gesteMontrer() — geste en cours. état actuel:', { curState });
 
   gesteMontrerActif = true;
 
   body.style.transition = 'transform .35s cubic-bezier(.34,1.56,.64,1)';
-  body.style.transform  = 'translateY(4px) scale(1.03)';
-  eyeL.style.transition = 'transform .3s ease';
-  eyeR.style.transition = 'transform .3s ease';
-  // On combine avec la translation courante du regard (eyeCurX/Y) au lieu
-  // de l'écraser, sinon les yeux "sauteraient" au centre le temps du geste.
-  eyeL.style.transform = `translate(${eyeCurX.toFixed(2)}px,${eyeCurY.toFixed(2)}px) scale(1.25)`;
-  eyeR.style.transform = `translate(${eyeCurX.toFixed(2)}px,${eyeCurY.toFixed(2)}px) scale(1.25)`;
-  console.log('[Alfred UI] gesteMontrer() — transforms appliqués:', { body: body.style.transform, eyeL: eyeL.style.transform, eyeR: eyeR.style.transform });
+  body.style.transform  = 'translateY(4px)';
+  eyeTargetX = -5;
+  eyeTargetY = 6;
 
   await attendre(1700);
 
-  body.style.transform = 'translateY(0) scale(1)';
-  // Pas besoin de réinitialiser le transform des yeux à la main : dès que
-  // gesteMontrerActif repasse à false, la prochaine frame de startEyeLerp
-  // réécrit un transform translate-only correct tout seul.
+  body.style.transform = 'translateY(0)';
+  eyeTargetX = 0;
+  eyeTargetY = 0;
   gesteMontrerActif = false;
   console.log('[Alfred UI] gesteMontrer() — geste terminé, retour à la normale.');
 }
@@ -1380,10 +1372,11 @@ function startEyeLerp() {
   function lerp() {
     // Étendu à 'talk' (avant : 'idle' seulement) — pendant qu'il parle, les
     // yeux restaient fixes, seul moment le plus regardé de toute la démo.
-    // Suspendu pendant clinDoeil()/gesteMontrer() : sinon ce lissage réécrit
-    // style.transform à chaque frame et annule aussitôt le plissement de
-    // l'œil droit / l'agrandissement des yeux.
-    if (!clinDoeilActif && !gesteMontrerActif && (curState === 'idle' || curState === 'talk')) {
+    // Suspendu pendant clinDoeil() : sinon ce lissage réécrit style.transform
+    // à chaque frame et annule aussitôt le plissement de l'œil droit.
+    // (gesteMontrer() ne touche plus directement ce transform — il passe
+    // par eyeTargetX/Y, donc n'a pas besoin d'être exclu ici.)
+    if (!clinDoeilActif && (curState === 'idle' || curState === 'talk')) {
       eyeCurX += (eyeTargetX - eyeCurX) * .12;
       eyeCurY += (eyeTargetY - eyeCurY) * .12;
       const eL = document.getElementById('alfred-eye-l');
@@ -1403,7 +1396,9 @@ function startEyeLerp() {
 // Réutilise eyeTargetX/Y et le lissage déjà en place (startEyeLerp) — cette
 // fonction ne fait que choisir une nouvelle cible de temps en temps.
 function balayageRegardEnParlant() {
-  if (curState === 'talk') {
+  // Suspendu pendant gesteMontrer() : sinon ce balayage aléatoire peut
+  // retomber pile pendant le geste et écraser le regard dirigé qu'il tient.
+  if (curState === 'talk' && !gesteMontrerActif) {
     eyeTargetX = (Math.random() - 0.5) * 10;
     eyeTargetY = (Math.random() - 0.5) * 5;
   }
