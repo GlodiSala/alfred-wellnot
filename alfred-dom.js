@@ -1377,10 +1377,19 @@ async function seq_creationDossier_parties() {
 }
 
 // Étape 3 — Bien, puis finalisation (Documents : rien à joindre en démo).
-async function seq_creationDossier_bien() {
+// Découpée en deux sous-étapes (comme CreationOuvrir/CreationParties/
+// CreationNotaires/CreationRedaction) pour un calage sur deux segments :
+// la réplique était restée "à plat" alors que le flux CADASTRE (recherche
+// + sélection + confirmation + enregistrement) est long — la narration
+// finissait bien avant que l'action à l'écran ne le fasse. Remonté en
+// test live.
+async function seq_creationDossier_bien_ajouter() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) return;
   await ajouterBien(cfg.bien);
+}
+
+async function seq_creationDossier_bien_finaliser() {
   if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.suivant)) {
     console.warn('[Alfred DOM] Étape "bien" bloquée — arrêt de la séquence.');
     return;
@@ -1392,6 +1401,13 @@ async function seq_creationDossier_bien() {
   await attendre(4500);
   await cliquerBoutonQuandActif(SELECTEURS.boutons.enregistrer);
   await attendre(2200);
+}
+
+// Rétrocompatibilité — enchaîne les deux sous-étapes (test manuel en
+// console ; le script normal déclenche chaque sous-étape à part).
+async function seq_creationDossier_bien() {
+  await seq_creationDossier_bien_ajouter();
+  await seq_creationDossier_bien_finaliser();
 }
 
 // Étape 4 — Rattacher les notaires (vendeur et acquéreur) depuis l'onglet Parties.
@@ -1557,6 +1573,8 @@ const DOM_ACTIONS = {
   'CreationParties_Vendeur':   seq_creationDossier_parties_vendeur,
   'CreationParties_Acquereur': seq_creationDossier_parties_acquereur,
   'CreationBien':      seq_creationDossier_bien,
+  'CreationBien_Rechercher': seq_creationDossier_bien_ajouter,
+  'CreationBien_Finaliser':  seq_creationDossier_bien_finaliser,
   'CreationNotaires':  seq_creationDossier_notaires,
   'CreationNotaires_Vendeur':   seq_creationDossier_notaires_vendeur,
   'CreationNotaires_Acquereur': seq_creationDossier_notaires_acquereur,
