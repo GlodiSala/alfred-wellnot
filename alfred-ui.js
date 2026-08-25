@@ -1258,10 +1258,18 @@ let gesteMontrerActif = false;
 // l'émotion) + un léger lean-in du corps, tenu pendant toute la ligne puis
 // relâché.
 async function gesteMontrer() {
+  // Diagnostics temporaires (même principe que clinDoeil) : la première
+  // tentative de test n'a rien montré de concluant en console, impossible
+  // de distinguer "jamais appelée" de "appelée mais sans effet visible".
+  console.log('[Alfred UI] gesteMontrer() appelée.');
   const body = document.getElementById('alfred-body-main');
   const eyeL = document.getElementById('alfred-eye-l');
   const eyeR = document.getElementById('alfred-eye-r');
-  if (!body || !eyeL || !eyeR || typeof attendre !== 'function') return;
+  if (!body || !eyeL || !eyeR || typeof attendre !== 'function') {
+    console.warn('[Alfred UI] gesteMontrer() interrompue — élément(s) introuvable(s):', { body: !!body, eyeL: !!eyeL, eyeR: !!eyeR, attendre: typeof attendre });
+    return;
+  }
+  console.log('[Alfred UI] gesteMontrer() — tous les éléments trouvés, geste en cours. état actuel:', { curState, gesteMontrerActif, clinDoeilActif });
 
   gesteMontrerActif = true;
 
@@ -1273,6 +1281,7 @@ async function gesteMontrer() {
   // de l'écraser, sinon les yeux "sauteraient" au centre le temps du geste.
   eyeL.style.transform = `translate(${eyeCurX.toFixed(2)}px,${eyeCurY.toFixed(2)}px) scale(1.25)`;
   eyeR.style.transform = `translate(${eyeCurX.toFixed(2)}px,${eyeCurY.toFixed(2)}px) scale(1.25)`;
+  console.log('[Alfred UI] gesteMontrer() — transforms appliqués:', { body: body.style.transform, eyeL: eyeL.style.transform, eyeR: eyeR.style.transform });
 
   await attendre(1700);
 
@@ -1281,6 +1290,7 @@ async function gesteMontrer() {
   // gesteMontrerActif repasse à false, la prochaine frame de startEyeLerp
   // réécrit un transform translate-only correct tout seul.
   gesteMontrerActif = false;
+  console.log('[Alfred UI] gesteMontrer() — geste terminé, retour à la normale.');
 }
 
 // Clin d'œil de clôture ("Ne partez pas trop vite. C'est moi qui vous
