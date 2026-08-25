@@ -172,6 +172,13 @@ async function defilerVersElement(el, dureeMs = 4500) {
   if (!annulationDemandee) await attendre(200);
 }
 
+// true une fois que le curseur a été positionné au moins une fois — sert à
+// ne le faire "téléporter" au logo qu'à la toute première apparition (point
+// de départ qui a du sens), pas à chaque clic. Avant : il repartait du logo
+// à CHAQUE appel, donnant un mouvement décousu d'une action à l'autre au
+// lieu d'un vrai déplacement continu — remonté en test live.
+let curseurPositionneUneFois = false;
+
 function curseurVers(el, callback) {
   const c = document.getElementById('alfred-cursor');
   if (!c || !el) { if (callback) callback(); return; }
@@ -180,12 +187,15 @@ function curseurVers(el, callback) {
   const x = rect.left + rect.width  / 2;
   const y = rect.top  + rect.height / 2;
 
-  const alfred = document.getElementById('alfred-svg');
-  if (alfred) {
-    const ar = alfred.getBoundingClientRect();
-    c.style.transition = 'none';
-    c.style.left = (ar.left + ar.width  / 2) + 'px';
-    c.style.top  = (ar.top  + ar.height / 2) + 'px';
+  if (!curseurPositionneUneFois) {
+    const alfred = document.getElementById('alfred-svg');
+    if (alfred) {
+      const ar = alfred.getBoundingClientRect();
+      c.style.transition = 'none';
+      c.style.left = (ar.left + ar.width  / 2) + 'px';
+      c.style.top  = (ar.top  + ar.height / 2) + 'px';
+    }
+    curseurPositionneUneFois = true;
   }
 
   // Réactivée ici (pas seulement coupée juste au-dessus) pour que
