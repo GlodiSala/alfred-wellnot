@@ -1092,13 +1092,23 @@ async function essayerAjouterBienParCadastre(bien) {
 
   // Coche le premier (et normalement seul) bien de la liste, confirmé par
   // capture d'écran ("Lot privé (ancien)..."). "Aucun bien coché-able
-  // trouvé" remonté en test live : la case n'est probablement pas un vrai
-  // <input type="checkbox"> mais un élément personnalisé (même famille
-  // que REPRÉSENTE) — recherche élargie à [role="checkbox"], et repli sur
-  // la ligne <li> entière si rien de plus précis n'est trouvé.
+  // trouvé" remonté en test live : suspicion confirmée que le problème
+  // vient de la recherche trop stricte (exiger un <li> parent), pas du
+  // clic lui-même. PrimeNG rend souvent les cases sous forme de
+  // <p-checkbox>/.p-checkbox(-box) qui ne sont pas forcément dans un
+  // <li> — recherche élargie à TOUT le document, sans exiger de parent
+  // particulier, sur tous les motifs de case à cocher usuels.
   async function chercherCheckboxBien() {
+    const SELECTEUR_CHECKBOX = [
+      'input[type="checkbox"]',
+      '[role="checkbox"]',
+      'p-checkbox',
+      '.p-checkbox',
+      '.p-checkbox-box',
+      '.p-checkbox-input',
+    ].join(', ');
     for (let i = 0; i < 8; i++) {
-      const trouve = Array.from(document.querySelectorAll('li input[type="checkbox"], li [role="checkbox"]'))
+      const trouve = Array.from(document.querySelectorAll(SELECTEUR_CHECKBOX))
         .find(el => el.getBoundingClientRect().width > 0);
       if (trouve) return trouve;
       await attendre(300);
