@@ -1387,11 +1387,12 @@ async function seq_creationDossier_parties_acquereur() {
   if (!ok) {
     console.warn('[Alfred DOM] Acquéreur toujours pas confirmé — on tente quand même "Suivant" (l\'ajout a peut-être réussi malgré la vérification).');
   }
-  // Petite pause volontaire : sans elle, le clic sur "Suivant" arrivait
-  // presque immédiatement après l'ajout de l'acquéreur — remonté en test
-  // live ("on a à peine le temps de voir il appuie Suivant"), encore un
-  // peu allongée (500 → 900ms) sur un nouveau retour du même type.
-  await attendre(900);
+  // Pause avant "Suivant" nettement allongée (900 → 3000ms) : même
+  // confirmé par la vérification DOM, l'ajout de l'acquéreur peut encore
+  // être en cours d'enregistrement côté serveur (UI optimiste) — remonté
+  // en test live ("il va sur suivant trop vite... attendre que ça
+  // s'enregistre avant d'aller sur suivant").
+  await attendre(3000);
   // "Suivant" reste désactivé tant que le vendeur n'a pas été ajouté avec succès.
   if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.suivant)) {
     console.warn('[Alfred DOM] Étape "parties" bloquée — arrêt de la séquence.');
