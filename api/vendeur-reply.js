@@ -150,7 +150,9 @@ export default async function handler(req, res) {
 
   // ?dry=1 : retrouve le mail et les pièces, mais n'envoie rien. Permet de
   // vérifier la configuration sans polluer le dossier côté Alfred.
-  const blanc = req.query?.dry === '1' || req.query?.dry === 'true';
+  // Un GET reste toujours une simulation : un envoi réel ne doit pas pouvoir
+  // partir sur une simple visite d'URL (préchargement, aperçu de lien...).
+  const blanc = req.method !== 'POST' || req.query?.dry === '1' || req.query?.dry === 'true';
 
   try {
     const mail = await trouverMailAlfred(user, pass);
