@@ -1169,17 +1169,12 @@ async function essayerAjouterBienParCadastre(bien) {
     await attendre(500);
     return false;
   }
-  // Laisse le temps de voir/lire le bien confirmé avant d'enregistrer
-  // (même demande que pour la saisie manuelle).
+  // Laisse le temps de voir/lire le bien confirmé avant d'enregistrer —
+  // demandé explicitement (revert du budget réduit : le bien a besoin de
+  // ce temps pour bien s'enregistrer côté serveur, sinon l'étape suivante
+  // échoue).
   await attendre(1800);
-  // Budget réduit (au lieu des 40x400=16s par défaut) : remonté en test
-  // live que l'ajout du bien via CADASTRE peut échouer côté serveur
-  // (POST add_folder_assets 400) sans qu'aucune erreur ne soit visible
-  // dans l'appli — dans ce cas "Enregistrer" n'apparaît jamais, et il ne
-  // sert à rien d'attendre 16 secondes avant de passer à la suite.
-  if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.enregistrer, 10, 400)) {
-    console.warn('[Alfred DOM] Bouton "Enregistrer" (biens) introuvable après confirmation — l\'ajout du bien a peut-être échoué côté serveur (voir la console pour une éventuelle erreur réseau).');
-  }
+  await cliquerBoutonQuandActif(SELECTEURS.boutons.enregistrer);
   await attendre(1000);
   return true;
 }
