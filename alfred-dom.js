@@ -266,10 +266,14 @@ function validerChamp(input) {
   input.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
-// ── Trouver un onglet par texte exact ─────────────────────
+// ── Trouver un onglet par texte ─────────────────────
+// Comparaison stricte (===) trop fragile — même famille de bug que
+// REPRÉSENTE/Compromis (icône ou espace en plus dans l'élément réel,
+// confirmé par capture DOM : <p-tab role="tab"> personnalisé). Passé en
+// .includes() insensible à la casse.
 function trouverOnglet(texte) {
   return Array.from(document.querySelectorAll('a, button, [role="tab"]'))
-    .find(el => el.textContent.trim() === texte && el.getBoundingClientRect().width > 0);
+    .find(el => el.textContent.trim().toLowerCase().includes(texte.toLowerCase()) && el.getBoundingClientRect().width > 0);
 }
 
 // Le panneau Alfred (Conversation / Événements) n'existe dans le DOM que
@@ -280,6 +284,13 @@ function trouverOnglet(texte) {
 // devine la position de cette icône (coin haut-droit, petite, ronde) faute
 // de sélecteur exact — à vérifier en live.
 function trouverAvatarAlfred() {
+  // Confirmé par capture DOM en direct : <button aria-label="Parler avec
+  // Alfred">, pas une icône devinée au pif — cherché en premier avant les
+  // anciens repris (gardés au cas où le libellé changerait).
+  const bouton = Array.from(document.querySelectorAll('button[aria-label]'))
+    .find(el => (el.getAttribute('aria-label') || '').toLowerCase().includes('parler avec alfred') && el.getBoundingClientRect().width > 0);
+  if (bouton) return bouton;
+
   const candidats = Array.from(document.querySelectorAll('img, button, [role="button"], div, span'))
     .filter(el => {
       const r = el.getBoundingClientRect();
