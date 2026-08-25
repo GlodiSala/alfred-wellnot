@@ -1133,6 +1133,7 @@ function initAlfredUI() {
   creerPanneauVoix();
   startBlinking();
   startEyeLerp();
+  balayageRegardEnParlant();
   resetSleepTimer();
   trackMouse();
 
@@ -1268,7 +1269,9 @@ function trackMouse() {
 
 function startEyeLerp() {
   function lerp() {
-    if (curState === 'idle') {
+    // Étendu à 'talk' (avant : 'idle' seulement) — pendant qu'il parle, les
+    // yeux restaient fixes, seul moment le plus regardé de toute la démo.
+    if (curState === 'idle' || curState === 'talk') {
       eyeCurX += (eyeTargetX - eyeCurX) * .12;
       eyeCurY += (eyeTargetY - eyeCurY) * .12;
       const eL = document.getElementById('alfred-eye-l');
@@ -1279,6 +1282,20 @@ function startEyeLerp() {
     rafEyes = requestAnimationFrame(lerp);
   }
   rafEyes = requestAnimationFrame(lerp);
+}
+
+// Pendant 'talk', le regard ne suit pas la souris (sa position réelle n'a
+// aucun sens comme cible — le présentateur peut cliquer n'importe où sur
+// l'écran) : un léger balayage autonome, vers un nouveau point discret
+// toutes les 2 à 4s, donne l'impression qu'il regarde la salle en parlant.
+// Réutilise eyeTargetX/Y et le lissage déjà en place (startEyeLerp) — cette
+// fonction ne fait que choisir une nouvelle cible de temps en temps.
+function balayageRegardEnParlant() {
+  if (curState === 'talk') {
+    eyeTargetX = (Math.random() - 0.5) * 10;
+    eyeTargetY = (Math.random() - 0.5) * 5;
+  }
+  setTimeout(balayageRegardEnParlant, 2000 + Math.random() * 2000);
 }
 
 function resetSleepTimer() {
