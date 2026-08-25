@@ -1273,8 +1273,11 @@ async function clinDoeil() {
   body.style.transform  = 'rotate(8deg)';
   eyeLCercle.style.display = 'none';
   eyeLFerme.style.display  = 'block';
-  eyeR.style.transition = 'transform .3s ease';
-  eyeR.style.transform  = 'scaleY(.35)';
+  // L'œil droit reste tel quel (pas de plissement) : en scaleY(.35) il se
+  // réduisait à un trait fin quasi identique à l'œil gauche fermé, donc les
+  // deux yeux avaient l'air fermés/plissés au lieu d'un vrai clin d'œil (un
+  // œil fermé, l'autre normal). Le contraste fermé/normal suffit à lire le
+  // geste, pas besoin de toucher l'œil droit.
   // Sourire forcé pendant le geste : la réplique est encore en train de
   // parler (talkTick continue d'appeler animateMouth toutes les 120ms), donc
   // sans ce forçage la bouche resterait l'ellipse "qui parle" pendant tout
@@ -1289,7 +1292,6 @@ async function clinDoeil() {
   body.style.transform     = 'rotate(0deg)';
   eyeLCercle.style.display = 'block';
   eyeLFerme.style.display  = 'none';
-  eyeR.style.transform     = 'scaleY(1)';
 
   clinDoeilActif = false;
 }
