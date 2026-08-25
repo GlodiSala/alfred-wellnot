@@ -1860,6 +1860,9 @@ const DOM_ACTIONS = {
   'CreationEmail_Ouverture': montrerPropositionEmail_ouverture,
   'CreationEmail_Envoyer':   montrerPropositionEmail_envoyer,
   'CreationReponseVendeur': seq_creationDossier_attenteReponseVendeur,
+  // Geste unique, purement visuel (voir clinDoeil dans alfred-ui.js) — pas
+  // d'automatisation de l'appli, juste le clin d'œil de clôture.
+  'ClosingWink': (typeof clinDoeil === 'function') ? clinDoeil : async () => {},
 };
 
 async function executerActionDOM(label) {

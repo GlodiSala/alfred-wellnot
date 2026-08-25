@@ -44,7 +44,12 @@ const ALFRED_SVG = `
         <path fill="#14b0bd" d="M246.68,12.44C230.03,4.47,211.1,0,189.28,0h-.53c-22.96.09-42.76,5.17-59.94,14.02C53.98,39.52,0,110.33,0,193.66c0,104.72,85.18,189.81,189.9,189.81s189.9-85.18,189.9-189.81c0-84.91-56-156.95-133.02-181.13l-.09-.09ZM126.63,30.06h.26c16.83-10.95,37.68-16.56,62.13-16.65h.7c32.16,0,58.01,9.64,77.03,28.66,35.32,35.32,35.49,92.1,35.49,92.89v.44s2.8,29.36-9.64,43.03c-4.29,4.73-9.9,7.01-17.18,7.01H107.44c-6.22.18-11.57-1.93-15.95-6.31-13.76-13.58-14.02-44.25-14.02-44.6,0-.53-.7-56.35,33.83-91.75,4.73-4.82,9.81-9.03,15.42-12.71h-.09ZM109.71,264.56l-3.07,2.1v81.58c-54.94-29.71-92.45-87.81-92.45-154.58,0-58.71,29.09-110.68,73.43-142.58-24.19,37.42-23.66,81.32-23.57,83.51,0,1.49.09,36.28,17.96,53.89,6.84,6.75,15.25,10.17,24.97,10.17h.53c10.95-.18,26.9-.18,44.69-.18-4.12,14.2-16.12,47.76-42.5,66.16v-.09ZM257.46,355.7c-20.86,8.76-43.64,13.58-67.56,13.58s-47.76-5.08-68.88-14.11v-81.15c30.85-23.49,42.94-63.09,46.09-75.63h15.07v93.06c-12.01,3.24-21.03,13.67-21.03,26.73,0,15.6,12.62,28.22,28.22,28.22s28.22-12.62,28.22-28.22c0-13.06-9.03-23.49-21.03-26.73v-93.06h15.07c3.15,12.53,15.25,52.05,46.09,75.54v81.67l-.26.09ZM271.74,348.86v-82.2l-3.07-2.1c-26.29-18.31-38.29-51.79-42.5-66.07h49.07c11.04,0,20.16-3.86,26.99-11.39,15.86-17.53,13.32-49.42,12.97-52.84,0-5.52-.96-48.64-25.5-84.91,45.66,31.72,75.63,84.48,75.63,144.15,0,67.3-38.03,125.75-93.77,155.19l.18.18Z"/>
         <path fill="#14b0bd" d="M275.51,107.61H103.4l-.79-4.38c-.18-1.14-5-28.83,8.06-44.34,5.7-6.75,13.67-10.17,23.66-10.17h110.94c9.64,0,17.35,3.42,22.87,9.9,12.97,15.42,8.33,43.38,8.15,44.52l-.79,4.47h0ZM112.61,96.92h153.71c.61-7.54.88-22.87-6.31-31.37-3.42-4.12-8.24-6.05-14.63-6.13-.88,0-110.85,0-110.77,0h-.09c-6.84,0-11.92,2.1-15.51,6.4-6.75,8.06-7.1,22.61-6.31,31.2"/>
         <g id="alfred-eye-l" style="transform-origin:141.97px 78.17px;">
-          <path fill="#14b0bd" d="M155.55,78.17c0,7.54-6.05,13.58-13.58,13.58s-13.58-6.13-13.58-13.58,6.05-13.58,13.58-13.58,13.58,6.13,13.58,13.58"/>
+          <path id="alfred-eye-l-cercle" fill="#14b0bd" d="M155.55,78.17c0,7.54-6.05,13.58-13.58,13.58s-13.58-6.13-13.58-13.58,6.05-13.58,13.58-13.58,13.58,6.13,13.58,13.58"/>
+          <!-- Œil fermé pour le clin d'œil (voir clinDoeil dans alfred-ui.js)
+               — même courbe que la paupière de sommeil (alfred-lids
+               ci-dessous), réutilisée plutôt qu'un nouveau dessin. Caché par
+               défaut, affiché uniquement pendant le geste. -->
+          <path id="alfred-eye-l-ferme" stroke="#14b0bd" stroke-width="5" stroke-linecap="round" fill="none" d="M128.39,78.17 Q141.97,88.1 155.55,78.17" style="display:none;"/>
         </g>
         <g id="alfred-eye-r" style="transform-origin:238.10px 78.17px;">
           <path fill="#14b0bd" d="M251.68,78.17c0,7.54-6.05,13.58-13.58,13.58s-13.58-6.13-13.58-13.58,6.05-13.58,13.58-13.58,13.58,6.13,13.58,13.58"/>
@@ -1235,6 +1240,45 @@ function setAlfredState(state) {
   }
 }
 
+// true pendant le geste — startEyeLerp (plus bas) doit s'interrompre le
+// temps du clin d'œil, sinon il réécrit style.transform de l'œil droit à
+// chaque frame et annule aussitôt le plissement.
+let clinDoeilActif = false;
+
+// Clin d'œil de clôture ("Ne partez pas trop vite. C'est moi qui vous
+// engage.") — le seul moment de tout le script pensé pour faire sourire,
+// jamais répété ailleurs. Contrairement au clignement (rapide, les deux
+// yeux, presque invisible), ici : un œil complètement fermé, l'autre
+// nettement plissé et TENU (pas un clignement), plus une vraie inclinaison
+// de tête. Sur un personnage à formes simples sans membres, ce sont les
+// yeux qui portent l'émotion, pas de petits déplacements du corps (voir la
+// recherche sur les mascottes à formes géométriques simples, ex. Duolingo).
+async function clinDoeil() {
+  const body       = document.getElementById('alfred-body-main');
+  const eyeR       = document.getElementById('alfred-eye-r');
+  const eyeLCercle = document.getElementById('alfred-eye-l-cercle');
+  const eyeLFerme  = document.getElementById('alfred-eye-l-ferme');
+  if (!body || !eyeR || !eyeLCercle || !eyeLFerme || typeof attendre !== 'function') return;
+
+  clinDoeilActif = true;
+
+  body.style.transition = 'transform .4s cubic-bezier(.34,1.56,.64,1)';
+  body.style.transform  = 'rotate(8deg)';
+  eyeLCercle.style.display = 'none';
+  eyeLFerme.style.display  = 'block';
+  eyeR.style.transition = 'transform .3s ease';
+  eyeR.style.transform  = 'scaleY(.35)';
+
+  await attendre(1400);
+
+  body.style.transform     = 'rotate(0deg)';
+  eyeLCercle.style.display = 'block';
+  eyeLFerme.style.display  = 'none';
+  eyeR.style.transform     = 'scaleY(1)';
+
+  clinDoeilActif = false;
+}
+
 function startBlinking() {
   function blink() {
     if (curState === 'idle') {
@@ -1271,7 +1315,9 @@ function startEyeLerp() {
   function lerp() {
     // Étendu à 'talk' (avant : 'idle' seulement) — pendant qu'il parle, les
     // yeux restaient fixes, seul moment le plus regardé de toute la démo.
-    if (curState === 'idle' || curState === 'talk') {
+    // Suspendu pendant clinDoeil() : sinon ce lissage réécrit style.transform
+    // à chaque frame et annule aussitôt le plissement de l'œil droit.
+    if (!clinDoeilActif && (curState === 'idle' || curState === 'talk')) {
       eyeCurX += (eyeTargetX - eyeCurX) * .12;
       eyeCurY += (eyeTargetY - eyeCurY) * .12;
       const eL = document.getElementById('alfred-eye-l');

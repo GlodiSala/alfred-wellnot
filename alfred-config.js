@@ -313,7 +313,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // déclaration prématurée devant un public de notaires.
     { acte: 3, label: 'Sécurité',      texte: "Toutes les données sont hébergées en Europe, sur des serveurs sécurisés. Je suis conforme RGPD. Et ma sécurité a été évaluée dans le cadre de Privanot. Vos données ne quittent jamais le cadre européen." },
     { acte: 3, label: 'Stand',         texte: "J'ai un stand dans la salle d'à côté. Je t'invite à passer, on pourra répondre à tes dernières questions. Et si tu veux, on peut aussi organiser une démonstration directement dans ton étude." },
-    { acte: 3, label: 'Closing',       texte: "Ne partez pas trop vite. C'est moi qui vous engage." },
+    { acte: 3, label: 'Closing',       texte: "Ne partez pas trop vite. C'est moi qui vous engage.", action: 'ClosingWink' },
   ],
 
   REPLIQUES_NL: [
@@ -368,7 +368,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // version FR : "certifié" à éviter tant que ce n'est pas acté).
     { acte: 3, label: 'Sécurité',      texte: "Alle gegevens worden in Europa opgeslagen op beveiligde servers. Ik ben GDPR-compliant. En mijn beveiliging werd geëvalueerd in het kader van Privanot. Uw gegevens verlaten nooit het Europese kader." },
     { acte: 3, label: 'Stand',         texte: "Ik heb een stand in de zaal hiernaast. Ik nodig u uit langs te komen, we kunnen uw laatste vragen beantwoorden. En als u wilt, kunnen we ook een demonstratie organiseren rechtstreeks in uw kantoor." },
-    { acte: 3, label: 'Closing',       texte: "Vertrek niet te snel. Ik ben degene die u aanneemt." },
+    { acte: 3, label: 'Closing',       texte: "Vertrek niet te snel. Ik ben degene die u aanneemt.", action: 'ClosingWink' },
   ],
 
   TRIGGERS_NL: [
