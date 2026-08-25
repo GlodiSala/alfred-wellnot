@@ -1090,77 +1090,47 @@ async function essayerAjouterBienParCadastre(bien) {
   await curseurVersAsync(declencheurBiens, () => simulerClic(declencheurBiens));
   await attendre(700);
 
-  // Coche le premier (et normalement seul) bien de la liste, confirmé par
-  // capture d'écran ("Lot privé (ancien)..."). "Aucun bien coché-able
-  // trouvé" remonté en test live : suspicion confirmée que le problème
-  // vient de la recherche trop stricte (exiger un <li> parent), pas du
-  // clic lui-même. PrimeNG rend souvent les cases sous forme de
-  // <p-checkbox>/.p-checkbox(-box) qui ne sont pas forcément dans un
-  // <li> — recherche élargie à TOUT le document, sans exiger de parent
-  // particulier, sur tous les motifs de case à cocher usuels.
-  async function chercherCheckboxBien() {
-    const SELECTEUR_CHECKBOX = [
-      'input[type="checkbox"]',
-      '[role="checkbox"]',
-      'p-checkbox',
-      '.p-checkbox',
-      '.p-checkbox-box',
-      '.p-checkbox-input',
-    ].join(', ');
-    for (let i = 0; i < 8; i++) {
-      const trouve = Array.from(document.querySelectorAll(SELECTEUR_CHECKBOX))
-        .find(el => el.getBoundingClientRect().width > 0);
-      if (trouve) return trouve;
+  // Confirmé par capture DOM en direct : "Sélectionner des biens" est un
+  // <p-multiselect> PrimeNG, PAS une case à cocher. L'option se choisit en
+  // cliquant directement sur le <span class="option-label"> du bien (ex.
+  // "Lot privé (ancien) : 0006/00B000, Coxyde (8670)"). Toute la piste
+  // "checkbox" précédente était une fausse hypothèse.
+  async function chercherOptionBien() {
+    for (let i = 0; i < 10; i++) {
+      const options = Array.from(document.querySelectorAll('.option-label, .p-multiselect-option'))
+        .filter(el => el.getBoundingClientRect().width > 0 && el.textContent.trim().length > 0);
+      if (options.length) return options[0];
       await attendre(300);
     }
     return null;
   }
 
-  let checkboxBien = await chercherCheckboxBien();
-  if (!checkboxBien) {
-    // Suspicion remontée en test live : le clic sur "Sélectionner des
-    // biens" n'a peut-être eu aucun effet réel (même famille de bug que
-    // partout ailleurs — le clic simulé ne déclenche pas toujours le
-    // gestionnaire réel). On retente le clic, sur le déclencheur lui-même
-    // puis sur son parent, en recherchant l'élément à nouveau au cas où
-    // il aurait été remplacé par le rendu Angular.
-    console.warn('[Alfred DOM] Rien trouvé après le clic sur "Sélectionner des biens" — le clic a peut-être échoué, nouvel essai.');
+  let optionBien = await chercherOptionBien();
+  if (!optionBien) {
+    // Au cas où le clic sur le déclencheur du multiselect n'a pas ouvert
+    // le panneau (même famille de bug que "Compromis"/REPRÉSENTE), on
+    // retente le clic avant d'abandonner.
+    console.warn('[Alfred DOM] Aucune option de bien trouvée — le clic sur "Sélectionner des biens" a peut-être échoué, nouvel essai.');
     const cible = await trouverDeclencheurBiens();
     if (cible) {
       await curseurVersAsync(cible, () => simulerClic(cible));
       await attendre(700);
-      checkboxBien = await chercherCheckboxBien();
-    }
-    if (!checkboxBien && cible && cible.parentElement) {
-      const parent = cible.parentElement;
-      await curseurVersAsync(parent, () => simulerClic(parent));
-      await attendre(700);
-      checkboxBien = await chercherCheckboxBien();
+      optionBien = await chercherOptionBien();
     }
   }
-  if (!checkboxBien) {
-    // Dernier repli : la ligne <li> elle-même, au cas où toute la ligne
-    // est cliquable pour sélectionner (pas de case distincte trouvable).
-    checkboxBien = Array.from(document.querySelectorAll('li'))
-      .find(el => el.getBoundingClientRect().width > 0 && el.textContent.trim().length > 0);
-  }
-  if (!checkboxBien) {
-    console.warn('[Alfred DOM] Aucun bien coché-able trouvé dans "Sélectionner des biens" — bascule sur saisie manuelle.');
+  if (!optionBien) {
+    console.warn('[Alfred DOM] Aucun bien sélectionnable trouvé dans "Sélectionner des biens" — bascule sur saisie manuelle.');
     fermerFenetreOuverte();
     await attendre(500);
     return false;
   }
-  await curseurVersAsync(checkboxBien, () => simulerClic(checkboxBien));
+  await curseurVersAsync(optionBien, () => simulerClic(optionBien));
+  await attendre(500);
+  // Le panneau du multiselect peut rester ouvert par-dessus le bouton
+  // "Confirmer" — on le referme avec Échap (comportement standard
+  // PrimeNG pour un overlay), sans toucher au reste du formulaire.
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
   await attendre(400);
-  if (checkboxBien.tagName === 'INPUT' && !checkboxBien.checked) {
-    // Même repli que pour REPRÉSENTE : le clic direct sur l'input caché
-    // ne suffit parfois pas, retente sur l'élément parent (ligne entière).
-    const wrapper = checkboxBien.closest('li') || checkboxBien.parentElement;
-    if (wrapper && wrapper !== checkboxBien) { await curseurVersAsync(wrapper, () => simulerClic(wrapper)); await attendre(400); }
-    if (!checkboxBien.checked) {
-      console.warn('[Alfred DOM] La case du bien ne semble toujours pas cochée après le clic.');
-    }
-  }
 
   if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.confirmerBien, 10, 400)) {
     console.warn('[Alfred DOM] Bouton "Confirmer" (biens) introuvable ou inactif.');
