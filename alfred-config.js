@@ -262,18 +262,9 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { texte: "Le vendeur est une société : BIMBIMMO. Je récupère : dénomination, siège, forme juridique, représentants. Rattaché au dossier.", action: 'CreationParties_Vendeur' },
       { texte: "L'acquéreur est une personne physique : Alain Caprasse. Je récupère : nom, adresse, date de naissance, nationalité, état civil, régime matrimonial. Tout remonte, prêt pour la rédaction du compromis.", action: 'CreationParties_Acquereur' },
     ] },
-    // Ordre Bien PUIS Notaires — remis comme avant (retour utilisateur :
-    // c'était bon comme ça, testé en live avec les vraies actions DOM).
-    // J'avais inversé sur la seule foi du script/séquencier écrits
-    // (qui décrivent bien Notaires avant Bien), mais l'ordre réellement
-    // vérifié dans l'appli prime sur le document — reverti.
     { acte: 2, label: 'CreationBien', segments: [
       { texte: "Pour le bien, vous sélectionnez le bon, et je récupère automatiquement la matrice cadastrale. Il se situe en Flandre, à 8670 Coxyde.", action: 'CreationBien_Rechercher' },
       { texte: "Matrice cadastrale récupérée. Parties, notaires, cadastre — tout est déjà là.", action: 'CreationBien_Finaliser' },
-    ] },
-    { acte: 2, label: 'CreationNotaires', segments: [
-      { texte: "Chaque partie doit être représentée par un notaire. BIMBIMMO, c'est nous.", action: 'CreationNotaires_Vendeur' },
-      { texte: "Pour l'acquéreur, j'ajoute Maxime Van der Straten — je le retrouve dans la base de tous les notaires belges et je le rattache à l'acquéreur. Chaque partie a son notaire.", action: 'CreationNotaires_Acquereur' },
     ] },
     // Ajouté suite au retour de Cyril (script officiel, séquence 9 —
     // "Documents") : sans cet échange, la démo enchaînait directement sur
@@ -294,6 +285,18 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'CreationDocuments', segments: [
       { texte: "Rien n'est encore chargé. Deux options : soit vous les uploadez, soit je vais les demander à la partie qui les détient — ici, le vendeur." },
       { texte: "Dossier enregistré.", action: 'CreationDocuments_Enregistrer' },
+    ] },
+    // Notaires déplacé APRÈS Documents (retour utilisateur, test live) :
+    // rattacher un notaire à une partie ne s'exécutait pas quand c'était
+    // tenté avant le vrai clic Enregistrer — le dossier doit être
+    // sauvegardé au moins une fois avant que l'appli n'accepte cet
+    // attachement. Avant mon déplacement du clic Enregistrer (voir
+    // CreationDocuments juste au-dessus), Notaires tombait déjà,
+    // mécaniquement, après ce clic — c'est CE déplacement qui a cassé
+    // l'ordre réel sans que j'y pense. Réparé en bougeant Notaires ici.
+    { acte: 2, label: 'CreationNotaires', segments: [
+      { texte: "Chaque partie doit être représentée par un notaire. BIMBIMMO, c'est nous.", action: 'CreationNotaires_Vendeur' },
+      { texte: "Pour l'acquéreur, j'ajoute Maxime Van der Straten — je le retrouve dans la base de tous les notaires belges et je le rattache à l'acquéreur. Chaque partie a son notaire.", action: 'CreationNotaires_Acquereur' },
     ] },
     // Même texte que la version à plat (aucun mot changé), redécoupé en 2
     // segments : le 2e ("À gauche/À droite...") ne se joue qu'une fois le
@@ -378,13 +381,13 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { texte: "Voor het onroerend goed selecteert u gewoon het juiste, en ik haal automatisch de kadastrale matrix op. Het bevindt zich in Vlaanderen, in 8670 Koksijde.", action: 'CreationBien_Rechercher' },
       { texte: "Kadastrale matrix opgehaald. Partijen, notarissen, kadaster — alles staat er al.", action: 'CreationBien_Finaliser' },
     ] },
-    { acte: 2, label: 'CreationNotaires', segments: [
-      { texte: "Elke partij moet vertegenwoordigd worden door een notaris. BIMBIMMO, dat zijn wij.", action: 'CreationNotaires_Vendeur' },
-      { texte: "Voor de koper voeg ik Maxime Van der Straten toe — ik vind hem in de databank van alle Belgische notarissen en koppel hem aan de koper. Elke partij heeft haar notaris.", action: 'CreationNotaires_Acquereur' },
-    ] },
     { acte: 2, label: 'CreationDocuments', segments: [
       { texte: "Er is nog niets geüpload. Twee opties: u laadt ze zelf op, of ik vraag ze op bij de partij die ze heeft — hier, de verkoper." },
       { texte: "Dossier geregistreerd.", action: 'CreationDocuments_Enregistrer' },
+    ] },
+    { acte: 2, label: 'CreationNotaires', segments: [
+      { texte: "Elke partij moet vertegenwoordigd worden door een notaris. BIMBIMMO, dat zijn wij.", action: 'CreationNotaires_Vendeur' },
+      { texte: "Voor de koper voeg ik Maxime Van der Straten toe — ik vind hem in de databank van alle Belgische notarissen en koppel hem aan de koper. Elke partij heeft haar notaris.", action: 'CreationNotaires_Acquereur' },
     ] },
     { acte: 2, label: 'CreationRedaction', segments: [
       { texte: "En nu het moment waar we op wachten: de opstelling. Eén klik. Ik verzamel de partijen, de notarissen en het kadaster, en ik genereer de verkoopbelofte.", action: 'CreationRedaction' },
