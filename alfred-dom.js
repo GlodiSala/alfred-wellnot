@@ -1935,52 +1935,22 @@ function compterDocumentsEnAttente() {
   return lignes.filter(tr => tr.textContent.includes('...')).length;
 }
 
-// Étape 7 (A20-A21 du séquencier) — attend qu'au moins un document
-// supplémentaire soit reçu et classé côté Alfred, en surveillant la baisse
-// du nombre de lignes en attente dans Documents (voir
-// compterDocumentsEnAttente). Remplace l'attente manuelle utilisée jusqu'ici
-// (Cyril répondait depuis une vraie boîte mail, hors de notre contrôle — la
-// réponse arrivait visible à l'œil dans Conversation) : la réponse est
-// maintenant envoyée automatiquement (voir montrerPropositionEmail_envoyer),
-// donc il y a enfin un signal DOM concret et spécifique à surveiller — les
-// tentatives précédentes de détection auto avaient échoué sur des signaux
-// génériques (badge, comptage dans Événements), pas sur celui-ci.
-// Budget raccourci (5 min → 10s) : remonté en test live — l'envoi
-// automatique du mail vendeur est actuellement en panne côté backend de
-// l'appli (ERROR.EMAIL, hors de notre contrôle), donc la détection échoue
-// systématiquement et la démo restait bloquée 5 min sur l'onglet Documents
-// à chaque répétition. Un court sondage garde une petite chance d'attraper
-// une vraie réponse rapide sans jamais bloquer la suite ("il faut partir
-// direct dans redaction") — à remonter si/quand l'envoi automatique est
-// réparé côté appli.
+// Étape 7 (A20-A21 du séquencier) — annonce que le vendeur a répondu et
+// revient directement sur le compromis.
+// Historique : a d'abord surveillé la baisse du nombre de lignes en attente
+// dans Documents (voir compterDocumentsEnAttente, toujours présente plus
+// bas mais plus appelée ici), pour confirmer l'arrivée réelle des pièces
+// envoyées par l'envoi automatique (montrerPropositionEmail_envoyer). Cet
+// envoi automatique est actuellement en panne côté backend de l'appli
+// (ERROR.EMAIL, hors de notre contrôle) — retour explicite : la réponse du
+// vendeur sera gérée manuellement (Cyril répond depuis sa propre boîte,
+// comme avant l'automatisation), donc plus besoin d'une vérification DOM
+// ici, juste la narration et le retour au compromis.
 async function seq_creationDossier_attenteReponseVendeur() {
-  await naviguerOnglet('Documents');
-  await attendre(1000);
-
-  const baseline = compterDocumentsEnAttente();
-  let detecte = false;
-  if (baseline === null) {
-    console.warn('[Alfred DOM] Liste des documents introuvable — impossible de détecter l\'arrivée des pièces, réplique jouée sans confirmation.');
-  } else {
-    console.log(`[Alfred DOM] ${baseline} document(s) encore en attente — surveillance en cours.`);
-    for (let i = 0; i < 5; i++) { // 5 x 2s = 10s
-      if (annulationDemandee) { console.warn('[Alfred DOM] Attente des documents annulée.'); break; }
-      await attendre(2000);
-      const actuel = compterDocumentsEnAttente();
-      if (actuel !== null && actuel < baseline) {
-        console.log(`[Alfred DOM] Nouveau(x) document(s) détecté(s) (${baseline} → ${actuel} en attente).`);
-        detecte = true;
-        break;
-      }
-    }
-    if (!detecte) console.warn('[Alfred DOM] Aucun nouveau document détecté après 10s — réplique jouée quand même, direct vers la rédaction.');
-  }
-
-  // Segment marqué parlerDepuisAction (voir alfred-brain.js et
-  // montrerPropositionEmail_envoyer pour le même principe) : le texte n'est
-  // dit qu'ici, une fois la meilleure preuve possible obtenue — ou, à
-  // défaut (détection indisponible/budget écoulé), on continue quand même
-  // pour ne pas bloquer une démo en direct sur un détail d'affichage.
+  // Segment marqué parlerDepuisAction (voir alfred-brain.js) : le texte
+  // n'est pas dit automatiquement au début du segment, il est dit ICI,
+  // explicitement — par cohérence avec CreationEmail_Envoyer, même si la
+  // détection réelle qui justifiait ce choix a été retirée ci-dessus.
   if (typeof speak === 'function' && typeof ALFRED_CONFIG !== 'undefined') {
     const liste = (typeof currentLangue !== 'undefined' && currentLangue === 'nl') ? ALFRED_CONFIG.REPLIQUES_NL : ALFRED_CONFIG.REPLIQUES_FR;
     const replique = liste?.find(r => r.label === 'ReponseVendeur'); // ex-'CreationReponseVendeur' — label raccourci, action inchangée
@@ -1991,6 +1961,11 @@ async function seq_creationDossier_attenteReponseVendeur() {
     }
   }
 
+  // Laisse un peu de temps avant de remonter sur le compromis — demandé
+  // explicitement : enchaîner tout de suite après la parole donnait
+  // l'impression que la réaction ("le vendeur a répondu...") passait trop
+  // vite, sans le temps de vraiment l'assimiler avant de changer d'écran.
+  await attendre(3000);
   await naviguerOnglet('Compromis');
   await attendre(800);
   return true;
