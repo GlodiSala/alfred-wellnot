@@ -386,9 +386,20 @@ function remplirPanneauRepliques() {
       // pas juste de la narration. Ça aide à repérer d'un coup d'œil
       // lesquelles ont un ordre qui compte vraiment (voir
       // repliqueADesActions plus haut).
-      btn.textContent = (repliqueADesActions(r) ? '⚡ ' : '') + r.label;
-      btn.title = repliqueADesActions(r) ? 'Déclenche une action réelle dans l\'appli' : '';
-      btn.style.cssText = 'flex:1;color:rgba(255,255,255,.75);font-size:11px;padding:5px 8px;border-radius:6px;cursor:pointer;transition:background .15s,color .15s;';
+      const libelle = (repliqueADesActions(r) ? '⚡ ' : '') + r.label;
+      btn.textContent = libelle;
+      // Toujours le nom complet en infobulle — utile maintenant que le
+      // texte peut être tronqué (voir text-overflow ci-dessous) sur les
+      // noms les plus longs.
+      btn.title = libelle + (repliqueADesActions(r) ? ' — déclenche une action réelle dans l\'appli' : '');
+      // white-space:nowrap + text-overflow:ellipsis : avant, un nom trop
+      // long passait à la ligne, ce qui rendait les lignes du panneau
+      // inégales et mal alignées entre elles (remonté en test live) —
+      // maintenant chaque ligne garde la même hauteur, quitte à tronquer
+      // avec "…" (le nom complet reste lisible au survol). min-width:0
+      // est nécessaire : un enfant flex ne respecte pas overflow:hidden
+      // sans ça.
+      btn.style.cssText = 'flex:1;min-width:0;color:rgba(255,255,255,.75);font-size:11px;padding:5px 8px;border-radius:6px;cursor:pointer;transition:background .15s,color .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
       btn.onmouseover = () => { btn.style.background='rgba(255,255,255,.12)'; btn.style.color='#fff'; };
       btn.onmouseout  = () => { btn.style.background='transparent'; btn.style.color='rgba(255,255,255,.75)'; };
       btn.onclick = () => {
