@@ -397,11 +397,17 @@ function creerPanneauEdition() {
   if (document.getElementById('alfred-edition-panel')) return;
   const panel = document.createElement('div');
   panel.id = 'alfred-edition-panel';
+  // max-height + overflow-y : sans ça, une réplique à plusieurs segments
+  // (une paire de champs FR/NL par segment) peut dépasser la hauteur de
+  // l'écran des deux côtés (le panneau est centré verticalement) — le
+  // bouton "Enregistrer" se retrouvait hors écran, impossible à cliquer.
+  // Remonté en test live.
   panel.style.cssText = `
     display:none; position:fixed;
     top:50%; left:50%; transform:translate(-50%,-50%);
     background:rgba(5,69,97,0.99); border-radius:14px;
     padding:20px; z-index:500; width:460px; max-width:90vw;
+    max-height:85vh; overflow-y:auto;
     box-shadow:0 8px 48px rgba(0,0,0,0.6);
     font-family:sans-serif;
   `;
