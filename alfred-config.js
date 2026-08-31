@@ -260,7 +260,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // complet : Fariël donne les numéros du dossier (dite en direct, pas
     // dans notre script), PUIS Alfred répond ça — réplique séparée exprès,
     // parce qu'il y a un vrai tour de parole de Fariël juste avant.
-    { acte: 2, label: 'CreationOuvrirConfirmation', texte: "Parfait, passons à la création des parties." },
+    { acte: 2, label: 'OuvrirOK', texte: "Parfait, passons à la création des parties." },
     // Retour Cyril (capture d'écran à l'appui) : rattacher le notaire de
     // chaque partie se fait en fait directement sur l'onglet Parties, juste
     // après avoir ajouté vendeur et acquéreur.
@@ -270,10 +270,10 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // notaires) — les enchaîner automatiquement sur un seul appui sur →
     // ne lui laissait aucun tour de parole prévu, juste le hasard du
     // temps que prenait chaque action réseau.
-    { acte: 2, label: 'CreationParties_Vendeur', texte: "Le vendeur est une société : BIMBIMMO. Je récupère : dénomination, siège, forme juridique, représentants. Rattaché au dossier.", action: 'CreationParties_Vendeur' },
-    { acte: 2, label: 'CreationParties_Acquereur', texte: "L'acquéreur est une personne physique : Alain Caprasse. Je récupère : nom, adresse, date de naissance, nationalité, état civil, régime matrimonial. Tout remonte, prêt pour la rédaction du compromis.", action: 'CreationParties_Acquereur' },
-    { acte: 2, label: 'CreationParties_NotaireVendeur', texte: "Chaque partie doit être représentée par un notaire. BIMBIMMO, c'est nous.", action: 'CreationParties_NotaireVendeur' },
-    { acte: 2, label: 'CreationParties_NotaireAcquereur', texte: "Pour l'acquéreur, j'ajoute Maxime Van der Straten — je le retrouve dans la base de tous les notaires belges et je le rattache à l'acquéreur. Chaque partie a son notaire.", action: 'CreationParties_NotaireAcquereur' },
+    { acte: 2, label: 'PartiesVendeur', texte: "Le vendeur est une société : BIMBIMMO. Je récupère : dénomination, siège, forme juridique, représentants. Rattaché au dossier.", action: 'CreationParties_Vendeur' },
+    { acte: 2, label: 'PartiesAcquereur', texte: "L'acquéreur est une personne physique : Alain Caprasse. Je récupère : nom, adresse, date de naissance, nationalité, état civil, régime matrimonial. Tout remonte, prêt pour la rédaction du compromis.", action: 'CreationParties_Acquereur' },
+    { acte: 2, label: 'PartiesNotaireV', texte: "Chaque partie doit être représentée par un notaire. BIMBIMMO, c'est nous.", action: 'CreationParties_NotaireVendeur' },
+    { acte: 2, label: 'PartiesNotaireA', texte: "Pour l'acquéreur, j'ajoute Maxime Van der Straten — je le retrouve dans la base de tous les notaires belges et je le rattache à l'acquéreur. Chaque partie a son notaire.", action: 'CreationParties_NotaireAcquereur' },
     { acte: 2, label: 'CreationBien', segments: [
       { texte: "Pour le bien, vous sélectionnez le bon, et je récupère automatiquement la matrice cadastrale. Il se situe en Flandre, à 8670 Coxyde.", action: 'CreationBien_Rechercher' },
       { texte: "Matrice cadastrale récupérée. Parties, notaires, cadastre — tout est déjà là.", action: 'CreationBien_Finaliser' },
@@ -292,14 +292,14 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // appui sur → sautait par-dessus ce tour. Pas de parlerDepuisAction
     // sur le clic Enregistrer : il est instantané et sous notre contrôle,
     // pas un événement externe incertain à attendre.
-    { acte: 2, label: 'CreationDocuments_Reponse', texte: "Rien n'est encore chargé. Deux options : soit vous les uploadez, soit je vais les demander à la partie qui les détient — ici, le vendeur." },
-    { acte: 2, label: 'CreationDocuments_Enregistrer', texte: "Dossier enregistré.", action: 'CreationDocuments_Enregistrer' },
+    { acte: 2, label: 'DocumentsReponse', texte: "Rien n'est encore chargé. Deux options : soit vous les uploadez, soit je vais les demander à la partie qui les détient — ici, le vendeur." },
+    { acte: 2, label: 'DocumentsSave', texte: "Dossier enregistré.", action: 'CreationDocuments_Enregistrer' },
     // Ligne manquante trouvée en recomparant au script officiel : Fariël
     // demande "Toujours pas peur des experts ?" avant de lancer la
     // rédaction, Alfred répond ça — puis Fariël relance ("Show us the
     // real magic. Lance la rédaction.") avant le clic réel. Réplique
     // séparée exprès (vrai tour de parole de Fariël avant et après).
-    { acte: 2, label: 'CreationRedactionConfirmation', texte: "Je suis né prêt. Allez-y." },
+    { acte: 2, label: 'RedactionOK', texte: "Je suis né prêt. Allez-y." },
     // Même texte que la version à plat (aucun mot changé), redécoupé en 2
     // segments : le 2e ("À gauche/À droite...") ne se joue qu'une fois le
     // 1er (avec son attente de chargement) bien terminé — sinon la
@@ -375,18 +375,18 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { texte: "Om een dossier aan te maken, niets eenvoudiger: ik klik op « Dossier aanmaken » en ik kom op de aanmaakfiche.", action: 'CreationOuvrir_CreerBouton' },
       { texte: "Geef me het dossiernummer, de opstellingstaal, de verantwoordelijke medewerker en de verantwoordelijke notaris, en we gaan naar de aanmaak van de partijen.", action: 'CreationOuvrir_Champs' },
     ] },
-    { acte: 2, label: 'CreationOuvrirConfirmation', texte: "Perfect, laten we verdergaan naar de aanmaak van de partijen." },
-    { acte: 2, label: 'CreationParties_Vendeur', texte: "De verkoper is een vennootschap: BIMBIMMO. Ik haal op: benaming, zetel, rechtsvorm, vertegenwoordigers. Gekoppeld aan het dossier.", action: 'CreationParties_Vendeur' },
-    { acte: 2, label: 'CreationParties_Acquereur', texte: "De koper is een natuurlijke persoon: Alain Caprasse. Ik haal op: naam, adres, geboortedatum, nationaliteit, burgerlijke staat, huwelijksvermogensstelsel. Alles is klaar voor de opstelling van de verkoopbelofte.", action: 'CreationParties_Acquereur' },
-    { acte: 2, label: 'CreationParties_NotaireVendeur', texte: "Elke partij moet vertegenwoordigd worden door een notaris. BIMBIMMO, dat zijn wij.", action: 'CreationParties_NotaireVendeur' },
-    { acte: 2, label: 'CreationParties_NotaireAcquereur', texte: "Voor de koper voeg ik Maxime Van der Straten toe — ik vind hem in de databank van alle Belgische notarissen en koppel hem aan de koper. Elke partij heeft haar notaris.", action: 'CreationParties_NotaireAcquereur' },
+    { acte: 2, label: 'OuvrirOK', texte: "Perfect, laten we verdergaan naar de aanmaak van de partijen." },
+    { acte: 2, label: 'PartiesVendeur', texte: "De verkoper is een vennootschap: BIMBIMMO. Ik haal op: benaming, zetel, rechtsvorm, vertegenwoordigers. Gekoppeld aan het dossier.", action: 'CreationParties_Vendeur' },
+    { acte: 2, label: 'PartiesAcquereur', texte: "De koper is een natuurlijke persoon: Alain Caprasse. Ik haal op: naam, adres, geboortedatum, nationaliteit, burgerlijke staat, huwelijksvermogensstelsel. Alles is klaar voor de opstelling van de verkoopbelofte.", action: 'CreationParties_Acquereur' },
+    { acte: 2, label: 'PartiesNotaireV', texte: "Elke partij moet vertegenwoordigd worden door een notaris. BIMBIMMO, dat zijn wij.", action: 'CreationParties_NotaireVendeur' },
+    { acte: 2, label: 'PartiesNotaireA', texte: "Voor de koper voeg ik Maxime Van der Straten toe — ik vind hem in de databank van alle Belgische notarissen en koppel hem aan de koper. Elke partij heeft haar notaris.", action: 'CreationParties_NotaireAcquereur' },
     { acte: 2, label: 'CreationBien', segments: [
       { texte: "Voor het onroerend goed selecteert u gewoon het juiste, en ik haal automatisch de kadastrale matrix op. Het bevindt zich in Vlaanderen, in 8670 Koksijde.", action: 'CreationBien_Rechercher' },
       { texte: "Kadastrale matrix opgehaald. Partijen, notarissen, kadaster — alles staat er al.", action: 'CreationBien_Finaliser' },
     ] },
-    { acte: 2, label: 'CreationDocuments_Reponse', texte: "Er is nog niets geüpload. Twee opties: u laadt ze zelf op, of ik vraag ze op bij de partij die ze heeft — hier, de verkoper." },
-    { acte: 2, label: 'CreationDocuments_Enregistrer', texte: "Dossier geregistreerd.", action: 'CreationDocuments_Enregistrer' },
-    { acte: 2, label: 'CreationRedactionConfirmation', texte: "Ik ben klaar geboren. Laat maar komen!" },
+    { acte: 2, label: 'DocumentsReponse', texte: "Er is nog niets geüpload. Twee opties: u laadt ze zelf op, of ik vraag ze op bij de partij die ze heeft — hier, de verkoper." },
+    { acte: 2, label: 'DocumentsSave', texte: "Dossier geregistreerd.", action: 'CreationDocuments_Enregistrer' },
+    { acte: 2, label: 'RedactionOK', texte: "Ik ben klaar geboren. Laat maar komen!" },
     { acte: 2, label: 'CreationRedaction', segments: [
       { texte: "En nu het moment waar we op wachten: de opstelling. Eén klik. Ik verzamel de partijen, de notarissen en het kadaster, en ik genereer de verkoopbelofte.", action: 'CreationRedaction' },
       { texte: "Links, alle verzamelde gegevens.", action: 'CreationRedaction_ScrollGauche' },
