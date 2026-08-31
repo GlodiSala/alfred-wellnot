@@ -938,6 +938,17 @@ function ouvrirEditionRéplique(index, nouvelActe) {
       : actionBrute;
     select.value = actionImplicite;
     panel.appendChild(select);
+
+    // Avertissement : contrairement à ce qu'on pourrait croire, une action
+    // de cette liste n'est pas une brique réutilisable n'importe où — elle
+    // a été écrite pour un point précis de la démo, en supposant un écran
+    // déjà affiché à ce moment-là (ex. rattacher un notaire suppose que le
+    // dossier vient d'être enregistré juste avant). La réassigner à une
+    // autre réplique peut casser l'ordre réel des clics en direct.
+    const avertAction = document.createElement('div');
+    avertAction.textContent = '⚠️ Chaque action est programmée pour un point précis de la démo — la réassigner ailleurs peut casser l\'ordre réel des clics dans l\'appli.';
+    avertAction.style.cssText = 'color:rgba(255,200,100,.75);font-size:10px;margin-top:6px;line-height:1.4;';
+    panel.appendChild(avertAction);
   }
 
   const boutons = document.createElement('div');
