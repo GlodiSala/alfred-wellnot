@@ -857,6 +857,10 @@ async function cocherBadgeSousSection(titreSection, qualitePartie) {
     if (ligne) checkbox = ligne.querySelector('input[type="checkbox"]');
   }
   if (!checkbox) { console.warn('[Alfred DOM] Case à cocher introuvable pour:', qualitePartie); return false; }
+  // Vérifiée AVANT de cliquer — ça manquait : sans ça, rejouer cette
+  // fonction sur une case déjà cochée la décocherait (clic = bascule),
+  // au lieu de la laisser telle quelle.
+  if (checkbox.checked) return true;
   await curseurVersAsync(checkbox, () => simulerClic(checkbox));
   await attendre(300);
 
@@ -880,50 +884,6 @@ async function cocherBadgeSousSection(titreSection, qualitePartie) {
 
 async function cocherRepresentation(qualitePartie) {
   return cocherBadgeSousSection(SELECTEURS.textes.represente, qualitePartie);
-}
-
-// Coche UNIQUEMENT la case de représentation `qualitePartie` sur le
-// panneau du DERNIER notaire ajouté (le plus récent dans le DOM) —
-// confirmé par capture live (HTML complet, pas juste un clic) : chaque
-// ligne contient le nom de la partie + une étiquette explicite
-// ("Acquéreur représenté par votre étude" / "Vendeur représenté par
-// votre étude"), qui distingue les deux lignes de façon fiable. Coche
-// SEULEMENT celle demandée : sur la fiche de Maxime par exemple, ne
-// cocher QUE "Acquéreur" — cocher "Vendeur" aussi ferait croire que
-// Maxime représente aussi BIMBIMMO, alors que BIMBIMMO reste représenté
-// par l'étude (déjà coché par défaut sur la fiche d'Alain Caprasse,
-// notaire en charge — rien à faire pour lui, sa fiche à lui a les deux
-// cases déjà cochées d'origine).
-async function cocherRepresentationDernierNotaire(qualitePartie) {
-  let listes = null;
-  for (let i = 0; i < 15; i++) {
-    listes = Array.from(document.querySelectorAll('app-notary-representation-list'));
-    if (listes.length) break;
-    await attendre(300);
-  }
-  if (!listes || !listes.length) { console.warn('[Alfred DOM] Aucun panneau de représentation trouvé.'); return false; }
-  const liste = listes[listes.length - 1]; // le dernier notaire ajouté = le dernier panneau du DOM
-
-  const ligne = Array.from(liste.querySelectorAll('.flex.items-center.gap-2'))
-    .find(row => row.textContent.toLowerCase().includes(qualitePartie.toLowerCase()));
-  if (!ligne) { console.warn('[Alfred DOM] Ligne de représentation introuvable pour:', qualitePartie); return false; }
-
-  const checkbox = ligne.querySelector('input[type="checkbox"]');
-  if (!checkbox) { console.warn('[Alfred DOM] Case à cocher introuvable pour:', qualitePartie); return false; }
-  if (checkbox.checked) return true;
-
-  await curseurVersAsync(checkbox, () => simulerClic(checkbox));
-  await attendre(300);
-  // Même piège que cocherBadgeSousSection : le vrai gestionnaire de clic
-  // écoute parfois le wrapper visuel, pas l'input caché lui-même.
-  if (!checkbox.checked) {
-    const wrapper = checkbox.closest('[role="checkbox"]') || checkbox.parentElement;
-    if (wrapper && wrapper !== checkbox) {
-      await curseurVersAsync(wrapper, () => simulerClic(wrapper));
-      await attendre(300);
-    }
-  }
-  return true;
 }
 
 // "Mes clients" apparaît sur la fiche du notaire DE VOTRE ÉTUDE, déjà
@@ -1652,18 +1612,15 @@ async function seq_creationDossier_parties_acquereur() {
 async function seq_creationDossier_parties_notaires() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) return;
-  // Retour utilisateur (test live, HTML complet capturé) : pas de section
-  // "Mes clients" séparée à cocher pour le vendeur — la fiche d'Alain
-  // Caprasse (notaire en charge) a déjà les deux cases cochées d'origine
-  // (BIMBIMMO/vendeur y reste représenté par l'étude). Seule la fiche de
-  // Maxime (ajoutée juste après) a besoin d'une action : cocher
-  // UNIQUEMENT "Acquéreur" — surtout pas "Vendeur" aussi, sinon Maxime
-  // représenterait aussi BIMBIMMO, ce qui contredit le script.
-  if (cfg.acquereur_notaire) {
-    await rattacherNotaire(cfg.acquereur_notaire, null); // pas de coche automatique dans rattacherNotaire, gérée précisément ci-dessous
-    await attendre(500);
-    await cocherRepresentationDernierNotaire('Acquéreur');
-  }
+  // Confirmé par capture live (HTML complet, état par défaut vraiment
+  // vérifié cette fois) : deux panneaux distincts, chacun avec son propre
+  // titre exact — "Mes clients" sur la fiche d'Alain Caprasse (notaire en
+  // charge, déjà sur le dossier), "Représente" sur la fiche de Maxime
+  // (ajoutée juste après) — toutes les cases décochées par défaut.
+  // Exactement la même distinction que l'ancien code d'avant ce soir.
+  await cocherMesClients('Vendeur');
+  await attendre(600);
+  if (cfg.acquereur_notaire) await rattacherNotaire(cfg.acquereur_notaire, 'Acquéreur');
   await attendre(500);
   // "Suivant" reste désactivé tant que le vendeur n'a pas été ajouté avec succès.
   if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.suivant)) {
