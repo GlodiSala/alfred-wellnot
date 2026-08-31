@@ -1945,8 +1945,14 @@ function compterDocumentsEnAttente() {
 // donc il y a enfin un signal DOM concret et spécifique à surveiller — les
 // tentatives précédentes de détection auto avaient échoué sur des signaux
 // génériques (badge, comptage dans Événements), pas sur celui-ci.
-// Budget large (5 min) : la durée réelle du traitement backend d'un mail
-// entrant n'a jamais été mesurée en conditions réelles.
+// Budget raccourci (5 min → 10s) : remonté en test live — l'envoi
+// automatique du mail vendeur est actuellement en panne côté backend de
+// l'appli (ERROR.EMAIL, hors de notre contrôle), donc la détection échoue
+// systématiquement et la démo restait bloquée 5 min sur l'onglet Documents
+// à chaque répétition. Un court sondage garde une petite chance d'attraper
+// une vraie réponse rapide sans jamais bloquer la suite ("il faut partir
+// direct dans redaction") — à remonter si/quand l'envoi automatique est
+// réparé côté appli.
 async function seq_creationDossier_attenteReponseVendeur() {
   await naviguerOnglet('Documents');
   await attendre(1000);
@@ -1957,9 +1963,9 @@ async function seq_creationDossier_attenteReponseVendeur() {
     console.warn('[Alfred DOM] Liste des documents introuvable — impossible de détecter l\'arrivée des pièces, réplique jouée sans confirmation.');
   } else {
     console.log(`[Alfred DOM] ${baseline} document(s) encore en attente — surveillance en cours.`);
-    for (let i = 0; i < 100; i++) { // 100 x 3s = 5 min
+    for (let i = 0; i < 5; i++) { // 5 x 2s = 10s
       if (annulationDemandee) { console.warn('[Alfred DOM] Attente des documents annulée.'); break; }
-      await attendre(3000);
+      await attendre(2000);
       const actuel = compterDocumentsEnAttente();
       if (actuel !== null && actuel < baseline) {
         console.log(`[Alfred DOM] Nouveau(x) document(s) détecté(s) (${baseline} → ${actuel} en attente).`);
@@ -1967,7 +1973,7 @@ async function seq_creationDossier_attenteReponseVendeur() {
         break;
       }
     }
-    if (!detecte) console.warn('[Alfred DOM] Aucun nouveau document détecté après 5 min — réplique jouée quand même.');
+    if (!detecte) console.warn('[Alfred DOM] Aucun nouveau document détecté après 10s — réplique jouée quand même, direct vers la rédaction.');
   }
 
   // Segment marqué parlerDepuisAction (voir alfred-brain.js et
