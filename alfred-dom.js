@@ -1591,9 +1591,19 @@ async function seq_creationDossier_parties_acquereur() {
 async function seq_creationDossier_parties_notaires() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) return;
-  await cocherMesClients('Vendeur');
-  await attendre(600);
-  if (cfg.acquereur_notaire) await rattacherNotaire(cfg.acquereur_notaire, 'Acquéreur');
+  // Retour utilisateur (test live) : il n'y a pas deux sections séparées
+  // ("Mes clients" indépendamment, puis Maxime) — les deux cases à cocher
+  // (Vendeur et Acquéreur) apparaissent ENSEMBLE, au même endroit, une
+  // fois Maxime ajouté. Donc : chercher/ajouter Maxime d'abord, puis
+  // cocher les deux cases qui apparaissent à ce moment-là — pas de
+  // cocherMesClients séparé avant.
+  if (cfg.acquereur_notaire) {
+    await rattacherNotaire(cfg.acquereur_notaire, null); // pas de coche automatique ici, on fait les deux ensemble juste après
+    await attendre(500);
+    await cocherRepresentation('Vendeur');
+    await attendre(300);
+    await cocherRepresentation('Acquéreur');
+  }
   await attendre(500);
   // "Suivant" reste désactivé tant que le vendeur n'a pas été ajouté avec succès.
   if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.suivant)) {
