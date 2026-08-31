@@ -1830,13 +1830,19 @@ async function seq_creationDossier_redaction_scrollGauche() {
   await defilerColonneLentement('gauche');
 }
 
+// Premier passage sur la rédaction (juste après la génération du
+// compromis) : défilement générique, comme avant l'ajout du ciblage PEB —
+// à ce stade le certificat PEB n'est pas encore rempli (les pièces du
+// vendeur n'arrivent que plus tard, voir Email/ReponseVendeur), donc viser
+// spécifiquement son titre ici n'aurait montré qu'une clause vide.
+async function seq_creationDossier_redaction_scrollDroite() {
+  await defilerColonneLentement('droite');
+}
+
 // Trouve, dans la colonne droite (le compromis généré), le titre de la
 // clause PEB ("La performance énergétique" / "Certificat énergétique") —
 // capturé en direct (clics + scroll réels) : c'est un simple <h3> dans le
-// contenu de l'éditeur CKEditor. Plus précis que le défilement générique de
-// quelques hauteurs d'écran (voir defilerColonneLentement), qui ne
-// garantissait pas d'atteindre cette clause précise selon la longueur du
-// document généré.
+// contenu de l'éditeur CKEditor.
 function trouverTitrePEB() {
   const conteneur = trouverColonneDefilante('droite');
   if (!conteneur) return null;
@@ -1844,7 +1850,11 @@ function trouverTitrePEB() {
   return Array.from(titres).find(t => /performance énergétique|certificat énergétique/i.test(t.textContent));
 }
 
-async function seq_creationDossier_redaction_scrollDroite() {
+// Utilisé en toute fin d'acte 2 (réplique ExportWord), une fois les pièces
+// du vendeur reçues et intégrées (Email/ReponseVendeur) : c'est SEULEMENT
+// à ce moment que la clause PEB est vraiment remplie, donc c'est là qu'on
+// montre qu'elle "a bien été rajoutée" — pas pendant la 1re rédaction.
+async function seq_creationDossier_redaction_scrollPEB() {
   let titre = null;
   for (let i = 0; i < 15; i++) {
     if (annulationDemandee) return;
@@ -2037,6 +2047,7 @@ const DOM_ACTIONS = {
   'CreationRedaction': seq_creationDossier_redaction,
   'CreationRedaction_ScrollGauche': seq_creationDossier_redaction_scrollGauche,
   'CreationRedaction_ScrollDroite': seq_creationDossier_redaction_scrollDroite,
+  'CreationRedaction_ScrollPEB': seq_creationDossier_redaction_scrollPEB,
   'CreationRedaction_ExporterWord': seq_creationDossier_redaction_exporterWord,
   'CreationEmail':     seq_creationDossier_email,
   'CreationEmail_Ouverture': montrerPropositionEmail_ouverture,

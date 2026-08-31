@@ -346,7 +346,15 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // pas juste après le scroll sur PEB (essayé d'abord, mais montré trop
     // vite) — l'écran reste sur le compromis, scrollé sur PEB, pendant
     // Email/ReponseVendeur juste avant, donc rien ne bouge entre-temps.
-    { acte: 2, label: 'ExportWord', texte: "Le compromis peut aussi s'exporter directement en Word.", action: 'CreationRedaction_ExporterWord' },
+    // Retour explicite : la clause PEB n'est vraiment remplie qu'une fois
+    // les pièces du vendeur intégrées (Email/ReponseVendeur juste avant) —
+    // c'est ICI, à la toute fin de l'acte 2, qu'on montre qu'elle a bien
+    // été rajoutée, pas pendant la 1re rédaction (voir ScrollDroite plus
+    // haut, revenu au défilement générique).
+    { acte: 2, label: 'ExportWord', segments: [
+      { texte: "Le certificat PEB a bien été intégré au compromis.", action: 'CreationRedaction_ScrollPEB' },
+      { texte: "Le compromis peut aussi s'exporter directement en Word.", action: 'CreationRedaction_ExporterWord' },
+    ] },
 
     // Pas de réplique pour la suite de la scène 11 ("Chat, collecte &
     // expertise" — 3 questions live de Fariël : zone inondable / régime
@@ -412,7 +420,10 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'ReponseVendeur', segments: [
       { texte: "Verzonden. De verkoper heeft geantwoord — de documenten zijn geladen. Ontvangen, geanalyseerd, gerangschikt. Bekijk de verkoopbelofte: de gegevens uit de stukken staan in de juiste clausules. Het ontwerp is volledig.", action: 'CreationReponseVendeur', parlerDepuisAction: true },
     ] },
-    { acte: 2, label: 'ExportWord', texte: "Ik kan de verkoopbelofte ook rechtstreeks exporteren naar Word.", action: 'CreationRedaction_ExporterWord' },
+    { acte: 2, label: 'ExportWord', segments: [
+      { texte: "Het PEB-certificaat is goed geïntegreerd in de verkoopbelofte.", action: 'CreationRedaction_ScrollPEB' },
+      { texte: "Ik kan de verkoopbelofte ook rechtstreeks exporteren naar Word.", action: 'CreationRedaction_ExporterWord' },
+    ] },
 
     // ACTE 3
     // "gecertificeerd door Privanot" corrigé (même note de prod que la
