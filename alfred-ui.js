@@ -283,6 +283,18 @@ function deplacerReplique(depuisIdx, versIdx) {
 
 let dragSourceIdx = null;
 
+// true si la réplique déclenche un vrai clic dans l'appli (elle-même ou
+// l'un de ses segments) — sert à avertir avant de la déplacer par
+// glisser-déposer : contrairement à une réplique de pure narration, son
+// ORDRE relatif aux autres actions compte pour de vrai dans l'appli en
+// direct (ex. rattacher un notaire doit se faire après le vrai clic
+// Enregistrer, pas avant — remonté en test live ce soir).
+function repliqueADesActions(r) {
+  if (r.action) return true;
+  if (Array.isArray(r.segments)) return r.segments.some(seg => seg.action);
+  return false;
+}
+
 function remplirPanneauRepliques() {
   const list = ALFRED_CONFIG.REPLIQUES_FR; // l'index est commun aux listes FR et NL
 
@@ -344,12 +356,31 @@ function remplirPanneauRepliques() {
         row.style.borderTop = '2px solid transparent';
         if (dragSourceIdx === null || dragSourceIdx === idx) return;
         if (list[dragSourceIdx].acte !== acteNum) return; // pas de réordre entre actes différents
+        // Avertissement avant de déplacer une réplique qui déclenche un
+        // vrai clic dans l'appli : contrairement à une réplique de pure
+        // narration, la changer de place peut casser une dépendance réelle
+        // entre deux actions (ex. rattacher un notaire doit rester après le
+        // vrai clic Enregistrer). Rien n'empêche le déplacement, juste un
+        // rappel avant de le faire sans y penser.
+        if (repliqueADesActions(list[dragSourceIdx])) {
+          const ok = confirm(
+            `« ${list[dragSourceIdx].label} » déclenche une vraie action dans l'appli.\n` +
+            `Changer sa place peut casser l'ordre réel des clics en direct (ex. un rattachement qui doit se faire après un enregistrement).\n\n` +
+            `Déplacer quand même ?`
+          );
+          if (!ok) { dragSourceIdx = null; return; }
+        }
         deplacerReplique(dragSourceIdx, idx);
         dragSourceIdx = null;
       };
 
       const btn = document.createElement('div');
-      btn.textContent = r.label;
+      // ⚡ signale une réplique qui déclenche un vrai clic dans l'appli —
+      // pas juste de la narration. Ça aide à repérer d'un coup d'œil
+      // lesquelles ont un ordre qui compte vraiment (voir
+      // repliqueADesActions plus haut).
+      btn.textContent = (repliqueADesActions(r) ? '⚡ ' : '') + r.label;
+      btn.title = repliqueADesActions(r) ? 'Déclenche une action réelle dans l\'appli' : '';
       btn.style.cssText = 'flex:1;color:rgba(255,255,255,.75);font-size:11px;padding:5px 8px;border-radius:6px;cursor:pointer;transition:background .15s,color .15s;';
       btn.onmouseover = () => { btn.style.background='rgba(255,255,255,.12)'; btn.style.color='#fff'; };
       btn.onmouseout  = () => { btn.style.background='transparent'; btn.style.color='rgba(255,255,255,.75)'; };
