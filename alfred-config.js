@@ -286,14 +286,19 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // pièces, ce qui créait une incohérence avec la séquence 11
     // (CreationEmail/CreationReponseVendeur) où Alfred va justement les
     // demander au vendeur — on aurait presque l'air de les avoir "déjà
-    // traitées" avant de les redemander. Pas d'action DOM pour l'instant :
-    // aucun document n'est réellement uploadé dans cette démo (note prod de
-    // Cyril), donc pas de nouvel écran à automatiser tant qu'on n'a pas
-    // confirmé s'il existe un onglet Documents / bouton Enregistrer à
-    // montrer réellement à l'écran à ce moment précis.
+    // traitées" avant de les redemander.
+    // Le clic "Enregistrer" vivait avant dans CreationBien_Finaliser (bien
+    // avant que cette réplique ne parle) — déplacé ici sur le 2e segment,
+    // pour tomber pile sur "Dossier enregistré." plutôt que sur la fin de
+    // Bien (retour Cyril). Pas de parlerDepuisAction : le clic est
+    // instantané et sous notre contrôle, pas un événement externe
+    // incertain à attendre — donc pas besoin du mécanisme utilisé pour
+    // CreationEmail_Envoyer/CreationReponseVendeur, la synchro normale
+    // (executerActionDOM en parallèle de speak(), délai de 600ms intégré)
+    // suffit.
     { acte: 2, label: 'CreationDocuments', segments: [
       { texte: "Rien n'est encore chargé. Deux options : soit vous les uploadez, soit je vais les demander à la partie qui les détient — ici, le vendeur." },
-      { texte: "Dossier enregistré." },
+      { texte: "Dossier enregistré.", action: 'CreationDocuments_Enregistrer' },
     ] },
     // Même texte que la version à plat (aucun mot changé), redécoupé en 2
     // segments : le 2e ("À gauche/À droite...") ne se joue qu'une fois le
@@ -376,7 +381,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     ] },
     { acte: 2, label: 'CreationDocuments', segments: [
       { texte: "Er is nog niets geüpload. Twee opties: u laadt ze zelf op, of ik vraag ze op bij de partij die ze heeft — hier, de verkoper." },
-      { texte: "Dossier geregistreerd." },
+      { texte: "Dossier geregistreerd.", action: 'CreationDocuments_Enregistrer' },
     ] },
     { acte: 2, label: 'CreationRedaction', segments: [
       { texte: "En nu het moment waar we op wachten: de opstelling. Eén klik. Ik verzamel de partijen, de notarissen en het kadaster, en ik genereer de verkoopbelofte.", action: 'CreationRedaction' },

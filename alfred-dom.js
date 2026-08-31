@@ -1590,7 +1590,20 @@ async function seq_creationDossier_bien_finaliser() {
   // documents pour tous les biens) passait trop vite pour être lu —
   // demandé explicitement, que ce soit après le cadastre ou la saisie
   // manuelle (même écran dans les deux cas).
+  // Le clic "Enregistrer" ne se fait plus ici — retour Cyril : le texte
+  // "Dossier enregistré." (scène 9, réplique CreationDocuments) doit
+  // tomber pile sur le clic réel. Avant, ce clic se faisait ici, bien
+  // avant que la narration Documents n'ait même commencé — voir
+  // seq_creationDossier_documents_enregistrer juste en dessous.
   await attendre(4500);
+}
+
+// Clic "Enregistrer" réel (scène 9 "Documents") — calé sur la réplique
+// "Dossier enregistré." plutôt que sur la fin de Bien (retour Cyril, voir
+// seq_creationDossier_bien_finaliser juste au-dessus). Le bouton reste
+// affiché entre les deux étapes (rien ne navigue ailleurs entretemps),
+// donc pas besoin de le retrouver depuis un autre écran.
+async function seq_creationDossier_documents_enregistrer() {
   await cliquerBoutonQuandActif(SELECTEURS.boutons.enregistrer);
   await attendre(2200);
 }
@@ -1850,6 +1863,7 @@ const DOM_ACTIONS = {
   'CreationBien':      seq_creationDossier_bien,
   'CreationBien_Rechercher': seq_creationDossier_bien_ajouter,
   'CreationBien_Finaliser':  seq_creationDossier_bien_finaliser,
+  'CreationDocuments_Enregistrer': seq_creationDossier_documents_enregistrer,
   'CreationNotaires':  seq_creationDossier_notaires,
   'CreationNotaires_Vendeur':   seq_creationDossier_notaires_vendeur,
   'CreationNotaires_Acquereur': seq_creationDossier_notaires_acquereur,
