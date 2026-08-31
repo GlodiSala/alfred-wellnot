@@ -1514,12 +1514,15 @@ async function seq_creationDossier_ouvrir_champs() {
   // dossier" n'étaient jusqu'ici pas remplis — le champ notaire existait
   // pourtant déjà dans la config (cfg.notaire) mais n'était jamais utilisé.
   // Le numéro de dossier doit être unique — l'appli refuse un doublon et
-  // bloque "Suivant". Pour ne pas devoir y penser à chaque test, on ajoute
-  // automatiquement l'heure du moment (HHMMSS) au code configuré : chaque
-  // lancement génère donc un numéro différent, sans jamais retomber sur un
-  // ancien dossier déjà créé.
-  const horodatage = new Date().toTimeString().slice(0, 8).replace(/:/g, '');
-  const codeUnique = `${cfg.code}-${horodatage}`;
+  // bloque "Suivant". Pour ne pas devoir y penser à chaque test, on génère
+  // automatiquement un code à chaque lancement, plutôt que de réutiliser
+  // cfg.code tel quel — jamais de retombée sur un ancien dossier déjà créé.
+  // Format demandé : "C-" + date du jour + heure (HHMMSS, pour rester
+  // unique même en cas de plusieurs lancements le même jour).
+  const maintenant = new Date();
+  const dateJour = maintenant.toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
+  const horodatage = maintenant.toTimeString().slice(0, 8).replace(/:/g, ''); // HHMMSS
+  const codeUnique = `C-${dateJour}-${horodatage}`;
   // Frappe accélérée (35ms/lettre au lieu de 90) : le suffixe d'horodatage
   // rallonge le code, et voir chaque lettre s'afficher une à une n'apporte
   // rien ici — contrairement à un champ où le "tapé en direct" fait partie

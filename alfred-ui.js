@@ -749,7 +749,10 @@ function ouvrirPanneauDonneesCreation() {
     panel.appendChild(input);
   }
 
-  ligne('Code du dossier', 'code', cfg.code);
+  // Pas de champ "Code du dossier" ici : il est généré automatiquement à
+  // chaque lancement (C- + date + heure, voir seq_creationDossier_ouvrir_champs
+  // dans alfred-dom.js) pour garantir l'unicité — un champ ici serait resté
+  // sans effet, ce qui aurait été trompeur.
   ligne('Collaborateur en charge du dossier', 'collaborateur', cfg.collaborateur);
   ligne('Collaborateur administratif', 'collaborateur_administratif', cfg.collaborateur_administratif);
   ligne('Notaire en charge du dossier', 'notaire', cfg.notaire);

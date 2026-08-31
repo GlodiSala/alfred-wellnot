@@ -51,7 +51,11 @@ const ALFRED_CONFIG = {
   // au séquencier qui l'indique — à revérifier si ce dropdown est corrigé
   // côté app (le nom exact sur "Mes clients" suit ce champ).
   DOSSIER_CREATION_DEMO: {
-    code:                       '2026/18-09',
+    // Pas de champ "code" ici : le numéro de dossier utilisé en live est
+    // généré automatiquement à chaque lancement (C- + date + heure), voir
+    // seq_creationDossier_ouvrir_champs dans alfred-dom.js — un code fixe
+    // ici aurait fait retomber sur un dossier déjà créé lors d'un test
+    // précédent (l'appli refuse un numéro en double).
     collaborateur:              'Cyril Cabuy', // "Collaborateur en charge du dossier"
     // Jean-François Ghigny n'existe pas dans la liste "Collaborateur
     // administratif" (confirmé en test live — c'est un notaire, pas un
