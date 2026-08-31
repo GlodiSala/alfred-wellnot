@@ -1545,13 +1545,34 @@ async function seq_creationDossier_parties_acquereur() {
     ok = await ajouterPartieParRN('Acquéreur', cfg.acquereur_rn);
   }
   if (!ok) {
-    console.warn('[Alfred DOM] Acquéreur toujours pas confirmé — on tente quand même "Suivant" (l\'ajout a peut-être réussi malgré la vérification).');
+    console.warn('[Alfred DOM] Acquéreur toujours pas confirmé — on continue quand même vers le rattachement des notaires (l\'ajout a peut-être réussi malgré la vérification).');
   }
   // Un délai fixe ici était trop variable (remonté plusieurs fois en test
   // live, jamais fiable à 100%) — ajouterPartieParRN attend maintenant
   // vraiment que la fenêtre d'ajout se referme (signal réel de fin
   // d'enregistrement) avant de revenir, donc plus besoin de deviner un
   // délai supplémentaire ici. Petite pause cosmétique seulement.
+  await attendre(500);
+  // Le clic "Suivant" vivait ici avant — déplacé dans
+  // seq_creationDossier_parties_notaires (juste en dessous), qui
+  // s'exécute juste après : le rattachement des notaires se fait
+  // maintenant pendant qu'on est encore sur l'onglet Parties (retour
+  // Cyril), donc "Suivant" doit venir après ce rattachement, pas avant.
+}
+
+// Rattache les notaires des deux parties — retour Cyril (script/
+// séquencier officiels, capture d'écran à l'appui) : inutile d'attendre
+// plus tard dans la démo et de revenir sur l'onglet Parties pour ça,
+// exactement les mêmes fonctions (cocherMesClients/rattacherNotaire,
+// déjà utilisées avant) marchent très bien ici, tant qu'on n'a pas encore
+// quitté l'onglet Parties. Se termine par le clic "Suivant" (qui vivait
+// avant à la fin de seq_creationDossier_parties_acquereur).
+async function seq_creationDossier_parties_notaires() {
+  const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
+  if (!cfg) return;
+  await cocherMesClients('Vendeur');
+  await attendre(600);
+  if (cfg.acquereur_notaire) await rattacherNotaire(cfg.acquereur_notaire, 'Acquéreur');
   await attendre(500);
   // "Suivant" reste désactivé tant que le vendeur n'a pas été ajouté avec succès.
   if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.suivant)) {
@@ -1561,11 +1582,12 @@ async function seq_creationDossier_parties_acquereur() {
   await attendre(2200);
 }
 
-// Rétrocompatibilité — enchaîne les deux sous-étapes (test manuel en
+// Rétrocompatibilité — enchaîne les trois sous-étapes (test manuel en
 // console ; le script normal déclenche chaque sous-étape à part).
 async function seq_creationDossier_parties() {
   await seq_creationDossier_parties_vendeur();
   await seq_creationDossier_parties_acquereur();
+  await seq_creationDossier_parties_notaires();
 }
 
 // Étape 3 — Bien, puis finalisation (Documents : rien à joindre en démo).
@@ -1615,6 +1637,12 @@ async function seq_creationDossier_bien() {
   await seq_creationDossier_bien_finaliser();
 }
 
+// SUPERSEDÉES (retour Cyril, capture d'écran à l'appui) : le rattachement
+// des notaires se fait maintenant DANS seq_creationDossier_parties_notaires
+// (voir plus haut), pendant qu'on est encore sur l'onglet Parties — plus
+// besoin d'y revenir plus tard via naviguerOnglet. Gardées ici pour
+// référence (mêmes fonctions cocherMesClients/rattacherNotaire réutilisées),
+// mais plus aucune réplique ne les déclenche.
 // Étape 4 — Rattacher les notaires (vendeur et acquéreur) depuis l'onglet Parties.
 // Découpée en deux sous-étapes (comme CreationOuvrir/CreationParties) pour
 // un calage sur deux segments : le notaire du vendeur (BIMBIMMO) pendant
@@ -1860,13 +1888,15 @@ const DOM_ACTIONS = {
   'CreationParties':   seq_creationDossier_parties,
   'CreationParties_Vendeur':   seq_creationDossier_parties_vendeur,
   'CreationParties_Acquereur': seq_creationDossier_parties_acquereur,
+  // Rattachement des notaires — déplacé ici (retour Cyril) : se fait
+  // maintenant juste après l'acquéreur, pendant qu'on est encore sur
+  // l'onglet Parties. Remplace 'CreationNotaires_Vendeur'/'_Acquereur'
+  // (superseded, voir seq_creationDossier_notaires_vendeur/acquereur).
+  'CreationParties_Notaires':  seq_creationDossier_parties_notaires,
   'CreationBien':      seq_creationDossier_bien,
   'CreationBien_Rechercher': seq_creationDossier_bien_ajouter,
   'CreationBien_Finaliser':  seq_creationDossier_bien_finaliser,
   'CreationDocuments_Enregistrer': seq_creationDossier_documents_enregistrer,
-  'CreationNotaires':  seq_creationDossier_notaires,
-  'CreationNotaires_Vendeur':   seq_creationDossier_notaires_vendeur,
-  'CreationNotaires_Acquereur': seq_creationDossier_notaires_acquereur,
   'CreationRedaction': seq_creationDossier_redaction,
   'CreationRedaction_ScrollGauche': seq_creationDossier_redaction_scrollGauche,
   'CreationRedaction_ScrollDroite': seq_creationDossier_redaction_scrollDroite,
