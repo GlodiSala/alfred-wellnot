@@ -168,12 +168,16 @@ function creerPanneauRepliques() {
   if (document.getElementById('alfred-repliques-panel')) return;
   const panel = document.createElement('div');
   panel.id = 'alfred-repliques-panel';
+  // max-height remonté (80vh → 92vh) : avec plus de répliques dans
+  // l'acte 2 (retour Cyril, séparation des répliques groupées ce soir),
+  // la colonne dépassait plus souvent la hauteur du panneau, forçant un
+  // défilement interne même sur un écran qui aurait la place.
   panel.style.cssText = `
     display:none; position:fixed;
     top:50%; left:270px; transform:translateY(-50%);
     background:rgba(5,69,97,0.97); border-radius:14px;
     padding:16px; z-index:500; min-width:460px; max-width:520px;
-    max-height:80vh; overflow-y:auto;
+    max-height:92vh; overflow-y:auto;
     box-shadow:0 8px 40px rgba(0,0,0,0.5);
     font-family:sans-serif;
   `;
