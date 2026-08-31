@@ -895,7 +895,16 @@ async function cocherMesClients(qualitePartie) {
 // ou 'Acquéreur').
 async function rattacherNotaire(nomNotaire, qualitePartie) {
   if (!nomNotaire) return false;
-  if (!await cliquerBouton(SELECTEURS.boutons.ajouterNotaire)) return false;
+  // Le bouton "Ajouter un notaire" (SELECTEURS.boutons.ajouterNotaire)
+  // n'existe pas sur cet écran — confirmé par capture de clics en direct :
+  // il faut repasser par le même menu "qualité" que pour Vendeur/Acquéreur
+  // (choisir "Notaire"), puis le même bouton "+" générique — exactement
+  // comme ajouterPartieParRN/ajouterPartieParBCE. Avant, le clic sur
+  // "Ajouter un notaire" échouait silencieusement (aucun match), donc
+  // Maxime n'était jamais recherché ni ajouté.
+  await choisirDansDropdown(SELECTEURS.menus.qualitePartie, 'Notaire');
+  await attendre(500);
+  if (!await cliquerBouton(SELECTEURS.boutons.ajouter)) return false;
   await attendre(600);
   let input = null;
   for (let i = 0; i < 15; i++) {
