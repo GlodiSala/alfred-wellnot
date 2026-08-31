@@ -483,10 +483,11 @@ function resetMouth() {
 }
 
 // Délai ajouté après l'événement "playing" avant d'afficher le 1er
-// sous-titre — voir le commentaire dans afficherSousTitresSync. Valeur de
-// départ raisonnable (latence de sortie audio typique d'un navigateur) ;
-// à ajuster si ça reste perçu comme en avance ou, à l'inverse, en retard.
-const DELAI_AUDIO_PERCEPTIBLE_MS = 250;
+// sous-titre — voir le commentaire dans afficherSousTitresSync. 250ms
+// remonté en test live comme encore insuffisant (texte toujours perçu en
+// avance) — monté à 600ms. À réajuster si ça reste en avance ou si, à
+// l'inverse, ça devient perceptible en retard sur la voix.
+const DELAI_AUDIO_PERCEPTIBLE_MS = 600;
 
 // ── Afficher sous-titres avec sync audio ──────────────────
 // timerRef : objet mutable { id } dans lequel on écrit l'id du setTimeout en
