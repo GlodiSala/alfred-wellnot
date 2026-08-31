@@ -382,16 +382,20 @@ function remplirPanneauRepliques() {
       };
 
       const btn = document.createElement('div');
-      // ⚡ signale une réplique qui déclenche un vrai clic dans l'appli —
-      // pas juste de la narration. Ça aide à repérer d'un coup d'œil
-      // lesquelles ont un ordre qui compte vraiment (voir
-      // repliqueADesActions plus haut).
-      const libelle = (repliqueADesActions(r) ? '⚡ ' : '') + r.label;
-      btn.textContent = libelle;
-      // Toujours le nom complet en infobulle — utile maintenant que le
-      // texte peut être tronqué (voir text-overflow ci-dessous) sur les
-      // noms les plus longs.
-      btn.title = libelle + (repliqueADesActions(r) ? ' — déclenche une action réelle dans l\'appli' : '');
+      // Le ⚡ était collé directement devant le texte : une réplique sans
+      // action commençait donc son nom 2 caractères plus à gauche qu'une
+      // réplique avec ⚡, ce qui désalignait le début des noms entre les
+      // lignes (remonté en test live — pas le même problème que la
+      // troncature réglée juste avant). Fix : un slot de largeur fixe pour
+      // le symbole (vide si pas d'action), séparé du texte du nom — chaque
+      // nom démarre maintenant toujours à la même position, avec ou sans ⚡.
+      const aAction = repliqueADesActions(r);
+      btn.style.cssText = 'flex:1;min-width:0;display:flex;align-items:center;color:rgba(255,255,255,.75);font-size:11px;padding:5px 8px;border-radius:6px;cursor:pointer;transition:background .15s,color .15s;';
+      const symbole = document.createElement('span');
+      symbole.textContent = aAction ? '⚡' : '';
+      symbole.style.cssText = 'flex:0 0 14px;text-align:center;';
+      const texte = document.createElement('span');
+      texte.textContent = r.label;
       // white-space:nowrap + text-overflow:ellipsis : avant, un nom trop
       // long passait à la ligne, ce qui rendait les lignes du panneau
       // inégales et mal alignées entre elles (remonté en test live) —
@@ -399,7 +403,13 @@ function remplirPanneauRepliques() {
       // avec "…" (le nom complet reste lisible au survol). min-width:0
       // est nécessaire : un enfant flex ne respecte pas overflow:hidden
       // sans ça.
-      btn.style.cssText = 'flex:1;min-width:0;color:rgba(255,255,255,.75);font-size:11px;padding:5px 8px;border-radius:6px;cursor:pointer;transition:background .15s,color .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+      texte.style.cssText = 'flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+      btn.appendChild(symbole);
+      btn.appendChild(texte);
+      // Toujours le nom complet en infobulle — utile maintenant que le
+      // texte peut être tronqué (voir text-overflow ci-dessus) sur les
+      // noms les plus longs.
+      btn.title = r.label + (aAction ? ' — déclenche une action réelle dans l\'appli' : '');
       btn.onmouseover = () => { btn.style.background='rgba(255,255,255,.12)'; btn.style.color='#fff'; };
       btn.onmouseout  = () => { btn.style.background='transparent'; btn.style.color='rgba(255,255,255,.75)'; };
       btn.onclick = () => {
