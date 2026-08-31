@@ -685,8 +685,15 @@ function ouvrirPanneauVoix() {
 
     btnSave.disabled = true;
     btnCancel.style.display = 'none';
-    const resultat = await prechargerScript(selectVoix.value, selectVoix.value, taTon.value, (fait, total) => {
-      btnSave.textContent = `⏳ Préchargement ${fait}/${total}…`;
+    const resultat = await prechargerScript(selectVoix.value, selectVoix.value, taTon.value, (fait, total, echecs, phase) => {
+      // 'attente-rattrapage' : les lignes en échec (limite Gemini "par
+      // minute", le cas le plus courant) attendent qu'elle se débloque
+      // toute seule avant un unique passage de rattrapage — sans ce
+      // libellé, le bouton restait figé sur "xx/xx" pendant ~65s, comme
+      // planté.
+      btnSave.textContent = phase === 'attente-rattrapage'
+        ? `⏳ Rattrapage de ${echecs} réplique(s)…`
+        : `⏳ Préchargement ${fait}/${total}…`;
     });
     btnSave.disabled = false;
 

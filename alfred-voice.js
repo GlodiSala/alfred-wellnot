@@ -413,6 +413,10 @@ function textesAPrecharger(replique) {
   return [replique.texte];
 }
 
+// Délai avant le passage de rattrapage ci-dessous — le temps que la limite
+// Gemini-TTS "par minute" (voir appellerGeminiTTS) se débloque toute seule.
+const ATTENTE_RATTRAPAGE_PRECHARGEMENT_MS = 65000;
+
 async function prechargerScript(voixFr, voixNl, ton, onProgress) {
   const lignes = [
     ...(ALFRED_CONFIG.REPLIQUES_FR || []).flatMap(r => textesAPrecharger(r).map(texte => ({ texte, voix: voixFr, langue: 'fr' }))),
@@ -423,24 +427,54 @@ async function prechargerScript(voixFr, voixNl, ton, onProgress) {
   let echecs = 0;
   let quotaDepasse = false;
   let indexSuivant = 0;
+  // Contrairement à un simple compteur d'échecs (avant) : sans savoir QUELLES
+  // lignes ont échoué, impossible de les rattraper — elles restaient
+  // silencieusement non préchargées, jouées plus tard en repli Cloud TTS
+  // (voix différente) pendant la vraie démo. Remonté en test live : "on
+  // dirait que certaines répliques ont des voix différentes, mélangées" —
+  // exactement ce symptôme, en français où le préchargement tape le plus
+  // souvent la limite par minute (bien plus de lignes qu'en néerlandais,
+  // jamais concerné).
+  const lignesEchouees = [];
 
-  async function travailleur() {
-    while (indexSuivant < lignes.length) {
-      const ligne = lignes[indexSuivant++];
+  async function travailleur(liste, tracker) {
+    while (tracker.index < liste.length) {
+      const ligne = liste[tracker.index++];
       try {
         await genererAudioGemini(ligne.texte, ligne.voix, ton, ligne.langue);
       } catch (e) {
-        echecs++;
+        tracker.echecs++;
+        lignesEchouees.push(ligne);
         if (e && e.quotaExceeded) quotaDepasse = true;
         console.warn('[Alfred Voice] Préchargement échoué pour une réplique:', ligne.texte.slice(0, 40), e);
       }
       fait++;
-      if (onProgress) onProgress(fait, lignes.length, echecs);
+      if (onProgress) onProgress(fait, lignes.length, tracker.echecs);
     }
   }
 
-  const travailleurs = Array.from({ length: Math.min(PRECHARGEMENT_CONCURRENCE, lignes.length) }, travailleur);
+  const tracker1 = { index: 0, echecs: 0 };
+  const travailleurs = Array.from({ length: Math.min(PRECHARGEMENT_CONCURRENCE, lignes.length) }, () => travailleur(lignes, tracker1));
   await Promise.all(travailleurs);
+  echecs = tracker1.echecs;
+
+  // Passage de rattrapage : les échecs "par minute" (le cas de loin le plus
+  // fréquent, pas le quota journalier — voir quotaDepasse) se résolvent
+  // tout seuls après un peu de temps. Un seul rattrapage, pas de boucle
+  // infinie : si ça échoue encore après, autant laisser la démo live gérer
+  // ces quelques lignes via le repli Cloud TTS habituel plutôt que de
+  // bloquer le préchargement indéfiniment.
+  if (lignesEchouees.length > 0 && !quotaDepasse) {
+    console.log(`[Alfred Voice] ${lignesEchouees.length} ligne(s) en échec — rattrapage dans ${ATTENTE_RATTRAPAGE_PRECHARGEMENT_MS / 1000}s.`);
+    if (onProgress) onProgress(fait, lignes.length, echecs, 'attente-rattrapage');
+    await attendreMs(ATTENTE_RATTRAPAGE_PRECHARGEMENT_MS);
+
+    const aRattraper = lignesEchouees.splice(0);
+    const tracker2 = { index: 0, echecs: 0 };
+    const travailleursRattrapage = Array.from({ length: Math.min(PRECHARGEMENT_CONCURRENCE, aRattraper.length) }, () => travailleur(aRattraper, tracker2));
+    await Promise.all(travailleursRattrapage);
+    echecs = tracker2.echecs; // remplace le compte initial : les lignes réussies au rattrapage ne comptent plus comme échec
+  }
 
   return { total: lignes.length, echecs, quotaDepasse };
 }
