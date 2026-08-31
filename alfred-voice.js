@@ -483,9 +483,13 @@ function resetMouth() {
 }
 
 // ── Afficher sous-titres avec sync audio ──────────────────
-function afficherSousTitresSync(sousTitre, audio) {
+// timerRef : objet mutable { id } dans lequel on écrit l'id du setTimeout en
+// cours, pour que l'appelant (speak(), dans onended) puisse toujours
+// l'annuler même si l'id change après le retour de cette fonction — voir
+// plus bas pourquoi l'affichage ne peut plus être synchrone.
+function afficherSousTitresSync(sousTitre, audio, timerRef) {
   const sub = document.getElementById('alfred-subtitles');
-  if (!sub || !sousTitre) return null;
+  if (!sub || !sousTitre) return;
 
   const phrases = sousTitre.match(/[^.!?]+[.!?]+/g) || [sousTitre];
 
@@ -494,26 +498,38 @@ function afficherSousTitresSync(sousTitre, audio) {
   // réplique précédente efface le sous-titre qu'on vient tout juste
   // d'afficher ici.
   if (typeof masquageSousTitresTimer !== 'undefined') clearTimeout(masquageSousTitresTimer);
-  sub.style.opacity = '1';
-  sub.textContent = phrases[0].trim();
 
-  if (phrases.length <= 1) return null;
-
-  let phraseTimer = null;
-
-  audio.onloadedmetadata = () => {
+  // Avant, la 1re phrase s'affichait ICI, tout de suite, dès que l'objet
+  // Audio existait — mais audio.play() n'était appelé que plus loin dans
+  // speak() (après la mise en place de l'analyseur de volume), et même une
+  // fois appelé, le navigateur met un instant à démarrer réellement le son
+  // (décodage). Résultat remonté en test live : le sous-titre apparaissait
+  // une fraction de seconde AVANT la voix. On attend maintenant l'événement
+  // "playing" (le son est vraiment en train de sortir) avant d'afficher quoi
+  // que ce soit.
+  let dureeSecondes = null;
+  audio.addEventListener('loadedmetadata', () => {
     const totalMots = phrases.reduce((acc, p) => acc + p.trim().split(' ').length, 0);
     // audio.duration n'est pas fiable pour un MP3 encodé en base64 (data:
     // URI) — certains navigateurs renvoient Infinity ou NaN tant que la
     // lecture n'a pas commencé (bug connu, pas spécifique à ce projet).
-    // Résultat observé en test live : délai NaN/Infinity → setTimeout
-    // traité comme 0 → tous les sous-titres s'affichent d'un coup,
-    // instantanément. Repli sur une estimation (~150 mots/min, un débit de
-    // parole normal) si la durée réelle n'est pas exploitable.
-    const dureeSecondes = isFinite(audio.duration) && audio.duration > 0
+    // Repli sur une estimation (~150 mots/min, un débit de parole normal)
+    // si la durée réelle n'est pas exploitable.
+    dureeSecondes = isFinite(audio.duration) && audio.duration > 0
       ? audio.duration
       : totalMots * 0.4;
-    const msParMot = (dureeSecondes * 1000) / totalMots;
+  }, { once: true });
+
+  audio.addEventListener('playing', () => {
+    sub.style.opacity = '1';
+    sub.textContent = phrases[0].trim();
+    if (phrases.length <= 1) return;
+
+    const totalMots = phrases.reduce((acc, p) => acc + p.trim().split(' ').length, 0);
+    // loadedmetadata arrive normalement avant playing, mais si jamais ce
+    // n'est pas encore passé, on retombe sur la même estimation de repli.
+    const duree = dureeSecondes !== null ? dureeSecondes : totalMots * 0.4;
+    const msParMot = (duree * 1000) / totalMots;
 
     let i = 0;
 
@@ -525,15 +541,13 @@ function afficherSousTitresSync(sousTitre, audio) {
         ? phrases[i].trim().split(' ').length
         : 0;
       if (motsSuivant > 0) {
-        phraseTimer = setTimeout(afficherSuivante, motsSuivant * msParMot);
+        timerRef.id = setTimeout(afficherSuivante, motsSuivant * msParMot);
       }
     }
 
     const motsPhrase0 = phrases[0].trim().split(' ').length;
-    phraseTimer = setTimeout(afficherSuivante, motsPhrase0 * msParMot);
-  };
-
-  return phraseTimer;
+    timerRef.id = setTimeout(afficherSuivante, motsPhrase0 * msParMot);
+  }, { once: true });
 }
 
 // ── Parler ────────────────────────────────────────────────
@@ -568,8 +582,13 @@ async function speak(text, langue, sousTitre, moteurForce) {
     const audio = await obtenirAudio(text, langue, moteurForce);
     currentAudio = audio;
 
-    // Sous-titres synchronisés sur la durée audio
-    let phraseTimer = afficherSousTitresSync(sousTitre || text, audio);
+    // Sous-titres synchronisés sur la durée audio. phraseTimerRef est un
+    // objet mutable (voir afficherSousTitresSync) car l'id du setTimeout
+    // n'existe qu'après l'événement "playing" de l'audio, donc après le
+    // retour de cet appel — clearInterval(phraseTimerRef.id) plus bas (dans
+    // onended) lit toujours la valeur la plus récente.
+    const phraseTimerRef = { id: null };
+    afficherSousTitresSync(sousTitre || text, audio, phraseTimerRef);
 
     // Analyseur volume → bouche. Un seul AudioContext partagé, créé une
     // fois puis réutilisé (voir obtenirAudioContextPartage) : en recréer
@@ -610,7 +629,7 @@ async function speak(text, langue, sousTitre, moteurForce) {
       // appeler deux fois (la 2e est ignorée).
       audio.onpause = () => resolve();
       audio.onended = () => {
-        clearInterval(phraseTimer);
+        clearInterval(phraseTimerRef.id);
         clearInterval(talkTick);
         updateVolBar(0);
         resetMouth();
