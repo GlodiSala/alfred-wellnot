@@ -482,6 +482,12 @@ function resetMouth() {
   if (ms) ms.style.display = 'block';
 }
 
+// Délai ajouté après l'événement "playing" avant d'afficher le 1er
+// sous-titre — voir le commentaire dans afficherSousTitresSync. Valeur de
+// départ raisonnable (latence de sortie audio typique d'un navigateur) ;
+// à ajuster si ça reste perçu comme en avance ou, à l'inverse, en retard.
+const DELAI_AUDIO_PERCEPTIBLE_MS = 250;
+
 // ── Afficher sous-titres avec sync audio ──────────────────
 // timerRef : objet mutable { id } dans lequel on écrit l'id du setTimeout en
 // cours, pour que l'appelant (speak(), dans onended) puisse toujours
@@ -521,32 +527,39 @@ function afficherSousTitresSync(sousTitre, audio, timerRef) {
   }, { once: true });
 
   audio.addEventListener('playing', () => {
-    sub.style.opacity = '1';
-    sub.textContent = phrases[0].trim();
-    if (phrases.length <= 1) return;
+    // Même après "playing", le texte restait perçu comme un peu en avance
+    // sur la voix (remonté en test live) : "playing" veut juste dire que la
+    // lecture a démarré côté navigateur, pas que le son est déjà sorti des
+    // haut-parleurs — il reste la latence du pipeline audio (buffer de
+    // sortie, driver système). Petit délai fixe pour compenser ce résidu.
+    timerRef.id = setTimeout(() => {
+      sub.style.opacity = '1';
+      sub.textContent = phrases[0].trim();
+      if (phrases.length <= 1) return;
 
-    const totalMots = phrases.reduce((acc, p) => acc + p.trim().split(' ').length, 0);
-    // loadedmetadata arrive normalement avant playing, mais si jamais ce
-    // n'est pas encore passé, on retombe sur la même estimation de repli.
-    const duree = dureeSecondes !== null ? dureeSecondes : totalMots * 0.4;
-    const msParMot = (duree * 1000) / totalMots;
+      const totalMots = phrases.reduce((acc, p) => acc + p.trim().split(' ').length, 0);
+      // loadedmetadata arrive normalement avant playing, mais si jamais ce
+      // n'est pas encore passé, on retombe sur la même estimation de repli.
+      const duree = dureeSecondes !== null ? dureeSecondes : totalMots * 0.4;
+      const msParMot = (duree * 1000) / totalMots;
 
-    let i = 0;
+      let i = 0;
 
-    function afficherSuivante() {
-      i++;
-      if (i >= phrases.length) return;
-      sub.textContent = phrases[i].trim();
-      const motsSuivant = i + 1 < phrases.length
-        ? phrases[i].trim().split(' ').length
-        : 0;
-      if (motsSuivant > 0) {
-        timerRef.id = setTimeout(afficherSuivante, motsSuivant * msParMot);
+      function afficherSuivante() {
+        i++;
+        if (i >= phrases.length) return;
+        sub.textContent = phrases[i].trim();
+        const motsSuivant = i + 1 < phrases.length
+          ? phrases[i].trim().split(' ').length
+          : 0;
+        if (motsSuivant > 0) {
+          timerRef.id = setTimeout(afficherSuivante, motsSuivant * msParMot);
+        }
       }
-    }
 
-    const motsPhrase0 = phrases[0].trim().split(' ').length;
-    timerRef.id = setTimeout(afficherSuivante, motsPhrase0 * msParMot);
+      const motsPhrase0 = phrases[0].trim().split(' ').length;
+      timerRef.id = setTimeout(afficherSuivante, motsPhrase0 * msParMot);
+    }, DELAI_AUDIO_PERCEPTIBLE_MS);
   }, { once: true });
 }
 
