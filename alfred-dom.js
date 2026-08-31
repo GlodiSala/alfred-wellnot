@@ -882,6 +882,43 @@ async function cocherRepresentation(qualitePartie) {
   return cocherBadgeSousSection(SELECTEURS.textes.represente, qualitePartie);
 }
 
+// Coche TOUTES les cases de représentation du panneau qui apparaît juste
+// après avoir ajouté un notaire (app-notary-representation-list) — sans
+// essayer de distinguer laquelle est Vendeur et laquelle est Acquéreur.
+// Retour utilisateur (test live) : les deux cases n'ont pas de badge/texte
+// exploitable pour les différencier de façon fiable comme le fait
+// cocherBadgeSousSection ailleurs, et de toute façon les deux doivent être
+// cochées ici (Maxime représente les deux parties dans cette démo) — pas
+// besoin de distinction, juste tout cocher.
+async function cocherToutesRepresentations() {
+  let conteneur = null;
+  for (let i = 0; i < 15; i++) {
+    conteneur = document.querySelector('app-notary-representation-list');
+    if (conteneur) break;
+    await attendre(300);
+  }
+  if (!conteneur) { console.warn('[Alfred DOM] Liste de représentation du notaire introuvable.'); return false; }
+
+  const checkboxes = Array.from(conteneur.querySelectorAll('input[type="checkbox"]'));
+  if (!checkboxes.length) { console.warn('[Alfred DOM] Aucune case de représentation trouvée dans le panneau.'); return false; }
+
+  for (const checkbox of checkboxes) {
+    if (checkbox.checked) continue;
+    await curseurVersAsync(checkbox, () => simulerClic(checkbox));
+    await attendre(300);
+    // Même piège que cocherBadgeSousSection : le vrai gestionnaire de clic
+    // écoute parfois le wrapper visuel, pas l'input caché lui-même.
+    if (!checkbox.checked) {
+      const wrapper = checkbox.closest('[role="checkbox"]') || checkbox.parentElement;
+      if (wrapper && wrapper !== checkbox) {
+        await curseurVersAsync(wrapper, () => simulerClic(wrapper));
+        await attendre(300);
+      }
+    }
+  }
+  return true;
+}
+
 // "Mes clients" apparaît sur la fiche du notaire DE VOTRE ÉTUDE, déjà
 // présent sur le dossier (pas besoin de le chercher/l'ajouter comme un
 // notaire externe) — coche directement la partie qu'il représente.
@@ -960,10 +997,27 @@ async function rattacherNotaire(nomNotaire, qualitePartie) {
   }
   if (!trouve) { console.warn('[Alfred DOM] Échec du rattachement du notaire:', nomNotaire); return false; }
 
-  // Certains flux affichent encore un bouton "Ajouter" pour confirmer la
-  // fiche ; s'il n'existe pas ici, cliquerBouton échoue silencieusement
-  // (averti en console) sans bloquer la suite.
-  await cliquerBouton(SELECTEURS.boutons.ajouter, 6);
+  // Confirme l'ajout du notaire sélectionné. Deux boutons "Ajouter"
+  // coexistent à ce moment précis (confirmé par capture de clics en
+  // direct) : celui qui a ouvert ce panneau (classe "items-end", encore
+  // dans le DOM) et le vrai bouton de confirmation (classe "justify-end").
+  // cliquerBouton (recherche générique par texte) tombait sur le premier
+  // trouvé dans le DOM — pas forcément le bon — d'où le clic "qui ne
+  // marchait pas". On cible spécifiquement celui dans un conteneur
+  // "justify-end", comme vu dans les deux captures.
+  let btnConfirmer = null;
+  for (let i = 0; i < 15; i++) {
+    btnConfirmer = Array.from(document.querySelectorAll('button'))
+      .find(b => b.textContent.trim() === 'Ajouter' && b.getBoundingClientRect().width > 0 && b.closest('.justify-end'));
+    if (btnConfirmer) break;
+    await attendre(300);
+  }
+  if (btnConfirmer) {
+    await curseurVersAsync(btnConfirmer, () => simulerClic(btnConfirmer));
+  } else {
+    console.warn('[Alfred DOM] Bouton "Ajouter" de confirmation (justify-end) introuvable — repli sur la recherche générique.');
+    await cliquerBouton(SELECTEURS.boutons.ajouter, 6);
+  }
   await attendre(1000); // légèrement remonté (800→1000) : la section "REPRÉSENTE" qui suit met parfois plus longtemps à apparaître
 
   if (qualitePartie) await cocherRepresentation(qualitePartie);
@@ -1600,9 +1654,11 @@ async function seq_creationDossier_parties_notaires() {
   if (cfg.acquereur_notaire) {
     await rattacherNotaire(cfg.acquereur_notaire, null); // pas de coche automatique ici, on fait les deux ensemble juste après
     await attendre(500);
-    await cocherRepresentation('Vendeur');
-    await attendre(300);
-    await cocherRepresentation('Acquéreur');
+    // Retour utilisateur : les deux cases (Vendeur/Acquéreur) sur ce
+    // panneau n'ont pas de badge exploitable pour les distinguer de façon
+    // fiable — et de toute façon les deux doivent être cochées ici. On
+    // coche tout ce qui apparaît, sans essayer de trier lequel est lequel.
+    await cocherToutesRepresentations();
   }
   await attendre(500);
   // "Suivant" reste désactivé tant que le vendeur n'a pas été ajouté avec succès.
