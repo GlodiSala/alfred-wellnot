@@ -980,6 +980,12 @@ async function rattacherNotaire(nomNotaire, qualitePartie) {
     await attendre(300);
   }
   if (btnConfirmer) {
+    // defilerVersElement manquait ici — contrairement à cliquerBouton()
+    // (qui le fait toujours), ce clic ciblé le zappait, donc le bouton
+    // pouvait être cliqué hors écran, sans le défilement doux ni le temps
+    // de voir ce qui se passe avant "Enregistrer"/"Ajouter", comme pour
+    // toutes les autres actions du script.
+    await defilerVersElement(btnConfirmer);
     await curseurVersAsync(btnConfirmer, () => simulerClic(btnConfirmer));
   } else {
     console.warn('[Alfred DOM] Bouton "Ajouter" de confirmation (justify-end) introuvable — repli sur la recherche générique.');
