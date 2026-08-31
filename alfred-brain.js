@@ -354,10 +354,17 @@ async function jouerSecoursInterne() {
     if (!seg.texte && !seg.parlerDepuisAction) continue;
     const segTrad = segmentsTrad[i] || segmentsTrad[segmentsTrad.length - 1];
     const promises = [];
+    // Chronométrage temporaire — pour voir, avec de vraies mesures et pas
+    // une estimation au nombre de mots, si la parole et l'action d'un même
+    // segment ont des durées comparables (sinon soit du silence en
+    // attendant l'action, soit l'action finit bien après avoir fini de
+    // parler). Un seul console.log par segment, les deux durées côte à côte.
+    let dureeParoleMs = null, dureeActionMs = null;
     if (!seg.parlerDepuisAction) {
       addToHistory('alfred', seg.texte);
       const sousTitre = segTrad?.texte || seg.texte;
-      promises.push(speak(naturaliserTexte(seg.texte), currentLangue, sousTitre));
+      const debutParole = performance.now();
+      promises.push(speak(naturaliserTexte(seg.texte), currentLangue, sousTitre).then(() => { dureeParoleMs = Math.round(performance.now() - debutParole); }));
     }
     // currentActe >= 2 : garde-fou pour ne jamais lancer d'automatisation
     // réelle de l'appli avant que la démo n'ait commencé. Les gestes
@@ -365,9 +372,13 @@ async function jouerSecoursInterne() {
     // l'appli — GESTES_VISUELS_SEULS les laisse passer même en acte 1.
     const estGesteVisuel = typeof GESTES_VISUELS_SEULS !== 'undefined' && GESTES_VISUELS_SEULS.has(seg.action);
     if ((currentActe >= 2 || estGesteVisuel) && seg.action && typeof executerActionDOM === 'function') {
-      promises.push(executerActionDOM(seg.action));
+      const debutAction = performance.now();
+      promises.push(executerActionDOM(seg.action).then(() => { dureeActionMs = Math.round(performance.now() - debutAction); }));
     }
     await Promise.all(promises);
+    if (seg.action || !seg.parlerDepuisAction) {
+      console.log(`%c[Alfred Timing] ${r.label} · segment ${i + 1}/${segmentsR.length} (${seg.action || 'sans action'}) — parole: ${dureeParoleMs ?? '—'}ms · action: ${dureeActionMs ?? '—'}ms`, 'color:#e0a030;font-weight:bold');
+    }
   }
 
   updateSecoursLabel(r.label, r.acte, secoursIdx + 1, list.length);
