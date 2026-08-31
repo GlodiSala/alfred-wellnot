@@ -285,19 +285,21 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // (CreationEmail/CreationReponseVendeur) où Alfred va justement les
     // demander au vendeur — on aurait presque l'air de les avoir "déjà
     // traitées" avant de les redemander.
-    // Le clic "Enregistrer" vivait avant dans CreationBien_Finaliser (bien
-    // avant que cette réplique ne parle) — déplacé ici sur le 2e segment,
-    // pour tomber pile sur "Dossier enregistré." plutôt que sur la fin de
-    // Bien (retour Cyril). Pas de parlerDepuisAction : le clic est
-    // instantané et sous notre contrôle, pas un événement externe
-    // incertain à attendre — donc pas besoin du mécanisme utilisé pour
-    // CreationEmail_Envoyer/CreationReponseVendeur, la synchro normale
-    // (executerActionDOM en parallèle de speak(), délai de 600ms intégré)
-    // suffit.
-    { acte: 2, label: 'CreationDocuments', segments: [
-      { texte: "Rien n'est encore chargé. Deux options : soit vous les uploadez, soit je vais les demander à la partie qui les détient — ici, le vendeur." },
-      { texte: "Dossier enregistré.", action: 'CreationDocuments_Enregistrer' },
-    ] },
+    // Séparé en 2 vraies répliques (même raison que CreationParties) :
+    // entre les deux, le script officiel a un vrai tour de parole de
+    // Fariël ("Partons du principe que nous n'avons rien sous la main.
+    // Enregistre le dossier tel quel.") — les enchaîner sur un seul
+    // appui sur → sautait par-dessus ce tour. Pas de parlerDepuisAction
+    // sur le clic Enregistrer : il est instantané et sous notre contrôle,
+    // pas un événement externe incertain à attendre.
+    { acte: 2, label: 'CreationDocuments_Reponse', texte: "Rien n'est encore chargé. Deux options : soit vous les uploadez, soit je vais les demander à la partie qui les détient — ici, le vendeur." },
+    { acte: 2, label: 'CreationDocuments_Enregistrer', texte: "Dossier enregistré.", action: 'CreationDocuments_Enregistrer' },
+    // Ligne manquante trouvée en recomparant au script officiel : Fariël
+    // demande "Toujours pas peur des experts ?" avant de lancer la
+    // rédaction, Alfred répond ça — puis Fariël relance ("Show us the
+    // real magic. Lance la rédaction.") avant le clic réel. Réplique
+    // séparée exprès (vrai tour de parole de Fariël avant et après).
+    { acte: 2, label: 'CreationRedactionConfirmation', texte: "Je suis né prêt. Allez-y." },
     // Même texte que la version à plat (aucun mot changé), redécoupé en 2
     // segments : le 2e ("À gauche/À droite...") ne se joue qu'une fois le
     // 1er (avec son attente de chargement) bien terminé — sinon la
@@ -382,10 +384,9 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { texte: "Voor het onroerend goed selecteert u gewoon het juiste, en ik haal automatisch de kadastrale matrix op. Het bevindt zich in Vlaanderen, in 8670 Koksijde.", action: 'CreationBien_Rechercher' },
       { texte: "Kadastrale matrix opgehaald. Partijen, notarissen, kadaster — alles staat er al.", action: 'CreationBien_Finaliser' },
     ] },
-    { acte: 2, label: 'CreationDocuments', segments: [
-      { texte: "Er is nog niets geüpload. Twee opties: u laadt ze zelf op, of ik vraag ze op bij de partij die ze heeft — hier, de verkoper." },
-      { texte: "Dossier geregistreerd.", action: 'CreationDocuments_Enregistrer' },
-    ] },
+    { acte: 2, label: 'CreationDocuments_Reponse', texte: "Er is nog niets geüpload. Twee opties: u laadt ze zelf op, of ik vraag ze op bij de partij die ze heeft — hier, de verkoper." },
+    { acte: 2, label: 'CreationDocuments_Enregistrer', texte: "Dossier geregistreerd.", action: 'CreationDocuments_Enregistrer' },
+    { acte: 2, label: 'CreationRedactionConfirmation', texte: "Ik ben klaar geboren. Laat maar komen!" },
     { acte: 2, label: 'CreationRedaction', segments: [
       { texte: "En nu het moment waar we op wachten: de opstelling. Eén klik. Ik verzamel de partijen, de notarissen en het kadaster, en ik genereer de verkoopbelofte.", action: 'CreationRedaction' },
       { texte: "Links, alle verzamelde gegevens.", action: 'CreationRedaction_ScrollGauche' },
