@@ -1829,8 +1829,74 @@ async function defilerColonneLentement(cote) {
 async function seq_creationDossier_redaction_scrollGauche() {
   await defilerColonneLentement('gauche');
 }
+
+// Trouve, dans la colonne droite (le compromis généré), le titre de la
+// clause PEB ("La performance énergétique" / "Certificat énergétique") —
+// capturé en direct (clics + scroll réels) : c'est un simple <h3> dans le
+// contenu de l'éditeur CKEditor. Plus précis que le défilement générique de
+// quelques hauteurs d'écran (voir defilerColonneLentement), qui ne
+// garantissait pas d'atteindre cette clause précise selon la longueur du
+// document généré.
+function trouverTitrePEB() {
+  const conteneur = trouverColonneDefilante('droite');
+  if (!conteneur) return null;
+  const titres = conteneur.querySelectorAll('h1, h2, h3, h4');
+  return Array.from(titres).find(t => /performance énergétique|certificat énergétique/i.test(t.textContent));
+}
+
 async function seq_creationDossier_redaction_scrollDroite() {
-  await defilerColonneLentement('droite');
+  let titre = null;
+  for (let i = 0; i < 15; i++) {
+    if (annulationDemandee) return;
+    titre = trouverTitrePEB();
+    if (titre) break;
+    await attendre(400);
+  }
+  if (!titre) {
+    console.warn('[Alfred DOM] Titre PEB introuvable dans le compromis — défilement générique conservé en repli.');
+    await defilerColonneLentement('droite');
+    return;
+  }
+  await defilerVersElement(titre, 3000);
+}
+
+// Bouton "Exporter en Word" de la barre d'outils de l'éditeur — capturé en
+// direct : c'est un bouton icône seule (pas de texte, cliquerBouton ne peut
+// pas le trouver), identifié de façon fiable par l'infobulle CKEditor
+// (data-cke-tooltip-text), plus stable que sa classe générique ck-button
+// partagée par tous les autres boutons de la barre d'outils.
+function trouverBoutonExporterWord() {
+  return document.querySelector('[data-cke-tooltip-text="Exporter en Word"]');
+}
+
+// Étape supplémentaire (hors script papier, demandée en test live) : export
+// du compromis en Word. Capturé en direct : cliquer sur l'icône ouvre une
+// fenêtre listant les valeurs manquantes (app-missing-value-dialog) — il
+// faut cliquer sur son bouton "Fermer" pour que le téléchargement se
+// déclenche réellement (confirmé par l'utilisatrice : contre-intuitif mais
+// c'est bien "Fermer", pas une simple fermeture sans effet).
+async function seq_creationDossier_redaction_exporterWord() {
+  let btn = null;
+  for (let i = 0; i < 15; i++) {
+    if (annulationDemandee) return false;
+    btn = trouverBoutonExporterWord();
+    if (btn) break;
+    await attendre(300);
+  }
+  if (!btn) { console.warn('[Alfred DOM] Bouton "Exporter en Word" introuvable.'); return false; }
+  await defilerVersElement(btn);
+  await curseurVersAsync(btn, () => simulerClic(btn));
+  await attendre(600);
+
+  const dialogue = trouverDialogueOuvert();
+  if (!dialogue) { console.warn('[Alfred DOM] Fenêtre "valeurs manquantes" non détectée après le clic export Word — abandon.'); return false; }
+  await attendre(400);
+
+  const btnFermer = dialogue.querySelector('.p-dialog-close-button');
+  if (!btnFermer) { console.warn('[Alfred DOM] Bouton "Fermer" introuvable dans la fenêtre export Word.'); return false; }
+  await curseurVersAsync(btnFermer, () => simulerClic(btnFermer));
+  await attendreFermetureDialogue(dialogue);
+  return true;
 }
 
 // Étape 6 — Attendre/montrer l'e-mail généré automatiquement.
@@ -1971,6 +2037,7 @@ const DOM_ACTIONS = {
   'CreationRedaction': seq_creationDossier_redaction,
   'CreationRedaction_ScrollGauche': seq_creationDossier_redaction_scrollGauche,
   'CreationRedaction_ScrollDroite': seq_creationDossier_redaction_scrollDroite,
+  'CreationRedaction_ExporterWord': seq_creationDossier_redaction_exporterWord,
   'CreationEmail':     seq_creationDossier_email,
   'CreationEmail_Ouverture': montrerPropositionEmail_ouverture,
   'CreationEmail_Envoyer':   montrerPropositionEmail_envoyer,

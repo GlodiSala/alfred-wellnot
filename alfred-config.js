@@ -311,6 +311,9 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { texte: "Et maintenant le moment qu'on attend : la rédaction. Un clic. Je réunis les parties, les notaires et le cadastre, et je génère le compromis de vente.", action: 'CreationRedaction' },
       { texte: "À gauche, toutes les données collectées.", action: 'CreationRedaction_ScrollGauche' },
       { texte: "À droite, le compromis qui se construit en direct.", action: 'CreationRedaction_ScrollDroite' },
+      // Étape supplémentaire hors script papier, ajoutée à la demande de
+      // l'utilisatrice (test live) : montrer l'export Word du compromis.
+      { texte: "Le compromis peut aussi s'exporter directement en Word.", action: 'CreationRedaction_ExporterWord' },
     ] },
     // Découpé en 2 segments (aucun mot changé sur le 1er) — avant, la
     // réplique parlait une fois puis tout le reste (attente de l'événement
@@ -391,6 +394,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { texte: "En nu het moment waar we op wachten: de opstelling. Eén klik. Ik verzamel de partijen, de notarissen en het kadaster, en ik genereer de verkoopbelofte.", action: 'CreationRedaction' },
       { texte: "Links, alle verzamelde gegevens.", action: 'CreationRedaction_ScrollGauche' },
       { texte: "Rechts, de akte die live wordt opgebouwd.", action: 'CreationRedaction_ScrollDroite' },
+      { texte: "Ik kan de verkoopbelofte ook rechtstreeks exporteren naar Word.", action: 'CreationRedaction_ExporterWord' },
     ] },
     { acte: 2, label: 'Email', segments: [
       { texte: "De stukken van de verkoper ontbreken nog — ik heb een e-mailontwerp klaargemaakt voor BIMBIMMO, met de vraag naar het EPC, de elektrische keuring en het bodemattest. Eén enkele vraag, nooit twee keer dezelfde. Bevestigt u de verzending?", action: 'CreationEmail_Ouverture' },
