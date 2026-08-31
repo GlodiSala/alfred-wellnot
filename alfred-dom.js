@@ -882,38 +882,45 @@ async function cocherRepresentation(qualitePartie) {
   return cocherBadgeSousSection(SELECTEURS.textes.represente, qualitePartie);
 }
 
-// Coche TOUTES les cases de représentation du panneau qui apparaît juste
-// après avoir ajouté un notaire (app-notary-representation-list) — sans
-// essayer de distinguer laquelle est Vendeur et laquelle est Acquéreur.
-// Retour utilisateur (test live) : les deux cases n'ont pas de badge/texte
-// exploitable pour les différencier de façon fiable comme le fait
-// cocherBadgeSousSection ailleurs, et de toute façon les deux doivent être
-// cochées ici (Maxime représente les deux parties dans cette démo) — pas
-// besoin de distinction, juste tout cocher.
-async function cocherToutesRepresentations() {
-  let conteneur = null;
+// Coche UNIQUEMENT la case de représentation `qualitePartie` sur le
+// panneau du DERNIER notaire ajouté (le plus récent dans le DOM) —
+// confirmé par capture live (HTML complet, pas juste un clic) : chaque
+// ligne contient le nom de la partie + une étiquette explicite
+// ("Acquéreur représenté par votre étude" / "Vendeur représenté par
+// votre étude"), qui distingue les deux lignes de façon fiable. Coche
+// SEULEMENT celle demandée : sur la fiche de Maxime par exemple, ne
+// cocher QUE "Acquéreur" — cocher "Vendeur" aussi ferait croire que
+// Maxime représente aussi BIMBIMMO, alors que BIMBIMMO reste représenté
+// par l'étude (déjà coché par défaut sur la fiche d'Alain Caprasse,
+// notaire en charge — rien à faire pour lui, sa fiche à lui a les deux
+// cases déjà cochées d'origine).
+async function cocherRepresentationDernierNotaire(qualitePartie) {
+  let listes = null;
   for (let i = 0; i < 15; i++) {
-    conteneur = document.querySelector('app-notary-representation-list');
-    if (conteneur) break;
+    listes = Array.from(document.querySelectorAll('app-notary-representation-list'));
+    if (listes.length) break;
     await attendre(300);
   }
-  if (!conteneur) { console.warn('[Alfred DOM] Liste de représentation du notaire introuvable.'); return false; }
+  if (!listes || !listes.length) { console.warn('[Alfred DOM] Aucun panneau de représentation trouvé.'); return false; }
+  const liste = listes[listes.length - 1]; // le dernier notaire ajouté = le dernier panneau du DOM
 
-  const checkboxes = Array.from(conteneur.querySelectorAll('input[type="checkbox"]'));
-  if (!checkboxes.length) { console.warn('[Alfred DOM] Aucune case de représentation trouvée dans le panneau.'); return false; }
+  const ligne = Array.from(liste.querySelectorAll('.flex.items-center.gap-2'))
+    .find(row => row.textContent.toLowerCase().includes(qualitePartie.toLowerCase()));
+  if (!ligne) { console.warn('[Alfred DOM] Ligne de représentation introuvable pour:', qualitePartie); return false; }
 
-  for (const checkbox of checkboxes) {
-    if (checkbox.checked) continue;
-    await curseurVersAsync(checkbox, () => simulerClic(checkbox));
-    await attendre(300);
-    // Même piège que cocherBadgeSousSection : le vrai gestionnaire de clic
-    // écoute parfois le wrapper visuel, pas l'input caché lui-même.
-    if (!checkbox.checked) {
-      const wrapper = checkbox.closest('[role="checkbox"]') || checkbox.parentElement;
-      if (wrapper && wrapper !== checkbox) {
-        await curseurVersAsync(wrapper, () => simulerClic(wrapper));
-        await attendre(300);
-      }
+  const checkbox = ligne.querySelector('input[type="checkbox"]');
+  if (!checkbox) { console.warn('[Alfred DOM] Case à cocher introuvable pour:', qualitePartie); return false; }
+  if (checkbox.checked) return true;
+
+  await curseurVersAsync(checkbox, () => simulerClic(checkbox));
+  await attendre(300);
+  // Même piège que cocherBadgeSousSection : le vrai gestionnaire de clic
+  // écoute parfois le wrapper visuel, pas l'input caché lui-même.
+  if (!checkbox.checked) {
+    const wrapper = checkbox.closest('[role="checkbox"]') || checkbox.parentElement;
+    if (wrapper && wrapper !== checkbox) {
+      await curseurVersAsync(wrapper, () => simulerClic(wrapper));
+      await attendre(300);
     }
   }
   return true;
@@ -1645,20 +1652,17 @@ async function seq_creationDossier_parties_acquereur() {
 async function seq_creationDossier_parties_notaires() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) return;
-  // Retour utilisateur (test live) : il n'y a pas deux sections séparées
-  // ("Mes clients" indépendamment, puis Maxime) — les deux cases à cocher
-  // (Vendeur et Acquéreur) apparaissent ENSEMBLE, au même endroit, une
-  // fois Maxime ajouté. Donc : chercher/ajouter Maxime d'abord, puis
-  // cocher les deux cases qui apparaissent à ce moment-là — pas de
-  // cocherMesClients séparé avant.
+  // Retour utilisateur (test live, HTML complet capturé) : pas de section
+  // "Mes clients" séparée à cocher pour le vendeur — la fiche d'Alain
+  // Caprasse (notaire en charge) a déjà les deux cases cochées d'origine
+  // (BIMBIMMO/vendeur y reste représenté par l'étude). Seule la fiche de
+  // Maxime (ajoutée juste après) a besoin d'une action : cocher
+  // UNIQUEMENT "Acquéreur" — surtout pas "Vendeur" aussi, sinon Maxime
+  // représenterait aussi BIMBIMMO, ce qui contredit le script.
   if (cfg.acquereur_notaire) {
-    await rattacherNotaire(cfg.acquereur_notaire, null); // pas de coche automatique ici, on fait les deux ensemble juste après
+    await rattacherNotaire(cfg.acquereur_notaire, null); // pas de coche automatique dans rattacherNotaire, gérée précisément ci-dessous
     await attendre(500);
-    // Retour utilisateur : les deux cases (Vendeur/Acquéreur) sur ce
-    // panneau n'ont pas de badge exploitable pour les distinguer de façon
-    // fiable — et de toute façon les deux doivent être cochées ici. On
-    // coche tout ce qui apparaît, sans essayer de trier lequel est lequel.
-    await cocherToutesRepresentations();
+    await cocherRepresentationDernierNotaire('Acquéreur');
   }
   await attendre(500);
   // "Suivant" reste désactivé tant que le vendeur n'a pas été ajouté avec succès.
