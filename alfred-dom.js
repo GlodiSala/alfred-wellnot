@@ -1613,19 +1613,25 @@ async function seq_creationDossier_parties_acquereur() {
 // plus tard dans la démo et de revenir sur l'onglet Parties pour ça,
 // exactement les mêmes fonctions (cocherMesClients/rattacherNotaire,
 // déjà utilisées avant) marchent très bien ici, tant qu'on n'a pas encore
-// quitté l'onglet Parties. Se termine par le clic "Suivant" (qui vivait
-// avant à la fin de seq_creationDossier_parties_acquereur).
-async function seq_creationDossier_parties_notaires() {
+// quitté l'onglet Parties.
+// Découpée en 2 segments (même principe que CreationBien/CreationOuvrir) :
+// cocher BIMBIMMO (rapide) et chercher/ajouter Maxime (recherche +
+// sélection + confirmation + case + "Suivant" — plusieurs secondes) ont
+// des durées très différentes ; les garder dans une seule réplique aurait
+// fait finir la narration bien avant la fin de l'action à l'écran.
+async function seq_creationDossier_parties_notaireVendeur() {
+  // Confirmé par capture live (HTML complet, état par défaut vraiment
+  // vérifié) : panneau "Mes clients" sur la fiche d'Alain Caprasse
+  // (notaire en charge, déjà sur le dossier) — case décochée par défaut.
+  await cocherMesClients('Vendeur');
+}
+
+async function seq_creationDossier_parties_notaireAcquereur() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) return;
-  // Confirmé par capture live (HTML complet, état par défaut vraiment
-  // vérifié cette fois) : deux panneaux distincts, chacun avec son propre
-  // titre exact — "Mes clients" sur la fiche d'Alain Caprasse (notaire en
-  // charge, déjà sur le dossier), "Représente" sur la fiche de Maxime
-  // (ajoutée juste après) — toutes les cases décochées par défaut.
-  // Exactement la même distinction que l'ancien code d'avant ce soir.
-  await cocherMesClients('Vendeur');
-  await attendre(600);
+  // Panneau "Représente" sur la fiche de Maxime (ajoutée par
+  // rattacherNotaire) — case décochée par défaut, même distinction que
+  // l'ancien code d'avant ce soir.
   if (cfg.acquereur_notaire) await rattacherNotaire(cfg.acquereur_notaire, 'Acquéreur');
   await attendre(500);
   // "Suivant" reste désactivé tant que le vendeur n'a pas été ajouté avec succès.
@@ -1634,6 +1640,14 @@ async function seq_creationDossier_parties_notaires() {
     return;
   }
   await attendre(2200);
+}
+
+// Rétrocompatibilité — enchaîne les deux sous-étapes (test manuel en
+// console ; le script normal déclenche chaque sous-étape à part).
+async function seq_creationDossier_parties_notaires() {
+  await seq_creationDossier_parties_notaireVendeur();
+  await attendre(600);
+  await seq_creationDossier_parties_notaireAcquereur();
 }
 
 // Rétrocompatibilité — enchaîne les trois sous-étapes (test manuel en
@@ -1946,7 +1960,10 @@ const DOM_ACTIONS = {
   // maintenant juste après l'acquéreur, pendant qu'on est encore sur
   // l'onglet Parties. Remplace 'CreationNotaires_Vendeur'/'_Acquereur'
   // (superseded, voir seq_creationDossier_notaires_vendeur/acquereur).
-  'CreationParties_Notaires':  seq_creationDossier_parties_notaires,
+  // Découpé en 2 (BIMBIMMO rapide / Maxime plus long), un par segment.
+  'CreationParties_Notaires':  seq_creationDossier_parties_notaires, // rétrocompat, plus utilisé par le script
+  'CreationParties_NotaireVendeur':   seq_creationDossier_parties_notaireVendeur,
+  'CreationParties_NotaireAcquereur': seq_creationDossier_parties_notaireAcquereur,
   'CreationBien':      seq_creationDossier_bien,
   'CreationBien_Rechercher': seq_creationDossier_bien_ajouter,
   'CreationBien_Finaliser':  seq_creationDossier_bien_finaliser,
