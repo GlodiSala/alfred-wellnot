@@ -335,6 +335,14 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { texte: "Envoyé. Le vendeur a répondu — les documents sont chargés. Réceptionnés, analysés, classés. Regardez le compromis : les données des pièces se sont placées dans les bonnes clauses. Le projet est complet.", action: 'CreationReponseVendeur', parlerDepuisAction: true },
     ] },
 
+    // Pas de réplique pour la suite de la scène 11 ("Chat, collecte &
+    // expertise" — 3 questions live de Fariël : zone inondable / régime
+    // matrimonial de l'acquéreur / surface cadastrale). Choix délibéré,
+    // pas un oubli : la didascalie du script dit "répond à chaque question
+    // au fil" — pas de texte figé — et Fariël pose ces questions dans le
+    // vrai chatbot intégré de l'appli (démontré en Acte 1, réplique
+    // Communication), pas dans ce bookmarklet. Rien à scripter ici.
+
     // ACTE 3
     // "certifié [par Privanot]" corrigé en "évalué dans le cadre de
     // Privanot" — note de prod explicite dans le script Word d'origine :
