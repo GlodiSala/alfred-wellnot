@@ -251,7 +251,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // (aucun mot changé — juste redécoupé en 3 segments), mais chaque
     // segment déclenche son action au bon moment, plutôt que tout le DOM
     // d'un coup dès le premier mot de la réplique complète.
-    { acte: 2, label: 'CreationOuvrir', segments: [
+    { acte: 2, label: 'Ouvrir', segments: [
       { texte: "Voici d'abord le tableau de bord : tous les dossiers en cours, les collaborateurs, les statuts.", action: 'CreationOuvrir_Dossiers' },
       { texte: "Pour créer un dossier, rien de plus simple : je clique sur « Créer un dossier » et j'arrive sur la fiche de création.", action: 'CreationOuvrir_CreerBouton' },
       { texte: "Donnez-moi le numéro de dossier, la langue de rédaction, le collaborateur en charge et le notaire en charge, et on passe à la création des parties.", action: 'CreationOuvrir_Champs' },
@@ -274,7 +274,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'PartiesAcquereur', texte: "L'acquéreur est une personne physique : Alain Caprasse. Je récupère : nom, adresse, date de naissance, nationalité, état civil, régime matrimonial. Tout remonte, prêt pour la rédaction du compromis.", action: 'CreationParties_Acquereur' },
     { acte: 2, label: 'PartiesNotaireV', texte: "Chaque partie doit être représentée par un notaire. BIMBIMMO, c'est nous.", action: 'CreationParties_NotaireVendeur' },
     { acte: 2, label: 'PartiesNotaireA', texte: "Pour l'acquéreur, j'ajoute Maxime Van der Straten — je le retrouve dans la base de tous les notaires belges et je le rattache à l'acquéreur. Chaque partie a son notaire.", action: 'CreationParties_NotaireAcquereur' },
-    { acte: 2, label: 'CreationBien', segments: [
+    { acte: 2, label: 'Bien', segments: [
       { texte: "Pour le bien, vous sélectionnez le bon, et je récupère automatiquement la matrice cadastrale. Il se situe en Flandre, à 8670 Coxyde.", action: 'CreationBien_Rechercher' },
       { texte: "Matrice cadastrale récupérée. Parties, notaires, cadastre — tout est déjà là.", action: 'CreationBien_Finaliser' },
     ] },
@@ -282,7 +282,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // "Documents") : sans cet échange, la démo enchaînait directement sur
     // la rédaction sans jamais dire que rien n'est encore chargé côté
     // pièces, ce qui créait une incohérence avec la séquence 11
-    // (CreationEmail/CreationReponseVendeur) où Alfred va justement les
+    // (Email/ReponseVendeur) où Alfred va justement les
     // demander au vendeur — on aurait presque l'air de les avoir "déjà
     // traitées" avant de les redemander.
     // Séparé en 2 vraies répliques (même raison que CreationParties) :
@@ -307,7 +307,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // La ligne "rien n'est encore chargé..." vivait ici avant — déplacée
     // dans CreationDocuments juste au-dessus (retour Cyril), pour ne plus
     // être noyée dans l'ouverture de la rédaction.
-    { acte: 2, label: 'CreationRedaction', segments: [
+    { acte: 2, label: 'Redaction', segments: [
       { texte: "Et maintenant le moment qu'on attend : la rédaction. Un clic. Je réunis les parties, les notaires et le cadastre, et je génère le compromis de vente.", action: 'CreationRedaction' },
       { texte: "À gauche, toutes les données collectées.", action: 'CreationRedaction_ScrollGauche' },
       { texte: "À droite, le compromis qui se construit en direct.", action: 'CreationRedaction_ScrollDroite' },
@@ -320,7 +320,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // l'événement "Email à valider" apparaît vraiment (voir
     // montrerPropositionEmail_envoyer dans alfred-dom.js, qui appelle
     // speak() lui-même au bon moment).
-    { acte: 2, label: 'CreationEmail', segments: [
+    { acte: 2, label: 'Email', segments: [
       { texte: "Il manque encore les pièces du vendeur — j'ai préparé un projet de mail à BIMBIMMO, en lui demandant le PEB, le contrôle électrique et l'attestation du sol. Une seule demande, jamais deux fois la même question. Vous validez l'envoi ?", action: 'CreationEmail_Ouverture' },
       { texte: "Voilà, je consulte le projet de mail et je l'envoie.", action: 'CreationEmail_Envoyer', parlerDepuisAction: true },
     ] },
@@ -331,7 +331,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // réellement détecté dans la liste Documents (voir
     // attendreNouveauxDocuments dans alfred-dom.js), pas avant — même
     // principe que CreationEmail_Envoyer juste au-dessus.
-    { acte: 2, label: 'CreationReponseVendeur', segments: [
+    { acte: 2, label: 'ReponseVendeur', segments: [
       { texte: "Envoyé. Le vendeur a répondu — les documents sont chargés. Réceptionnés, analysés, classés. Regardez le compromis : les données des pièces se sont placées dans les bonnes clauses. Le projet est complet.", action: 'CreationReponseVendeur', parlerDepuisAction: true },
     ] },
 
@@ -370,7 +370,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Tekst afgestemd op Alfreds exacte repliek in het officiële script
     // "Script_scene_Wellnot_InsideAI26" — niet herformuleren zonder ook
     // Cyrils papieren script bij te werken.
-    { acte: 2, label: 'CreationOuvrir', segments: [
+    { acte: 2, label: 'Ouvrir', segments: [
       { texte: "Hier eerst het dashboard: alle lopende dossiers, de medewerkers, de statussen.", action: 'CreationOuvrir_Dossiers' },
       { texte: "Om een dossier aan te maken, niets eenvoudiger: ik klik op « Dossier aanmaken » en ik kom op de aanmaakfiche.", action: 'CreationOuvrir_CreerBouton' },
       { texte: "Geef me het dossiernummer, de opstellingstaal, de verantwoordelijke medewerker en de verantwoordelijke notaris, en we gaan naar de aanmaak van de partijen.", action: 'CreationOuvrir_Champs' },
@@ -380,23 +380,23 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'PartiesAcquereur', texte: "De koper is een natuurlijke persoon: Alain Caprasse. Ik haal op: naam, adres, geboortedatum, nationaliteit, burgerlijke staat, huwelijksvermogensstelsel. Alles is klaar voor de opstelling van de verkoopbelofte.", action: 'CreationParties_Acquereur' },
     { acte: 2, label: 'PartiesNotaireV', texte: "Elke partij moet vertegenwoordigd worden door een notaris. BIMBIMMO, dat zijn wij.", action: 'CreationParties_NotaireVendeur' },
     { acte: 2, label: 'PartiesNotaireA', texte: "Voor de koper voeg ik Maxime Van der Straten toe — ik vind hem in de databank van alle Belgische notarissen en koppel hem aan de koper. Elke partij heeft haar notaris.", action: 'CreationParties_NotaireAcquereur' },
-    { acte: 2, label: 'CreationBien', segments: [
+    { acte: 2, label: 'Bien', segments: [
       { texte: "Voor het onroerend goed selecteert u gewoon het juiste, en ik haal automatisch de kadastrale matrix op. Het bevindt zich in Vlaanderen, in 8670 Koksijde.", action: 'CreationBien_Rechercher' },
       { texte: "Kadastrale matrix opgehaald. Partijen, notarissen, kadaster — alles staat er al.", action: 'CreationBien_Finaliser' },
     ] },
     { acte: 2, label: 'DocumentsReponse', texte: "Er is nog niets geüpload. Twee opties: u laadt ze zelf op, of ik vraag ze op bij de partij die ze heeft — hier, de verkoper." },
     { acte: 2, label: 'DocumentsSave', texte: "Dossier geregistreerd.", action: 'CreationDocuments_Enregistrer' },
     { acte: 2, label: 'RedactionOK', texte: "Ik ben klaar geboren. Laat maar komen!" },
-    { acte: 2, label: 'CreationRedaction', segments: [
+    { acte: 2, label: 'Redaction', segments: [
       { texte: "En nu het moment waar we op wachten: de opstelling. Eén klik. Ik verzamel de partijen, de notarissen en het kadaster, en ik genereer de verkoopbelofte.", action: 'CreationRedaction' },
       { texte: "Links, alle verzamelde gegevens.", action: 'CreationRedaction_ScrollGauche' },
       { texte: "Rechts, de akte die live wordt opgebouwd.", action: 'CreationRedaction_ScrollDroite' },
     ] },
-    { acte: 2, label: 'CreationEmail', segments: [
+    { acte: 2, label: 'Email', segments: [
       { texte: "De stukken van de verkoper ontbreken nog — ik heb een e-mailontwerp klaargemaakt voor BIMBIMMO, met de vraag naar het EPC, de elektrische keuring en het bodemattest. Eén enkele vraag, nooit twee keer dezelfde. Bevestigt u de verzending?", action: 'CreationEmail_Ouverture' },
       { texte: "Daar is het, ik bekijk het e-mailontwerp en verstuur het.", action: 'CreationEmail_Envoyer', parlerDepuisAction: true },
     ] },
-    { acte: 2, label: 'CreationReponseVendeur', segments: [
+    { acte: 2, label: 'ReponseVendeur', segments: [
       { texte: "Verzonden. De verkoper heeft geantwoord — de documenten zijn geladen. Ontvangen, geanalyseerd, gerangschikt. Bekijk de verkoopbelofte: de gegevens uit de stukken staan in de juiste clausules. Het ontwerp is volledig.", action: 'CreationReponseVendeur', parlerDepuisAction: true },
     ] },
 

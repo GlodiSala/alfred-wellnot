@@ -1118,7 +1118,7 @@ async function montrerPropositionEmail_envoyer() {
   // avec le FR/NL et un futur changement de texte sans toucher au JS.
   if (typeof speak === 'function' && typeof ALFRED_CONFIG !== 'undefined') {
     const liste = (typeof currentLangue !== 'undefined' && currentLangue === 'nl') ? ALFRED_CONFIG.REPLIQUES_NL : ALFRED_CONFIG.REPLIQUES_FR;
-    const replique = liste?.find(r => r.label === 'CreationEmail');
+    const replique = liste?.find(r => r.label === 'Email'); // ex-'CreationEmail' — label raccourci, action inchangée
     const segment = replique?.segments?.find(s => s.action === 'CreationEmail_Envoyer');
     if (segment?.texte) {
       if (typeof addToHistory === 'function') addToHistory('alfred', segment.texte);
@@ -1898,7 +1898,7 @@ async function seq_creationDossier_attenteReponseVendeur() {
   // pour ne pas bloquer une démo en direct sur un détail d'affichage.
   if (typeof speak === 'function' && typeof ALFRED_CONFIG !== 'undefined') {
     const liste = (typeof currentLangue !== 'undefined' && currentLangue === 'nl') ? ALFRED_CONFIG.REPLIQUES_NL : ALFRED_CONFIG.REPLIQUES_FR;
-    const replique = liste?.find(r => r.label === 'CreationReponseVendeur');
+    const replique = liste?.find(r => r.label === 'ReponseVendeur'); // ex-'CreationReponseVendeur' — label raccourci, action inchangée
     const segment = replique?.segments?.find(s => s.action === 'CreationReponseVendeur');
     if (segment?.texte) {
       if (typeof addToHistory === 'function') addToHistory('alfred', segment.texte);

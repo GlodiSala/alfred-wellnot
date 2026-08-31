@@ -854,7 +854,7 @@ function ouvrirEditionRéplique(index, nouvelActe) {
 
   // Une réplique "groupée" (r.segments — plusieurs bouts de texte, chacun
   // avec sa propre action) a son NOM verrouillé : alfred-dom.js retrouve
-  // certaines d'entre elles (CreationEmail, CreationReponseVendeur) par ce
+  // certaines d'entre elles (Email, ReponseVendeur) par ce
   // nom exact, codé en dur, pour savoir QUAND parler depuis l'action DOM
   // (parlerDepuisAction) plutôt qu'au début du segment. Un renommage ici
   // casserait ce lien silencieusement (l'action ne retrouverait plus rien,
