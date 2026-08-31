@@ -941,6 +941,18 @@ async function rattacherNotaire(nomNotaire, qualitePartie) {
     if (opt) {
       await curseurVersAsync(opt, () => simulerClic(opt));
       await attendre(700);
+      // Même famille de bug que le menu "Compromis" et les cases REPRÉSENTE :
+      // le clic sur le <li> ne referme pas toujours la liste (le vrai
+      // gestionnaire écoute parfois l'élément interne, pas le <li>
+      // lui-même) — si la liste est encore là, on retente sur le <span>
+      // interne. Remonté en test live : le bouton "Ajouter" de confirmation
+      // qui suit ne faisait rien, probablement parce que la sélection
+      // n'avait jamais vraiment été enregistrée.
+      if (opt.isConnected && opt.getBoundingClientRect().width > 0) {
+        const cible = opt.querySelector('span') || opt;
+        await curseurVersAsync(cible, () => simulerClic(cible));
+        await attendre(500);
+      }
       trouve = true;
       break;
     }
