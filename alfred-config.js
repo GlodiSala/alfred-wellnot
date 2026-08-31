@@ -274,12 +274,30 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { texte: "Chaque partie doit être représentée par un notaire. BIMBIMMO, c'est nous.", action: 'CreationNotaires_Vendeur' },
       { texte: "Pour l'acquéreur, j'ajoute Maxime Van der Straten — je le retrouve dans la base de tous les notaires belges et je le rattache à l'acquéreur. Chaque partie a son notaire.", action: 'CreationNotaires_Acquereur' },
     ] },
+    // Ajouté suite au retour de Cyril (script officiel, séquence 9 —
+    // "Documents") : sans cet échange, la démo enchaînait directement sur
+    // la rédaction sans jamais dire que rien n'est encore chargé côté
+    // pièces, ce qui créait une incohérence avec la séquence 11
+    // (CreationEmail/CreationReponseVendeur) où Alfred va justement les
+    // demander au vendeur — on aurait presque l'air de les avoir "déjà
+    // traitées" avant de les redemander. Pas d'action DOM pour l'instant :
+    // aucun document n'est réellement uploadé dans cette démo (note prod de
+    // Cyril), donc pas de nouvel écran à automatiser tant qu'on n'a pas
+    // confirmé s'il existe un onglet Documents / bouton Enregistrer à
+    // montrer réellement à l'écran à ce moment précis.
+    { acte: 2, label: 'CreationDocuments', segments: [
+      { texte: "Rien n'est encore chargé. Deux options : soit vous les uploadez, soit je vais les demander à la partie qui les détient — ici, le vendeur." },
+      { texte: "Dossier enregistré." },
+    ] },
     // Même texte que la version à plat (aucun mot changé), redécoupé en 2
     // segments : le 2e ("À gauche/À droite...") ne se joue qu'une fois le
     // 1er (avec son attente de chargement) bien terminé — sinon la
     // narration décrivait un écran qui n'était pas encore affiché.
+    // La ligne "rien n'est encore chargé..." vivait ici avant — déplacée
+    // dans CreationDocuments juste au-dessus (retour Cyril), pour ne plus
+    // être noyée dans l'ouverture de la rédaction.
     { acte: 2, label: 'CreationRedaction', segments: [
-      { texte: "Rien n'est encore chargé côté pièces — on enregistre le dossier tel quel. Et maintenant le moment qu'on attend : la rédaction. Un clic. Je réunis les parties, les notaires et le cadastre, et je génère le compromis de vente.", action: 'CreationRedaction' },
+      { texte: "Et maintenant le moment qu'on attend : la rédaction. Un clic. Je réunis les parties, les notaires et le cadastre, et je génère le compromis de vente.", action: 'CreationRedaction' },
       { texte: "À gauche, toutes les données collectées.", action: 'CreationRedaction_ScrollGauche' },
       { texte: "À droite, le compromis qui se construit en direct.", action: 'CreationRedaction_ScrollDroite' },
     ] },
@@ -350,8 +368,12 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { texte: "Elke partij moet vertegenwoordigd worden door een notaris. BIMBIMMO, dat zijn wij.", action: 'CreationNotaires_Vendeur' },
       { texte: "Voor de koper voeg ik Maxime Van der Straten toe — ik vind hem in de databank van alle Belgische notarissen en koppel hem aan de koper. Elke partij heeft haar notaris.", action: 'CreationNotaires_Acquereur' },
     ] },
+    { acte: 2, label: 'CreationDocuments', segments: [
+      { texte: "Er is nog niets geüpload. Twee opties: u laadt ze zelf op, of ik vraag ze op bij de partij die ze heeft — hier, de verkoper." },
+      { texte: "Dossier geregistreerd." },
+    ] },
     { acte: 2, label: 'CreationRedaction', segments: [
-      { texte: "Er is nog niets geüpload aan stukken — we registreren het dossier zoals het is. En nu het moment waar we op wachten: de opstelling. Eén klik. Ik verzamel de partijen, de notarissen en het kadaster, en ik genereer de verkoopbelofte.", action: 'CreationRedaction' },
+      { texte: "En nu het moment waar we op wachten: de opstelling. Eén klik. Ik verzamel de partijen, de notarissen en het kadaster, en ik genereer de verkoopbelofte.", action: 'CreationRedaction' },
       { texte: "Links, alle verzamelde gegevens.", action: 'CreationRedaction_ScrollGauche' },
       { texte: "Rechts, de akte die live wordt opgebouwd.", action: 'CreationRedaction_ScrollDroite' },
     ] },
