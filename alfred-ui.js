@@ -172,11 +172,14 @@ function creerPanneauRepliques() {
   // l'acte 2 (retour Cyril, séparation des répliques groupées ce soir),
   // la colonne dépassait plus souvent la hauteur du panneau, forçant un
   // défilement interne même sur un écran qui aurait la place.
+  // Largeur remontée un peu aussi (460-520 → 500-560) : la colonne acte 3
+  // (voir alfred-col-3, flex:0.7) était trop étroite pour "⚡ Closing" sur
+  // une ligne (le ⚡ ajouté ce soir devant les répliques à action).
   panel.style.cssText = `
     display:none; position:fixed;
     top:50%; left:270px; transform:translateY(-50%);
     background:rgba(5,69,97,0.97); border-radius:14px;
-    padding:16px; z-index:500; min-width:460px; max-width:520px;
+    padding:16px; z-index:500; min-width:500px; max-width:560px;
     max-height:92vh; overflow-y:auto;
     box-shadow:0 8px 40px rgba(0,0,0,0.5);
     font-family:sans-serif;
@@ -198,7 +201,7 @@ function creerPanneauRepliques() {
     <div style="display:flex;gap:20px;align-items:flex-start;">
       <div id="alfred-col-1" style="flex:1;"></div>
       <div id="alfred-col-2" style="flex:1.2;"></div>
-      <div id="alfred-col-3" style="flex:0.7;"></div>
+      <div id="alfred-col-3" style="flex:0.9;"></div>
     </div>
   `;
   document.body.appendChild(panel);
