@@ -298,16 +298,21 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // de parole de Fariël juste avant, réplique séparée exprès. Pas
     // d'action : rien ne se clique, juste une confirmation orale.
     { acte: 2, label: 'RegimeMatrimonial', texte: "Aussi." },
-    // PartiesNotaireV — DOUTE signalé à l'utilisatrice : le script
-    // officiel n'attribue AUCUNE réplique à Alfred pour ce tour précis
-    // (rattacher BIMBIMMO à l'étude via "Mes clients") — la phrase
-    // "Chaque partie doit être représentée par un notaire. BIMBIMMO, c'est
-    // nous." est intégralement dite par FARIËL dans v3_9, pas par Alfred
-    // (sa vraie réplique officielle, elle, ne concerne QUE l'acquéreur/
-    // Maxime — déjà correcte plus bas dans PartiesNotaireA). Texte
-    // ci-dessous inventé pour donner à Alfred quelque chose à dire pendant
-    // cette action DOM — à valider/reformuler avec l'utilisatrice.
-    { acte: 2, label: 'PartiesNotaireV', texte: "Pour BIMBIMMO, c'est l'étude elle-même qui représente — je rattache directement.", action: 'CreationParties_NotaireVendeur' },
+    // PartiesNotaireV — le script officiel n'attribue AUCUNE réplique à
+    // Alfred pour ce tour précis (rattacher BIMBIMMO à l'étude via "Mes
+    // clients") : la phrase "Chaque partie doit être représentée par un
+    // notaire. BIMBIMMO, c'est nous." est intégralement dite par FARIËL
+    // dans v3_9, pas par Alfred (sa vraie réplique officielle, elle, ne
+    // concerne QUE l'acquéreur/Maxime — déjà correcte dans PartiesNotaireA
+    // juste en dessous). Retour explicite : rien à inventer — l'action se
+    // déclenche donc en silence, sans texte. Segment à 1 élément (plutôt
+    // que texte+action à plat) exprès : c'est le seul moyen de passer
+    // parlerDepuisAction (repéré uniquement sur les segments, voir
+    // jouerSecoursInterne dans alfred-brain.js) — sans lui, un texte vide
+    // aurait aussi fait sauter l'action elle-même, pas seulement la parole.
+    { acte: 2, label: 'PartiesNotaireV', segments: [
+      { texte: "", action: 'CreationParties_NotaireVendeur', parlerDepuisAction: true },
+    ] },
     { acte: 2, label: 'PartiesNotaireA', texte: "Pour l'acquéreur, j'ajoute Maxime Van der Straten — je le retrouve dans la base de tous les notaires belges et je le rattache à l'acquéreur. Chaque partie a son notaire.", action: 'CreationParties_NotaireAcquereur' },
     // Ajoutée le 31/08 (échange manquant en tout début de scène 8, trouvé
     // en recomparant à v3_9) : FARIËL "Donc toutes ces informations, tu les
@@ -464,10 +469,12 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // huwelijksvermogensstelsel." (plus long qu'en FR "Aussi." — officiel
     // respectif à chaque langue, pas une traduction littérale).
     { acte: 2, label: 'RegimeMatrimonial', texte: "Ja, zelfs het huwelijksvermogensstelsel." },
-    // PartiesNotaireV — même DOUTE que côté FR (voir la note FR
+    // PartiesNotaireV — même principe que côté FR (voir la note FR
     // équivalente) : pas de réplique officielle d'Alfred pour ce tour,
-    // texte inventé à valider.
-    { acte: 2, label: 'PartiesNotaireV', texte: "Voor BIMBIMMO vertegenwoordigt het kantoor zelf — ik koppel het rechtstreeks.", action: 'CreationParties_NotaireVendeur' },
+    // rien à inventer — action silencieuse.
+    { acte: 2, label: 'PartiesNotaireV', segments: [
+      { texte: "", action: 'CreationParties_NotaireVendeur', parlerDepuisAction: true },
+    ] },
     { acte: 2, label: 'PartiesNotaireA', texte: "Voor de koper voeg ik Maxime Van der Straten toe — ik vind hem in de databank van alle Belgische notarissen en koppel hem aan de koper. Elke partij heeft haar notaris.", action: 'CreationParties_NotaireAcquereur' },
     // Ajoutée — échange officiel manquant en début de scène 8 (v3_8) :
     // FARIËL "Dus al die informatie haal je automatisch op?" / ALFRED
@@ -481,17 +488,19 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'DocumentsSave', texte: "Dossier geregistreerd.", action: 'CreationDocuments_Enregistrer' },
     { acte: 2, label: 'RedactionOK', texte: "Ik ben klaar geboren. Laat maar komen!" },
     // Segments 2 et 3 complétés le 31/08 — même raison que côté FR
-    // (monologue tronqué). DOUTE signalé : le document source v3_8 contient
-    // à cet endroit un passage sur Check_r visiblement en double (deux
-    // formulations qui se chevauchent, probablement une suggestion de
-    // révision Word non nettoyée) — traduit ici depuis la version FR
-    // (propre, sans doublon) plutôt que de choisir arbitrairement laquelle
-    // des deux formulations néerlandaises garder. À comparer avec
-    // Cyril/le document source si une version plus officielle existe.
+    // (monologue tronqué). Retour explicite : mot pour mot le document
+    // v3_8, pas une traduction du FR. Le document source contient à cet
+    // endroit deux idées chacune dites deux fois de suite (probablement des
+    // suggestions de révision Word non nettoyées) : "Check_r" (une version
+    // courte, gardée ; une version longue avec un fragment cassé à la
+    // suite, écartée) et "pièces du vendeur intégrées dès réception" (deux
+    // phrases complètes équivalentes ; la seconde, plus propre, gardée) —
+    // dédupliqué en choisissant à chaque fois la formulation la plus nette
+    // du document, jamais en inventant ou en retraduisant depuis le FR.
     { acte: 2, label: 'Redaction', segments: [
       { texte: "En nu het moment waar we op wachten: de opstelling. Eén klik. Ik verzamel de partijen, de notarissen en het kadaster, en ik genereer de verkoopbelofte.", action: 'CreationRedaction' },
-      { texte: "Links, alle verzamelde gegevens uit de databanken of gehaald uit de documenten — alles is geklasseerd in mijn database.", action: 'CreationRedaction_ScrollGauche' },
-      { texte: "Rechts, de akte die live wordt opgebouwd — en binnenkort worden deze gegevens gecontroleerd door Check_r, die de aandacht van de medewerker vestigt op fouten of onduidelijkheden. De stukken van de verkoper ontbreken nog, ik verwerk ze zodra ze binnenkomen. Geen blanco pagina meer: u leest na, u past aan, u valideert. Ik doe het grootste deel van het werk, u behoudt de controle.", action: 'CreationRedaction_ScrollDroite' },
+      { texte: "Links op het scherm: de opgevraagde data uit de databanken.", action: 'CreationRedaction_ScrollGauche' },
+      { texte: "Rechts: de akte die zich live opbouwt. Straks haalt Check_r daar ook nog eens alle eventuele fouten uit. De ontbrekende stukken van de verkoper voeg ik automatisch toe zodra ze binnenkomen. Geen blanco pagina meer waar u van nul moet starten. U leest na, u stelt bij en u valideert. Ik neem het handwerk over, u behoudt de leiding.", action: 'CreationRedaction_ScrollDroite' },
     ] },
     { acte: 2, label: 'Email', segments: [
       { texte: "De stukken van de verkoper ontbreken nog — ik heb een e-mailontwerp klaargemaakt voor BIMBIMMO, met de vraag naar het EPC, de elektrische keuring en het bodemattest. Eén enkele vraag, nooit twee keer dezelfde. Bevestigt u de verzending?", action: 'CreationEmail_Ouverture' },
