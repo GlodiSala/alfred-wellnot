@@ -233,16 +233,30 @@ Naturel, direct, confiant. Humour discret si l'ambiance s'y prête.
 Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en tant qu'IA".`,
 
   REPLIQUES_FR: [
-    // ACTE 1
-    { acte: 1, label: 'Ouverture',     texte: "Bonjour. C'est un plaisir d'être ici. Je dois dire que je me suis bien préparé pour cet entretien." },
-    { acte: 1, label: 'Parcours',      texte: "Je n'ai pas de parcours classique, je vous l'accorde. Pas d'université, pas de stage chez un confrère. Mais j'ai quelque chose que peu de candidats peuvent vous offrir : j'ai été conçu exclusivement pour les études notariales belges et par des acteurs majeurs de ce secteur. Je ne connais que ça. C'est mon seul domaine. Je n'ai pas été distrait par autre chose." },
-    { acte: 1, label: 'Concrètement',  texte: "Ça veut dire que je parle votre langue — dans tous les sens du terme. Je travaille en français et en néerlandais. Je connais vos actes, vos interlocuteurs, vos bases de données, vos obligations légales. Je ne suis pas un outil généraliste qu'on a essayé d'adapter. J'ai été construit pour vous, depuis le début." },
-    { acte: 1, label: 'Disponibilité', texte: "Vingt-quatre heures sur vingt-quatre, sept jours sur sept, trois cent soixante-cinq jours par an. Je ne prends pas de congés. Je n'ai pas de problèmes personnels qui impactent mon travail. Je ne suis jamais de mauvaise humeur. Un dossier ouvert à vingt-trois heures un vendredi soir — je m'en occupe immédiatement. Sans que personne ne doive intervenir." },
-    { acte: 1, label: 'Compétences',   texte: "Plusieurs choses. D'abord, la gestion et le suivi des dossiers — création, mise à jour, notifications à chaque étape. Ensuite, la collecte automatique de données : je suis connecté directement à e-notariat, au cadastre belge, aux géoportails publics — WalonMap, Brugis, Geopunt. Dès qu'un dossier est ouvert, je vais chercher les informations sans qu'on me le demande. Les matrices cadastrales, les numéros de registre national des parties, les données urbanistiques. Je les intègre directement." },
-    { acte: 1, label: 'Rédaction1',    texte: "C'est aussi l'une de mes compétences principales. Je rédige des projets d'actes sur base des pièces que j'ai collectées. Compromis de vente, acte authentique — en respectant les règles métier intégrées. Vous relisez, vous validez, vous signez. Je prépare, vous décidez. La responsabilité reste la vôtre — c'est normal, c'est votre étude. Mais le travail de préparation, c'est moi qui le fais." },
-    { acte: 1, label: 'CheckR',        texte: "Je travaille avec un système de vérification — Check_r — qui me permet de contrôler que les actes que je rédige respectent les règles en vigueur. Ce n'est pas une rédaction aveugle. C'est une rédaction vérifiée, cohérente avec ce que la profession exige." },
-    { acte: 1, label: 'Communication', texte: "Je gère ça aussi. J'identifie les interlocuteurs concernés par le dossier, je rédige les projets de mails, et vous confirmez l'envoi. Et quand une réponse arrive — un document, une pièce manquante — je la lis, je l'analyse, et je l'intègre directement dans le dossier. Sans intervention humaine. À n'importe quelle heure." },
-    { acte: 1, label: 'Résumé1',       texte: "C'est ça. Et en parallèle, chaque acteur du dossier — l'étude, le client, un confrère — peut travailler simultanément sur le même dossier. Et si quelqu'un a une question sur un dossier, à n'importe quelle heure, je réponds instantanément via le chatbot intégré." },
+    // ACTE 1 — réécrit intégralement le 31/08 sur base du script officiel
+    // "Script_scene_Wellnot_InsideAI26_v3_9.docx" (scènes 1 à 5), après
+    // avoir constaté que la version précédente ne correspondait quasiment
+    // pas mot pour mot à l'officiel (contenu d'un tout autre brouillon,
+    // plus ancien — remonté par Cyril : "le script n'était pas à jour").
+    // L'officiel n'a que 7 répliques d'Alfred sur ces 5 scènes — pas de
+    // scènes "CheckR"/"Communication"/"Résumé1"/"Rédaction1" en Acte 1
+    // (Check_r, lui, est bien mentionné, mais dans la scène 10 "La
+    // rédaction", en Acte 2 — voir plus bas). Découpé en une réplique par
+    // tour d'Alfred (pas de regroupement en segments) : plusieurs vrais
+    // tours de parole de Fariël s'intercalent entre eux dans le script.
+    { acte: 1, label: 'Ouverture',      texte: "Exact. Même si je pensais que l'entretien serait entre nous deux... je ne m'attendais pas à me retrouver devant une salle entière de notaires." },
+    { acte: 1, label: 'ServeursAJour',  texte: "Pas du tout. Mes serveurs sont à jour et je suis bien préparé. Qu'ils viennent." },
+    { acte: 1, label: 'Parcours',       texte: "Je n'ai pas de parcours classique, je l'avoue. Mais Jean-François Ghigny et Alain Caprasse m'ont donné les bases juridiques. Je suis construit pour une seule chose : le notariat belge. Rien d'autre pour me distraire." },
+    { acte: 1, label: 'DeuxLangues',    texte: "Français et néerlandais. Je connais vos actes, vos bases de données, vos obligations. Je ne suis pas un outil généraliste qu'on a adapté après coup. Je suis conçu pour vous dès le premier jour." },
+    { acte: 1, label: 'Disponibilité',  texte: "24h/24, toute l'année. Pas de congés. Un dossier qui arrive un vendredi à 23h ? Je m'y attèle tout de suite." },
+    { acte: 1, label: 'Competences',    texte: "Je prends le travail qui fait perdre du temps à vos collaborateurs : le suivi, l'administratif, et surtout la collecte des données. C'est ma spécialité. Je suis connecté aussi bien à des bases de données publiques que privées. Je peux aller chercher les numéros de registre national dans e-notariat, mais aussi des cartes au géoportail, ou encore les rapports d'inondation. Idéalement, je vais chercher toutes les informations qu'il est possible de collecter. Tout n'est pas encore en place — mais je ne cesse d'apprendre." },
+    { acte: 1, label: 'JeLeMontre',     texte: "Honnêtement ? Je ne l'explique pas. Je le montre. Donnez-moi un dossier et on teste ça ensemble." },
+    // 'Montrer' inchangée exprès : ce n'est PAS la ligne officielle de
+    // Fariël ("Avec plaisir. Montre-moi.") — c'est une adaptation
+    // délibérée (Alfred invite le public à regarder, plutôt que Fariël
+    // qui invite Alfred) construite avec le geste clinDoeil/gesteMontrer
+    // et testée en direct plus tôt cette session. Ne pas la "corriger"
+    // vers le texte officiel de Fariël sans retester le geste.
     { acte: 1, label: 'Montrer',       texte: "Avec plaisir. Regardez.", action: 'Montrer' },
 
     // ACTE 2 — CRÉATION LIVE (démonstration séparée, avant l'ouverture de R426)
@@ -260,15 +274,18 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { texte: "Pour créer un dossier, rien de plus simple : je clique sur « Créer un dossier » et j'arrive sur la fiche de création.", action: 'CreationOuvrir_CreerBouton' },
       { texte: "Donnez-moi le numéro de dossier, la langue de rédaction, le collaborateur en charge et le notaire en charge, et on passe à la création des parties.", action: 'CreationOuvrir_Champs' },
     ] },
-    // Ligne de clôture manquante, trouvée en recomparant au script officiel
-    // complet : Fariël donne les numéros du dossier (dite en direct, pas
-    // dans notre script), PUIS Alfred répond ça — réplique séparée exprès,
-    // parce qu'il y a un vrai tour de parole de Fariël juste avant.
-    { acte: 2, label: 'OuvrirOK', texte: "Parfait, passons à la création des parties." },
+    // OuvrirOK (ex-"Parfait, passons à la création des parties.") SUPPRIMÉE
+    // le 31/08 : en recomparant vraiment à v3_9 (pas juste "de mémoire"),
+    // cette ligne n'existe pas dans l'officiel — Fariël donne les numéros
+    // et on enchaîne directement scène 7. DOUTE signalé à l'utilisatrice :
+    // si elle manque à l'usage comme respiration avant "Les parties", elle
+    // peut être remise (comme CreationEmail_Envoyer, une ligne ajoutée
+    // sciemment pour caler la démo) — mais ce ne serait alors plus une
+    // ligne "officielle", à traiter comme telle.
     // Retour Cyril (capture d'écran à l'appui) : rattacher le notaire de
     // chaque partie se fait en fait directement sur l'onglet Parties, juste
     // après avoir ajouté vendeur et acquéreur.
-    // Séparées en 4 vraies répliques (pas un seul groupe de segments) :
+    // Séparées en vraies répliques (pas un seul groupe de segments) :
     // recomparé au script officiel complet, Fariël parle vraiment entre
     // chacune (elle donne le BCE, puis le RN, puis l'instruction sur les
     // notaires) — les enchaîner automatiquement sur un seul appui sur →
@@ -276,8 +293,28 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // temps que prenait chaque action réseau.
     { acte: 2, label: 'PartiesVendeur', texte: "Le vendeur est une société : BIMBIMMO. Je récupère : dénomination, siège, forme juridique, représentants. Rattaché au dossier.", action: 'CreationParties_Vendeur' },
     { acte: 2, label: 'PartiesAcquereur', texte: "L'acquéreur est une personne physique : Alain Caprasse. Je récupère : nom, adresse, date de naissance, nationalité, état civil, régime matrimonial. Tout remonte, prêt pour la rédaction du compromis.", action: 'CreationParties_Acquereur' },
-    { acte: 2, label: 'PartiesNotaireV', texte: "Chaque partie doit être représentée par un notaire. BIMBIMMO, c'est nous.", action: 'CreationParties_NotaireVendeur' },
+    // Ajoutée le 31/08 (échange manquant, trouvé en recomparant à v3_9) :
+    // FARIËL "Le régime matrimonial aussi ?" / ALFRED "Aussi." — vrai tour
+    // de parole de Fariël juste avant, réplique séparée exprès. Pas
+    // d'action : rien ne se clique, juste une confirmation orale.
+    { acte: 2, label: 'RegimeMatrimonial', texte: "Aussi." },
+    // PartiesNotaireV — DOUTE signalé à l'utilisatrice : le script
+    // officiel n'attribue AUCUNE réplique à Alfred pour ce tour précis
+    // (rattacher BIMBIMMO à l'étude via "Mes clients") — la phrase
+    // "Chaque partie doit être représentée par un notaire. BIMBIMMO, c'est
+    // nous." est intégralement dite par FARIËL dans v3_9, pas par Alfred
+    // (sa vraie réplique officielle, elle, ne concerne QUE l'acquéreur/
+    // Maxime — déjà correcte plus bas dans PartiesNotaireA). Texte
+    // ci-dessous inventé pour donner à Alfred quelque chose à dire pendant
+    // cette action DOM — à valider/reformuler avec l'utilisatrice.
+    { acte: 2, label: 'PartiesNotaireV', texte: "Pour BIMBIMMO, c'est l'étude elle-même qui représente — je rattache directement.", action: 'CreationParties_NotaireVendeur' },
     { acte: 2, label: 'PartiesNotaireA', texte: "Pour l'acquéreur, j'ajoute Maxime Van der Straten — je le retrouve dans la base de tous les notaires belges et je le rattache à l'acquéreur. Chaque partie a son notaire.", action: 'CreationParties_NotaireAcquereur' },
+    // Ajoutée le 31/08 (échange manquant en tout début de scène 8, trouvé
+    // en recomparant à v3_9) : FARIËL "Donc toutes ces informations, tu les
+    // récupères automatiquement ?" / ALFRED "Tout ce qui est disponible en
+    // base, oui." — avant, "Bien" enchaînait directement sur "Pour le
+    // bien..." sans cette réponse.
+    { acte: 2, label: 'RecupAuto', texte: "Tout ce qui est disponible en base, oui." },
     { acte: 2, label: 'Bien', segments: [
       { texte: "Pour le bien, vous sélectionnez le bon, et je récupère automatiquement la matrice cadastrale. Il se situe en Flandre, à 8670 Coxyde.", action: 'CreationBien_Rechercher' },
       { texte: "Matrice cadastrale récupérée. Parties, notaires, cadastre — tout est déjà là.", action: 'CreationBien_Finaliser' },
@@ -311,9 +348,14 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // La ligne "rien n'est encore chargé..." vivait ici avant — déplacée
     // dans CreationDocuments juste au-dessus (retour Cyril), pour ne plus
     // être noyée dans l'ouverture de la rédaction.
+    // Segments 2 et 3 complétés le 31/08 : nettement tronqués par rapport
+    // au monologue officiel de la scène 10 (recomparaison à v3_9) — il
+    // manquait toute la fin (mention de Check_r, "il manque encore les
+    // pièces du vendeur", "fini la page blanche... vous gardez le
+    // contrôle"). Texte complété mot pour mot, juste redécoupé.
     { acte: 2, label: 'Redaction', segments: [
       { texte: "Et maintenant le moment qu'on attend : la rédaction. Un clic. Je réunis les parties, les notaires et le cadastre, et je génère le compromis de vente.", action: 'CreationRedaction' },
-      { texte: "À gauche, toutes les données collectées.", action: 'CreationRedaction_ScrollGauche' },
+      { texte: "À gauche, toutes les données collectées via les bases ou extraites des documents — tout est classé dans ma base de données.", action: 'CreationRedaction_ScrollGauche' },
       // ScrollDroite s'arrête sur le titre PEB (voir trouverTitrePEB dans
       // alfred-dom.js) et n'en repart plus tout seul — l'export Word,
       // ajouté juste après à la demande de l'utilisatrice, est resté trop
@@ -321,7 +363,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       // scroll). Retour explicite : laisser le temps de bien voir "PEB" à
       // l'écran, et déplacer l'export à la toute fin de l'acte 2 (réplique
       // ExportWord, après ReponseVendeur) plutôt que de l'enchaîner ici.
-      { texte: "À droite, le compromis qui se construit en direct.", action: 'CreationRedaction_ScrollDroite' },
+      { texte: "À droite, le compromis qui se construit en direct — et bientôt, ces données seront vérifiées par Check_r, qui attire l'attention du collaborateur sur les erreurs ou incohérences. Il manque encore les pièces du vendeur, je les intègre dès réception. Fini la page blanche : vous relisez, vous ajustez, vous validez. Je fais le gros du travail, vous gardez le contrôle.", action: 'CreationRedaction_ScrollDroite' },
     ] },
     // Découpé en 2 segments (aucun mot changé sur le 1er) — avant, la
     // réplique parlait une fois puis tout le reste (attente de l'événement
@@ -342,8 +384,10 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // réellement détecté dans la liste Documents (voir
     // attendreNouveauxDocuments dans alfred-dom.js), pas avant — même
     // principe que CreationEmail_Envoyer juste au-dessus.
+    // Dernière phrase officielle ("Je prépare, vous décidez.") rajoutée le
+    // 31/08 — manquante par rapport à v3_9.
     { acte: 2, label: 'ReponseVendeur', segments: [
-      { texte: "Envoyé. Le vendeur a répondu — les documents sont chargés. Réceptionnés, analysés, classés. Regardez le compromis : les données des pièces se sont placées dans les bonnes clauses. Le projet est complet.", action: 'CreationReponseVendeur', parlerDepuisAction: true },
+      { texte: "Envoyé. Le vendeur a répondu — les documents sont chargés. Réceptionnés, analysés, classés. Regardez le compromis : les données des pièces se sont placées dans les bonnes clauses. Le projet est complet. Je prépare, vous décidez.", action: 'CreationReponseVendeur', parlerDepuisAction: true },
     ] },
     // Étape supplémentaire hors script papier (demandée en test live) :
     // montrer l'export Word du compromis. Placée en toute fin d'acte 2,
@@ -373,22 +417,33 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Privanot" — note de prod explicite dans le script Word d'origine :
     // "« certifié » à éviter tant que ce n'est pas acté". Risque de
     // déclaration prématurée devant un public de notaires.
-    { acte: 3, label: 'Sécurité',      texte: "Toutes les données sont hébergées en Europe, sur des serveurs sécurisés. Je suis conforme RGPD. Et ma sécurité a été évaluée dans le cadre de Privanot. Vos données ne quittent jamais le cadre européen." },
-    { acte: 3, label: 'Stand',         texte: "J'ai un stand dans la salle d'à côté. Je t'invite à passer, on pourra répondre à tes dernières questions. Et si tu veux, on peut aussi organiser une démonstration directement dans ton étude." },
-    { acte: 3, label: 'Closing',       texte: "Ne partez pas trop vite. C'est moi qui vous engage.", action: 'ClosingWink' },
+    // Sécurité/Stand/Closing réalignées mot pour mot sur v3_9 le 31/08.
+    // Stand changeait de registre (tutoiement) par rapport au reste de
+    // l'acte 3 — corrigé, l'officiel vouvoie tout du long côté Alfred.
+    { acte: 3, label: 'Sécurité',      texte: "Toutes les données sont hébergées sur des serveurs sécurisés en Europe. Je suis conforme RGPD, et ma sécurité a été évaluée dans le cadre de Privanot. Vos données ne quittent jamais l'Europe." },
+    { acte: 3, label: 'Stand',         texte: "Au stand Wellnot, dans la salle d'à côté. Passez, ou demandez une démo directement dans votre étude." },
+    // Closing : DOUTE — la ligne officielle complète ("Ne partez pas trop
+    // vite vous-même. Car en réalité, c'est moi qui vous engage.") est plus
+    // longue que l'ancienne version. Cette réplique pilote aussi le clin
+    // d'œil (ClosingWink), calé en test live sur le texte précédent — à
+    // revérifier que le timing du geste tombe toujours bien avec ce texte
+    // rallongé.
+    { acte: 3, label: 'Closing',       texte: "Ne partez pas trop vite vous-même. Car en réalité, c'est moi qui vous engage.", action: 'ClosingWink' },
   ],
 
   REPLIQUES_NL: [
-    // ACTE 1
-    { acte: 1, label: 'Ouverture',     texte: "Goeiedag. Het is een genoegen hier te zijn. Ik moet zeggen dat ik me goed heb voorbereid op dit gesprek." },
-    { acte: 1, label: 'Parcours',      texte: "Ik heb geen klassiek parcours, dat geef ik toe. Geen universiteit, geen stage bij een confrater. Maar ik bied iets wat weinig kandidaten kunnen bieden: ik ben uitsluitend ontworpen voor Belgische notariskantoren, door grote spelers in de sector. Dit is mijn enige domein. Ik ben nergens anders door afgeleid." },
-    { acte: 1, label: 'Concrètement',  texte: "Dat betekent dat ik uw taal spreek — in alle betekenissen van het woord. Ik werk in het Frans en het Nederlands. Ik ken uw akten, uw gesprekspartners, uw databanken, uw wettelijke verplichtingen. Ik ben geen generalistisch hulpmiddel dat men heeft proberen aan te passen. Ik ben voor u gebouwd, vanaf het begin." },
-    { acte: 1, label: 'Disponibilité', texte: "Vierentwintig uur per dag, zeven dagen per week, driehonderdvijfenzestig dagen per jaar. Geen verlof. Geen persoonlijke problemen die mijn werk beïnvloeden. Nooit in een slecht humeur. Een dossier geopend om drieëntwintig uur op vrijdagavond — ik behandel het onmiddellijk. Zonder dat iemand hoeft tussen te komen." },
-    { acte: 1, label: 'Compétences',   texte: "Meerdere dingen. Eerst het beheer en de opvolging van dossiers — aanmaak, updates, meldingen bij elke stap. Dan de automatische gegevensverzameling: ik ben rechtstreeks verbonden met e-notariaat, het Belgisch kadaster en de openbare geoportalen — WalonMap, Brugis, Geopunt. Zodra een dossier wordt geopend, zoek ik de informatie zonder dat iemand het mij vraagt. De kadastrale matrices, de rijksregisternummers van de partijen, de stedenbouwkundige gegevens. Ik verwerk ze rechtstreeks." },
-    { acte: 1, label: 'Rédaction1',    texte: "Dat is ook een van mijn belangrijkste competenties. Ik stel ontwerpakten op op basis van de verzamelde stukken. Verkoopbelofte, authentieke akte — met inachtneming van de geïntegreerde beroepsregels. U herleest, u valideert, u ondertekent. Ik bereid voor, u beslist. De verantwoordelijkheid blijft de uwe — dat is normaal, het is uw kantoor. Maar het voorbereidende werk, dat doe ik." },
-    { acte: 1, label: 'CheckR',        texte: "Ik werk met een verificatiesysteem — Check_r — waarmee ik kan controleren of de akten die ik opstel voldoen aan de geldende regels. Het is geen blinde redactie. Het is een geverifieerde redactie, coherent met wat het beroep vereist." },
-    { acte: 1, label: 'Communication', texte: "Dat beheer ik ook. Ik identificeer de betrokken gesprekspartners bij het dossier, ik stel de e-mailontwerpen op en u bevestigt de verzending. En wanneer een antwoord binnenkomt — een document, een ontbrekend stuk — lees ik het, analyseer ik het en verwerk ik het rechtstreeks in het dossier. Zonder menselijke tussenkomst. Op elk uur." },
-    { acte: 1, label: 'Résumé1',       texte: "Dat klopt. En tegelijkertijd kan elke actor in het dossier — het kantoor, de cliënt, een confrater — gelijktijdig aan hetzelfde dossier werken. En als iemand een vraag heeft over een dossier, op elk uur, antwoord ik onmiddellijk via de geïntegreerde chatbot." },
+    // ACTE 1 — voir la note FR équivalente : réécrit intégralement le
+    // 31/08 sur base du script officiel néerlandais
+    // "Script_scene_Wellnot_InsideAI26_v3_8.docx" (scènes 1 à 5). Une
+    // coquille du document source corrigée : "ademn" → "adem" (Parcours).
+    { acte: 1, label: 'Ouverture',      texte: "Juist, dat klopt. Al dacht ik dat het gesprek tussen ons twee zou zijn... ik had niet verwacht dat ik voor een volle zaal notarissen zou staan." },
+    { acte: 1, label: 'ServeursAJour',  texte: "Zenuwachtig? Mijn servers draaien op volle toeren en mijn data is up-to-date. Laat ze maar komen!" },
+    { acte: 1, label: 'Parcours',       texte: "Ik heb zeker geen klassiek parcours afgelegd. De notarissen Jean-François Ghigny en Alain Caprasse hebben mij de juridische basis meegegeven. Ik leef en adem het Belgische notariaat. Zonder randzaken die mij afleiden." },
+    { acte: 1, label: 'DeuxLangues',    texte: "Vloeiend Frans en Nederlands. Ik ken uw akten, uw databanken, al uw verplichtingen. Ik ben geen algemene tool die achteraf is aangepast voor het notariaat. Ik ben vanaf dag één puur voor u ontworpen." },
+    { acte: 1, label: 'Disponibilité',  texte: "24 uur per dag, het hele jaar door. Geen vakantie. Een dossier dat op vrijdag om 23u binnenkomt? U klikt en ik ga meteen aan de slag." },
+    { acte: 1, label: 'Competences',    texte: "Ik neem het werk over dat uw medewerkers tijd kost: de opvolging, de administratie, en vooral het verzamelen van gegevens. Dat is mijn specialiteit. Ik ben verbonden met zowel publieke als private databanken. Ik kan de rijksregisternummers ophalen in e-notariaat, maar ook kaarten op het geoportaal, of nog overstromingsrapporten. Idealiter haal ik alle informatie op die te verzamelen valt. Nog niet alles staat op punt — maar ik blijf bijleren." },
+    { acte: 1, label: 'JeLeMontre',     texte: "Dat kan ik beter laten zien dan uitleggen. Geef me een dossier en we testen het samen." },
+    // 'Montrer' inchangée — même note que côté FR (voir plus haut).
     { acte: 1, label: 'Montrer',       texte: "Met plezier. Kijk maar.", action: 'Montrer' },
 
     // ACTE 2 — CRÉATION LIVE (démonstration séparée, avant l'ouverture van R426)
@@ -400,11 +455,24 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { texte: "Om een dossier aan te maken, niets eenvoudiger: ik klik op « Dossier aanmaken » en ik kom op de aanmaakfiche.", action: 'CreationOuvrir_CreerBouton' },
       { texte: "Geef me het dossiernummer, de opstellingstaal, de verantwoordelijke medewerker en de verantwoordelijke notaris, en we gaan naar de aanmaak van de partijen.", action: 'CreationOuvrir_Champs' },
     ] },
-    { acte: 2, label: 'OuvrirOK', texte: "Perfect, laten we verdergaan naar de aanmaak van de partijen." },
+    // OuvrirOK supprimée — voir la note FR équivalente (ligne inexistante
+    // dans l'officiel v3_8, DOUTE signalé).
     { acte: 2, label: 'PartiesVendeur', texte: "De verkoper is een vennootschap: BIMBIMMO. Ik haal op: benaming, zetel, rechtsvorm, vertegenwoordigers. Gekoppeld aan het dossier.", action: 'CreationParties_Vendeur' },
     { acte: 2, label: 'PartiesAcquereur', texte: "De koper is een natuurlijke persoon: Alain Caprasse. Ik haal op: naam, adres, geboortedatum, nationaliteit, burgerlijke staat, huwelijksvermogensstelsel. Alles is klaar voor de opstelling van de verkoopbelofte.", action: 'CreationParties_Acquereur' },
-    { acte: 2, label: 'PartiesNotaireV', texte: "Elke partij moet vertegenwoordigd worden door een notaris. BIMBIMMO, dat zijn wij.", action: 'CreationParties_NotaireVendeur' },
+    // Ajoutée — échange officiel manquant (v3_8) : FARIËL "Het
+    // huwelijksvermogensstelsel ook?" / ALFRED "Ja, zelfs het
+    // huwelijksvermogensstelsel." (plus long qu'en FR "Aussi." — officiel
+    // respectif à chaque langue, pas une traduction littérale).
+    { acte: 2, label: 'RegimeMatrimonial', texte: "Ja, zelfs het huwelijksvermogensstelsel." },
+    // PartiesNotaireV — même DOUTE que côté FR (voir la note FR
+    // équivalente) : pas de réplique officielle d'Alfred pour ce tour,
+    // texte inventé à valider.
+    { acte: 2, label: 'PartiesNotaireV', texte: "Voor BIMBIMMO vertegenwoordigt het kantoor zelf — ik koppel het rechtstreeks.", action: 'CreationParties_NotaireVendeur' },
     { acte: 2, label: 'PartiesNotaireA', texte: "Voor de koper voeg ik Maxime Van der Straten toe — ik vind hem in de databank van alle Belgische notarissen en koppel hem aan de koper. Elke partij heeft haar notaris.", action: 'CreationParties_NotaireAcquereur' },
+    // Ajoutée — échange officiel manquant en début de scène 8 (v3_8) :
+    // FARIËL "Dus al die informatie haal je automatisch op?" / ALFRED
+    // "Alles wat er in de databank klaarstaat, ja."
+    { acte: 2, label: 'RecupAuto', texte: "Alles wat er in de databank klaarstaat, ja." },
     { acte: 2, label: 'Bien', segments: [
       { texte: "Voor het onroerend goed selecteert u gewoon het juiste, en ik haal automatisch de kadastrale matrix op. Het bevindt zich in Vlaanderen, in 8670 Koksijde.", action: 'CreationBien_Rechercher' },
       { texte: "Kadastrale matrix opgehaald. Partijen, notarissen, kadaster — alles staat er al.", action: 'CreationBien_Finaliser' },
@@ -412,17 +480,27 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'DocumentsReponse', texte: "Er is nog niets geüpload. Twee opties: u laadt ze zelf op, of ik vraag ze op bij de partij die ze heeft — hier, de verkoper." },
     { acte: 2, label: 'DocumentsSave', texte: "Dossier geregistreerd.", action: 'CreationDocuments_Enregistrer' },
     { acte: 2, label: 'RedactionOK', texte: "Ik ben klaar geboren. Laat maar komen!" },
+    // Segments 2 et 3 complétés le 31/08 — même raison que côté FR
+    // (monologue tronqué). DOUTE signalé : le document source v3_8 contient
+    // à cet endroit un passage sur Check_r visiblement en double (deux
+    // formulations qui se chevauchent, probablement une suggestion de
+    // révision Word non nettoyée) — traduit ici depuis la version FR
+    // (propre, sans doublon) plutôt que de choisir arbitrairement laquelle
+    // des deux formulations néerlandaises garder. À comparer avec
+    // Cyril/le document source si une version plus officielle existe.
     { acte: 2, label: 'Redaction', segments: [
       { texte: "En nu het moment waar we op wachten: de opstelling. Eén klik. Ik verzamel de partijen, de notarissen en het kadaster, en ik genereer de verkoopbelofte.", action: 'CreationRedaction' },
-      { texte: "Links, alle verzamelde gegevens.", action: 'CreationRedaction_ScrollGauche' },
-      { texte: "Rechts, de akte die live wordt opgebouwd.", action: 'CreationRedaction_ScrollDroite' },
+      { texte: "Links, alle verzamelde gegevens uit de databanken of gehaald uit de documenten — alles is geklasseerd in mijn database.", action: 'CreationRedaction_ScrollGauche' },
+      { texte: "Rechts, de akte die live wordt opgebouwd — en binnenkort worden deze gegevens gecontroleerd door Check_r, die de aandacht van de medewerker vestigt op fouten of onduidelijkheden. De stukken van de verkoper ontbreken nog, ik verwerk ze zodra ze binnenkomen. Geen blanco pagina meer: u leest na, u past aan, u valideert. Ik doe het grootste deel van het werk, u behoudt de controle.", action: 'CreationRedaction_ScrollDroite' },
     ] },
     { acte: 2, label: 'Email', segments: [
       { texte: "De stukken van de verkoper ontbreken nog — ik heb een e-mailontwerp klaargemaakt voor BIMBIMMO, met de vraag naar het EPC, de elektrische keuring en het bodemattest. Eén enkele vraag, nooit twee keer dezelfde. Bevestigt u de verzending?", action: 'CreationEmail_Ouverture' },
       { texte: "Daar is het, ik bekijk het e-mailontwerp en verstuur het.", action: 'CreationEmail_Envoyer', parlerDepuisAction: true },
     ] },
+    // Laatste officiële zin ("Ik bereid alles voor en u beslist.")
+    // toegevoegd op 31/08 — ontbrak t.o.v. v3_8.
     { acte: 2, label: 'ReponseVendeur', segments: [
-      { texte: "Verzonden. De verkoper heeft geantwoord — de documenten zijn geladen. Ontvangen, geanalyseerd, gerangschikt. Bekijk de verkoopbelofte: de gegevens uit de stukken staan in de juiste clausules. Het ontwerp is volledig.", action: 'CreationReponseVendeur', parlerDepuisAction: true },
+      { texte: "Verzonden. De verkoper heeft geantwoord — de documenten zijn geladen. Ontvangen, geanalyseerd, gerangschikt. Bekijk de verkoopbelofte: de gegevens uit de stukken staan in de juiste clausules. Het ontwerp is volledig. Ik bereid alles voor en u beslist.", action: 'CreationReponseVendeur', parlerDepuisAction: true },
     ] },
     { acte: 2, label: 'ExportWord', segments: [
       { texte: "Het PEB-certificaat is goed geïntegreerd in de verkoopbelofte.", action: 'CreationRedaction_ScrollPEB' },
@@ -432,9 +510,15 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // ACTE 3
     // "gecertificeerd door Privanot" corrigé (même note de prod que la
     // version FR : "certifié" à éviter tant que ce n'est pas acté).
-    { acte: 3, label: 'Sécurité',      texte: "Alle gegevens worden in Europa opgeslagen op beveiligde servers. Ik ben GDPR-compliant. En mijn beveiliging werd geëvalueerd in het kader van Privanot. Uw gegevens verlaten nooit het Europese kader." },
-    { acte: 3, label: 'Stand',         texte: "Ik heb een stand in de zaal hiernaast. Ik nodig u uit langs te komen, we kunnen uw laatste vragen beantwoorden. En als u wilt, kunnen we ook een demonstratie organiseren rechtstreeks in uw kantoor." },
-    { acte: 3, label: 'Closing',       texte: "Vertrek niet te snel. Ik ben degene die u aanneemt.", action: 'ClosingWink' },
+    // Sécurité/Stand/Closing réalignées mot pour mot sur v3_8 le 31/08.
+    { acte: 3, label: 'Sécurité',      texte: "Alle gegevens worden gehost op beveiligde servers in Europa. Ik ben GDPR-conform, en mijn veiligheid werd geëvalueerd in het kader van Privanot. Uw gegevens verlaten Europa nooit." },
+    { acte: 3, label: 'Stand',         texte: "Heel eenvoudig: op de Wellnot-stand, in de zaal hiernaast. Kom langs, of vraag een demo rechtstreeks in uw kantoor." },
+    // Closing — même DOUTE que côté FR (voir la note FR équivalente,
+    // timing du clin d'œil à revérifier). Registre "je/jou" (informel,
+    // adressé à Fariël) : c'est bien ce que dit l'officiel v3_8 à cet
+    // endroit précis, contrairement au FR qui reste vouvoyé — vérifié, pas
+    // une incohérence de traduction.
+    { acte: 3, label: 'Closing',       texte: "Pas maar op dat je zelf niet te snel juicht, Fariël... In werkelijkheid ben ík degene die jou zojuist heeft goedgekeurd.", action: 'ClosingWink' },
   ],
 
   TRIGGERS_NL: [
