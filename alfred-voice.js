@@ -23,20 +23,27 @@
 // nl-BE n'a pas de Chirp3 HD chez Google — nl-NL (Pays-Bas) l'a, accepté
 // ici malgré l'accent légèrement différent, pour rester sur la meilleure
 // qualité disponible plutôt que de redescendre en Wavenet par défaut.
+// Pas de "pitch" ici : confirmé par l'API elle-même ("This voice does not
+// support pitch parameters at this time") — les voix Chirp3 HD (utilisées
+// ci-dessous) ne supportent pas ce paramètre du tout, contrairement aux
+// voix Wavenet/Neural2 plus anciennes. L'envoyer faisait échouer TOUT
+// appel Cloud TTS (repli du chatbot libre ET repli de secours des
+// répliques scriptées quand Gemini est indisponible), et retombait
+// ensuite sur fallbackSpeak() — la voix robotique native du navigateur,
+// nettement moins bonne, sans que ce soit visible autrement qu'en
+// console. Remonté en test live ("le micro d'Alfred" sonne mal/différent).
 const VOIX_CONFIG = {
   fr: {
     languageCode: 'fr-FR',
     name:         'fr-FR-Chirp3-HD-Charon',
     ssmlGender:   'MALE',
-    speakingRate:  0.82,
-    pitch:        -1.5
+    speakingRate:  0.82
   },
   nl: {
     languageCode: 'nl-NL',
     name:         'nl-NL-Chirp3-HD-Charon',
     ssmlGender:   'MALE',
-    speakingRate:  0.80,
-    pitch:        -1.0
+    speakingRate:  0.80
   }
 };
 
@@ -98,7 +105,7 @@ function ouvrirCacheTTS() {
 }
 
 function cleTTS(voix, text) {
-  return [voix.languageCode, voix.name, voix.speakingRate, voix.pitch, text].join('|');
+  return [voix.languageCode, voix.name, voix.speakingRate, text].join('|');
 }
 
 async function lireCacheTTS(cle) {
@@ -357,7 +364,7 @@ async function genererAudioCloud(text, voix) {
         body: JSON.stringify({
           input:       { text },
           voice:       { languageCode: voix.languageCode, name: voix.name, ssmlGender: voix.ssmlGender },
-          audioConfig: { audioEncoding: 'MP3', speakingRate: voix.speakingRate, pitch: voix.pitch }
+          audioConfig: { audioEncoding: 'MP3', speakingRate: voix.speakingRate }
         })
       });
       const data = await res.json();
