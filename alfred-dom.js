@@ -98,7 +98,7 @@ const SELECTEURS = {
     rechercheNotaire: ['Rechercher dans votre liste de notaires'],
   },
   menus: {
-    qualitePartie:              ['Sélectionnez une qualité'],
+    qualitePartie:              ['Sélectionnez une qualité', 'Selecteer ...'], // NL confirmé (capture d'écran, menu "Een persoon toevoegen")
     // NL confirmés par capture d'écran (04/09, fiche "Nieuw dossier
     // aanmaken") — libellés plus courts qu'en FR, normal, pas une erreur.
     collaborateurEnCharge:      ['Collaborateur en charge du dossier', 'Verantwoordelijke medewerker'],
