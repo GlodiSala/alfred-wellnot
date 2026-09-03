@@ -72,8 +72,8 @@ const SELECTEURS = {
     personneMorale:      ['Personne morale', 'Rechtspersoon'], // estimation, terme juridique standard
     rechercher:          ['Rechercher', 'Zoeken'], // estimation (placeholder "Zoeken" confirmé ailleurs sur le site)
     confirmerBien:       ['Confirmer', 'Bevestigen'], // confirmé (capture d'écran 04/09)
-    rediger:             ['Rédiger un document'],
-    genererCompromis:    ['Générer le compromis'],
+    rediger:             ['Rédiger un document', 'Document aanmaken'], // NL confirmé (capture d'écran, onglet fiche dossier "+ Document aanmaken") — c'est le déclencheur qui ouvre le sous-menu avec l'option "Compromis" (déjà confirmée identique en NL), donc ça correspond bien au même bouton que "Rédiger un document" en FR, pas à "Générer le compromis"
+    genererCompromis:    ['Générer le compromis'], // repli seulement — jamais vu déclencher directement en NL, "rediger" ouvre toujours un sous-menu d'après ce qu'on a observé
     suivant:             ['Suivant', 'Volgende'], // confirmé par capture d'écran (04/09)
     validerEtEnvoyer:    ['Valider et envoyer', 'Valideren en versturen'], // confirmé (capture d'écran 04/09, panneau Alfred)
     consulter:           ['Consulter', 'Raadplegen'], // confirmé (capture d'écran 04/09, panneau Alfred)
