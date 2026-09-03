@@ -1753,6 +1753,15 @@ async function seq_creationDossier_ouvrir() {
 async function seq_creationDossier_parties_vendeur() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) return;
+  // Garde-fou anti-doublon : rien ici n'empêchait de rajouter un second
+  // vendeur si cette réplique était rejouée (flèche ←, "Jouer tout"
+  // relancé, double-clic...) — remonté en test live ("deux Verkoper").
+  // Si un badge Vendeur/Verkoper est déjà visible, on considère que
+  // c'est déjà fait et on n'ajoute rien de plus.
+  if (compterOccurrencesTexte(SELECTEURS.textes.qualiteVendeur) > 0) {
+    console.warn('[Alfred DOM] Vendeur déjà présent dans les parties — ajout ignoré (rejeu ?).');
+    return;
+  }
   if (cfg.vendeur_type === 'morale' && cfg.vendeur_bce) {
     await ajouterPartieParBCE(SELECTEURS.textes.qualiteVendeur, cfg.vendeur_bce);
   } else {
@@ -1763,14 +1772,28 @@ async function seq_creationDossier_parties_vendeur() {
 async function seq_creationDossier_parties_acquereur() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) return;
+  // Même garde-fou anti-doublon que pour le vendeur (voir juste au-dessus).
+  if (compterOccurrencesTexte(SELECTEURS.textes.qualiteAcquereur) > 0) {
+    console.warn('[Alfred DOM] Acquéreur déjà présent dans les parties — ajout ignoré (rejeu ?).');
+    return;
+  }
   // Le résultat n'était pas vérifié ici avant — on avançait vers "Suivant"
   // (donc vers l'étape "bien") même si l'acquéreur n'avait pas vraiment
   // été enregistré, ce qui faisait échouer toute la suite en cascade
   // (remonté en test live). Un seul nouvel essai avant d'abandonner.
   let ok = await ajouterPartieParRN(SELECTEURS.textes.qualiteAcquereur, cfg.acquereur_rn);
   if (!ok) {
-    console.warn('[Alfred DOM] Acquéreur pas confirmé après le premier essai — nouvelle tentative.');
-    ok = await ajouterPartieParRN(SELECTEURS.textes.qualiteAcquereur, cfg.acquereur_rn);
+    // Revérifie avant de retenter : partieAjouteeAvecSucces peut avoir
+    // rendu un faux négatif (juste trop lent à confirmer) plutôt qu'un
+    // vrai échec — sans ce re-contrôle, la "nouvelle tentative" ajoutait
+    // en fait un second acquéreur en double.
+    if (compterOccurrencesTexte(SELECTEURS.textes.qualiteAcquereur) > 0) {
+      console.warn('[Alfred DOM] Acquéreur en fait bien présent (faux négatif de la vérification) — pas de nouvelle tentative.');
+      ok = true;
+    } else {
+      console.warn('[Alfred DOM] Acquéreur pas confirmé après le premier essai — nouvelle tentative.');
+      ok = await ajouterPartieParRN(SELECTEURS.textes.qualiteAcquereur, cfg.acquereur_rn);
+    }
   }
   if (!ok) {
     console.warn('[Alfred DOM] Acquéreur toujours pas confirmé — on continue quand même vers le rattachement des notaires (l\'ajout a peut-être réussi malgré la vérification).');
