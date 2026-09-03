@@ -669,7 +669,7 @@ function ouvrirPanneauVoix() {
   // ça), on teste chacun, et on coche celui qu'on garde. Dès qu'un
   // emplacement est coché, obtenirAudio() (alfred-voice.js) l'utilise en
   // PREMIER pour le NL, avant même Gemini.
-  panel.appendChild(champLabel('Voix ElevenLabs — néerlandais BELGE (optionnel, jusqu\'à 5 candidats)'));
+  panel.appendChild(champLabel(`Voix ElevenLabs — néerlandais BELGE (optionnel, jusqu'à ${ALFRED_ELEVENLABS_NB_CANDIDATS} candidats)`));
 
   const candidatsElevenLabs = chargerCandidatsElevenLabsNL();
   const voixActiveActuelle = (typeof voixElevenLabsNL === 'function') ? voixElevenLabsNL() : '';
@@ -941,20 +941,38 @@ function champLabel(texte) {
   return l;
 }
 
-// ── 5 emplacements de voix candidates ElevenLabs (NL) ──────────────
+// ── Emplacements de voix candidates ElevenLabs (NL) ──────────────
 // Simple liste persistée en local (nom facultatif + Voice ID par ligne),
 // distincte de ALFRED_ELEVENLABS_VOIX_NL_KEY qui ne retient que celle
 // cochée comme active (c'est cette dernière que lit alfred-voice.js).
 const ALFRED_ELEVENLABS_CANDIDATS_KEY = 'alfred_elevenlabs_candidats_nl';
+const ALFRED_ELEVENLABS_NB_CANDIDATS = 6;
+// Pré-rempli une seule fois (tant que rien n'est encore enregistré en
+// local) avec les 6 ID trouvés sur elevenlabs.io/voice-library — évite
+// d'avoir à les recopier à la main dans le panneau.
+const ALFRED_ELEVENLABS_CANDIDATS_DEFAUT = [
+  'tRyB8BgRzpNUv3o2XWD4',
+  'W3tynvkIV6vLqFqVMaqT',
+  'Yv0oyZ3obP9foTH7emqG',
+  '9VFAPoHUQMWIBDOxYj22',
+  'FpLGR2n1CcG1v7SHJFsa',
+  'wqDY19Brqhu7UCoLadPh',
+];
 function chargerCandidatsElevenLabsNL() {
+  const brut = localStorage.getItem(ALFRED_ELEVENLABS_CANDIDATS_KEY);
   let liste = [];
-  try { liste = JSON.parse(localStorage.getItem(ALFRED_ELEVENLABS_CANDIDATS_KEY) || '[]'); } catch (e) { liste = []; }
-  if (!Array.isArray(liste)) liste = [];
-  while (liste.length < 5) liste.push({ label: '', voiceId: '' });
-  return liste.slice(0, 5);
+  if (brut === null) {
+    // Rien enregistré encore : on démarre avec les candidats par défaut.
+    liste = ALFRED_ELEVENLABS_CANDIDATS_DEFAUT.map((voiceId, i) => ({ label: `Voix ${i + 1}`, voiceId }));
+  } else {
+    try { liste = JSON.parse(brut); } catch (e) { liste = []; }
+    if (!Array.isArray(liste)) liste = [];
+  }
+  while (liste.length < ALFRED_ELEVENLABS_NB_CANDIDATS) liste.push({ label: '', voiceId: '' });
+  return liste.slice(0, ALFRED_ELEVENLABS_NB_CANDIDATS);
 }
 function enregistrerCandidatsElevenLabsNL(liste) {
-  localStorage.setItem(ALFRED_ELEVENLABS_CANDIDATS_KEY, JSON.stringify(liste.slice(0, 5)));
+  localStorage.setItem(ALFRED_ELEVENLABS_CANDIDATS_KEY, JSON.stringify(liste.slice(0, ALFRED_ELEVENLABS_NB_CANDIDATS)));
 }
 
 function ouvrirEditionRéplique(index, nouvelActe) {
