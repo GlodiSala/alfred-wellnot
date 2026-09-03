@@ -188,9 +188,15 @@ async function askAlfred(text, retries = 2) {
         : 'Posez votre prochaine question.';
       const autreLangue = langue === 'nl' ? 'fr' : 'nl';
       const trad = await traduire(fb, autreLangue);
-      // 'cloud' : texte libre généré à la volée, jamais préchargeable —
-      // Cloud TTS répond plus vite que Gemini pour ce cas précis.
-      await speak(naturaliserTexte(fb), langue, trad || fb, 'cloud');
+      // Plus de 'cloud' forcé ici (retiré le 03/09, demandé en test live) :
+      // texte libre généré à la volée, jamais préchargeable, donc Gemini
+      // TTS y est plus lent que Cloud TTS — mais garder la MÊME voix que
+      // le reste de la démo (Gemini) compte plus que gagner 1-2s, la
+      // latence est acceptée. obtenirAudio() essaie Gemini d'abord et
+      // retombe sur Cloud TTS automatiquement en cas d'échec (rate limit
+      // etc.) — fonctionne enfin correctement depuis la correction du bug
+      // 'pitch' (voir genererAudioCloud dans alfred-voice.js).
+      await speak(naturaliserTexte(fb), langue, trad || fb);
       return;
     }
 
@@ -216,9 +222,8 @@ async function askAlfred(text, retries = 2) {
 
     const autreLangue = langue === 'nl' ? 'fr' : 'nl';
     const trad = await traduire(replyClean, autreLangue);
-    // 'cloud' : réponse libre générée à la volée, jamais préchargeable —
-    // Cloud TTS répond plus vite que Gemini pour ce cas précis.
-    await speak(naturaliserTexte(replyClean), langue, trad || replyClean, 'cloud');
+    // Plus de 'cloud' forcé ici — voir la note équivalente plus haut.
+    await speak(naturaliserTexte(replyClean), langue, trad || replyClean);
 
   } catch(e) {
     console.error('askAlfred:', e);
