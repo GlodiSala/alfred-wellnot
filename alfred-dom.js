@@ -891,16 +891,45 @@ function trouverDialogueOuvert() {
 // retour : "Alfred ne montre pas assez ce qu'il fait" — avant, le clic
 // "Enregistrer" arrivait quasi tout de suite après le remplissage
 // automatique, sans laisser le temps au public de le voir vraiment.
+// Injecte une seule fois la feuille de style de l'animation — question
+// posée explicitement ("y a moyen de le faire plus pro ?") : remplacé
+// l'ancien contour qui apparaissait net (box-shadow appliqué directement en
+// JS) par un vrai fondu enchaîné géré en CSS (montée douce → halo tenu →
+// descente douce), avec un léger lavis de fond en plus du contour — plus
+// proche d'un effet "surligneur" soigné que d'un clignotement brut.
+let styleSurbrillanceInjecte = false;
+function assurerStyleSurbrillance() {
+  if (styleSurbrillanceInjecte) return;
+  styleSurbrillanceInjecte = true;
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes alfred-surbrillance-anim {
+      0%   { box-shadow: 0 0 0 0 rgba(20,176,189,0), 0 0 0 rgba(20,176,189,0); background-color: rgba(20,176,189,0); }
+      18%  { box-shadow: 0 0 0 2px rgba(20,176,189,.85), 0 3px 14px rgba(20,176,189,.35); background-color: rgba(20,176,189,.10); }
+      82%  { box-shadow: 0 0 0 2px rgba(20,176,189,.85), 0 3px 14px rgba(20,176,189,.35); background-color: rgba(20,176,189,.10); }
+      100% { box-shadow: 0 0 0 0 rgba(20,176,189,0), 0 0 0 rgba(20,176,189,0); background-color: rgba(20,176,189,0); }
+    }
+    .alfred-surbrillance {
+      animation: alfred-surbrillance-anim var(--alfred-surbrillance-duree, 1.5s) cubic-bezier(.4,0,.2,1) both;
+      border-radius: 4px;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 function surlignerBrievement(el, dureeMs = 1500) {
   if (!el) return;
-  const boxShadowOriginal = el.style.boxShadow;
-  const transitionOriginale = el.style.transition;
-  el.style.transition = 'box-shadow 0.3s ease';
-  el.style.boxShadow = '0 0 0 3px rgba(20,176,189,.6), 0 0 24px rgba(20,176,189,.5)';
-  setTimeout(() => {
-    el.style.boxShadow = boxShadowOriginal;
-    setTimeout(() => { el.style.transition = transitionOriginale; }, 300);
-  }, dureeMs);
+  assurerStyleSurbrillance();
+  el.style.setProperty('--alfred-surbrillance-duree', dureeMs + 'ms');
+  // Redémarre proprement l'animation si cet élément est déjà en train de
+  // s'allumer (rappel rapproché) — juste réappliquer la même classe ne
+  // relance pas une animation CSS déjà en cours, il faut un reflow entre
+  // les deux (retrait, lecture forcée, ajout).
+  el.classList.remove('alfred-surbrillance');
+  void el.offsetWidth;
+  el.classList.add('alfred-surbrillance');
+  clearTimeout(el._alfredSurbrillanceTimer);
+  el._alfredSurbrillanceTimer = setTimeout(() => el.classList.remove('alfred-surbrillance'), dureeMs);
 }
 
 // Version plus précise, demandée en retour : mettre en évidence les vrais
