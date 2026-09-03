@@ -200,7 +200,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // seule façon de passer parlerDepuisAction, même mécanisme que
     // PartiesNotaireV/CreationEmail_Envoyer plus bas.
     { acte: 2, label: 'Ouvrir', segments: [
-      { texte: "Voici d'abord le tableau de bord : tous les dossiers en cours, les collaborateurs, les statuts.", action: 'CreationOuvrir_Dossiers', parlerDepuisAction: true, surbrillance: [
+      { texte: "Voici d'abord le tableau de bord : tous les dossiers en cours... les collaborateurs... les statuts.", action: 'CreationOuvrir_Dossiers', parlerDepuisAction: true, surbrillance: [
         { mots: ['dossiers'], cible: 'colDossiers' },
         { mots: ['collaborateurs'], cible: 'colCollaborateur' },
         { mots: ['statuts'], cible: 'colStatut' },
@@ -267,8 +267,8 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // personne physique : Alain Caprasse." retirés le 31/08 : c'était du
     // FARIËL collé en tête de la réplique d'Alfred (même souci que
     // PartiesNotaireV) — l'officiel n'a plus que la vraie ligne d'Alfred.
-    { acte: 2, label: 'PartiesVendeur', texte: "Je récupère : dénomination, siège, forme juridique, représentants. Rattaché au dossier.", action: 'CreationParties_Vendeur' },
-    { acte: 2, label: 'PartiesAcquereur', texte: "Je récupère : nom, adresse, date de naissance, nationalité, état civil, régime matrimonial. Tout remonte, prêt pour la rédaction du compromis.", action: 'CreationParties_Acquereur' },
+    { acte: 2, label: 'PartiesVendeur', texte: "Je récupère : dénomination... siège... forme juridique... représentants. Rattaché au dossier.", action: 'CreationParties_Vendeur' },
+    { acte: 2, label: 'PartiesAcquereur', texte: "Je récupère : nom... adresse... date de naissance... nationalité... état civil... régime matrimonial. Tout remonte, prêt pour la rédaction du compromis.", action: 'CreationParties_Acquereur' },
     // Ajoutée le 31/08 (échange manquant, trouvé en recomparant à v3_9) :
     // FARIËL "Le régime matrimonial aussi ?" / ALFRED "Aussi." — vrai tour
     // de parole de Fariël juste avant, réplique séparée exprès. Pas
@@ -312,7 +312,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // comparaison (DOUTE explicitement signalé, maintenant tranché).
     // DÉCOMPOSÉ le 03/09 (2e passe) — même raison que Ouvrir ci-dessus.
     { acte: 2, label: 'Bien', texte: "Pour le bien, vous sélectionnez le bon, et je récupère automatiquement la matrice cadastrale.", action: 'CreationBien_Rechercher' },
-    { acte: 2, label: 'BienOK', texte: "Matrice cadastrale récupérée. Parties, notaires, cadastre — tout est déjà là.", action: 'CreationBien_Finaliser' },
+    { acte: 2, label: 'BienOK', texte: "Matrice cadastrale récupérée. Parties... notaires... cadastre — tout est déjà là.", action: 'CreationBien_Finaliser' },
     // Ajouté suite au retour de Cyril (script officiel, séquence 9 —
     // "Documents") : sans cet échange, la démo enchaînait directement sur
     // la rédaction sans jamais dire que rien n'est encore chargé côté
@@ -358,7 +358,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // un écran pas encore prêt. Avec 3 répliques séparées, c'est la
     // personne qui gère la démo qui décide quand appuyer sur → pour
     // chacune, au rythme réel de ce qui s'affiche à l'écran.
-    { acte: 2, label: 'Redaction', texte: "Un clic. Je réunis les parties, les notaires et le cadastre, et je génère le compromis de vente.", action: 'CreationRedaction' },
+    { acte: 2, label: 'Redaction', texte: "Un clic. Je réunis les parties... les notaires... et le cadastre, et je génère le compromis de vente.", action: 'CreationRedaction' },
     { acte: 2, label: 'RedactionGauche', texte: "À gauche, toutes les données collectées via les bases ou extraites des documents — tout est classé dans ma base de données.", action: 'CreationRedaction_ScrollGauche' },
     // ScrollDroite s'arrête sur le titre PEB (voir trouverTitrePEB dans
     // alfred-dom.js) et n'en repart plus tout seul — l'export Word, ajouté
@@ -387,7 +387,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // seul moyen de passer parlerDepuisAction (voir la note plus haut sur
     // PartiesNotaireV) — le texte n'est dit que lorsque l'événement "Email
     // à valider" apparaît vraiment, pas dès l'appui sur →.
-    { acte: 2, label: 'Email', texte: "J'ai préparé un projet de mail à BIMBIMMO, le vendeur, en lui demandant de m'envoyer le PEB, le contrôle électrique, l'attestation du sol. Une seule demande, jamais deux fois la même question. Vous validez l'envoi ?", action: 'CreationEmail_Ouverture' },
+    { acte: 2, label: 'Email', texte: "J'ai préparé un projet de mail à BIMBIMMO, le vendeur, en lui demandant de m'envoyer le PEB... le contrôle électrique... l'attestation du sol. Une seule demande, jamais deux fois la même question. Vous validez l'envoi ?", action: 'CreationEmail_Ouverture' },
     { acte: 2, label: 'EmailEnvoyer', segments: [
       { texte: "Voilà, je consulte le projet de mail et je l'envoie.", action: 'CreationEmail_Envoyer', parlerDepuisAction: true },
     ] },
@@ -503,7 +503,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // DÉCOMPOSÉ le 03/09 (2e passe) — voir la note FR équivalente.
     // parlerDepuisAction — voir la note FR équivalente.
     { acte: 2, label: 'Ouvrir', segments: [
-      { texte: "We beginnen bij het dashboard: hier ziet u al uw lopende dossiers, de medewerkers en de actuele statussen.", action: 'CreationOuvrir_Dossiers', parlerDepuisAction: true, surbrillance: [
+      { texte: "We beginnen bij het dashboard: hier ziet u al uw lopende dossiers... de medewerkers... en de actuele statussen.", action: 'CreationOuvrir_Dossiers', parlerDepuisAction: true, surbrillance: [
         { mots: ['dossiers'], cible: 'colDossiers' },
         { mots: ['medewerkers'], cible: 'colCollaborateur' },
         { mots: ['statussen'], cible: 'colStatut' },
@@ -533,8 +533,8 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // pour mot le v3_8 ("Ik haal op" au lieu de "Ik haal de gegevens
     // meteen op" ; "Gekoppeld aan het dossier." n'existe pas en NL, c'était
     // une trace de traduction du FR "Rattaché au dossier.").
-    { acte: 2, label: 'PartiesVendeur', texte: "Ik haal de gegevens meteen op: benaming, zetel, rechtsvorm, vertegenwoordigers...", action: 'CreationParties_Vendeur' },
-    { acte: 2, label: 'PartiesAcquereur', texte: "Ik haal het volgende op: naam, adres, geboortedatum, nationaliteit, burgerlijke staat en huwelijksvermogensstelsel. Alles staat klaar voor het opstellen van de compromis.", action: 'CreationParties_Acquereur' },
+    { acte: 2, label: 'PartiesVendeur', texte: "Ik haal de gegevens meteen op: benaming... zetel... rechtsvorm... vertegenwoordigers...", action: 'CreationParties_Vendeur' },
+    { acte: 2, label: 'PartiesAcquereur', texte: "Ik haal het volgende op: naam... adres... geboortedatum... nationaliteit... burgerlijke staat... en huwelijksvermogensstelsel. Alles staat klaar voor het opstellen van de compromis.", action: 'CreationParties_Acquereur' },
     // Ajoutée — échange officiel manquant (v3_8) : FARIËL "Het
     // huwelijksvermogensstelsel ook?" / ALFRED "Ja, zelfs het
     // huwelijksvermogensstelsel." (plus long qu'en FR "Aussi." — officiel
@@ -569,7 +569,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Alfred.
     // DÉCOMPOSÉ le 03/09 (2e passe) — voir la note FR équivalente.
     { acte: 2, label: 'Bien', texte: "U duidt simpelweg het pand aan, en ik haal meteen de kadastrale legger op.", action: 'CreationBien_Rechercher' },
-    { acte: 2, label: 'BienOK', texte: "Partijen gekoppeld, notarissen toegewezen en kadastrale legger opgevraagd. We zijn helemaal klaar.", action: 'CreationBien_Finaliser' },
+    { acte: 2, label: 'BienOK', texte: "Partijen gekoppeld... notarissen toegewezen... en kadastrale legger opgevraagd. We zijn helemaal klaar.", action: 'CreationBien_Finaliser' },
     // Corrigée le 31/08 — traduction du FR au lieu du vrai v3_8.
     { acte: 2, label: 'DocumentsReponse', texte: "Die ontbreken nog. Maar geen probleem: u kunt ze zelf uploaden, óf ik stuur meteen een verzoek naar de verkoper om ze aan te leveren." },
     // "Dossier geregistreerd." → "Dossier bewaard en opgeslagen" : c'est
@@ -593,7 +593,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // séparées au lieu d'un seul groupe enchaîné automatiquement, pour
     // laisser la main à la personne qui gère la démo entre chaque étape
     // (le temps réel de génération du compromis varie).
-    { acte: 2, label: 'Redaction', texte: "Eén muisklik. Partijen, notarissen en kadastrale gegevens. Ik breng alles samen en genereer de compromis.", action: 'CreationRedaction' },
+    { acte: 2, label: 'Redaction', texte: "Eén muisklik. Partijen... notarissen... en kadastrale gegevens. Ik breng alles samen en genereer de compromis.", action: 'CreationRedaction' },
     { acte: 2, label: 'RedactionGauche', texte: "Links op het scherm: de opgevraagde data uit de databanken.", action: 'CreationRedaction_ScrollGauche' },
     // CORRIGÉE le 03/09 : la version précédente ("Straks haalt Check_r daar
     // ook nog eens alle eventuele fouten uit.") était MA PROPRE paraphrase,
@@ -613,7 +613,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // mais en relisant v3_8 (scène 11) directement, la vraie ligne
     // commence par "Heel eenvoudig.", pas par ce lead-in.
     // DÉCOMPOSÉ le 03/09 (2e passe) — voir la note FR équivalente.
-    { acte: 2, label: 'Email', texte: "Heel eenvoudig. Ik heb een conceptmail klaargezet voor BIMBIMMO, de verkoper, met de vraag om het EPC, de elektrische keuring en het bodemattest te bezorgen. Één gerichte vraag, nooit twee keer hetzelfde. Valideert u de verzending?", action: 'CreationEmail_Ouverture' },
+    { acte: 2, label: 'Email', texte: "Heel eenvoudig. Ik heb een conceptmail klaargezet voor BIMBIMMO, de verkoper, met de vraag om het EPC... de elektrische keuring... en het bodemattest te bezorgen. Één gerichte vraag, nooit twee keer hetzelfde. Valideert u de verzending?", action: 'CreationEmail_Ouverture' },
     { acte: 2, label: 'EmailEnvoyer', segments: [
       { texte: "Daar is het, ik bekijk het e-mailontwerp en verstuur het.", action: 'CreationEmail_Envoyer', parlerDepuisAction: true },
     ] },
