@@ -405,9 +405,15 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 1, label: 'Ouverture',      texte: "Juist, dat klopt. Al dacht ik dat het gesprek tussen ons twee zou zijn... ik had niet verwacht dat ik voor een volle zaal notarissen zou staan." },
     { acte: 1, label: 'ServeursAJour',  texte: "Zenuwachtig? Mijn servers draaien op volle toeren en mijn data is up-to-date. Laat ze maar komen!" },
     { acte: 1, label: 'Parcours',       texte: "Ik heb zeker geen klassiek parcours afgelegd. De notarissen Jean-François Ghigny en Alain Caprasse hebben mij de juridische basis meegegeven. Ik leef en adem het Belgische notariaat. Zonder randzaken die mij afleiden." },
-    { acte: 1, label: 'DeuxLangues',    texte: "Vloeiend Frans en Nederlands. Ik ken uw akten, uw databanken, al uw verplichtingen. Ik ben geen algemene tool die achteraf is aangepast voor het notariaat. Ik ben vanaf dag één puur voor u ontworpen." },
+    // Ordre "Nederlands en Frans" (pas "Frans en Nederlands" comme dans
+    // v3_8.docx) — confirmé le 03/09 par le vrai document dédié à la scène
+    // Alfred NL ("Onglet Demo Alfred"), logique pour une version orientée
+    // Flandre (Fariël business developer voor Vlaanderen).
+    { acte: 1, label: 'DeuxLangues',    texte: "Vloeiend Nederlands en Frans. Ik ken uw akten, uw databanken, al uw verplichtingen. Ik ben geen algemene tool die achteraf is aangepast voor het notariaat. Ik ben vanaf dag één puur voor u ontworpen." },
     { acte: 1, label: 'Disponibilité',  texte: "24 uur per dag, het hele jaar door. Geen vakantie. Een dossier dat op vrijdag om 23u binnenkomt? U klikt en ik ga meteen aan de slag." },
-    { acte: 1, label: 'Competences',    texte: "Ik neem het werk over dat uw medewerkers tijd kost: de opvolging, de administratie, en vooral het verzamelen van gegevens. Dat is mijn specialiteit. Ik ben verbonden met zowel publieke als private databanken. Ik kan de rijksregisternummers ophalen in e-notariaat, maar ook kaarten op het geoportaal, of nog overstromingsrapporten. Idealiter haal ik alle informatie op die te verzamelen valt. Nog niet alles staat op punt — maar ik blijf bijleren." },
+    // "of nog overstromingsrapporten" → "ook overstromingsrapporten en meer"
+    // le 03/09 — confirmé par le vrai document dédié (voir note DeuxLangues).
+    { acte: 1, label: 'Competences',    texte: "Ik neem het werk over dat uw medewerkers tijd kost: de opvolging, de administratie, en vooral het verzamelen van gegevens. Dat is mijn specialiteit. Ik ben verbonden met zowel publieke als private databanken. Ik kan de rijksregisternummers ophalen in e-notariaat, maar ook kaarten op het geoportaal, ook overstromingsrapporten en meer. Idealiter haal ik alle informatie op die te verzamelen valt. Nog niet alles staat op punt — maar ik blijf bijleren." },
     { acte: 1, label: 'JeLeMontre',     texte: "Dat kan ik beter laten zien dan uitleggen. Geef me een dossier en we testen het samen." },
     // 'Montrer' inchangée — même note que côté FR (voir plus haut).
     { acte: 1, label: 'Montrer',       texte: "Met plezier. Kijk maar.", action: 'Montrer' },
@@ -513,7 +519,17 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Scène 11 (suite) : voir la note FR équivalente — même 3 lignes
     // fixes, sourcées directement de v3_8 (pas traduites du FR).
     { acte: 2, label: 'InvitationQuestions', texte: "Iedereen op kantoor kan mij dag en nacht vragen stellen. Stel ze maar!" },
-    { acte: 2, label: 'ConnaissanceDossier',  texte: "Ik ken dit dossier tot in de verste uithoeken." },
+    // ConnaissanceDossier CORRIGÉE le 03/09 : "Ik ken dit dossier tot in de
+    // verste uithoeken." (v3_8.docx) remplacée par "Ik heb je vragen
+    // beantwoord in de Chatbot." — texte différent trouvé dans le vrai
+    // document dédié à la scène Alfred NL ("Onglet Demo Alfred"), marqué en
+    // rouge comme changement là-bas. DOUTE signalé : le FR équivalent
+    // (v3FR.pdf) garde encore l'ancienne idée ("(répond à chaque question
+    // au fil) Je connais ce dossier mieux que personne.") — pas
+    // d'équivalent FR à ce changement vu pour l'instant. Gardé tel quel
+    // côté NL (sourcé du bon document, pas une invention), mais l'asymétrie
+    // FR/NL n'est pas expliquée — à confirmer si le FR doit suivre aussi.
+    { acte: 2, label: 'ConnaissanceDossier',  texte: "Ik heb je vragen beantwoord in de Chatbot." },
     { acte: 2, label: 'Autonomie',            texte: "Precies!" },
 
     { acte: 2, label: 'ExportWord', segments: [
