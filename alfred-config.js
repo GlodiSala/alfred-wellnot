@@ -342,16 +342,19 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { texte: "Envoyé. Le vendeur a répondu — les documents sont chargés.", action: 'CreationReponseVendeur', parlerDepuisAction: true },
     ] },
     { acte: 2, label: 'ProjetComplet', texte: "Réceptionnés, analysés, classés. Et regardez le compromis : les données des pièces se sont placées dans les bonnes clauses. Le projet est complet. Je prépare, vous décidez." },
-    // Étape supplémentaire hors script papier (demandée en test live) :
-    // montrer l'export Word du compromis. Placée en toute fin d'acte 2,
-    // pas juste après le scroll sur PEB (essayé d'abord, mais montré trop
-    // vite) — l'écran reste sur le compromis, scrollé sur PEB, pendant
-    // Email/ReponseVendeur juste avant, donc rien ne bouge entre-temps.
-    // Retour explicite : la clause PEB n'est vraiment remplie qu'une fois
-    // les pièces du vendeur intégrées (Email/ReponseVendeur juste avant) —
-    // c'est ICI, à la toute fin de l'acte 2, qu'on montre qu'elle a bien
-    // été rajoutée, pas pendant la 1re rédaction (voir ScrollDroite plus
-    // haut, revenu au défilement générique).
+    // ClausePEB REPOSITIONNÉE le 03/09 : le document officiel a une vraie
+    // didascalie à CET endroit précis, juste après "Ontvangen, geanalyseerd
+    // en verwerkt... Ik bereid alles voor en u beslist." (= ProjetComplet) :
+    // "⇒ Montrer ici la clause EPC" — repérée en rouge par l'utilisatrice.
+    // Avant, ce scroll vivait à la toute fin de l'acte 2 (raisonnement :
+    // la clause PEB n'est vraiment remplie qu'une fois les pièces
+    // intégrées, donc après Email/ReponseVendeur) — ce raisonnement reste
+    // valable ici (ProjetComplet vient bien après l'intégration des
+    // pièces), mais la vraie place officielle, plus précise, est
+    // directement ici plutôt qu'après tout le Q&A live qui suit.
+    { acte: 2, label: 'ClausePEB', segments: [
+      { texte: "Le certificat PEB a bien été intégré au compromis.", action: 'CreationRedaction_ScrollPEB' },
+    ] },
     // Scène 11 (suite) : 3 répliques FIXES d'Alfred trouvées dans
     // l'officiel autour du Q&A live, absentes jusqu'ici — ajoutées le
     // 03/09 suite à une revérification. Entre 'InvitationQuestions' et
@@ -373,8 +376,10 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // (démontré en Acte 1, réplique Communication), pas dans ce
     // bookmarklet. Rien à scripter ici.
 
+    // ScrollPEB retiré d'ici — déplacé juste après ProjetComplet (voir
+    // réplique ClausePEB plus haut). Ne reste ici que l'export Word,
+    // toujours hors script officiel, disclosed.
     { acte: 2, label: 'ExportWord', segments: [
-      { texte: "Le certificat PEB a bien été intégré au compromis.", action: 'CreationRedaction_ScrollPEB' },
       { texte: "Le compromis peut aussi s'exporter directement en Word.", action: 'CreationRedaction_ExporterWord' },
     ] },
 
@@ -528,6 +533,12 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { texte: "Verstuurd. En kijk eens aan: de verkoper heeft al geantwoord, de documenten zijn binnen.", action: 'CreationReponseVendeur', parlerDepuisAction: true },
     ] },
     { acte: 2, label: 'ProjetComplet', texte: "Ontvangen, geanalyseerd en verwerkt. En kijk naar de verkoopovereenkomst: de gegevens uit de stukken zijn in de juiste clausules verwerkt. Het ontwerp is klaar. Ik bereid alles voor en u beslist." },
+    // ClausePEB — voir la note FR équivalente : repositionnée le 03/09,
+    // didascalie officielle "⇒ Montrer ici la clause EPC" trouvée en rouge
+    // exactement à cet endroit du document.
+    { acte: 2, label: 'ClausePEB', segments: [
+      { texte: "Het PEB-certificaat is goed geïntegreerd in de verkoopbelofte.", action: 'CreationRedaction_ScrollPEB' },
+    ] },
     // Scène 11 (suite) : voir la note FR équivalente — même 3 lignes
     // fixes, sourcées directement de v3_8 (pas traduites du FR).
     { acte: 2, label: 'InvitationQuestions', texte: "Iedereen op kantoor kan mij dag en nacht vragen stellen. Stel ze maar!" },
@@ -545,7 +556,6 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'Autonomie',            texte: "Precies!" },
 
     { acte: 2, label: 'ExportWord', segments: [
-      { texte: "Het PEB-certificaat is goed geïntegreerd in de verkoopbelofte.", action: 'CreationRedaction_ScrollPEB' },
       { texte: "Ik kan de verkoopbelofte ook rechtstreeks exporteren naar Word.", action: 'CreationRedaction_ExporterWord' },
     ] },
 
