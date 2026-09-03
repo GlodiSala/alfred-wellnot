@@ -661,42 +661,86 @@ function ouvrirPanneauVoix() {
   // Ni Gemini-TTS ni Cloud TTS (Google) n'ont de voix nl-BE, seulement
   // nl-NL (accent différent, confirmé par une vraie erreur API) —
   // ElevenLabs a de vraies voix flamandes dans sa bibliothèque
-  // (elevenlabs.io/voice-library, chercher "Flemish"). Collée ici, sans
-  // repasser par le code : dès qu'un Voice ID est renseigné, obtenirAudio()
-  // (alfred-voice.js) l'utilise en PREMIER pour le NL, avant même Gemini.
-  panel.appendChild(champLabel('Voix ElevenLabs — néerlandais BELGE (optionnel)'));
-  const inputElevenLabsNL = document.createElement('input');
-  inputElevenLabsNL.type = 'text';
-  inputElevenLabsNL.placeholder = 'Voice ID ElevenLabs (ex. depuis elevenlabs.io/voice-library)';
-  inputElevenLabsNL.value = (typeof voixElevenLabsNL === 'function') ? voixElevenLabsNL() : '';
-  inputElevenLabsNL.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:12px;font-family:monospace;margin-bottom:8px;';
-  inputElevenLabsNL.oninput = () => localStorage.setItem(ALFRED_ELEVENLABS_VOIX_NL_KEY, inputElevenLabsNL.value.trim());
-  panel.appendChild(inputElevenLabsNL);
+  // (elevenlabs.io/voice-library, chercher "Flemish"). 5 emplacements pour
+  // comparer plusieurs candidats "comme avant" (menu Gemini) : on ne peut
+  // pas pré-remplir avec de vraies voix (bibliothèque ElevenLabs pas
+  // consultable depuis ici), donc on colle soi-même les Voice ID trouvés en
+  // écoutant sur elevenlabs.io (gratuit, pas besoin de compte payant pour
+  // ça), on teste chacun, et on coche celui qu'on garde. Dès qu'un
+  // emplacement est coché, obtenirAudio() (alfred-voice.js) l'utilise en
+  // PREMIER pour le NL, avant même Gemini.
+  panel.appendChild(champLabel('Voix ElevenLabs — néerlandais BELGE (optionnel, jusqu\'à 5 candidats)'));
 
-  const zoneTestElevenLabs = document.createElement('div');
-  zoneTestElevenLabs.style.cssText = 'display:flex;gap:6px;margin-bottom:14px;';
-  const btnTesterElevenLabsNL = document.createElement('button');
-  btnTesterElevenLabsNL.textContent = '▶ Tester (ElevenLabs, NL)';
-  btnTesterElevenLabsNL.style.cssText = 'flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:12px;cursor:pointer;';
-  btnTesterElevenLabsNL.onclick = async () => {
-    const voiceId = inputElevenLabsNL.value.trim();
-    if (!voiceId) { alert('Colle d\'abord un Voice ID ElevenLabs (depuis elevenlabs.io/voice-library).'); return; }
-    const original = btnTesterElevenLabsNL.textContent;
-    btnTesterElevenLabsNL.disabled = true;
-    btnTesterElevenLabsNL.textContent = '… génération';
-    try {
-      const audio = await genererAudioElevenLabs("Goeiedag, ik ben Alfred. Dit is een voorbeeld van mijn stem.", voiceId);
-      await audio.play();
-    } catch (e) {
-      console.warn('[Alfred Voice] Test de voix ElevenLabs échoué:', e);
-      alert('Cette voix n\'a pas pu être générée — vérifie le Voice ID, ou que ELEVENLABS_API_KEY est bien configurée côté serveur (Vercel). Regarde la console pour le détail.');
-    } finally {
-      btnTesterElevenLabsNL.disabled = false;
-      btnTesterElevenLabsNL.textContent = original;
+  const candidatsElevenLabs = chargerCandidatsElevenLabsNL();
+  const voixActiveActuelle = (typeof voixElevenLabsNL === 'function') ? voixElevenLabsNL() : '';
+  const zoneCandidats = document.createElement('div');
+  zoneCandidats.style.cssText = 'display:flex;flex-direction:column;gap:6px;margin-bottom:14px;';
+
+  candidatsElevenLabs.forEach((candidat, i) => {
+    const ligne = document.createElement('div');
+    ligne.style.cssText = 'display:flex;gap:6px;align-items:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:6px;';
+
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.name = 'alfred-elevenlabs-actif';
+    radio.title = 'Utiliser cette voix pour le NL';
+    radio.checked = !!candidat.voiceId && candidat.voiceId === voixActiveActuelle;
+    radio.style.cssText = 'flex:none;cursor:pointer;';
+
+    const inputLabel = document.createElement('input');
+    inputLabel.type = 'text';
+    inputLabel.placeholder = 'Nom (ex. Sven)';
+    inputLabel.value = candidat.label || '';
+    inputLabel.style.cssText = 'width:70px;flex:none;box-sizing:border-box;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:11px;';
+
+    const inputId = document.createElement('input');
+    inputId.type = 'text';
+    inputId.placeholder = `Voice ID #${i + 1} (elevenlabs.io/voice-library)`;
+    inputId.value = candidat.voiceId || '';
+    inputId.style.cssText = 'flex:1;min-width:0;box-sizing:border-box;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:11px;font-family:monospace;';
+
+    function sauverLigne() {
+      candidatsElevenLabs[i] = { label: inputLabel.value.trim(), voiceId: inputId.value.trim() };
+      enregistrerCandidatsElevenLabsNL(candidatsElevenLabs);
+      // Si la ligne cochée n'a plus d'ID (effacé), on désactive l'ElevenLabs actif.
+      if (radio.checked) localStorage.setItem(ALFRED_ELEVENLABS_VOIX_NL_KEY, inputId.value.trim());
     }
-  };
-  zoneTestElevenLabs.appendChild(btnTesterElevenLabsNL);
-  panel.appendChild(zoneTestElevenLabs);
+    inputLabel.oninput = sauverLigne;
+    inputId.oninput = sauverLigne;
+
+    radio.onchange = () => {
+      if (radio.checked) localStorage.setItem(ALFRED_ELEVENLABS_VOIX_NL_KEY, inputId.value.trim());
+    };
+
+    const btnTester = document.createElement('button');
+    btnTester.textContent = '▶';
+    btnTester.title = 'Tester cette voix';
+    btnTester.style.cssText = 'flex:none;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:12px;cursor:pointer;';
+    btnTester.onclick = async () => {
+      const voiceId = inputId.value.trim();
+      if (!voiceId) { alert('Colle d\'abord un Voice ID ElevenLabs (depuis elevenlabs.io/voice-library).'); return; }
+      const original = btnTester.textContent;
+      btnTester.disabled = true;
+      btnTester.textContent = '…';
+      try {
+        const audio = await genererAudioElevenLabs("Goeiedag, ik ben Alfred. Dit is een voorbeeld van mijn stem.", voiceId);
+        await audio.play();
+      } catch (e) {
+        console.warn('[Alfred Voice] Test de voix ElevenLabs échoué:', e);
+        alert('Cette voix n\'a pas pu être générée — vérifie le Voice ID, ou que ELEVENLABS_API_KEY est bien configurée côté serveur (Vercel). Regarde la console pour le détail.');
+      } finally {
+        btnTester.disabled = false;
+        btnTester.textContent = original;
+      }
+    };
+
+    ligne.appendChild(radio);
+    ligne.appendChild(inputLabel);
+    ligne.appendChild(inputId);
+    ligne.appendChild(btnTester);
+    zoneCandidats.appendChild(ligne);
+  });
+  panel.appendChild(zoneCandidats);
 
   const boutons = document.createElement('div');
   boutons.style.cssText = 'display:flex;gap:8px;';
@@ -895,6 +939,22 @@ function champLabel(texte) {
   l.textContent = texte;
   l.style.cssText = 'display:block;color:rgba(255,255,255,.5);font-size:9px;letter-spacing:1px;text-transform:uppercase;margin:10px 0 4px;';
   return l;
+}
+
+// ── 5 emplacements de voix candidates ElevenLabs (NL) ──────────────
+// Simple liste persistée en local (nom facultatif + Voice ID par ligne),
+// distincte de ALFRED_ELEVENLABS_VOIX_NL_KEY qui ne retient que celle
+// cochée comme active (c'est cette dernière que lit alfred-voice.js).
+const ALFRED_ELEVENLABS_CANDIDATS_KEY = 'alfred_elevenlabs_candidats_nl';
+function chargerCandidatsElevenLabsNL() {
+  let liste = [];
+  try { liste = JSON.parse(localStorage.getItem(ALFRED_ELEVENLABS_CANDIDATS_KEY) || '[]'); } catch (e) { liste = []; }
+  if (!Array.isArray(liste)) liste = [];
+  while (liste.length < 5) liste.push({ label: '', voiceId: '' });
+  return liste.slice(0, 5);
+}
+function enregistrerCandidatsElevenLabsNL(liste) {
+  localStorage.setItem(ALFRED_ELEVENLABS_CANDIDATS_KEY, JSON.stringify(liste.slice(0, 5)));
 }
 
 function ouvrirEditionRéplique(index, nouvelActe) {
