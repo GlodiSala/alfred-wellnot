@@ -32,6 +32,18 @@
 // ensuite sur fallbackSpeak() — la voix robotique native du navigateur,
 // nettement moins bonne, sans que ce soit visible autrement qu'en
 // console. Remonté en test live ("le micro d'Alfred" sonne mal/différent).
+// Voix ElevenLabs pour le néerlandais BELGE (nl-BE/flamand) — recherche
+// confirmée : ni Gemini-TTS ni Chirp3 HD (Google, voir VOIX_CONFIG.nl plus
+// bas) n'ont de voix nl-BE, seulement nl-NL (Pays-Bas, accent différent).
+// ElevenLabs, lui, a de vraies voix flamandes nommées dans sa bibliothèque
+// vocale (ex. "Jann", "Jan Schevenels", "Petra Vlaams" — à écouter et
+// choisir sur elevenlabs.io/voice-library). À REMPLIR une fois la voix
+// choisie et son Voice ID copié depuis ElevenLabs — laissé vide tant que ce
+// n'est pas fait : voir son utilisation dans obtenirAudio() ci-dessous,
+// qui n'essaie ElevenLabs QUE si cette valeur est renseignée, sinon
+// continue de se rabattre sur Gemini/Cloud TTS (nl-NL) comme avant.
+const VOIX_ELEVENLABS_NL_ID = ''; // ex. 'XXXXXXXXXXXXXXXXXXXXXXXX'
+
 const VOIX_CONFIG = {
   fr: {
     languageCode: 'fr-FR',
@@ -382,6 +394,39 @@ async function genererAudioCloud(text, voix) {
   return new Audio('data:audio/mp3;base64,' + audioContent);
 }
 
+// Équivalent ElevenLabs — même logique de cache (local puis partagé) que
+// genererAudioGemini/genererAudioCloud ci-dessus, juste un moteur différent
+// derrière (voir api/tts-elevenlabs.js). Clé de cache distincte ('el-')
+// pour ne jamais confondre avec de l'audio Google même à texte identique.
+async function genererAudioElevenLabs(text, voiceId) {
+  const cle = cleTTS({ languageCode: 'nl-BE', name: 'elevenlabs-' + voiceId }, text);
+
+  let audioContent = await lireCacheTTS(cle);
+  if (audioContent) {
+    console.log('[Alfred Voice] Audio ElevenLabs depuis le cache local (pas d\'appel API).');
+  } else {
+    const partage = await lireCachePartage(cle);
+    if (partage && partage.base64) {
+      console.log('[Alfred Voice] Audio ElevenLabs depuis le cache partagé (généré ailleurs, pas d\'appel API).');
+      audioContent = partage.base64;
+      ecrireCacheTTS(cle, audioContent);
+    } else {
+      const res = await fetch(ALFRED_CONFIG.API_TTS_ELEVENLABS, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, voiceId }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(`ElevenLabs: ${data.error}`);
+      if (!data.audioContent) throw new Error('ElevenLabs: réponse sans audioContent ni erreur — ' + JSON.stringify(data).slice(0, 200));
+      audioContent = data.audioContent;
+      ecrireCacheTTS(cle, audioContent);
+      ecrireCachePartage(cle, { base64: audioContent, format: 'mp3' });
+    }
+  }
+  return new Audio('data:audio/mp3;base64,' + audioContent);
+}
+
 // Prépare un élément <audio> prêt à jouer. Gemini TTS par défaut ; si ça
 // échoue (quota, réseau, voix indisponible...), repli automatique et
 // silencieux sur Cloud TTS avant d'abandonner — l'utilisateur n'a pas à
@@ -393,7 +438,20 @@ async function genererAudioCloud(text, voix) {
 // jamais préchargeable, où la vitesse de Cloud TTS compte plus que le
 // contrôle du ton). Les répliques scriptées, elles, restent sur Gemini
 // (préchargeables, donc la lenteur ne se voit jamais en direct).
+//
+// nl-BE (flamand) : ni Gemini-TTS ni Cloud TTS n'ont de voix belge (voir
+// VOIX_ELEVENLABS_NL_ID plus haut) — dès que cette constante est renseignée,
+// le néerlandais passe par ElevenLabs en PREMIER (avant même Gemini), pour
+// avoir le bon accent. Repli sur Gemini/Cloud TTS (nl-NL) si ElevenLabs
+// échoue (quota, réseau...) — jamais de silence total en démo live.
 async function obtenirAudio(text, langue, moteurForce) {
+  if (langue === 'nl' && VOIX_ELEVENLABS_NL_ID) {
+    try {
+      return await genererAudioElevenLabs(text, VOIX_ELEVENLABS_NL_ID);
+    } catch (e) {
+      console.warn('[Alfred Voice] ElevenLabs (nl-BE) indisponible, repli sur Gemini/Cloud TTS (nl-NL):', e);
+    }
+  }
   if (moteurForce !== 'cloud' && moteurVoixActuel() === 'gemini') {
     try {
       return await genererAudioGemini(text, voixGeminiActuelle(), tonGemini(), langue);

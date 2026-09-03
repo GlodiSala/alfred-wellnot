@@ -3,6 +3,7 @@ const ALFRED_CONFIG = {
   API_GEMINI: 'https://alfred-wellnot.vercel.app/api/gemini',
   API_TTS:    'https://alfred-wellnot.vercel.app/api/tts',
   API_TTS_CACHE: 'https://alfred-wellnot.vercel.app/api/tts-cache',
+  API_TTS_ELEVENLABS: 'https://alfred-wellnot.vercel.app/api/tts-elevenlabs',
   API_SCRIPT: 'https://alfred-wellnot.vercel.app/api/script',
   API_DEMO_DATA: 'https://alfred-wellnot.vercel.app/api/demo-data',
   API_VENDEUR_REPLY: 'https://alfred-wellnot.vercel.app/api/vendeur-reply',
