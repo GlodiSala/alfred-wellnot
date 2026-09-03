@@ -1014,10 +1014,22 @@ const SURBRILLANCE_CIBLES = {
 // budget (~7s), plutôt que de bloquer indéfiniment.
 async function attendreTableauDossiersCharge() {
   let tbody = null, dernierCompte = -1, stable = 0;
-  for (let i = 0; i < 28; i++) {
+  for (let i = 0; i < 32; i++) {
     if (annulationDemandee) return null;
     tbody = document.querySelector('tbody.p-datatable-tbody');
-    const enChargement = !!document.querySelector('.p-datatable-loading-overlay, .p-datatable-loading-icon, .p-datatable-loading, .p-datatable-mask');
+    // Vraie cause trouvée par capture d'écran en direct : ce tableau
+    // n'utilise PAS d'overlay de chargement PrimeNG (aucune des classes
+    // vérifiées jusqu'ici) — il affiche des lignes SQUELETTES (cases grises
+    // animées) dès le tout début, avec un nombre de lignes déjà stable dès
+    // le départ. La vérification précédente (compte de lignes stable)
+    // passait donc alors que ce ne sont encore que des placeholders, pas les
+    // vraies données. .p-skeleton : composant PrimeNG standard pour ce
+    // motif (déjà confirmée utilisée ici via p-datatable-tbody/
+    // p-multiselect) ; repli sur toute classe contenant "skeleton" au cas
+    // où une variante différente serait utilisée.
+    const squelettes = tbody ? tbody.querySelectorAll('.p-skeleton, [class*="skeleton" i]').length : 0;
+    const enChargement = squelettes > 0
+      || !!document.querySelector('.p-datatable-loading-overlay, .p-datatable-loading-icon, .p-datatable-loading, .p-datatable-mask');
     const compte = tbody ? tbody.querySelectorAll('tr').length : 0;
     if (!enChargement && compte > 0 && compte === dernierCompte) {
       if (++stable >= 3) break;

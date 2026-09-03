@@ -648,7 +648,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
   SLEEP_APRES: 10,
 };
 
-var currentLangue = 'fr';
+var currentLangue = 'nl';
 var currentAudio  = null;
 var talkTick      = null;
 var curState      = 'idle';
