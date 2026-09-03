@@ -1413,7 +1413,7 @@ function fermerFenetreOuverte() {
   const fermeture = candidats.find(el => {
     const txt = el.textContent.trim();
     const label = (el.getAttribute('aria-label') || '').toLowerCase();
-    return txt === '×' || txt === '✕' || txt === 'X' || label.includes('fermer') || label.includes('close');
+    return txt === '×' || txt === '✕' || txt === 'X' || label.includes('fermer') || label.includes('close') || label.includes('sluiten');
   });
   if (fermeture) { curseurVers(fermeture, () => simulerClic(fermeture)); return true; }
   console.warn('[Alfred DOM] Bouton de fermeture (×) introuvable — le panneau CADASTRE risque de rester ouvert.');
@@ -1524,10 +1524,19 @@ async function essayerAjouterBienParCadastre(bien) {
     // PrimeNG de multiselect précise, et seulement en dernier recours un
     // span/div générique.
     for (let i = 0; i < 15; i++) {
+      // Ciblage par classe PrimeNG SEULE, sans vérifier le texte — repéré
+      // en test live NL : le texte "sélectionner des biens" était codé en
+      // dur en français ici (oublié lors du passage bilingue), donc jamais
+      // retrouvé en néerlandais. Inutile en fait : à ce stade (juste après
+      // la recherche CADASTRE), ce multiselect est le seul visible sur
+      // l'écran, la classe suffit à elle seule à l'identifier, quelle que
+      // soit la langue.
       const precis = Array.from(document.querySelectorAll('.p-multiselect-label, .p-multiselect'))
-        .find(e => e.getBoundingClientRect().width > 0 && e.textContent.trim().toLowerCase().includes('sélectionner des biens'));
+        .find(e => e.getBoundingClientRect().width > 0);
       if (precis) return precis;
 
+      // Repli très improbable (si jamais ce composant n'a pas cette classe
+      // PrimeNG) — texte FR uniquement, jamais confirmé en NL.
       const candidats = Array.from(document.querySelectorAll('span, div'))
         .filter(e => e.getBoundingClientRect().width > 0 && e.textContent.trim().toLowerCase().includes('sélectionner des biens'));
       if (candidats.length) {
