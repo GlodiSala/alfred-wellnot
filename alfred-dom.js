@@ -63,15 +63,15 @@ function reinitialiserAnnulation() { annulationDemandee = false; }
 const SELECTEURS = {
   boutons: {
     ajouter:             ['Ajouter', 'Toevoegen'], // estimation
-    ajouterManuellement: ['Ajouter manuellement', 'Handmatig toevoegen'], // estimation
-    ajouterBienCadastre: ['Ajouter un bien via le CADASTRE'],
+    ajouterManuellement: ['Ajouter manuellement', 'Handmatig toevoegen'], // confirmé (capture d'écran 04/09)
+    ajouterBienCadastre: ['Ajouter un bien via le CADASTRE', 'Een goed toevoegen via het KADASTER'], // confirmé (capture d'écran 04/09)
     ajouterNotaire:      ['Ajouter un notaire', 'Notaris toevoegen'], // estimation
     creerDossier:        ['Créer un dossier', 'Nieuw dossier aanmaken'], // confirmé (capture d'écran 04/09)
     enregistrer:         ['Enregistrer', 'Opslaan'], // estimation, sourcée du script officiel NL ("Dossier bewaard en opgeslagen")
     personnePhysique:    ['Personne physique', 'Natuurlijke persoon'], // estimation, terme juridique standard
     personneMorale:      ['Personne morale', 'Rechtspersoon'], // estimation, terme juridique standard
     rechercher:          ['Rechercher', 'Zoeken'], // estimation (placeholder "Zoeken" confirmé ailleurs sur le site)
-    confirmerBien:       ['Confirmer', 'Bevestigen'], // estimation
+    confirmerBien:       ['Confirmer', 'Bevestigen'], // confirmé (capture d'écran 04/09)
     rediger:             ['Rédiger un document'],
     genererCompromis:    ['Générer le compromis'],
     suivant:             ['Suivant', 'Volgende'], // confirmé par capture d'écran (04/09)
@@ -122,6 +122,16 @@ const SELECTEURS = {
     // valider".
     propositionEmail: ["Email à valider"],
     lienDossiers: ['Dossiers'], // identique en NL, confirmé par capture d'écran (nav "DOSSIERS")
+    // Qualité de partie (menu déroulant ET badges affichés) — confirmés
+    // par capture d'écran (04/09, menu "Een persoon toevoegen" : Verkoper/
+    // Koper/Notaris/Landmeter/Vastgoedmakelaar/...). Avant, ces mots
+    // français étaient codés en dur dans les appels (ajouterPartieParRN/
+    // BCE, rattacherNotaire, cocherMesClients...) — ne matchaient plus
+    // rien une fois le site en néerlandais ('verkoper'.includes('vendeur')
+    // est faux), bug trouvé par lecture de code après une capture d'écran.
+    qualiteVendeur:   ['Vendeur', 'Verkoper'],
+    qualiteAcquereur: ['Acquéreur', 'Koper'],
+    qualiteNotaire:   ['Notaire', 'Notaris'],
     ariaParlerAlfred: ['parler avec alfred'], // aria-label (déjà en minuscules, comparé en minuscules)
   },
 };
@@ -673,8 +683,8 @@ function trouverDeclencheurProcheLabel(labelTexte) {
 // pourtant visible à l'écran.
 function optionCorrespond(li, texteOption) {
   const texte = li.textContent.trim().toLowerCase();
-  const attendu = texteOption.toLowerCase();
-  return texte === attendu || texte.includes(attendu);
+  const candidats = (Array.isArray(texteOption) ? texteOption : [texteOption]).map(t => t.toLowerCase());
+  return candidats.some(attendu => texte === attendu || texte.includes(attendu));
 }
 
 // Sélectionne une option dans le menu déroulant situé juste sous un libellé
@@ -788,7 +798,7 @@ async function taperDansChamp(id, texte, tentatives = 15, delaiParLettre) {
 // "Acquéreur" à cocher pour son notaire).
 function compterOccurrencesTexte(texte) {
   return Array.from(document.querySelectorAll('*'))
-    .filter(el => el.children.length === 0 && el.textContent.trim() === texte && el.getBoundingClientRect().width > 0)
+    .filter(el => el.children.length === 0 && texteCorrespond(el.textContent, texte) && el.getBoundingClientRect().width > 0)
     .length;
 }
 
@@ -979,8 +989,9 @@ async function cocherBadgeSousSection(titreSection, qualitePartie) {
   await attendre(300);
 
   const tr = titre.getBoundingClientRect();
+  const candidatsQualite = (Array.isArray(qualitePartie) ? qualitePartie : [qualitePartie]).map(q => q.toLowerCase());
   const badge = Array.from(document.querySelectorAll('*'))
-    .filter(el => el.children.length === 0 && el.textContent.trim().toLowerCase().includes(qualitePartie.toLowerCase()) && el.getBoundingClientRect().width > 0)
+    .filter(el => el.children.length === 0 && candidatsQualite.some(q => el.textContent.trim().toLowerCase().includes(q)) && el.getBoundingClientRect().width > 0)
     .filter(el => el.getBoundingClientRect().top >= tr.bottom - 5)
     .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top)[0];
   if (!badge) { console.warn('[Alfred DOM] Badge de partie introuvable sous', titreSection, ':', qualitePartie); return false; }
@@ -1044,7 +1055,7 @@ async function rattacherNotaire(nomNotaire, qualitePartie) {
   // comme ajouterPartieParRN/ajouterPartieParBCE. Avant, le clic sur
   // "Ajouter un notaire" échouait silencieusement (aucun match), donc
   // Maxime n'était jamais recherché ni ajouté.
-  await choisirDansDropdown(SELECTEURS.menus.qualitePartie, 'Notaire');
+  await choisirDansDropdown(SELECTEURS.menus.qualitePartie, SELECTEURS.textes.qualiteNotaire);
   await attendre(500);
   if (!await cliquerBouton(SELECTEURS.boutons.ajouter)) return false;
   await attendre(600);
@@ -1724,9 +1735,9 @@ async function seq_creationDossier_parties_vendeur() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) return;
   if (cfg.vendeur_type === 'morale' && cfg.vendeur_bce) {
-    await ajouterPartieParBCE('Vendeur', cfg.vendeur_bce);
+    await ajouterPartieParBCE(SELECTEURS.textes.qualiteVendeur, cfg.vendeur_bce);
   } else {
-    await ajouterPartieParRN('Vendeur', cfg.vendeur_rn);
+    await ajouterPartieParRN(SELECTEURS.textes.qualiteVendeur, cfg.vendeur_rn);
   }
 }
 
@@ -1737,10 +1748,10 @@ async function seq_creationDossier_parties_acquereur() {
   // (donc vers l'étape "bien") même si l'acquéreur n'avait pas vraiment
   // été enregistré, ce qui faisait échouer toute la suite en cascade
   // (remonté en test live). Un seul nouvel essai avant d'abandonner.
-  let ok = await ajouterPartieParRN('Acquéreur', cfg.acquereur_rn);
+  let ok = await ajouterPartieParRN(SELECTEURS.textes.qualiteAcquereur, cfg.acquereur_rn);
   if (!ok) {
     console.warn('[Alfred DOM] Acquéreur pas confirmé après le premier essai — nouvelle tentative.');
-    ok = await ajouterPartieParRN('Acquéreur', cfg.acquereur_rn);
+    ok = await ajouterPartieParRN(SELECTEURS.textes.qualiteAcquereur, cfg.acquereur_rn);
   }
   if (!ok) {
     console.warn('[Alfred DOM] Acquéreur toujours pas confirmé — on continue quand même vers le rattachement des notaires (l\'ajout a peut-être réussi malgré la vérification).');
@@ -1773,7 +1784,7 @@ async function seq_creationDossier_parties_notaireVendeur() {
   // Confirmé par capture live (HTML complet, état par défaut vraiment
   // vérifié) : panneau "Mes clients" sur la fiche d'Alain Caprasse
   // (notaire en charge, déjà sur le dossier) — case décochée par défaut.
-  await cocherMesClients('Vendeur');
+  await cocherMesClients(SELECTEURS.textes.qualiteVendeur);
 }
 
 async function seq_creationDossier_parties_notaireAcquereur() {
@@ -1782,7 +1793,7 @@ async function seq_creationDossier_parties_notaireAcquereur() {
   // Panneau "Représente" sur la fiche de Maxime (ajoutée par
   // rattacherNotaire) — case décochée par défaut, même distinction que
   // l'ancien code d'avant ce soir.
-  if (cfg.acquereur_notaire) await rattacherNotaire(cfg.acquereur_notaire, 'Acquéreur');
+  if (cfg.acquereur_notaire) await rattacherNotaire(cfg.acquereur_notaire, SELECTEURS.textes.qualiteAcquereur);
   await attendre(500);
   // "Suivant" reste désactivé tant que le vendeur n'a pas été ajouté avec succès.
   if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.suivant)) {
@@ -1880,14 +1891,14 @@ async function seq_creationDossier_notaires_vendeur() {
   // passer par une recherche/ajout d'un notaire externe : on coche "Mes
   // clients" sur la fiche du notaire déjà présent sur le dossier (celui
   // renseigné comme "Notaire en charge" à l'étape 1).
-  await cocherMesClients('Vendeur');
+  await cocherMesClients(SELECTEURS.textes.qualiteVendeur);
 }
 
 async function seq_creationDossier_notaires_acquereur() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) return;
   if (cfg.acquereur_notaire) {
-    await rattacherNotaire(cfg.acquereur_notaire, 'Acquéreur');
+    await rattacherNotaire(cfg.acquereur_notaire, SELECTEURS.textes.qualiteAcquereur);
   }
 }
 
