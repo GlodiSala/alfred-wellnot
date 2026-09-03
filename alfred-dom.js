@@ -949,11 +949,26 @@ async function surlignerChampsRemplis(conteneur, dureeMs = 1500) {
 // alfred-config.js ne référence que la clé symbolique (ex: "notaireEnCharge"),
 // jamais un sélecteur — même séparation texte/DOM que partout ailleurs.
 const SURBRILLANCE_CIBLES = {
-  dossierCode:   () => surlignerBrievement(document.getElementById(SELECTEURS.champs.dossierCode)),
-  langueActe:    () => surlignerBrievement(trouverDeclencheurProcheLabel(SELECTEURS.menus.langueActe)),
-  collaborateur: () => surlignerBrievement(trouverDeclencheurProcheLabel(SELECTEURS.menus.collaborateurEnCharge)),
-  notaireEnCharge: () => surlignerBrievement(trouverDeclencheurProcheLabel(SELECTEURS.menus.notaireEnCharge)),
+  dossierCode:   () => defilerPuisSurligner(document.getElementById(SELECTEURS.champs.dossierCode)),
+  langueActe:    () => defilerPuisSurligner(trouverDeclencheurProcheLabel(SELECTEURS.menus.langueActe)),
+  collaborateur: () => defilerPuisSurligner(trouverDeclencheurProcheLabel(SELECTEURS.menus.collaborateurEnCharge)),
+  notaireEnCharge: () => defilerPuisSurligner(trouverDeclencheurProcheLabel(SELECTEURS.menus.notaireEnCharge)),
 };
+
+// Défilement AUTOMATIQUE (pas une réplique à part, pas de flèche dédiée) —
+// question posée explicitement : "pour les surligneurs, faut pas faire les
+// scrolls auto ?". Différent des gros scrolls narratifs (RedactionGauche/
+// Droite, ClausePEB), qui restent volontairement des répliques séparées
+// pilotées à la flèche : ici, c'est juste un filet de sécurité — si le champ
+// visé est déjà visible (cas normal sur cet écran), defilerVersElement() ne
+// fait RIEN ; s'il est hors champ, un petit défilement doux (700ms, plus
+// rapide que le défilement narratif à 4,5s) le ramène à l'écran juste avant
+// de s'allumer, sinon le surlignage se déclencherait invisible pour le public.
+async function defilerPuisSurligner(el) {
+  if (!el) return;
+  await defilerVersElement(el, 700);
+  surlignerBrievement(el);
+}
 
 // Traduit les entrées symboliques {mots, cible} d'une réplique/segment
 // (alfred-config.js) en entrées {motsCles, action} exploitables par
