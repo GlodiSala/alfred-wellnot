@@ -1062,19 +1062,32 @@ async function lancerRedactionCompromis() {
 // ne sont PAS des <li> (comme l'ancien code le supposait, jamais vérifié),
 // mais des cartes (probablement des <div>), et il peut y avoir plusieurs
 // cartes avec chacune leur propre bouton "Consulter" en même temps (ex.
-// "Demande d'Alfred" ET "Email à valider" simultanément) — d'où le besoin
-// de remonter depuis CHAQUE bouton "Consulter" jusqu'à sa carte pour
-// vérifier laquelle correspond au bon titre, plutôt que de prendre le
-// premier bouton "Consulter" trouvé sur l'écran.
+// "Demande d'Alfred" ET "Email à valider" simultanément).
+//
+// Confirmé en test live par capture d'écran (02/09) : la version
+// précédente remontait depuis CHAQUE bouton "Consulter" (dans l'ordre du
+// DOM, donc "Demande d'Alfred" en premier puisqu'affiché au-dessus) et
+// s'arrêtait au premier ancêtre dont le texte CONTENAIT titreEvenement —
+// mais un ancêtre assez large (le conteneur du fil d'événements entier)
+// contient le texte des DEUX cartes à la fois, donc ce test devenait vrai
+// pour le bouton de "Demande d'Alfred" avant même d'avoir examiné celui
+// de "Email à valider". Résultat : le clic partait sur la mauvaise carte.
+//
+// Inversé : on part du titre (l'élément le plus SPÉCIFIQUE — donc le plus
+// court — dont le texte contient titreEvenement, pas un ancêtre large qui
+// engloberait aussi d'autres cartes), puis on descend chercher le bouton
+// "Consulter" propre à ce sous-arbre.
 function trouverConsulterPourEvenement(titreEvenement) {
-  const boutons = Array.from(document.querySelectorAll('button'))
-    .filter(b => b.textContent.trim() === SELECTEURS.boutons.consulter && b.getBoundingClientRect().width > 0);
-  for (const bouton of boutons) {
-    let ancetre = bouton.parentElement;
-    for (let i = 0; i < 8 && ancetre; i++) {
-      if (ancetre.textContent.includes(titreEvenement)) return bouton;
-      ancetre = ancetre.parentElement;
-    }
+  const candidats = Array.from(document.querySelectorAll('*'))
+    .filter(el => el.getBoundingClientRect().width > 0 && el.textContent.includes(titreEvenement));
+  if (!candidats.length) return null;
+  candidats.sort((a, b) => a.textContent.length - b.textContent.length);
+  let carte = candidats[0];
+  for (let i = 0; i < 8 && carte; i++) {
+    const bouton = Array.from(carte.querySelectorAll('button'))
+      .find(b => b.textContent.trim() === SELECTEURS.boutons.consulter && b.getBoundingClientRect().width > 0);
+    if (bouton) return bouton;
+    carte = carte.parentElement;
   }
   return null;
 }
