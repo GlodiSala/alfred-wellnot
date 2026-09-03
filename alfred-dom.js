@@ -360,13 +360,19 @@ async function ouvrirPanneauAlfred() {
 // avant tout scroll (voir seq_creationDossier_redaction_scrollPEB).
 async function fermerPanneauAlfred() {
   if (!trouverOnglet(SELECTEURS.onglets.evenements)) return true; // déjà fermé
-  const ferme = fermerFenetreOuverte();
+  // PAS de croix de fermeture (essayé via fermerFenetreOuverte, introuvable
+  // en test live) — c'est un panneau à bascule (toggle) : le même bouton
+  // logo/avatar qui l'ouvre (trouverAvatarAlfred, voir ouvrirPanneauAlfred
+  // juste au-dessus) le referme aussi. Confirmé par l'utilisatrice.
+  const avatar = trouverAvatarAlfred();
+  if (!avatar) { console.warn('[Alfred DOM] Icône Alfred (pour fermer le panneau Événements) introuvable.'); return false; }
+  await curseurVersAsync(avatar, () => simulerClic(avatar));
   await attendre(500);
   if (trouverOnglet(SELECTEURS.onglets.evenements)) {
-    console.warn('[Alfred DOM] Panneau Alfred toujours ouvert après tentative de fermeture.');
+    console.warn('[Alfred DOM] Panneau Alfred toujours ouvert après re-clic sur le logo.');
     return false;
   }
-  return ferme;
+  return true;
 }
 
 // ── Trouver un élément de navigation par texte ────────────
@@ -1156,16 +1162,6 @@ async function montrerPropositionEmail_envoyer() {
     }
   }
 
-  // Capturé AVANT le clic : sert de point de référence pour reconnaître,
-  // après l'envoi, un mail vraiment nouveau plutôt que le dernier trouvé par
-  // hasard (qui pourrait être celui d'une répétition précédente — voir
-  // attendreNouveauMailPuisRepondre dans alfred-config.js). Best-effort :
-  // null si le mot de passe n'est pas encore stocké ou si l'appel échoue,
-  // auquel cas l'attente sera simplement sautée plus loin.
-  const baselineMailId = (typeof obtenirDernierMailIdAlfred === 'function')
-    ? await obtenirDernierMailIdAlfred()
-    : null;
-
   await curseurVersAsync(consulter, () => consulter.click());
   await attendre(1200);
 
@@ -1175,26 +1171,18 @@ async function montrerPropositionEmail_envoyer() {
   }
   await attendre(1200);
 
-  // Automatise la suite : attend qu'un mail réellement nouveau soit arrivé
-  // (pas juste 1,2s fixes — la livraison Gmail n'est pas instantanée), puis
-  // répond depuis la boîte du vendeur avec les 8 pièces (voir
-  // attendreNouveauMailPuisRepondre / envoyerReponseVendeurAutomatique dans
-  // alfred-config.js et api/vendeur-reply). Un échec ici (réseau, mot de
-  // passe...) n'empêche pas la démo de continuer : il reste possible de
-  // répondre à la main comme avant, seul l'avancement vers "Documents"/
-  // Compromis reste manuel (voir commentaire de
-  // seq_creationDossier_attenteReponseVendeur — détection auto déjà tentée
-  // et abandonnée sur d'autres signaux, on garde l'avancement à la flèche).
-  if (typeof attendreNouveauMailPuisRepondre === 'function') {
-    const reponse = await attendreNouveauMailPuisRepondre(baselineMailId);
-    if (reponse.ok) {
-      console.log('[Alfred DOM] Réponse automatique du vendeur envoyée.', reponse.data);
-    } else {
-      console.warn('[Alfred DOM] Réponse automatique du vendeur non envoyée — à faire à la main si besoin.', reponse);
-    }
-  }
-
-  console.log('[Alfred DOM] Mail envoyé au vendeur et réponse automatique tentée. Vérifier "Documents"/Compromis une fois le traitement terminé côté Alfred.');
+  // Réponse automatique du vendeur (attendreNouveauMailPuisRepondre /
+  // envoyerReponseVendeurAutomatique, api/vendeur-reply) RETIRÉE le 03/09 —
+  // reste oublié d'un abandon déjà acté ailleurs (voir
+  // seq_creationDossier_attenteReponseVendeur dans ce même fichier) : le
+  // backend renvoie ERROR.EMAIL, hors de notre contrôle, confirmé par
+  // l'utilisatrice. Ce reste bloquait jusqu'à 3 min (poll d'un nouveau
+  // mail) avant de retenter l'envoi automatique cassé — symptôme remonté
+  // en test live : "on ne passe plus à l'acte 3" après l'e-mail. La
+  // réponse du vendeur se gère maintenant entièrement à la main (Cyril
+  // répond depuis sa propre boîte) — voir ReponseVendeur, joué directement
+  // à la flèche suivante, sans attendre de vraie réponse ici.
+  console.log('[Alfred DOM] Mail envoyé au vendeur. Réponse à faire à la main (voir ReponseVendeur, réplique suivante).');
   return true;
 }
 
