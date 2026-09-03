@@ -68,8 +68,8 @@ const SELECTEURS = {
     ajouterNotaire:      ['Ajouter un notaire', 'Notaris toevoegen'], // estimation
     creerDossier:        ['Créer un dossier', 'Nieuw dossier aanmaken'], // confirmé (capture d'écran 04/09)
     enregistrer:         ['Enregistrer', 'Opslaan'], // confirmé (capture d'écran 04/09, bouton fiche création dossier)
-    personnePhysique:    ['Personne physique', 'Natuurlijke persoon'], // estimation, terme juridique standard
-    personneMorale:      ['Personne morale', 'Rechtspersoon'], // estimation, terme juridique standard
+    personnePhysique:    ['Personne physique', 'Natuurlijk persoon'], // NL confirmé (capture d'écran, modale "Een persoon toevoegen") — corrigé : pas "Natuurlijke persoon" (estimation initiale fausse, sans le -e final)
+    personneMorale:      ['Personne morale', 'Rechtspersoon'], // NL confirmé (capture d'écran, modale "Een persoon toevoegen") — l'estimation initiale était la bonne
     rechercher:          ['Rechercher', 'Zoeken'], // estimation (placeholder "Zoeken" confirmé ailleurs sur le site)
     confirmerBien:       ['Confirmer', 'Bevestigen'], // confirmé (capture d'écran 04/09)
     rediger:             ['Rédiger un document', 'Document aanmaken'], // NL confirmé (capture d'écran, onglet fiche dossier "+ Document aanmaken") — c'est le déclencheur qui ouvre le sous-menu avec l'option "Compromis" (déjà confirmée identique en NL), donc ça correspond bien au même bouton que "Rédiger un document" en FR, pas à "Générer le compromis"
