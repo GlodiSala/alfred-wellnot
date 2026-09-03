@@ -580,6 +580,21 @@ function trouverParPlaceholder(candidats) {
     .find(i => texteCorrespond(i.placeholder, candidats) && i.getBoundingClientRect().width > 0);
 }
 
+// Repli structurel, sans deviner de texte : si aucun placeholder connu ne
+// matche (ex. texte NL jamais capturé pour "Rechercher dans votre liste de
+// notaires"/CADASTRE), on prend le seul champ texte visible dans la modale
+// actuellement ouverte — ça marche quelle que soit la langue puisqu'on ne
+// dépend d'aucun texte, juste du fait qu'une modale de recherche n'a
+// normalement qu'un seul champ. Ne renvoie rien si 0 ou plusieurs champs
+// (cas ambigu, mieux vaut échouer proprement que taper au mauvais endroit).
+function trouverSeulChampTexteDialogueOuvert() {
+  const dialogue = trouverDialogueOuvert();
+  if (!dialogue) return null;
+  const champs = Array.from(dialogue.querySelectorAll('input'))
+    .filter(i => (!i.type || i.type === 'text' || i.type === 'search') && i.getBoundingClientRect().width > 0);
+  return champs.length === 1 ? champs[0] : null;
+}
+
 // Cherche un bouton visible dont le texte correspond exactement.
 function trouverBoutonParTexte(texte) {
   return Array.from(document.querySelectorAll('button'))
@@ -1098,7 +1113,7 @@ async function rattacherNotaire(nomNotaire, qualitePartie) {
   await attendre(600);
   let input = null;
   for (let i = 0; i < 15; i++) {
-    input = trouverParPlaceholder(SELECTEURS.placeholders.rechercheNotaire);
+    input = trouverParPlaceholder(SELECTEURS.placeholders.rechercheNotaire) || trouverSeulChampTexteDialogueOuvert();
     if (input) break;
     await attendre(300);
   }
@@ -1427,7 +1442,8 @@ async function essayerAjouterBienParCadastre(bien) {
   let input = null;
   for (let i = 0; i < 10; i++) {
     input = document.getElementById(SELECTEURS.champs.communeCadastre)
-      || trouverParPlaceholder(SELECTEURS.placeholders.rechercheCommune);
+      || trouverParPlaceholder(SELECTEURS.placeholders.rechercheCommune)
+      || trouverSeulChampTexteDialogueOuvert();
     if (input) break;
     await attendre(400);
   }
