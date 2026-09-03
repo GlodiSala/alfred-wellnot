@@ -67,7 +67,7 @@ const SELECTEURS = {
     ajouterBienCadastre: ['Ajouter un bien via le CADASTRE', 'Een goed toevoegen via het KADASTER'], // confirmé (capture d'écran 04/09)
     ajouterNotaire:      ['Ajouter un notaire', 'Notaris toevoegen'], // estimation
     creerDossier:        ['Créer un dossier', 'Nieuw dossier aanmaken'], // confirmé (capture d'écran 04/09)
-    enregistrer:         ['Enregistrer', 'Opslaan'], // estimation, sourcée du script officiel NL ("Dossier bewaard en opgeslagen")
+    enregistrer:         ['Enregistrer', 'Opslaan'], // confirmé (capture d'écran 04/09, bouton fiche création dossier)
     personnePhysique:    ['Personne physique', 'Natuurlijke persoon'], // estimation, terme juridique standard
     personneMorale:      ['Personne morale', 'Rechtspersoon'], // estimation, terme juridique standard
     rechercher:          ['Rechercher', 'Zoeken'], // estimation (placeholder "Zoeken" confirmé ailleurs sur le site)
@@ -75,8 +75,8 @@ const SELECTEURS = {
     rediger:             ['Rédiger un document'],
     genererCompromis:    ['Générer le compromis'],
     suivant:             ['Suivant', 'Volgende'], // confirmé par capture d'écran (04/09)
-    validerEtEnvoyer:    ['Valider et envoyer'],
-    consulter:           ['Consulter'],
+    validerEtEnvoyer:    ['Valider et envoyer', 'Valideren en versturen'], // confirmé (capture d'écran 04/09, panneau Alfred)
+    consulter:           ['Consulter', 'Raadplegen'], // confirmé (capture d'écran 04/09, panneau Alfred)
   },
   champs: {
     dossierCode:         'folder-code',
@@ -109,9 +109,9 @@ const SELECTEURS = {
     langueActe:                 ['Taal'],
   },
   onglets: {
-    evenements:   ['Événements', 'Gebeurtenissen'], // estimation
-    conversation: ['Conversation', 'Gesprek'], // estimation
-    parties:      ['Parties', 'Partijen'], // estimation fiable, terme du script officiel NL
+    evenements:   ['Événements', 'Gebeurtenissen'], // confirmé (capture d'écran 04/09, panneau Alfred)
+    conversation: ['Conversation', 'Gesprek'], // confirmé (capture d'écran 04/09, panneau Alfred)
+    parties:      ['Parties', 'Partijen'], // confirmé (capture d'écran 04/09, onglet dossier)
   },
   textes: {
     represente: ['REPRÉSENTE'],
