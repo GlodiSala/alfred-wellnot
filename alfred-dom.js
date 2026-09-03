@@ -58,7 +58,7 @@ const SELECTEURS = {
     ajouterManuellement: ['Ajouter manuellement'],
     ajouterBienCadastre: ['Ajouter un bien via le CADASTRE'],
     ajouterNotaire:      ['Ajouter un notaire'],
-    creerDossier:        ['Créer un dossier'],
+    creerDossier:        ['Créer un dossier', 'Nieuw dossier aanmaken'], // NL confirmé par capture d'écran (04/09)
     enregistrer:         ['Enregistrer'],
     personnePhysique:    ['Personne physique'],
     personneMorale:      ['Personne morale'],
