@@ -57,15 +57,15 @@ const ALFRED_CONFIG = {
     // seq_creationDossier_ouvrir_champs dans alfred-dom.js — un code fixe
     // ici aurait fait retomber sur un dossier déjà créé lors d'un test
     // précédent (l'appli refuse un numéro en double).
-    collaborateur:              'Cyril Cabuy', // "Collaborateur en charge du dossier"
     // Jean-François Ghigny n'existe pas dans la liste "Collaborateur
     // administratif" (confirmé en test live — c'est un notaire, pas un
     // collaborateur dans l'appli) ; Cyril Cabuy, lui, y figure bien.
-    // Collaborateur administratif : Fariël RABAH (demandé explicitement,
-    // 03/09) — à vérifier en live que ce nom existe bien dans le dropdown
-    // "Collaborateur administratif" de l'appli, même contrainte que pour
-    // JF Ghigny ci-dessus.
-    collaborateur_administratif: 'Fariël RABAH', // "Collaborateur administratif"
+    // Inversion demandée le 03/09 (2e passe) : Fariël RABAH (orthographe
+    // confirmée par l'utilisatrice depuis la vraie liste de l'appli) passe
+    // "Collaborateur en charge du dossier", Cyril Cabuy passe "Collaborateur
+    // administratif".
+    collaborateur:              'Fariël RABAH', // "Collaborateur en charge du dossier"
+    collaborateur_administratif: 'Cyril Cabuy', // "Collaborateur administratif"
     notaire:                    'Alain Caprasse', // "Notaire en charge du dossier" — voir note ci-dessus
     vendeur_type:      'morale',            // 'physique' (RN) ou 'morale' (BCE)
     vendeur_rn:        '84.06.28-314.70',    // utilisé si vendeur_type === 'physique'
