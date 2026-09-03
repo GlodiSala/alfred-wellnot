@@ -641,12 +641,29 @@ function programmerSurbrillanceMots(texteComplet, audio, entrees, timersRef) {
   audio.addEventListener('playing', () => {
     setTimeout(() => {
       const duree = dureeSecondes !== null ? dureeSecondes : total * 0.4;
-      const msParMot = (duree * 1000) / total;
+      const dureeMs = duree * 1000;
+      // Facteur de compression (7%) — remonté en test live à plusieurs
+      // reprises : le DERNIER repère d'une phrase (souvent le plus
+      // important, ex. "statuts"/"statussen") arrivait systématiquement
+      // en retard, parfois même après la fin réelle mesurée de l'audio —
+      // l'estimation à débit constant ne compense pas le fait qu'une
+      // énumération finale ("X, Y et Z") est en général dite d'un trait,
+      // légèrement plus vite que la moyenne du reste de la phrase. Une
+      // légère anticipation généralisée réduit ce décalage sans fausser
+      // sensiblement les tout premiers mots.
+      const msParMot = (dureeMs / total) * 0.93;
+      // Filet de sécurité : ne JAMAIS programmer un repère après la fin
+      // réelle de l'audio (moins une marge) — sur une phrase où le dernier
+      // mot-repère tombe très près de la fin, un tout petit écart
+      // d'estimation suffisait à le faire dépasser la durée réelle, donc à
+      // ne jamais se déclencher (repéré : "statut" ne s'allumait jamais).
+      const plafondMs = Math.max(0, dureeMs - 250);
       for (const entree of entrees) {
         const cles = (entree.motsCles || []).map((m) => m.toLowerCase());
         const idx = motsNettoyes.findIndex((m) => cles.some((c) => m === c || m.startsWith(c)));
         if (idx === -1 || typeof entree.action !== 'function') continue;
-        const id = setTimeout(entree.action, idx * msParMot);
+        const delai = Math.min(idx * msParMot, plafondMs);
+        const id = setTimeout(entree.action, delai);
         if (timersRef) timersRef.ids.push(id);
       }
     }, DELAI_AUDIO_PERCEPTIBLE_MS);
