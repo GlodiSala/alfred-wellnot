@@ -98,7 +98,7 @@ const SELECTEURS = {
     rechercheNotaire: ['Rechercher dans votre liste de notaires'],
   },
   menus: {
-    qualitePartie:              ['Sélectionnez une qualité', 'Selecteer ...'], // NL confirmé (capture d'écran, menu "Een persoon toevoegen")
+    qualitePartie:              ['Sélectionnez une qualité', 'Selecteer een h'], // NL confirmé — préfixe volontairement tronqué : la capture d'écran montrait "Selecteer een h..." coupé par ellipsis CSS (boîte trop étroite), donc "..." n'est PAS le vrai texte du DOM. Matché en startsWith (voir choisirDansDropdown) plutôt qu'en deviner la fin ("hoedanigheid" probable mais non confirmé caractère par caractère).
     // NL confirmés par capture d'écran (04/09, fiche "Nieuw dossier
     // aanmaken") — libellés plus courts qu'en FR, normal, pas une erreur.
     collaborateurEnCharge:      ['Collaborateur en charge du dossier', 'Verantwoordelijke medewerker'],
@@ -745,8 +745,13 @@ async function choisirDansDropdownParLabelProche(labelTexte, texteOption, dejaRe
 // (pas une balise div/button) et attrape un conteneur bien trop large qui
 // ne réagit pas au clic (même bug que pour les menus collaborateur).
 async function choisirDansDropdown(texteDeclencheur, texteOption) {
+  // startsWith plutôt qu'égalité stricte : le texte affiché peut être
+  // tronqué par ellipsis CSS dans une boîte étroite (ex. "Selecteer een
+  // h..." en NL) — le "..." visible n'est pas forcément dans le vrai
+  // textContent, donc une égalité stricte contre un candidat qui l'inclut
+  // rate le match (même bug que "Taal", voir trouverDeclencheurProcheLabel).
   const declencheur = Array.from(document.querySelectorAll('span'))
-    .find(s => texteCorrespond(s.textContent, texteDeclencheur) && s.getBoundingClientRect().width > 0);
+    .find(s => texteCommencePar(s.textContent, texteDeclencheur) && s.getBoundingClientRect().width > 0);
   if (!declencheur) { console.warn('[Alfred DOM] Menu déroulant introuvable:', texteDeclencheur); return false; }
   await curseurVersAsync(declencheur, () => simulerClic(declencheur));
   await attendre(400); // laisse le menu visible un instant, plus lisible en démo live (raccourci, 800 → 400)
