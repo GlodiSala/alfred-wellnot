@@ -422,18 +422,31 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // c'est ICI, à la toute fin de l'acte 2, qu'on montre qu'elle a bien
     // été rajoutée, pas pendant la 1re rédaction (voir ScrollDroite plus
     // haut, revenu au défilement générique).
+    // Scène 11 (suite) : 3 répliques FIXES d'Alfred trouvées dans
+    // l'officiel autour du Q&A live, absentes jusqu'ici — ajoutées le
+    // 03/09 suite à une revérification. Entre 'InvitationQuestions' et
+    // 'ConnaissanceDossier', Fariël pose en vrai ses 3 questions (zone
+    // inondable / régime matrimonial de l'acquéreur / surface cadastrale)
+    // dans le vrai chatbot de l'appli — voir note ci-dessous, ce trou
+    // reste volontairement non scripté, la flèche suivante enchaîne
+    // simplement sur la réplique d'après une fois le Q&A terminé en live.
+    { acte: 2, label: 'InvitationQuestions', texte: "N'importe qui dans l'étude peut me la poser, à toute heure. Allez-y." },
+    { acte: 2, label: 'ConnaissanceDossier',  texte: "Je connais ce dossier mieux que personne." },
+    { acte: 2, label: 'Autonomie',            texte: "Exactement." },
+
+    // Pas de réplique pour le Q&A live lui-même (3 questions de Fariël :
+    // zone inondable / régime matrimonial de l'acquéreur / surface
+    // cadastrale, entre InvitationQuestions et ConnaissanceDossier
+    // ci-dessus). Choix délibéré, pas un oubli : la didascalie du script
+    // dit "répond à chaque question au fil" — pas de texte figé — et
+    // Fariël pose ces questions dans le vrai chatbot intégré de l'appli
+    // (démontré en Acte 1, réplique Communication), pas dans ce
+    // bookmarklet. Rien à scripter ici.
+
     { acte: 2, label: 'ExportWord', segments: [
       { texte: "Le certificat PEB a bien été intégré au compromis.", action: 'CreationRedaction_ScrollPEB' },
       { texte: "Le compromis peut aussi s'exporter directement en Word.", action: 'CreationRedaction_ExporterWord' },
     ] },
-
-    // Pas de réplique pour la suite de la scène 11 ("Chat, collecte &
-    // expertise" — 3 questions live de Fariël : zone inondable / régime
-    // matrimonial de l'acquéreur / surface cadastrale). Choix délibéré,
-    // pas un oubli : la didascalie du script dit "répond à chaque question
-    // au fil" — pas de texte figé — et Fariël pose ces questions dans le
-    // vrai chatbot intégré de l'appli (démontré en Acte 1, réplique
-    // Communication), pas dans ce bookmarklet. Rien à scripter ici.
 
     // ACTE 3
     // "certifié [par Privanot]" corrigé en "évalué dans le cadre de
@@ -559,6 +572,12 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'ReponseVendeur', segments: [
       { texte: "Verstuurd. En kijk eens aan: de verkoper heeft al geantwoord, de documenten zijn binnen. Ontvangen, geanalyseerd en verwerkt. En kijk naar de verkoopovereenkomst: de gegevens uit de stukken zijn in de juiste clausules verwerkt. Het ontwerp is klaar. Ik bereid alles voor en u beslist.", action: 'CreationReponseVendeur', parlerDepuisAction: true },
     ] },
+    // Scène 11 (suite) : voir la note FR équivalente — même 3 lignes
+    // fixes, sourcées directement de v3_8 (pas traduites du FR).
+    { acte: 2, label: 'InvitationQuestions', texte: "Iedereen op kantoor kan mij dag en nacht vragen stellen. Stel ze maar!" },
+    { acte: 2, label: 'ConnaissanceDossier',  texte: "Ik ken dit dossier tot in de verste uithoeken." },
+    { acte: 2, label: 'Autonomie',            texte: "Precies!" },
+
     { acte: 2, label: 'ExportWord', segments: [
       { texte: "Het PEB-certificaat is goed geïntegreerd in de verkoopbelofte.", action: 'CreationRedaction_ScrollPEB' },
       { texte: "Ik kan de verkoopbelofte ook rechtstreeks exporteren naar Word.", action: 'CreationRedaction_ExporterWord' },
