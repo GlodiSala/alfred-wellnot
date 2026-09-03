@@ -52,21 +52,29 @@ function reinitialiserAnnulation() { annulationDemandee = false; }
 // NL PAS ENCORE REMPLI (04/09, démo demandée en néerlandais) — voir
 // capture-selecteurs-nl.js dans le scratchpad pour le script de capture à
 // faire tourner sur le site en néerlandais, écran par écran.
+// Deux catégories de NL dans les tableaux ci-dessous :
+//  - "confirmé" : vu littéralement sur une capture d'écran du site réel ou
+//    dans le script officiel v3_8.docx — fiable.
+//  - "estimation" : vocabulaire standard/juridique sans ambiguïté probable,
+//    PAS vérifié en direct — risque assumé sciemment (contrairement à
+//    "Proposition d'e-mail", jamais deviné pour un libellé propre au
+//    produit). À confirmer dès que possible, mais mieux qu'une case vide
+//    en attendant.
 const SELECTEURS = {
   boutons: {
-    ajouter:             ['Ajouter'],
-    ajouterManuellement: ['Ajouter manuellement'],
+    ajouter:             ['Ajouter', 'Toevoegen'], // estimation
+    ajouterManuellement: ['Ajouter manuellement', 'Handmatig toevoegen'], // estimation
     ajouterBienCadastre: ['Ajouter un bien via le CADASTRE'],
-    ajouterNotaire:      ['Ajouter un notaire'],
-    creerDossier:        ['Créer un dossier', 'Nieuw dossier aanmaken'], // NL confirmé par capture d'écran (04/09)
-    enregistrer:         ['Enregistrer'],
-    personnePhysique:    ['Personne physique'],
-    personneMorale:      ['Personne morale'],
-    rechercher:          ['Rechercher'],
-    confirmerBien:       ['Confirmer'],
+    ajouterNotaire:      ['Ajouter un notaire', 'Notaris toevoegen'], // estimation
+    creerDossier:        ['Créer un dossier', 'Nieuw dossier aanmaken'], // confirmé (capture d'écran 04/09)
+    enregistrer:         ['Enregistrer', 'Opslaan'], // estimation, sourcée du script officiel NL ("Dossier bewaard en opgeslagen")
+    personnePhysique:    ['Personne physique', 'Natuurlijke persoon'], // estimation, terme juridique standard
+    personneMorale:      ['Personne morale', 'Rechtspersoon'], // estimation, terme juridique standard
+    rechercher:          ['Rechercher', 'Zoeken'], // estimation (placeholder "Zoeken" confirmé ailleurs sur le site)
+    confirmerBien:       ['Confirmer', 'Bevestigen'], // estimation
     rediger:             ['Rédiger un document'],
     genererCompromis:    ['Générer le compromis'],
-    suivant:             ['Suivant'],
+    suivant:             ['Suivant', 'Volgende'], // estimation très fiable (mot standard de navigation)
     validerEtEnvoyer:    ['Valider et envoyer'],
     consulter:           ['Consulter'],
   },
@@ -96,19 +104,19 @@ const SELECTEURS = {
     notaireEnCharge:            ['Notaire en charge du dossier'],
   },
   onglets: {
-    evenements:   ['Événements'],
-    conversation: ['Conversation'],
-    parties:      ['Parties'],
+    evenements:   ['Événements', 'Gebeurtenissen'], // estimation
+    conversation: ['Conversation', 'Gesprek'], // estimation
+    parties:      ['Parties', 'Partijen'], // estimation fiable, terme du script officiel NL
   },
   textes: {
     represente: ['REPRÉSENTE'],
-    mesClients: ['Mes clients'],
-    optionCompromis: ['Compromis'],
+    mesClients: ['Mes clients', 'Mijn cliënten'], // estimation ("cliënten" confirmé par capture d'écran, nav "CLIËNTEN")
+    optionCompromis: ['Compromis'], // "Compromis" reste identique en NL, confirmé par capture d'écran (badge dossier)
     // "Proposition d'e-mail" ne correspondait à rien dans le vrai DOM —
     // confirmé par capture d'écran, le vrai titre de la carte est "Email à
     // valider".
     propositionEmail: ["Email à valider"],
-    lienDossiers: ['Dossiers'],
+    lienDossiers: ['Dossiers'], // identique en NL, confirmé par capture d'écran (nav "DOSSIERS")
     ariaParlerAlfred: ['parler avec alfred'], // aria-label (déjà en minuscules, comparé en minuscules)
   },
 };
