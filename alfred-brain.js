@@ -46,6 +46,34 @@ function naturaliserTexte(text) {
     .trim();
 }
 
+// ── Contexte dossier démo ─────────────────────────────────
+// Injecte les vraies données FIXES du dossier de démo (vendeur, acquéreur,
+// bien, notaire, collaborateur) — tout, SAUF le numéro de dossier, qui lui
+// est généré en direct à chaque lancement (voir SYSTEM_PROMPT, section
+// "DONNÉES DU DOSSIER"). Lu depuis ALFRED_CONFIG.DOSSIER_CREATION_DEMO à
+// chaque question (pas une copie figée) : reste juste même si les données
+// sont modifiées via le panneau "Données du dossier démo" en cours de
+// route. Corrige un vrai bug remonté en test live : le SYSTEM_PROMPT
+// citait auparavant un ancien dossier fixe ("R426 — Lynn DENEYER", jamais
+// mis à jour depuis la réécriture du script), qu'Alfred ressortait tel
+// quel aux questions libres au lieu de parler du dossier réellement en
+// cours (BIMBIMMO/Caprasse).
+function getContexteDossierDemo() {
+  const d = typeof ALFRED_CONFIG !== 'undefined' ? ALFRED_CONFIG.DOSSIER_CREATION_DEMO : null;
+  if (!d) return '';
+  const vendeur = d.vendeur_type === 'morale'
+    ? `société BIMBIMMO (BCE ${d.vendeur_bce})`
+    : `personne physique (RN ${d.vendeur_rn})`;
+  const bien = d.bien
+    ? `${d.bien.type}, ${d.bien.rue} ${d.bien.numero}, ${d.bien.commune}`
+    : 'non renseigné';
+  return '\n\nDOSSIER DÉMO (fixe, connu à l\'avance — PAS le numéro, voir ÉCRAN VISIBLE) :'
+    + `\nVendeur : ${vendeur}`
+    + `\nAcquéreur : personne physique (RN ${d.acquereur_rn}), notaire ${d.acquereur_notaire}`
+    + `\nNotaire en charge : ${d.notaire} — Collaborateur : ${d.collaborateur}`
+    + `\nBien : ${bien}`;
+}
+
 // ── Contexte écran ────────────────────────────────────────
 function getContexteEcran() {
   const main = document.querySelector('main, .main-content, app-root, [class*="content"]');
@@ -117,6 +145,7 @@ async function askAlfred(text, retries = 2) {
 
   const fullPrompt = langInstruction
     + ALFRED_CONFIG.SYSTEM_PROMPT
+    + getContexteDossierDemo()
     + getContexteEcran()
     + '\n\nQuestion : ' + text;
 
