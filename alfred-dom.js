@@ -93,6 +93,28 @@ const SELECTEURS = {
     bienNumero:          'asset-street-number',
     bienCommune:         'asset-municipality',
   },
+  // Libellés des champs dans la fenêtre "Ajouter une partie" (Vendeur/
+  // Acquéreur) — utilisés par surlignerChampParLabelDialogue pour cibler le
+  // bon champ par son TEXTE plutôt que par sa POSITION (voir historique :
+  // "le Nième champ rempli" ne correspond pas à l'ordre énuméré à l'oral,
+  // remonté en test live — "il remonte bizarrement"). NL confirmés par
+  // capture d'écran en direct (03/09, fiches Alain Caprasse/BIMBIMMO) ; FR
+  // NON CONFIRMÉS (termes standards attendus, jamais vus sur une vraie
+  // capture FR) — à vérifier en live, corriger si besoin.
+  labelsPartie: {
+    nom:               ['Nom', 'Achternaam'], // sert aussi pour "représentants" (Vendeur) : même libellé, section "Relaties"/"Mes relations" différente
+    adresseSiege:      ['Rue', 'Straat'], // "siège" (personne morale) et "adresse" (personne physique) sont tous deux ce champ — même section Contact/Contactgegevens
+    dateNaissance:     ['Date de naissance', 'Geboortedatum'],
+    nationalite:       ['Nationalité', 'Nationaliteit'],
+    etatCivil:         ['État civil', 'Burgerlijke staat'],
+    regimeMatrimonial: ['Régime matrimonial', 'Huwelijksvermogensstelsel'],
+    denomination:      ['Dénomination', 'Benaming'],
+    // Pas d'entrée pour "forme juridique" : le seul libellé NL repéré sur
+    // la capture ("Type *") est trop générique/risqué pour un matching
+    // fiable sans confirmation en direct ("Type persoon" apparaît aussi
+    // ailleurs dans la même fenêtre) — laissé sans cible de surlignage
+    // plutôt que de deviner un sélecteur qui viserait le mauvais champ.
+  },
   placeholders: {
     rechercheCommune: ['Rechercher une commune par son nom ou son code postal'],
     rechercheNotaire: ['Rechercher dans votre liste de notaires', 'Zoeken in uw notarissenlijst'], // NL confirmé (capture d'écran, modale "Een notaris toevoegen")
@@ -1017,28 +1039,64 @@ async function surlignerChampsRemplis(conteneur, dureeMs = 1500) {
   }
 }
 
+// Cherche un champ (input/textarea/select, ou déclencheur de dropdown
+// PrimeNG) associé à un libellé donné, à l'INTÉRIEUR d'un conteneur précis
+// (ex: la fenêtre "Ajouter une partie" actuellement ouverte) — même logique
+// de proximité géométrique que trouverDeclencheurProcheLabel, mais scopée à
+// un conteneur (jamais un champ de la page derrière la fenêtre) et couvrant
+// aussi les champs texte classiques, pas seulement les menus déroulants.
+function trouverChampProcheLabelDans(conteneur, labelTexte) {
+  if (!conteneur) return null;
+  const label = Array.from(conteneur.querySelectorAll('*'))
+    .find(el => el.children.length === 0 && texteCommencePar(el.textContent, labelTexte) && el.getBoundingClientRect().width > 0);
+  if (!label) return null;
+  const lr = label.getBoundingClientRect();
+  const candidats = [
+    ...conteneur.querySelectorAll('input, textarea, select'),
+    ...conteneur.querySelectorAll('[role="combobox"]'),
+  ].filter(el => el.getBoundingClientRect().width > 0);
+  let meilleur = null, meilleureDistance = Infinity;
+  for (const c of candidats) {
+    const r = c.getBoundingClientRect();
+    if (r.top < lr.bottom - 5) continue; // le champ est censé être sous (ou juste à côté de) son libellé
+    const distance = (r.top - lr.bottom) + Math.abs(r.left - lr.left);
+    if (distance < meilleureDistance) { meilleureDistance = distance; meilleur = c; }
+  }
+  return meilleur;
+}
+
 // Version VRAIMENT synchronisée au mot (contrairement à surlignerChampsRemplis
 // ci-dessus, qui balaie tous les champs sur un budget fixe indépendant de ce
 // qu'Alfred dit) — demandé explicitement : "il faut hilight bien les champs
-// qu'on parle quand c'est dit". Utilisée pour les fiches Vendeur/Acquéreur
-// (voir champDialogue1..6 dans SURBRILLANCE_CIBLES plus bas), dont les champs
-// sont dans une fenêtre PrimeNG ouverte dynamiquement (pas d'ID stable connu
-// à l'avance) — on retrouve donc "le Nième champ rempli, dans l'ordre visuel
-// haut → bas" de la fenêtre actuellement ouverte, même tri que
-// surlignerChampsRemplis, au moment où le mot correspondant est prononcé.
-// defilerPuisSurligner (pas surlignerBrievement directement) : couvre aussi
-// "il faut scroller doucement si le champ est en bas" (défilement doux avant
-// le halo si le champ ciblé est hors écran, no-op sinon).
-function surlignerChampDialogueOuvert(index) {
-  const dialogue = typeof trouverDialogueOuvert === 'function' ? trouverDialogueOuvert() : null;
-  if (!dialogue) return;
-  const champs = Array.from(dialogue.querySelectorAll('input, textarea, select'))
-    .filter(el => el.value && el.value.trim() && el.getBoundingClientRect().width > 0)
-    .sort((a, b) => {
-      const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
-      return Math.abs(ra.top - rb.top) > 5 ? ra.top - rb.top : ra.left - rb.left;
-    });
-  defilerPuisSurligner(champs[index]); // no-op silencieux si l'index dépasse (champ pas encore rempli/visible)
+// qu'on parle quand c'est dit". Utilisée pour les fiches Vendeur/Acquéreur.
+// HISTORIQUE : une 1re version ciblait "le Nième champ rempli, dans l'ordre
+// visuel haut → bas" (position pure) — remonté en test live comme faux : une
+// vraie capture du formulaire a montré que l'ordre RÉEL des champs ("nom,
+// date de naissance, nationalité, adresse, état civil...") ne correspond pas
+// à l'ordre ÉNUMÉRÉ à l'oral ("nom, adresse, date de naissance,
+// nationalité..."), donc viser "le 2e champ rempli" pour "adresse" visait en
+// fait un autre champ, encore vide ou déjà dépassé — d'où l'impression que
+// "ça remonte" (le surlignage sautait en arrière dans le formulaire). Ciblage
+// par LIBELLÉ (voir SELECTEURS.labelsPartie) à la place — fiable quel que
+// soit l'ordre réel des champs dans le DOM. ATTEND en plus que le champ ait
+// vraiment une valeur (pas juste qu'il existe) avant de l'allumer — la
+// parole démarre maintenant dès le lancement de la recherche BCE/RN (voir
+// ajouterPartieParRN/BCE), donc certains mots peuvent être prononcés avant
+// que LEUR champ précis soit rempli ; on attend plutôt que de risquer un
+// flash sur du vide. defilerPuisSurligner (pas surlignerBrievement
+// directement) : couvre aussi "il faut scroller doucement si le champ est
+// en bas".
+async function surlignerChampParLabelDialogue(labelTexte, tentatives = 30, delai = 250) {
+  for (let i = 0; i < tentatives; i++) {
+    if (annulationDemandee) return;
+    const dialogue = trouverDialogueOuvert();
+    const champ = dialogue ? trouverChampProcheLabelDans(dialogue, labelTexte) : null;
+    if (champ && champ.value && champ.value.trim()) {
+      defilerPuisSurligner(champ);
+      return;
+    }
+    await attendre(delai);
+  }
 }
 
 // Déclenche la parole d'un segment 'parlerDepuisAction' une fois les champs
@@ -1100,19 +1158,21 @@ const SURBRILLANCE_CIBLES = {
   creerDossierClic: () => cliquerBouton(SELECTEURS.boutons.creerDossier),
   // Fiches Vendeur/Acquéreur (fenêtre "Ajouter une partie") — demandé
   // explicitement : surligner le bon champ pile quand Alfred le nomme, avec
-  // défilement doux si besoin (voir surlignerChampDialogueOuvert). Champs
-  // GÉNÉRIQUES par POSITION (1er, 2e... champ rempli, haut → bas dans la
-  // fenêtre actuellement ouverte), pas par nom : la même fenêtre sert au
-  // Vendeur (4 champs : dénomination/siège/forme juridique/représentants) et
-  // à l'Acquéreur (6 champs : nom/adresse/naissance/nationalité/état
-  // civil/régime matrimonial) — un seul jeu de cibles réutilisé pour les
-  // deux, l'ordre visuel du formulaire suit l'ordre énuméré à l'oral.
-  champDialogue1: () => surlignerChampDialogueOuvert(0),
-  champDialogue2: () => surlignerChampDialogueOuvert(1),
-  champDialogue3: () => surlignerChampDialogueOuvert(2),
-  champDialogue4: () => surlignerChampDialogueOuvert(3),
-  champDialogue5: () => surlignerChampDialogueOuvert(4),
-  champDialogue6: () => surlignerChampDialogueOuvert(5),
+  // défilement doux si besoin. Ciblage par LIBELLÉ (voir
+  // SELECTEURS.labelsPartie et surlignerChampParLabelDialogue) — pas par
+  // position, remonté en test live comme peu fiable (voir l'historique dans
+  // surlignerChampParLabelDialogue). champPartieNom sert aussi pour
+  // "représentants" côté Vendeur (même libellé "Nom"/"Achternaam", fenêtre
+  // différente). Pas de cible pour "forme juridique" (voir
+  // SELECTEURS.labelsPartie, libellé NL trop générique/non confirmé).
+  champPartieNom:               () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.nom),
+  champPartieAdresseSiege:      () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.adresseSiege),
+  champPartieDateNaissance:     () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.dateNaissance),
+  champPartieNationalite:       () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.nationalite),
+  champPartieEtatCivil:         () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.etatCivil),
+  champPartieRegimeMatrimonial: () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.regimeMatrimonial),
+  champPartieDenomination:      () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.denomination),
+  champPartieRepresentants:     () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.nom),
 };
 
 // Met en évidence une colonne entière (en-tête + toutes les cellules
@@ -1274,15 +1334,15 @@ async function attendreFermetureDialogue(dialogue, tentatives = 30, delai = 500)
   return false;
 }
 
-// options.quandChampsRemplis(dialogue) : appelé UNE FOIS le formulaire
-// vraiment rempli, à la place du balayage générique surlignerChampsRemplis —
-// utilisé par seq_creationDossier_parties_vendeur/acquereur pour déclencher
-// la parole ('parlerDepuisAction') pile à ce moment-là et surligner chaque
-// champ en vraie synchro avec le mot prononcé (voir parlerSegmentDepuisAction
-// et champDialogue1..6 dans SURBRILLANCE_CIBLES) — demandé explicitement :
-// "il a pas le temps de cliquer que les champs s'affichent quand il parle".
-// Repli sur l'ancien balayage générique si non fourni (aucun appelant ne
-// perd son comportement).
+// options.pendantRecherche() : appelé dès le clic sur "Rechercher" (pas
+// après), à la place du balayage générique surlignerChampsRemplis — utilisé
+// par seq_creationDossier_parties_vendeur/acquereur pour déclencher la
+// parole ('parlerDepuisAction') dès le lancement de la recherche BCE/RN et
+// surligner chaque champ par son libellé réel (voir parlerSegmentDepuisAction
+// et surlignerChampParLabelDialogue) une fois qu'il a VRAIMENT une valeur —
+// demandé explicitement : "le plus simple c'est de cliquer d'abord, et
+// parler au moment où on commence à encoder". Repli sur l'ancien balayage
+// générique si non fourni (aucun appelant ne perd son comportement).
 async function ajouterPartieParRN(qualite, rn, options = {}) {
   // Compté AVANT tout changement : le menu QUALITÉ choisi juste après
   // (choisirDansDropdown) affiche déjà ce même texte à l'écran — sans
@@ -1297,22 +1357,29 @@ async function ajouterPartieParRN(qualite, rn, options = {}) {
   await attendre(700);
   await taperDansChamp(SELECTEURS.champs.rechercheRN, rn);
   await cliquerBouton(SELECTEURS.boutons.rechercher);
+  // Parole déclenchée ICI, PENDANT l'attente réseau ci-dessous (pas après) —
+  // demandé explicitement : "le plus simple c'est de cliquer d'abord, et
+  // parler au moment où on commence à encoder". Chaque surlignage de champ
+  // (voir surlignerChampParLabelDialogue) attend lui-même que SON champ ait
+  // une vraie valeur avant de s'allumer, donc pas de risque de flash sur un
+  // champ encore vide même si la parole est en avance sur le remplissage.
+  const parole = (typeof options.pendantRecherche === 'function') ? options.pendantRecherche() : null;
   await attendre(3200); // laisse largement le temps à la recherche e-notariat de remplir le formulaire (attente réseau réelle, pas juste cosmétique — non raccourcie)
   // Plus gros délai fixe non-annulable de toute la séquence (3,2s) — vérifié
   // ici pour ne pas continuer sur "Enregistrer" après une annulation.
-  if (annulationDemandee) return false;
+  if (annulationDemandee) { if (parole) await parole; return false; }
   // Signal fiable plutôt qu'un délai deviné (demandé par l'utilisatrice,
   // le délai fixe précédent était trop variable) : on capture la fenêtre
   // "Ajouter une partie" avant de cliquer "Enregistrer", puis on attend
   // qu'elle se referme vraiment (jusqu'à 15s) — c'est ce que fait l'appli
   // elle-même une fois l'enregistrement terminé côté serveur.
   const dialogue = trouverDialogueOuvert();
-  // Halo sur les champs remplis + vraie pause avant "Enregistrer" —
-  // retour : "Alfred ne montre pas assez ce qu'il fait, ça va trop vite".
-  // Avant, le clic partait quasi tout de suite après le remplissage
-  // automatique du formulaire.
-  if (typeof options.quandChampsRemplis === 'function') {
-    await options.quandChampsRemplis(dialogue);
+  // Attend la fin de la parole/des surlignages avant "Enregistrer" — sinon
+  // la fenêtre se refermerait pendant qu'Alfred énumère encore les champs.
+  // Repli sur l'ancien balayage générique si aucune parole n'est fournie
+  // (aucun appelant actuel ne perd son comportement).
+  if (parole) {
+    await parole;
   } else {
     await surlignerChampsRemplis(dialogue, 2400);
   }
@@ -1341,16 +1408,17 @@ async function ajouterPartieParBCE(qualite, bce, options = {}) {
   await attendre(700);
   await taperDansChamp(SELECTEURS.champs.rechercheBCE, bce);
   await cliquerBouton(SELECTEURS.boutons.rechercher);
+  // Parole + attente/fermeture — voir la note équivalente dans
+  // ajouterPartieParRN juste au-dessus (même options.pendantRecherche, même
+  // raison).
+  const parole = (typeof options.pendantRecherche === 'function') ? options.pendantRecherche() : null;
   await attendre(3200); // laisse largement le temps à la recherche BCE de remplir le formulaire (attente réseau réelle, pas juste cosmétique — non raccourcie)
   // Plus gros délai fixe non-annulable de toute la séquence (3,2s) — vérifié
   // ici pour ne pas continuer sur "Enregistrer" après une annulation.
-  if (annulationDemandee) return false;
+  if (annulationDemandee) { if (parole) await parole; return false; }
   const dialogue = trouverDialogueOuvert();
-  // Halo sur les champs remplis + vraie pause avant "Enregistrer" — voir
-  // la note équivalente dans ajouterPartieParRN juste au-dessus (même
-  // options.quandChampsRemplis, même raison).
-  if (typeof options.quandChampsRemplis === 'function') {
-    await options.quandChampsRemplis(dialogue);
+  if (parole) {
+    await parole;
   } else {
     await surlignerChampsRemplis(dialogue, 2400);
   }
@@ -2227,51 +2295,58 @@ async function seq_creationDossier_ouvrir() {
   await seq_creationDossier_ouvrir_suivant();
 }
 
-// Étape 2 — Parties : vendeur (morale via BCE, ou physique via RN) puis
-// acquéreur (physique via RN).
+// Étape 2 — Parties : acquéreur (physique via RN) puis vendeur (morale via
+// BCE, ou physique via RN) — ordre inversé (03/09, 4e passe), demandé
+// explicitement (voir la note sur l'ordre des répliques dans
+// alfred-config.js, label 'PartiesAcquereur').
 // Découpée en deux sous-étapes (comme CreationOuvrir) pour un calage sur
-// deux segments : "vendeur" pendant qu'on parle du vendeur, "acquéreur"
-// pendant qu'on parle de l'acquéreur.
-// parlerDepuisAction (voir PartiesVendeur dans alfred-config.js) : la parole
-// ne part plus dès l'appui sur → — demandé explicitement ("il a pas le
-// temps de cliquer que les champs s'affichent quand il parle"), même
-// principe que seq_creationDossier_ouvrir_dossiers. quandChampsRemplis
-// n'est appelé qu'une fois le formulaire vraiment rempli (voir
-// ajouterPartieParRN/BCE) — c'est SEULEMENT à ce moment qu'Alfred parle.
+// deux segments : "acquéreur" pendant qu'on parle de l'acquéreur, "vendeur"
+// pendant qu'on parle du vendeur.
+// parlerDepuisAction (voir PartiesVendeur/PartiesAcquereur dans
+// alfred-config.js) : la parole ne part plus dès l'appui sur → — demandé
+// explicitement ("il a pas le temps de cliquer que les champs s'affichent
+// quand il parle"), même principe que seq_creationDossier_ouvrir_dossiers.
+// pendantRecherche (voir ajouterPartieParBCE/RN) : appelé dès le lancement
+// de la recherche BCE/RN, pas une fois le formulaire rempli — demandé
+// explicitement : "le plus simple c'est de cliquer d'abord, et parler au
+// moment où on commence à encoder". Chaque champ ne s'allume que lorsqu'il
+// a VRAIMENT une valeur (voir surlignerChampParLabelDialogue), donc pas de
+// risque de flash sur du vide même si la parole est en avance sur le
+// remplissage réel.
 async function seq_creationDossier_parties_vendeur() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) return;
-  const quandChampsRemplis = () => parlerSegmentDepuisAction('PartiesVendeur', 'CreationParties_Vendeur');
+  const pendantRecherche = () => parlerSegmentDepuisAction('PartiesVendeur', 'CreationParties_Vendeur');
   if (cfg.vendeur_type === 'morale' && cfg.vendeur_bce) {
-    await ajouterPartieParBCE(SELECTEURS.textes.qualiteVendeur, cfg.vendeur_bce, { quandChampsRemplis });
+    await ajouterPartieParBCE(SELECTEURS.textes.qualiteVendeur, cfg.vendeur_bce, { pendantRecherche });
   } else {
-    await ajouterPartieParRN(SELECTEURS.textes.qualiteVendeur, cfg.vendeur_rn, { quandChampsRemplis });
+    await ajouterPartieParRN(SELECTEURS.textes.qualiteVendeur, cfg.vendeur_rn, { pendantRecherche });
   }
 }
 
-// parlerDepuisAction — voir la note équivalente dans
+// pendantRecherche — voir la note équivalente dans
 // seq_creationDossier_parties_vendeur juste au-dessus. dejaParle : garde-fou
 // pour le nouvel essai ci-dessous (retour "acquéreur pas confirmé") — sans
-// lui, un 2e essai reparlerait la réplique en double ; sur ce 2e essai, les
-// champs sont quand même mis en évidence (balayage générique en repli), sans
-// reparler par-dessus.
+// lui, un 2e essai reparlerait la réplique en double ; sur ce 2e essai, rien
+// n'est reparlé (les champs restent visibles à l'écran normalement, sans
+// narration ni surlignage superflu).
 async function seq_creationDossier_parties_acquereur() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) return;
   let dejaParle = false;
-  const quandChampsRemplis = async (dialogue) => {
-    if (dejaParle) { await surlignerChampsRemplis(dialogue, 2400); return; }
+  const pendantRecherche = () => {
+    if (dejaParle) return Promise.resolve();
     dejaParle = true;
-    await parlerSegmentDepuisAction('PartiesAcquereur', 'CreationParties_Acquereur');
+    return parlerSegmentDepuisAction('PartiesAcquereur', 'CreationParties_Acquereur');
   };
   // Le résultat n'était pas vérifié ici avant — on avançait vers "Suivant"
   // (donc vers l'étape "bien") même si l'acquéreur n'avait pas vraiment
   // été enregistré, ce qui faisait échouer toute la suite en cascade
   // (remonté en test live). Un seul nouvel essai avant d'abandonner.
-  let ok = await ajouterPartieParRN(SELECTEURS.textes.qualiteAcquereur, cfg.acquereur_rn, { quandChampsRemplis });
+  let ok = await ajouterPartieParRN(SELECTEURS.textes.qualiteAcquereur, cfg.acquereur_rn, { pendantRecherche });
   if (!ok) {
     console.warn('[Alfred DOM] Acquéreur pas confirmé après le premier essai — nouvelle tentative.');
-    ok = await ajouterPartieParRN(SELECTEURS.textes.qualiteAcquereur, cfg.acquereur_rn, { quandChampsRemplis });
+    ok = await ajouterPartieParRN(SELECTEURS.textes.qualiteAcquereur, cfg.acquereur_rn, { pendantRecherche });
   }
   if (!ok) {
     console.warn('[Alfred DOM] Acquéreur toujours pas confirmé — on continue quand même vers le rattachement des notaires (l\'ajout a peut-être réussi malgré la vérification).');
