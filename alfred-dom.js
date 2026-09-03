@@ -2169,7 +2169,7 @@ async function seq_creationDossier_ouvrir_champs() {
   // l'est, comme le dit Fariël dans le script officiel NL ("Taal:
   // Nederlands").
   if (typeof currentLangue !== 'undefined' && currentLangue === 'nl') {
-    await choisirDansDropdownParLabelProche(SELECTEURS.menus.langueActe, 'Nederlands', undefined, true);
+    await choisirDansDropdownParLabelProche(SELECTEURS.menus.langueActe, 'Nederlands');
     await attendre(300);
   }
   // Pauses encore raccourcies (500ms → 300ms, et 800ms → 400ms côté
@@ -2178,27 +2178,24 @@ async function seq_creationDossier_ouvrir_champs() {
   // réelle entre durée de la réplique et durée de cette étape est apparue
   // beaucoup plus tardive que prévu — remonté en test live (la parole était
   // términée depuis un moment, la sélection tournait encore).
-  await choisirDansDropdownParLabelProche(SELECTEURS.menus.collaborateurEnCharge, cfg.collaborateur, undefined, true);
+  // REVENU au concurrent (03/09, 4e passe) — voir la note dans
+  // alfred-config.js (label 'OuvrirChamps') : un bref passage par
+  // parlerDepuisAction (3e passe) a été annulé pour cette réplique
+  // précise — jugé plus naturel de laisser Alfred parler PENDANT que ces
+  // champs se remplissent en direct (contrairement aux fiches Vendeur/
+  // Acquéreur, pré-remplies d'un coup par une recherche externe). Chaque
+  // choisirDansDropdownParLabelProche ci-dessous garde donc son halo
+  // causal normal (silencieux non passé = false par défaut).
+  await choisirDansDropdownParLabelProche(SELECTEURS.menus.collaborateurEnCharge, cfg.collaborateur);
   await attendre(300);
   if (cfg.collaborateur_administratif) {
-    await choisirDansDropdownParLabelProche(SELECTEURS.menus.collaborateurAdministratif, cfg.collaborateur_administratif, undefined, true);
+    await choisirDansDropdownParLabelProche(SELECTEURS.menus.collaborateurAdministratif, cfg.collaborateur_administratif);
     await attendre(300);
   }
   if (cfg.notaire) {
-    await choisirDansDropdownParLabelProche(SELECTEURS.menus.notaireEnCharge, cfg.notaire, undefined, true);
+    await choisirDansDropdownParLabelProche(SELECTEURS.menus.notaireEnCharge, cfg.notaire);
     await attendre(300);
   }
-  // parlerDepuisAction (03/09, 3e passe) — demandé explicitement : "les
-  // sélectionneurs sont en retard systématiquement par rapport à la
-  // phrase". Avant, la parole partait dès l'appui sur → (concurremment à
-  // tout ce remplissage, qui prend plusieurs secondes avec les vraies
-  // recherches/sélections ci-dessus) — les champs n'étaient jamais encore
-  // à l'écran quand Alfred commençait à les nommer. Même principe que
-  // 'Ouvrir'/PartiesVendeur/PartiesAcquereur : tout est rempli EN SILENCE
-  // (silencieux=true ci-dessus, pas de halo prématuré) d'abord, puis Alfred
-  // parle — chaque champ se re-surligne alors en vraie synchro au mot (voir
-  // SURBRILLANCE_CIBLES: dossierCode/langueActe/collaborateur/notaireEnCharge).
-  await parlerSegmentDepuisAction('OuvrirChamps', 'CreationOuvrir_Champs');
   // Le clic "Suivant" vivait ici avant — sorti dans sa propre fonction/
   // réplique (seq_creationDossier_ouvrir_suivant, juste en dessous) : retour
   // Cyril, "chaque action doit avoir sa propre flèche" — sans ça, l'écran
