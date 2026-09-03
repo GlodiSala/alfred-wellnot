@@ -1001,20 +1001,26 @@ const SURBRILLANCE_CIBLES = {
 // tableau n'est pas encore affiché (ex: mot prononcé avant la fin du
 // chargement de la page) — simple no-op silencieux, comme surlignerBrievement.
 async function surlignerColonneDossiers(indexColonne) {
-  // Attend le tableau, avec un vrai budget — remonté en test live : "il le
-  // dit avant que le tableau apparaisse la 1re fois". Le mot déclencheur
-  // (estimé sur la durée de la parole) peut tomber avant que la toute
-  // première navigation vers cet écran ait fini de charger — cette attente
-  // absorbe ce décalage au lieu d'abandonner tout de suite.
-  let tbody = null;
-  for (let i = 0; i < 20; i++) {
+  // Attend que le tableau soit vraiment STABLE (même nombre de lignes sur
+  // deux vérifications de suite), pas juste "au moins une ligne" — remonté
+  // en test live : le surlignage se déclenchait pendant que le tableau
+  // finissait encore de charger ses données (une 1re ligne apparaît avant
+  // les autres). Repli sur le dernier état trouvé si ça ne se stabilise
+  // jamais dans le budget (~5s), plutôt que de bloquer indéfiniment.
+  let tbody = null, dernierCompte = -1, stable = 0;
+  for (let i = 0; i < 25; i++) {
     if (annulationDemandee) return;
     tbody = document.querySelector('tbody.p-datatable-tbody');
-    if (tbody && tbody.querySelector('tr')) break;
-    tbody = null;
+    const compte = tbody ? tbody.querySelectorAll('tr').length : 0;
+    if (compte > 0 && compte === dernierCompte) {
+      if (++stable >= 2) break;
+    } else {
+      stable = 0;
+    }
+    dernierCompte = compte;
     await attendre(200);
   }
-  if (!tbody) return;
+  if (!tbody || !tbody.querySelector('tr')) return;
   const table = tbody.closest('table') || tbody.closest('[role="table"]');
   if (!table) return;
   const enTetes = table.querySelectorAll('thead th');
@@ -1023,24 +1029,48 @@ async function surlignerColonneDossiers(indexColonne) {
   // semblait pas être la bonne. Cette ligne dit exactement quel en-tête
   // est visé à cet index, pour confirmer/corriger avec de vraies preuves.
   console.log('[Alfred DOM] Colonne dossiers surlignée — index', indexColonne, '→ en-tête:', enTete ? JSON.stringify(enTete.textContent.trim()) : '(introuvable)', '— en-têtes disponibles:', Array.from(enTetes).map(e => JSON.stringify(e.textContent.trim())));
-  if (enTete) {
-    // Défilement HORIZONTAL — remonté en test live : avec le panneau Alfred
-    // ouvert, le site est rétréci et ce tableau déborde ; la colonne visée
-    // (surtout Medewerker/Notaris, plus à droite) peut être hors champ sans
-    // faire défiler la molette latéralement. defilerVersElement (utilisé
-    // ailleurs) ne gère que le défilement VERTICAL — scrollIntoView natif
-    // gère nativement les deux à la fois (inline: horizontal, block:
-    // vertical), sans avoir besoin de retrouver le conteneur défilant
-    // nous-mêmes : suffisant ici (déplacement court, contrairement aux gros
-    // scrolls narratifs qui ont besoin d'une durée maîtrisée).
-    enTete.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
-    await attendre(500);
-    surlignerBrievement(enTete, 1200);
-  }
-  Array.from(tbody.querySelectorAll('tr'))
+  if (!enTete) return;
+  // Défilement HORIZONTAL — remonté en test live : avec le panneau Alfred
+  // ouvert, le site est rétréci et ce tableau déborde ; la colonne visée
+  // (surtout Medewerker/Notaris, plus à droite) peut être hors champ sans
+  // faire défiler la molette latéralement. defilerVersElement (utilisé
+  // ailleurs) ne gère que le défilement VERTICAL — scrollIntoView natif
+  // gère nativement les deux à la fois (inline: horizontal, block:
+  // vertical), sans avoir besoin de retrouver le conteneur défilant
+  // nous-mêmes : suffisant ici (déplacement court, contrairement aux gros
+  // scrolls narratifs qui ont besoin d'une durée maîtrisée).
+  enTete.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+  await attendre(500);
+  // UN seul cadre autour de TOUTE la colonne (en-tête + lignes visibles),
+  // pas un flash par cellule — demandé explicitement : "juste entourer la
+  // colonne, pas les lignes aussi" (un halo par ligne donnait l'impression
+  // de surligner les LIGNES plutôt que la colonne). On calcule le
+  // rectangle englobant tous ces éléments, à jour APRÈS le défilement
+  // ci-dessus, et on pose un seul cadre dessus (voir surlignerRectangle).
+  const cellules = Array.from(tbody.querySelectorAll('tr'))
     .map(tr => tr.children[indexColonne])
-    .filter(td => td && td.getBoundingClientRect().width > 0)
-    .forEach(td => surlignerBrievement(td, 1200));
+    .filter(td => td && td.getBoundingClientRect().width > 0);
+  const rects = [enTete, ...cellules].map(el => el.getBoundingClientRect());
+  const left   = Math.min(...rects.map(r => r.left));
+  const right  = Math.max(...rects.map(r => r.right));
+  const top    = Math.min(...rects.map(r => r.top));
+  const bottom = Math.max(...rects.map(r => r.bottom));
+  surlignerRectangle({ left, top, width: right - left, height: bottom - top }, 1500);
+}
+
+// Cadre autour d'une ZONE (rectangle en coordonnées viewport, ex. tout un
+// bloc de tableau), plutôt qu'un élément unique — un calque flottant
+// (position: fixed), même animation/couleur que surlignerBrievement, retiré
+// tout seul après la durée donnée.
+function surlignerRectangle(rect, dureeMs = 1500) {
+  if (!rect || rect.width <= 0 || rect.height <= 0) return;
+  assurerStyleSurbrillance();
+  const calque = document.createElement('div');
+  calque.style.cssText = `position:fixed; left:${rect.left}px; top:${rect.top}px; width:${rect.width}px; height:${rect.height}px; pointer-events:none; z-index:99999;`;
+  calque.style.setProperty('--alfred-surbrillance-duree', dureeMs + 'ms');
+  calque.classList.add('alfred-surbrillance');
+  document.body.appendChild(calque);
+  setTimeout(() => calque.remove(), dureeMs + 100);
 }
 
 // Défilement AUTOMATIQUE (pas une réplique à part, pas de flèche dédiée) —
