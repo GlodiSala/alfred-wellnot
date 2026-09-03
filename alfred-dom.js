@@ -1466,7 +1466,7 @@ async function essayerAjouterBienParCadastre(bien) {
   // taper la recherche elle-même : le champ de recherche réel de l'appli
   // ne comprend PAS le format complet "8670 — Coxyde" (renvoie "Aucun
   // résultat"), seulement le nom ("Coxyde") — confirmé en test live.
-  const [, nomCommune] = bien.commune.split(/[—-]/).map(s => s && s.trim());
+  const [codePostal, nomCommune] = bien.commune.split(/[—-]/).map(s => s && s.trim());
 
   await curseurVersAsync(input, () => input.focus());
   await attendre(200);
@@ -1478,10 +1478,22 @@ async function essayerAjouterBienParCadastre(bien) {
   // (texte libre non reconnu). Remonté en test live : "avant il arrivait
   // à taper Coxyde et à sélectionner la bonne commune, maintenant il
   // écrit juste, sans sélectionner".
+  //
+  // Confirmé par capture d'écran en NL : taper "Coxyde" (nom FR configuré)
+  // fait quand même remonter la bonne suggestion côté appli, mais affichée
+  // sous son nom NÉERLANDAIS ("8670 — Koksijde", pas "Coxyde") — beaucoup
+  // de communes belges ont un nom différent en FR/NL. Comparer seulement
+  // au nom FR configuré ratait donc systématiquement la suggestion en NL.
+  // Le CODE POSTAL, lui, ne change pas selon la langue — on matche
+  // d'abord dessus, et seulement en repli sur le nom.
   let optionCommune = null;
   for (let i = 0; i < 10; i++) {
     optionCommune = Array.from(document.querySelectorAll('li'))
-      .find(el => el.getBoundingClientRect().width > 0 && el.textContent.trim().toLowerCase().includes((nomCommune || bien.commune).toLowerCase()));
+      .find(el => {
+        if (el.getBoundingClientRect().width === 0) return false;
+        const t = el.textContent.trim().toLowerCase();
+        return (codePostal && t.includes(codePostal.toLowerCase())) || t.includes((nomCommune || bien.commune).toLowerCase());
+      });
     if (optionCommune) break;
     await attendre(400);
   }
