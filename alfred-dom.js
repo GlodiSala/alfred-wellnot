@@ -208,6 +208,50 @@ async function defilerVersElement(el, dureeMs = 4500) {
   if (!annulationDemandee) await attendre(200);
 }
 
+// Même principe que trouverConteneurDefilant, mais pour le défilement
+// HORIZONTAL (overflow-x) — utilisé par surlignerColonneDossiers ci-dessous.
+function trouverConteneurDefilantHorizontal(el) {
+  let p = el.parentElement;
+  while (p) {
+    const style = getComputedStyle(p);
+    if (/(auto|scroll)/.test(style.overflowX) && p.scrollWidth > p.clientWidth + 1) return p;
+    p = p.parentElement;
+  }
+  return null;
+}
+
+// Équivalent HORIZONTAL de defilerVersElement, avec la même durée réglable —
+// remplace scrollIntoView({inline:'center', behavior:'smooth'}) qu'on
+// utilisait ici (voir surlignerColonneDossiers) : sa vitesse native n'est
+// pas réglable, remonté en test live comme trop rapide ("le scrolle sur la
+// colonne doit être ralenti"), même retour déjà eu sur le défilement
+// vertical narratif (voir defilerVersElement plus haut). Repli sur
+// scrollIntoView natif si aucun conteneur à overflow-x n'est trouvé (ne
+// devrait pas arriver ici, mais pas de silence total sinon).
+async function defilerVersElementHorizontal(el, dureeMs = 1800) {
+  const conteneur = trouverConteneurDefilantHorizontal(el);
+  if (!conteneur) { el.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); await attendre(400); return; }
+  const r = el.getBoundingClientRect();
+  const rectRef = conteneur.getBoundingClientRect();
+  const dejaVisible = r.left >= rectRef.left && r.right <= rectRef.right;
+  if (dejaVisible) return;
+  const decalage = r.left - rectRef.left - (rectRef.width / 2) + (r.width / 2);
+  const depart = conteneur.scrollLeft;
+  const cible  = depart + decalage;
+  await new Promise(resolve => {
+    const debut = performance.now();
+    function etape(maintenant) {
+      if (annulationDemandee) { resolve(); return; }
+      const t = Math.min((maintenant - debut) / dureeMs, 1);
+      const t2 = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; // ease-in-out
+      conteneur.scrollLeft = depart + (cible - depart) * t2;
+      if (t < 1) requestAnimationFrame(etape); else resolve();
+    }
+    requestAnimationFrame(etape);
+  });
+  if (!annulationDemandee) await attendre(200);
+}
+
 // true une fois que le curseur a été positionné au moins une fois — sert à
 // ne le faire "téléporter" au logo qu'à la toute première apparition (point
 // de départ qui a du sens), pas à chaque clic. Avant : il repartait du logo
@@ -705,7 +749,14 @@ function optionCorrespond(li, texteOption) {
 // Sélectionne une option dans le menu déroulant situé juste sous un libellé
 // donné. Utile quand le champ est vide et n'a donc aucun texte de
 // déclencheur fiable pour être ciblé autrement.
-async function choisirDansDropdownParLabelProche(labelTexte, texteOption, dejaReessaye) {
+// silencieux : n'allume PAS le halo de sélection (voir plus bas) — utilisé
+// par seq_creationDossier_ouvrir_champs (parlerDepuisAction, 03/09 3e passe) :
+// les champs sont maintenant remplis EN SILENCE avant qu'Alfred ne parle,
+// puis re-surlignés un par un en vraie synchro au mot (voir
+// SURBRILLANCE_CIBLES: langueActe/collaborateur/notaireEnCharge) — sans ce
+// flag, chaque champ flasherait deux fois (une fois ici, en silence, une
+// fois pendant la narration), retour déjà eu ("impression de superposition").
+async function choisirDansDropdownParLabelProche(labelTexte, texteOption, dejaReessaye, silencieux) {
   let declencheur = null;
   for (let i = 0; i < 15; i++) {
     if (annulationDemandee) { console.warn('[Alfred DOM] Attente du dropdown annulée:', labelTexte); return false; }
@@ -728,10 +779,11 @@ async function choisirDansDropdownParLabelProche(labelTexte, texteOption, dejaRe
     if (opt) {
       await curseurVersAsync(opt, () => simulerClic(opt));
       await attendre(300);
-      // Retour direct : mettre en évidence la valeur sélectionnée, en
-      // rythme avec ce qu'Alfred est en train de dire (langue, notaire,
-      // collaborateur...) — même halo que sur les fiches Vendeur/Acquéreur.
-      surlignerBrievement(declencheur);
+      // Retour direct : mettre en évidence la valeur sélectionnée — sauf en
+      // mode silencieux (voir le paramètre plus haut), où c'est un
+      // surlignage synchronisé au mot, déclenché séparément pendant la
+      // parole, qui s'en charge.
+      if (!silencieux) surlignerBrievement(declencheur);
       console.log('[Alfred DOM] Après sélection, texte du déclencheur:', JSON.stringify(declencheur.textContent.trim()));
       return true;
     }
@@ -748,7 +800,7 @@ async function choisirDansDropdownParLabelProche(labelTexte, texteOption, dejaRe
   if (liVisibles.length === 0 && !dejaReessaye) {
     console.warn('[Alfred DOM] Menu probablement jamais ouvert — nouvel essai pour', labelTexte);
     await attendre(600);
-    return choisirDansDropdownParLabelProche(labelTexte, texteOption, true);
+    return choisirDansDropdownParLabelProche(labelTexte, texteOption, true, silencieux);
   }
   return false;
 }
@@ -989,13 +1041,15 @@ function surlignerChampDialogueOuvert(index) {
   defilerPuisSurligner(champs[index]); // no-op silencieux si l'index dépasse (champ pas encore rempli/visible)
 }
 
-// Déclenche la parole d'un segment 'parlerDepuisAction' (fiches Vendeur/
-// Acquéreur — voir seq_creationDossier_parties_vendeur/acquereur) une fois
-// les champs VRAIMENT remplis, exactement le même schéma que
-// seq_creationDossier_ouvrir_dossiers pour 'Ouvrir' : cherché dans la config
-// par label + nom d'action plutôt que codé en dur, pour rester en phase avec
-// le FR/NL et un futur changement de texte sans toucher au JS.
-async function parlerPartieDepuisAction(label, actionNom) {
+// Déclenche la parole d'un segment 'parlerDepuisAction' une fois les champs
+// VRAIMENT remplis — utilisée par les fiches Vendeur/Acquéreur ET par
+// seq_creationDossier_ouvrir_champs (numéro/langue/collaborateur/notaire),
+// exactement le même schéma que seq_creationDossier_ouvrir_dossiers pour
+// 'Ouvrir' : cherché dans la config par label + nom d'action plutôt que
+// codé en dur, pour rester en phase avec le FR/NL et un futur changement de
+// texte sans toucher au JS. Générique (label/actionNom en paramètres) —
+// aucune logique spécifique à un écran en particulier.
+async function parlerSegmentDepuisAction(label, actionNom) {
   if (typeof speak !== 'function' || typeof ALFRED_CONFIG === 'undefined') return;
   const liste = (typeof currentLangue !== 'undefined' && currentLangue === 'nl') ? ALFRED_CONFIG.REPLIQUES_NL : ALFRED_CONFIG.REPLIQUES_FR;
   const replique = liste?.find(r => r.label === label);
@@ -1137,14 +1191,12 @@ async function surlignerColonneDossiers(indexColonne) {
   // Défilement HORIZONTAL — remonté en test live : avec le panneau Alfred
   // ouvert, le site est rétréci et ce tableau déborde ; la colonne visée
   // (surtout Medewerker/Notaris, plus à droite) peut être hors champ sans
-  // faire défiler la molette latéralement. defilerVersElement (utilisé
-  // ailleurs) ne gère que le défilement VERTICAL — scrollIntoView natif
-  // gère nativement les deux à la fois (inline: horizontal, block:
-  // vertical), sans avoir besoin de retrouver le conteneur défilant
-  // nous-mêmes : suffisant ici (déplacement court, contrairement aux gros
-  // scrolls narratifs qui ont besoin d'une durée maîtrisée).
-  enTete.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
-  await attendre(500);
+  // faire défiler la molette latéralement. Utilisait scrollIntoView natif
+  // (durée non réglable) — remonté en test live comme trop rapide, remplacé
+  // par defilerVersElementHorizontal (même durée maîtrisée que les autres
+  // défilements du script).
+  await defilerVersElementHorizontal(enTete, 1800);
+  await attendre(300);
   // UN seul cadre autour de TOUTE la colonne (en-tête + lignes visibles),
   // pas un flash par cellule — demandé explicitement : "juste entourer la
   // colonne, pas les lignes aussi" (un halo par ligne donnait l'impression
@@ -1226,7 +1278,7 @@ async function attendreFermetureDialogue(dialogue, tentatives = 30, delai = 500)
 // vraiment rempli, à la place du balayage générique surlignerChampsRemplis —
 // utilisé par seq_creationDossier_parties_vendeur/acquereur pour déclencher
 // la parole ('parlerDepuisAction') pile à ce moment-là et surligner chaque
-// champ en vraie synchro avec le mot prononcé (voir parlerPartieDepuisAction
+// champ en vraie synchro avec le mot prononcé (voir parlerSegmentDepuisAction
 // et champDialogue1..6 dans SURBRILLANCE_CIBLES) — demandé explicitement :
 // "il a pas le temps de cliquer que les champs s'affichent quand il parle".
 // Repli sur l'ancien balayage générique si non fourni (aucun appelant ne
@@ -2117,7 +2169,7 @@ async function seq_creationDossier_ouvrir_champs() {
   // l'est, comme le dit Fariël dans le script officiel NL ("Taal:
   // Nederlands").
   if (typeof currentLangue !== 'undefined' && currentLangue === 'nl') {
-    await choisirDansDropdownParLabelProche(SELECTEURS.menus.langueActe, 'Nederlands');
+    await choisirDansDropdownParLabelProche(SELECTEURS.menus.langueActe, 'Nederlands', undefined, true);
     await attendre(300);
   }
   // Pauses encore raccourcies (500ms → 300ms, et 800ms → 400ms côté
@@ -2126,16 +2178,27 @@ async function seq_creationDossier_ouvrir_champs() {
   // réelle entre durée de la réplique et durée de cette étape est apparue
   // beaucoup plus tardive que prévu — remonté en test live (la parole était
   // términée depuis un moment, la sélection tournait encore).
-  await choisirDansDropdownParLabelProche(SELECTEURS.menus.collaborateurEnCharge, cfg.collaborateur);
+  await choisirDansDropdownParLabelProche(SELECTEURS.menus.collaborateurEnCharge, cfg.collaborateur, undefined, true);
   await attendre(300);
   if (cfg.collaborateur_administratif) {
-    await choisirDansDropdownParLabelProche(SELECTEURS.menus.collaborateurAdministratif, cfg.collaborateur_administratif);
+    await choisirDansDropdownParLabelProche(SELECTEURS.menus.collaborateurAdministratif, cfg.collaborateur_administratif, undefined, true);
     await attendre(300);
   }
   if (cfg.notaire) {
-    await choisirDansDropdownParLabelProche(SELECTEURS.menus.notaireEnCharge, cfg.notaire);
+    await choisirDansDropdownParLabelProche(SELECTEURS.menus.notaireEnCharge, cfg.notaire, undefined, true);
     await attendre(300);
   }
+  // parlerDepuisAction (03/09, 3e passe) — demandé explicitement : "les
+  // sélectionneurs sont en retard systématiquement par rapport à la
+  // phrase". Avant, la parole partait dès l'appui sur → (concurremment à
+  // tout ce remplissage, qui prend plusieurs secondes avec les vraies
+  // recherches/sélections ci-dessus) — les champs n'étaient jamais encore
+  // à l'écran quand Alfred commençait à les nommer. Même principe que
+  // 'Ouvrir'/PartiesVendeur/PartiesAcquereur : tout est rempli EN SILENCE
+  // (silencieux=true ci-dessus, pas de halo prématuré) d'abord, puis Alfred
+  // parle — chaque champ se re-surligne alors en vraie synchro au mot (voir
+  // SURBRILLANCE_CIBLES: dossierCode/langueActe/collaborateur/notaireEnCharge).
+  await parlerSegmentDepuisAction('OuvrirChamps', 'CreationOuvrir_Champs');
   // Le clic "Suivant" vivait ici avant — sorti dans sa propre fonction/
   // réplique (seq_creationDossier_ouvrir_suivant, juste en dessous) : retour
   // Cyril, "chaque action doit avoir sa propre flèche" — sans ça, l'écran
@@ -2181,7 +2244,7 @@ async function seq_creationDossier_ouvrir() {
 async function seq_creationDossier_parties_vendeur() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) return;
-  const quandChampsRemplis = () => parlerPartieDepuisAction('PartiesVendeur', 'CreationParties_Vendeur');
+  const quandChampsRemplis = () => parlerSegmentDepuisAction('PartiesVendeur', 'CreationParties_Vendeur');
   if (cfg.vendeur_type === 'morale' && cfg.vendeur_bce) {
     await ajouterPartieParBCE(SELECTEURS.textes.qualiteVendeur, cfg.vendeur_bce, { quandChampsRemplis });
   } else {
@@ -2202,7 +2265,7 @@ async function seq_creationDossier_parties_acquereur() {
   const quandChampsRemplis = async (dialogue) => {
     if (dejaParle) { await surlignerChampsRemplis(dialogue, 2400); return; }
     dejaParle = true;
-    await parlerPartieDepuisAction('PartiesAcquereur', 'CreationParties_Acquereur');
+    await parlerSegmentDepuisAction('PartiesAcquereur', 'CreationParties_Acquereur');
   };
   // Le résultat n'était pas vérifié ici avant — on avançait vers "Suivant"
   // (donc vers l'étape "bien") même si l'acquéreur n'avait pas vraiment

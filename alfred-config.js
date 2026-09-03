@@ -218,24 +218,30 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // surbrillance : met le champ en évidence au moment estimé où Alfred
     // prononce le mot correspondant (voir resoudreSurbrillance/
     // SURBRILLANCE_CIBLES dans alfred-dom.js) — demandé explicitement.
-    // surbrillance réduite au SEUL champ tapé (dossierCode) — retiré pour
-    // langue/collaborateur/notaire (03/09, 2e passe) : remonté en test
-    // live ("en retard") — ces 3 menus déroulants ont DÉJÀ leur propre
-    // surlignage causal, déclenché par choisirDansDropdownParLabelProche
-    // pile au moment où la vraie sélection a lieu (voir alfred-dom.js) —
-    // ce qui peut prendre plus longtemps que l'estimation au mot (chaque
-    // clic réel + attente réseau). Garder AUSSI un surlignage au mot pour
-    // ces 3 champs créait un doublon : un 1er flash trop tôt (estimé sur
-    // la parole, sur un champ pas encore rempli), puis un 2e flash plus
-    // tard quand la vraie valeur arrivait — d'où l'impression de retard.
+    // HISTORIQUE (03/09, 2e passe) : surbrillance un temps réduite au SEUL
+    // champ tapé (dossierCode) — les 3 dropdowns (langue/collaborateur/
+    // notaire) avaient alors leur PROPRE surlignage causal, déclenché
+    // pendant que la parole tournait déjà en concurrence (action + speak en
+    // parallèle), d'où un doublon (1er flash trop tôt, 2e flash en retard).
+    // RÉSOLU le 03/09 (3e passe), autrement : passage en parlerDepuisAction
+    // (voir seq_creationDossier_ouvrir_champs, alfred-dom.js) — les 4 champs
+    // sont maintenant remplis EN SILENCE d'abord (halo causal désactivé,
+    // silencieux=true), et Alfred ne parle qu'une fois tout rempli. Les 4
+    // surbrillances ci-dessous sont donc de nouveau la SEULE source de halo,
+    // en vraie synchro au mot, sans plus aucun risque de doublon/retard.
     // Pauses ajoutées (points de suspension) entre les 4 éléments énumérés
     // — demandé explicitement, l'énumération enchaînée d'un trait donnait
     // l'impression d'aller trop vite pour suivre le remplissage à l'écran.
     // Mots inchangés (fidélité au texte officiel), seule la ponctuation
     // bouge — les moteurs TTS marquent une pause nettement plus longue sur
     // "..." que sur une simple virgule.
-    { acte: 2, label: 'OuvrirChamps', texte: "Donnez-moi le numéro de dossier... la langue de rédaction... le collaborateur en charge... et le notaire en charge, et on passe à la création des parties.", action: 'CreationOuvrir_Champs', surbrillance: [
-      { mots: ['numéro'], cible: 'dossierCode' },
+    { acte: 2, label: 'OuvrirChamps', segments: [
+      { texte: "Donnez-moi le numéro de dossier... la langue de rédaction... le collaborateur en charge... et le notaire en charge, et on passe à la création des parties.", action: 'CreationOuvrir_Champs', parlerDepuisAction: true, surbrillance: [
+        { mots: ['numéro'], cible: 'dossierCode' },
+        { mots: ['langue'], cible: 'langueActe' },
+        { mots: ['collaborateur'], cible: 'collaborateur' },
+        { mots: ['notaire'], cible: 'notaireEnCharge' },
+      ] },
     ] },
     // OuvrirOK ("Parfait, passons à la création des parties.") RESTAURÉE le
     // 03/09 : supprimée le 31/08 sur base de v3_9 qui semblait ne pas
@@ -546,11 +552,14 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'OuvrirCreer', texte: "Een nieuw dossier starten is kinderspel. Ik klik op 'Dossier aanmaken' en de fiche staat klaar.", surbrillance: [
       { mots: ['klik'], cible: 'creerDossierClic' },
     ] },
-    // surbrillance — voir la note FR équivalente.
-    // surbrillance réduite — voir la note FR équivalente.
-    // Pauses — voir la note FR équivalente.
-    { acte: 2, label: 'OuvrirChamps', texte: "Geef mij gewoon het dossiernummer... de taal van de akte... de bevoegde medewerker... en de notaris, dan voeg ik meteen de partijen toe.", action: 'CreationOuvrir_Champs', surbrillance: [
-      { mots: ['dossiernummer'], cible: 'dossierCode' },
+    // surbrillance / parlerDepuisAction / pauses — voir la note FR équivalente.
+    { acte: 2, label: 'OuvrirChamps', segments: [
+      { texte: "Geef mij gewoon het dossiernummer... de taal van de akte... de bevoegde medewerker... en de notaris, dan voeg ik meteen de partijen toe.", action: 'CreationOuvrir_Champs', parlerDepuisAction: true, surbrillance: [
+        { mots: ['dossiernummer'], cible: 'dossierCode' },
+        { mots: ['taal'], cible: 'langueActe' },
+        { mots: ['medewerker'], cible: 'collaborateur' },
+        { mots: ['notaris'], cible: 'notaireEnCharge' },
+      ] },
     ] },
     // OuvrirOK ajoutée le 03/09 — voir la note FR équivalente. v3_8 a
     // toujours eu cette ligne ("Genoteerd! Tijd om de partijen erin te
