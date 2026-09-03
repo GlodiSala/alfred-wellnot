@@ -1783,7 +1783,30 @@ async function seq_creationDossier_ouvrir_dossiers() {
   } else {
     console.warn('[Alfred DOM] Lien "Dossiers" introuvable');
   }
-  await attendre(1800);
+  // Attend que le tableau soit VRAIMENT affiché (au moins une ligne), au
+  // lieu d'un délai fixe à l'aveugle — question posée explicitement :
+  // "vérifier si la page a fini de charger avant" de mettre quoi que ce
+  // soit en évidence. tbody.p-datatable-tbody : même sélecteur PrimeNG
+  // confirmé ailleurs (voir compterDocumentsEnAttente).
+  let tbody = null;
+  for (let i = 0; i < 15; i++) {
+    tbody = document.querySelector('tbody.p-datatable-tbody');
+    if (tbody && tbody.querySelector('tr')) break;
+    tbody = null;
+    await attendre(200);
+  }
+  if (tbody) {
+    // Un seul surlignage sur TOUT le tableau, pas colonne par colonne :
+    // "les collaborateurs"/"les statuts" ne pointent pas vers UNE valeur
+    // précise ici (une liste de plusieurs dossiers, chacun avec son propre
+    // collaborateur/statut) — contrairement aux champs de la fiche de
+    // création juste après, où chaque mot correspond à un seul champ.
+    // Déclenché dès que le tableau est confirmé chargé (pas sur un timing
+    // estimé par la parole, qui ne sait pas si la page a fini de charger).
+    await defilerPuisSurligner(tbody.closest('table') || tbody);
+  } else {
+    await attendre(1800); // repli : comportement d'avant si le tableau n'apparaît jamais
+  }
 }
 
 // 1b. Cliquer sur "Créer un dossier" — calé sur le segment qui en parle.
