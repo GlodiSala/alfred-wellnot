@@ -97,10 +97,9 @@ const SELECTEURS = {
   // Acquéreur) — utilisés par surlignerChampParLabelDialogue pour cibler le
   // bon champ par son TEXTE plutôt que par sa POSITION (voir historique :
   // "le Nième champ rempli" ne correspond pas à l'ordre énuméré à l'oral,
-  // remonté en test live — "il remonte bizarrement"). NL confirmés par
-  // capture d'écran en direct (03/09, fiches Alain Caprasse/BIMBIMMO) ; FR
-  // NON CONFIRMÉS (termes standards attendus, jamais vus sur une vraie
-  // capture FR) — à vérifier en live, corriger si besoin.
+  // remonté en test live — "il remonte bizarrement"). FR et NL confirmés par
+  // captures d'écran en direct (03/09, fiches Alain Caprasse/BIMBIMMO, dans
+  // les deux langues de l'interface).
   labelsPartie: {
     nom:               ['Nom', 'Achternaam'], // sert aussi pour "représentants" (Vendeur) : même libellé, section "Relaties"/"Mes relations" différente
     adresseSiege:      ['Rue', 'Straat'], // "siège" (personne morale) et "adresse" (personne physique) sont tous deux ce champ — même section Contact/Contactgegevens
@@ -109,11 +108,11 @@ const SELECTEURS = {
     etatCivil:         ['État civil', 'Burgerlijke staat'],
     regimeMatrimonial: ['Régime matrimonial', 'Huwelijksvermogensstelsel'],
     denomination:      ['Dénomination', 'Benaming'],
-    // Pas d'entrée pour "forme juridique" : le seul libellé NL repéré sur
-    // la capture ("Type *") est trop générique/risqué pour un matching
-    // fiable sans confirmation en direct ("Type persoon" apparaît aussi
-    // ailleurs dans la même fenêtre) — laissé sans cible de surlignage
-    // plutôt que de deviner un sélecteur qui viserait le mauvais champ.
+    // Pas d'entrée pour "forme juridique" : confirmé par capture FR, le
+    // champ "Type *" du formulaire Vendeur correspond en fait à
+    // l'assujettissement TVA ("Assujetti à la TVA"), pas à la forme
+    // juridique — aucun champ "Forme juridique" n'existe sur la fiche
+    // BIMBIMMO, donc pas de cible possible ici, laissé sans surlignage.
   },
   placeholders: {
     rechercheCommune: ['Rechercher une commune par son nom ou son code postal'],
@@ -2295,13 +2294,13 @@ async function seq_creationDossier_ouvrir() {
   await seq_creationDossier_ouvrir_suivant();
 }
 
-// Étape 2 — Parties : acquéreur (physique via RN) puis vendeur (morale via
-// BCE, ou physique via RN) — ordre inversé (03/09, 4e passe), demandé
-// explicitement (voir la note sur l'ordre des répliques dans
-// alfred-config.js, label 'PartiesAcquereur').
+// Étape 2 — Parties : vendeur (morale via BCE, ou physique via RN) puis
+// acquéreur (physique via RN) — ordre repris du script officiel (une
+// inversion faite le 03/09 sur une mauvaise lecture de la demande a été
+// annulée, voir la note dans alfred-config.js, label 'PartiesVendeur').
 // Découpée en deux sous-étapes (comme CreationOuvrir) pour un calage sur
-// deux segments : "acquéreur" pendant qu'on parle de l'acquéreur, "vendeur"
-// pendant qu'on parle du vendeur.
+// deux segments : "vendeur" pendant qu'on parle du vendeur, "acquéreur"
+// pendant qu'on parle de l'acquéreur.
 // parlerDepuisAction (voir PartiesVendeur/PartiesAcquereur dans
 // alfred-config.js) : la parole ne part plus dès l'appui sur → — demandé
 // explicitement ("il a pas le temps de cliquer que les champs s'affichent

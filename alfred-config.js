@@ -277,15 +277,13 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // personne physique : Alain Caprasse." retirés le 31/08 : c'était du
     // FARIËL collé en tête de la réplique d'Alfred (même souci que
     // PartiesNotaireV) — l'officiel n'a plus que la vraie ligne d'Alfred.
-    // ORDRE INVERSÉ le 03/09 (4e passe), demandé explicitement : Acquéreur
-    // ajouté AVANT Vendeur. ATTENTION — ceci s'écarte du script officiel tel
-    // que recomparé plus haut ("Fariël parle vraiment entre chacune : elle
-    // donne le BCE, PUIS le RN" — donc Vendeur/BCE avant Acquéreur/RN dans
-    // le document source) : changement demandé pour des raisons pratiques
-    // de démo, pas retrouvé dans le document. RegimeMatrimonial (qui
-    // concerne l'acquéreur) suit désormais directement PartiesAcquereur.
-    // parlerDepuisAction (03/09, 3e→4e passe) — demandé explicitement : "il
-    // a pas le temps de cliquer que les champs s'affichent quand il parle".
+    // ORDRE REMIS comme le script officiel (Vendeur/BCE avant Acquéreur/RN)
+    // — l'inversion du 03/09 (4e passe) était une mauvaise lecture de la
+    // demande ("je parle juste du clic qui associe, pas d'inverser dans le
+    // script") : la demande portait sur le clic de RATTACHEMENT DU NOTAIRE
+    // (voir PartiesNotaireA plus bas), pas sur l'ordre d'ajout des parties.
+    // parlerDepuisAction (03/09, 3e passe) — demandé explicitement : "il a
+    // pas le temps de cliquer que les champs s'affichent quand il parle".
     // La parole part maintenant PENDANT la recherche BCE/RN (dès le clic
     // "Rechercher", voir ajouterPartieParBCE/RN et pendantRecherche dans
     // alfred-dom.js), pas après — chaque champ ne s'allume que quand il a
@@ -297,9 +295,24 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // formulaire a montré que l'ordre réel des champs ne suit pas l'ordre
     // énuméré ici (ex: la date de naissance apparaît AVANT l'adresse dans le
     // vrai formulaire), une synchro par position sautait donc dans le mauvais
-    // ordre ("ça remonte bizarrement", remonté en test live). Pas de cible
-    // pour "forme juridique" (côté Vendeur) — libellé réel non confirmé de
-    // façon fiable, laissé sans surlignage plutôt que de deviner.
+    // ordre ("ça remonte bizarrement", remonté en test live). Libellés FR
+    // CONFIRMÉS le 03/09 par une vraie capture des fiches Caprasse/BIMBIMMO
+    // (Nom, Rue, Date de naissance, Nationalité, État civil, Régime
+    // matrimonial, Dénomination — tous identiques à ce qui était deviné).
+    // Toujours pas de cible pour "forme juridique" : la même capture montre
+    // que le champ "Type *" du formulaire Vendeur correspond en fait à
+    // l'assujettissement TVA ("Assujetti à la TVA"), pas à la forme
+    // juridique — aucun champ "Forme juridique" visible sur la fiche
+    // BIMBIMMO, donc pas de cible possible ici, laissé sans surlignage.
+    { acte: 2, label: 'PartiesVendeur', segments: [
+      { texte: "Je récupère : dénomination... siège... forme juridique... représentants. Rattaché au dossier.", action: 'CreationParties_Vendeur', parlerDepuisAction: true, surbrillance: [
+        { mots: ['dénomination'], cible: 'champPartieDenomination' },
+        { mots: ['siège'], cible: 'champPartieAdresseSiege' },
+        { mots: ['représentants'], cible: 'champPartieRepresentants' },
+      ] },
+    ] },
+    // parlerDepuisAction — voir la note équivalente sur PartiesVendeur
+    // juste au-dessus.
     { acte: 2, label: 'PartiesAcquereur', segments: [
       { texte: "Je récupère : nom... adresse... date de naissance... nationalité... état civil... régime matrimonial. Tout remonte, prêt pour la rédaction du compromis.", action: 'CreationParties_Acquereur', parlerDepuisAction: true, surbrillance: [
         { mots: ['nom'], cible: 'champPartieNom' },
@@ -315,15 +328,6 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // de parole de Fariël juste avant, réplique séparée exprès. Pas
     // d'action : rien ne se clique, juste une confirmation orale.
     { acte: 2, label: 'RegimeMatrimonial', texte: "Aussi." },
-    // parlerDepuisAction — voir la note équivalente sur PartiesAcquereur
-    // juste au-dessus.
-    { acte: 2, label: 'PartiesVendeur', segments: [
-      { texte: "Je récupère : dénomination... siège... forme juridique... représentants. Rattaché au dossier.", action: 'CreationParties_Vendeur', parlerDepuisAction: true, surbrillance: [
-        { mots: ['dénomination'], cible: 'champPartieDenomination' },
-        { mots: ['siège'], cible: 'champPartieAdresseSiege' },
-        { mots: ['représentants'], cible: 'champPartieRepresentants' },
-      ] },
-    ] },
     // PartiesNotaireV — le script officiel n'attribue AUCUNE réplique à
     // Alfred pour ce tour précis (rattacher BIMBIMMO à l'étude via "Mes
     // clients") : la phrase "Chaque partie doit être représentée par un
@@ -582,8 +586,16 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // pour mot le v3_8 ("Ik haal op" au lieu de "Ik haal de gegevens
     // meteen op" ; "Gekoppeld aan het dossier." n'existe pas en NL, c'était
     // une trace de traduction du FR "Rattaché au dossier.").
-    // Ordre inversé / parlerDepuisAction / cibles par libellé — voir la
-    // note FR équivalente.
+    // Ordre remis comme le script officiel / parlerDepuisAction / cibles
+    // par libellé — voir la note FR équivalente.
+    { acte: 2, label: 'PartiesVendeur', segments: [
+      { texte: "Ik haal de gegevens meteen op: benaming... zetel... rechtsvorm... vertegenwoordigers...", action: 'CreationParties_Vendeur', parlerDepuisAction: true, surbrillance: [
+        { mots: ['benaming'], cible: 'champPartieDenomination' },
+        { mots: ['zetel'], cible: 'champPartieAdresseSiege' },
+        { mots: ['vertegenwoordigers'], cible: 'champPartieRepresentants' },
+      ] },
+    ] },
+    // parlerDepuisAction / cibles par libellé — voir la note FR équivalente.
     { acte: 2, label: 'PartiesAcquereur', segments: [
       { texte: "Ik haal het volgende op: naam... adres... geboortedatum... nationaliteit... burgerlijke staat... en huwelijksvermogensstelsel. Alles staat klaar voor het opstellen van de compromis.", action: 'CreationParties_Acquereur', parlerDepuisAction: true, surbrillance: [
         { mots: ['naam'], cible: 'champPartieNom' },
@@ -599,14 +611,6 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // huwelijksvermogensstelsel." (plus long qu'en FR "Aussi." — officiel
     // respectif à chaque langue, pas une traduction littérale).
     { acte: 2, label: 'RegimeMatrimonial', texte: "Ja, zelfs het huwelijksvermogensstelsel." },
-    // parlerDepuisAction / cibles par libellé — voir la note FR équivalente.
-    { acte: 2, label: 'PartiesVendeur', segments: [
-      { texte: "Ik haal de gegevens meteen op: benaming... zetel... rechtsvorm... vertegenwoordigers...", action: 'CreationParties_Vendeur', parlerDepuisAction: true, surbrillance: [
-        { mots: ['benaming'], cible: 'champPartieDenomination' },
-        { mots: ['zetel'], cible: 'champPartieAdresseSiege' },
-        { mots: ['vertegenwoordigers'], cible: 'champPartieRepresentants' },
-      ] },
-    ] },
     // PartiesNotaireV — même principe que côté FR (voir la note FR
     // équivalente) : pas de réplique officielle d'Alfred pour ce tour,
     // rien à inventer — action silencieuse.
