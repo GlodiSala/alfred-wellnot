@@ -309,7 +309,14 @@ async function genererAudioGemini(text, voixId, ton, langue) {
   // défectueux généré du temps de l'ancien pipeline (avant le passage à
   // Cloud TTS), resté en cache car la clé de cache n'avait pas changé
   // depuis. Bumper la clé force tout le monde à régénérer proprement.
-  const cle = ['gemini-tts-v2', voixId, ton, languageCode, text].join('|');
+  // "v3" : même logique — la réplique "Ouverture" se répétait deux fois
+  // de suite à chaque lecture (panneau, flèche, "Jouer tout"), toujours
+  // servie depuis le cache ("pas d'appel API"). Le déclenchement JS ne se
+  // produit qu'une fois (vérifié par log), donc le problème est dans
+  // l'audio caché lui-même — un raté de génération Gemini TTS, une phrase
+  // courte dite deux fois d'affilée dans l'enregistrement. Bumper la clé
+  // force une régénération propre pour toutes les répliques.
+  const cle = ['gemini-tts-v3', voixId, ton, languageCode, text].join('|');
 
   let audioContent = await lireCacheTTS(cle);
   if (audioContent) {
