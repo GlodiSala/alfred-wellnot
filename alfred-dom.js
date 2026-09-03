@@ -771,20 +771,24 @@ async function choisirDansDropdown(texteDeclencheur, texteOption) {
     if (declencheur) console.warn('[Alfred DOM] Menu qualité retrouvé via son ancienne valeur:', JSON.stringify(declencheur.textContent.trim()));
   }
   if (!declencheur) { console.warn('[Alfred DOM] Menu déroulant introuvable:', texteDeclencheur); return false; }
-  // Traçage ajouté — remonté en test live : la partie ajoutée semble
-  // toujours porter la qualité "Vendeur", jamais "Acquéreur"/"Notaire",
-  // et pareil en français (donc pas un problème de texte NL/FR). Sans
-  // preuve DOM de ce qui se passe réellement au clic sur l'option, on ne
-  // peut pas savoir si l'option cliquée est la bonne, si le clic ne
-  // change rien (menu resté sur l'ancienne valeur), ou si c'est ailleurs
-  // (l'appli elle-même) que ça se joue.
   console.log('[Alfred DOM] Menu qualité — avant sélection, texte du déclencheur:', JSON.stringify(declencheur.textContent.trim()), '— option cherchée:', texteOption);
   await curseurVersAsync(declencheur, () => simulerClic(declencheur));
   await attendre(400); // laisse le menu visible un instant, plus lisible en démo live (raccourci, 800 → 400)
   for (let i = 0; i < 15; i++) {
     if (annulationDemandee) { console.warn('[Alfred DOM] Attente de l\'option annulée:', texteOption); return false; }
     const optionsVisibles = Array.from(document.querySelectorAll('li')).filter(li => li.getBoundingClientRect().width > 0);
-    const opt = optionsVisibles.find(li => optionCorrespond(li, texteOption));
+    // Bug réel confirmé en test live (trace DOM à l'appui) : en cherchant
+    // "Koper" (acquéreur), la correspondance "contient" de optionCorrespond()
+    // matchait "Verkoper" (vendeur) en premier, puisque "koper" est
+    // littéralement un sous-mot de "verkoper" — la sélection retombait donc
+    // presque toujours sur "Vendeur" au lieu de "Acquéreur", uniquement en
+    // néerlandais (jamais vu en FR : "Acquéreur" n'est pas un sous-mot de
+    // "Vendeur"). On priorise donc une correspondance EXACTE dans tout le
+    // menu ; la correspondance "contient" d'optionCorrespond() ne sert plus
+    // que de repli si aucune correspondance exacte n'existe.
+    const candidatsExacts = (Array.isArray(texteOption) ? texteOption : [texteOption]).map(t => t.toLowerCase());
+    let opt = optionsVisibles.find(li => candidatsExacts.includes(li.textContent.trim().toLowerCase()));
+    if (!opt) opt = optionsVisibles.find(li => optionCorrespond(li, texteOption));
     if (opt) {
       if (i === 0) console.log('[Alfred DOM] Menu qualité — options visibles dans la liste:', optionsVisibles.map(li => JSON.stringify(li.textContent.trim())));
       await curseurVersAsync(opt, () => simulerClic(opt));
