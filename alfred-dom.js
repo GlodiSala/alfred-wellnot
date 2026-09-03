@@ -1098,14 +1098,16 @@ async function surlignerColonneDossiers(indexColonne) {
   const right  = Math.max(...rects.map(r => r.right));
   const top    = Math.min(...rects.map(r => r.top));
   const bottom = Math.max(...rects.map(r => r.bottom));
-  // Durée raccourcie une 2e fois (800 → 550ms) — même raison qu'avant en
-  // plus marqué : demandé explicitement pour éviter tout "sentiment de
-  // superposition" entre deux colonnes. Les mots-repères de cette phrase
-  // ("dossiers", "medewerkers", "statussen") tombent parfois à moins de
-  // 850ms d'écart les uns des autres (énumération en fin de phrase) — un
-  // halo plus court laisse toujours le temps à chaque flash de retomber
-  // avant que le suivant démarre.
-  surlignerRectangle({ left, top, width: right - left, height: bottom - top }, 550);
+  // Remonté à 1000ms — 550ms était trop court pour l'œil humain (remonté
+  // explicitement). Le raccourcissement précédent voulait éviter tout
+  // chevauchement avec le halo suivant, mais rien n'oblige le halo à
+  // rester contenu dans la fenêtre de l'audio : SEUL le moment où il se
+  // DÉCLENCHE doit rester calé sur le mot prononcé (voir le plafond dans
+  // programmerSurbrillanceMots) — combien de temps il reste ensuite
+  // affiché à l'écran n'a aucune contrainte technique. Un léger
+  // chevauchement visuel entre deux colonnes proches n'est pas un
+  // problème en soi, la lisibilité passe avant.
+  surlignerRectangle({ left, top, width: right - left, height: bottom - top }, 1000);
 }
 
 // Cadre autour d'une ZONE (rectangle en coordonnées viewport, ex. tout un
