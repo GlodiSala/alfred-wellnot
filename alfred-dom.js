@@ -771,15 +771,25 @@ async function choisirDansDropdown(texteDeclencheur, texteOption) {
     if (declencheur) console.warn('[Alfred DOM] Menu qualité retrouvé via son ancienne valeur:', JSON.stringify(declencheur.textContent.trim()));
   }
   if (!declencheur) { console.warn('[Alfred DOM] Menu déroulant introuvable:', texteDeclencheur); return false; }
+  // Traçage ajouté — remonté en test live : la partie ajoutée semble
+  // toujours porter la qualité "Vendeur", jamais "Acquéreur"/"Notaire",
+  // et pareil en français (donc pas un problème de texte NL/FR). Sans
+  // preuve DOM de ce qui se passe réellement au clic sur l'option, on ne
+  // peut pas savoir si l'option cliquée est la bonne, si le clic ne
+  // change rien (menu resté sur l'ancienne valeur), ou si c'est ailleurs
+  // (l'appli elle-même) que ça se joue.
+  console.log('[Alfred DOM] Menu qualité — avant sélection, texte du déclencheur:', JSON.stringify(declencheur.textContent.trim()), '— option cherchée:', texteOption);
   await curseurVersAsync(declencheur, () => simulerClic(declencheur));
   await attendre(400); // laisse le menu visible un instant, plus lisible en démo live (raccourci, 800 → 400)
   for (let i = 0; i < 15; i++) {
     if (annulationDemandee) { console.warn('[Alfred DOM] Attente de l\'option annulée:', texteOption); return false; }
-    const opt = Array.from(document.querySelectorAll('li'))
-      .find(li => optionCorrespond(li, texteOption) && li.getBoundingClientRect().width > 0);
+    const optionsVisibles = Array.from(document.querySelectorAll('li')).filter(li => li.getBoundingClientRect().width > 0);
+    const opt = optionsVisibles.find(li => optionCorrespond(li, texteOption));
     if (opt) {
+      if (i === 0) console.log('[Alfred DOM] Menu qualité — options visibles dans la liste:', optionsVisibles.map(li => JSON.stringify(li.textContent.trim())));
       await curseurVersAsync(opt, () => simulerClic(opt));
       await attendre(200);
+      console.log('[Alfred DOM] Menu qualité — après sélection, texte du déclencheur:', JSON.stringify(declencheur.textContent.trim()));
       return true;
     }
     await attendre(200);
