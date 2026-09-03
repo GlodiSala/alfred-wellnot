@@ -612,6 +612,47 @@ function afficherSousTitresSync(sousTitre, audio, timerRef) {
   }, { once: true });
 }
 
+// ── Surbrillance de champs synchronisée sur la parole ──────
+// Demandé explicitement : "quand il dit notaire en charge, il faut le
+// mettre en évidence" — même principe que les sous-titres ci-dessus (même
+// base de calcul : durée réelle de l'audio / nombre de mots), mais au lieu
+// d'afficher du texte, ça déclenche une action (typiquement surligner un
+// champ) au moment estimé où le mot-clé correspondant est prononcé. Pas une
+// vraie synchro au phonème près (on n'a pas de timestamps mot-à-mot du
+// moteur TTS) — une estimation proportionnelle à la position du mot dans le
+// texte, qui reste largement suffisante à l'oreille/l'œil pour un public.
+// entrees : [{ motsCles: ['notaire'], action: () => ... }, ...]
+// Retourne un tableau d'ids de setTimeout (pour pouvoir tout annuler si la
+// parole est coupée en cours de route — voir speak()/stopAudio()).
+function programmerSurbrillanceMots(texteComplet, audio, entrees, timersRef) {
+  if (!texteComplet || !entrees || !entrees.length) return;
+  const mots = texteComplet.trim().split(/\s+/);
+  const total = mots.length;
+  if (!total) return;
+  const nettoie = (m) => m.toLowerCase().replace(/^[«"'‘“(]+|[»"'’”),.;:!?]+$/g, '');
+  const motsNettoyes = mots.map(nettoie);
+
+  let dureeSecondes = null;
+  audio.addEventListener('loadedmetadata', () => {
+    // Repli identique à afficherSousTitresSync (~150 mots/min) si la durée réelle n'est pas exploitable.
+    dureeSecondes = isFinite(audio.duration) && audio.duration > 0 ? audio.duration : total * 0.4;
+  }, { once: true });
+
+  audio.addEventListener('playing', () => {
+    setTimeout(() => {
+      const duree = dureeSecondes !== null ? dureeSecondes : total * 0.4;
+      const msParMot = (duree * 1000) / total;
+      for (const entree of entrees) {
+        const cles = (entree.motsCles || []).map((m) => m.toLowerCase());
+        const idx = motsNettoyes.findIndex((m) => cles.some((c) => m === c || m.startsWith(c)));
+        if (idx === -1 || typeof entree.action !== 'function') continue;
+        const id = setTimeout(entree.action, idx * msParMot);
+        if (timersRef) timersRef.ids.push(id);
+      }
+    }, DELAI_AUDIO_PERCEPTIBLE_MS);
+  }, { once: true });
+}
+
 // ── Parler ────────────────────────────────────────────────
 let audioCtxPartage = null;
 function obtenirAudioContextPartage() {
@@ -632,7 +673,12 @@ let audioGeneration = 0;
 
 // moteurForce: 'cloud' pour forcer Cloud TTS (voir obtenirAudio) — utilisé
 // pour les réponses libres du chatbot, jamais pour les répliques scriptées.
-async function speak(text, langue, sousTitre, moteurForce) {
+// surbrillanceMots (optionnel) : [{ motsCles: [...], action: () => ... }, ...]
+// — voir programmerSurbrillanceMots ci-dessus. texteSurbrillance : le texte
+// RÉELLEMENT prononcé (peut différer de sousTitre, qui affiche parfois la
+// traduction dans l'autre langue — voir l'appel dans alfred-brain.js) ;
+// sert de base au calcul des positions de mots, jamais sousTitre lui-même.
+async function speak(text, langue, sousTitre, moteurForce, surbrillanceMots, texteSurbrillance) {
   if (!text || text === '...') return;
   langue = langue || currentLangue || 'fr';
   const maGeneration = ++audioGeneration;
@@ -651,6 +697,14 @@ async function speak(text, langue, sousTitre, moteurForce) {
     // onended) lit toujours la valeur la plus récente.
     const phraseTimerRef = { id: null };
     afficherSousTitresSync(sousTitre || text, audio, phraseTimerRef);
+
+    // Idem pour la surbrillance de champs synchronisée (voir
+    // programmerSurbrillanceMots ci-dessus) — même texte de référence que
+    // les sous-titres (sousTitre, déjà traduit dans la langue affichée).
+    const surbrillanceTimersRef = { ids: [] };
+    if (surbrillanceMots && surbrillanceMots.length) {
+      programmerSurbrillanceMots(texteSurbrillance || text, audio, surbrillanceMots, surbrillanceTimersRef);
+    }
 
     // Analyseur volume → bouche. Un seul AudioContext partagé, créé une
     // fois puis réutilisé (voir obtenirAudioContextPartage) : en recréer
@@ -692,6 +746,7 @@ async function speak(text, langue, sousTitre, moteurForce) {
       audio.onpause = () => resolve();
       audio.onended = () => {
         clearInterval(phraseTimerRef.id);
+        surbrillanceTimersRef.ids.forEach(clearTimeout);
         clearInterval(talkTick);
         updateVolBar(0);
         resetMouth();

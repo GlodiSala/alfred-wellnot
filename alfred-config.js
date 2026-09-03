@@ -189,7 +189,15 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // création → champs remplis).
     { acte: 2, label: 'Ouvrir', texte: "Voici d'abord le tableau de bord : tous les dossiers en cours, les collaborateurs, les statuts.", action: 'CreationOuvrir_Dossiers' },
     { acte: 2, label: 'OuvrirCreer', texte: "Pour créer un dossier, rien de plus simple : je clique sur « Créer un dossier » et j'arrive sur la fiche de création.", action: 'CreationOuvrir_CreerBouton' },
-    { acte: 2, label: 'OuvrirChamps', texte: "Donnez-moi le numéro de dossier, la langue de rédaction, le collaborateur en charge et le notaire en charge, et on passe à la création des parties.", action: 'CreationOuvrir_Champs' },
+    // surbrillance : met le champ en évidence au moment estimé où Alfred
+    // prononce le mot correspondant (voir resoudreSurbrillance/
+    // SURBRILLANCE_CIBLES dans alfred-dom.js) — demandé explicitement.
+    { acte: 2, label: 'OuvrirChamps', texte: "Donnez-moi le numéro de dossier, la langue de rédaction, le collaborateur en charge et le notaire en charge, et on passe à la création des parties.", action: 'CreationOuvrir_Champs', surbrillance: [
+      { mots: ['numéro'], cible: 'dossierCode' },
+      { mots: ['langue'], cible: 'langueActe' },
+      { mots: ['collaborateur'], cible: 'collaborateur' },
+      { mots: ['notaire'], cible: 'notaireEnCharge' },
+    ] },
     // OuvrirOK ("Parfait, passons à la création des parties.") RESTAURÉE le
     // 03/09 : supprimée le 31/08 sur base de v3_9 qui semblait ne pas
     // l'avoir — mais le document "Script_scene_Wellnot_InsideAI26_v3.pdf"
@@ -445,7 +453,13 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // DÉCOMPOSÉ le 03/09 (2e passe) — voir la note FR équivalente.
     { acte: 2, label: 'Ouvrir', texte: "We beginnen bij het dashboard: hier ziet u al uw lopende dossiers, de medewerkers en de actuele statussen.", action: 'CreationOuvrir_Dossiers' },
     { acte: 2, label: 'OuvrirCreer', texte: "Een nieuw dossier starten is kinderspel. Ik klik op 'Dossier aanmaken' en de fiche staat klaar.", action: 'CreationOuvrir_CreerBouton' },
-    { acte: 2, label: 'OuvrirChamps', texte: "Geef mij gewoon het dossiernummer, de taal van de akte, de bevoegde medewerker en de notaris dan voeg ik meteen de partijen toe.", action: 'CreationOuvrir_Champs' },
+    // surbrillance — voir la note FR équivalente.
+    { acte: 2, label: 'OuvrirChamps', texte: "Geef mij gewoon het dossiernummer, de taal van de akte, de bevoegde medewerker en de notaris dan voeg ik meteen de partijen toe.", action: 'CreationOuvrir_Champs', surbrillance: [
+      { mots: ['dossiernummer'], cible: 'dossierCode' },
+      { mots: ['taal'], cible: 'langueActe' },
+      { mots: ['medewerker'], cible: 'collaborateur' },
+      { mots: ['notaris'], cible: 'notaireEnCharge' },
+    ] },
     // OuvrirOK ajoutée le 03/09 — voir la note FR équivalente. v3_8 a
     // toujours eu cette ligne ("Genoteerd! Tijd om de partijen erin te
     // zetten.", juste après que Fariël donne le numéro/langue/médewerker/

@@ -392,7 +392,7 @@ async function jouerSecoursInterne() {
   // d'un coup dès le premier mot. Une réplique classique (texte + action
   // uniques) est traitée comme un groupe à un seul segment, donc rien ne
   // change pour elle. Un seul appui sur → avance sur tout le groupe.
-  const segmentsR    = r.segments || [{ texte: r.texte, action: r.action }];
+  const segmentsR    = r.segments || [{ texte: r.texte, action: r.action, surbrillance: r.surbrillance }];
   const segmentsTrad = rTrad?.segments || [{ texte: rTrad?.texte }];
 
   for (let i = 0; i < segmentsR.length; i++) {
@@ -416,7 +416,17 @@ async function jouerSecoursInterne() {
       addToHistory('alfred', seg.texte);
       const sousTitre = segTrad?.texte || seg.texte;
       const debutParole = performance.now();
-      promises.push(speak(naturaliserTexte(seg.texte), currentLangue, sousTitre).then(() => { dureeParoleMs = Math.round(performance.now() - debutParole); }));
+      // Surbrillance synchronisée sur la parole (voir SURBRILLANCE_CIBLES
+      // et resoudreSurbrillance dans alfred-dom.js, programmerSurbrillanceMots
+      // dans alfred-voice.js) — demandé explicitement : "quand il dit
+      // notaire en charge, il faut le mettre en évidence". IMPORTANT :
+      // basé sur seg.texte (ce qui est VRAIMENT prononcé dans currentLangue),
+      // pas sur sousTitre — sousTitre affiche volontairement la traduction
+      // dans l'AUTRE langue (repère bilingue pour le public), un texte
+      // différent dont la position des mots ne correspond à rien dans
+      // l'audio réellement joué.
+      const surbrillance = (typeof resoudreSurbrillance === 'function') ? resoudreSurbrillance(seg.surbrillance) : null;
+      promises.push(speak(naturaliserTexte(seg.texte), currentLangue, sousTitre, undefined, surbrillance, seg.texte).then(() => { dureeParoleMs = Math.round(performance.now() - debutParole); }));
     }
     // currentActe >= 2 : garde-fou pour ne jamais lancer d'automatisation
     // réelle de l'appli avant que la démo n'ait commencé. Les gestes

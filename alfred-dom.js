@@ -936,6 +936,35 @@ async function surlignerChampsRemplis(conteneur, dureeMs = 1500) {
   }
 }
 
+// ── Surbrillance synchronisée sur la parole ────────────────
+// Demandé explicitement : "quand il dit notaire en charge, il faut le
+// mettre en évidence" — pour les champs qu'on remplit NOUS-MÊMES (donc au
+// rythme qu'on contrôle, pas au rythme imprévisible d'une recherche RN/BCE
+// externe comme pour Vendeur/Acquéreur), une vraie synchro avec le mot
+// prononcé est possible : voir programmerSurbrillanceMots dans
+// alfred-voice.js, branché depuis jouerSecoursInterne (alfred-brain.js).
+// Registre symbolique { motRepère: fonction qui retrouve et surligne le
+// vrai champ } — vit ici, pas dans alfred-config.js, car ce fichier est le
+// seul à connaître les vrais sélecteurs (SELECTEURS, trouverDeclencheur...).
+// alfred-config.js ne référence que la clé symbolique (ex: "notaireEnCharge"),
+// jamais un sélecteur — même séparation texte/DOM que partout ailleurs.
+const SURBRILLANCE_CIBLES = {
+  dossierCode:   () => surlignerBrievement(document.getElementById(SELECTEURS.champs.dossierCode)),
+  langueActe:    () => surlignerBrievement(trouverDeclencheurProcheLabel(SELECTEURS.menus.langueActe)),
+  collaborateur: () => surlignerBrievement(trouverDeclencheurProcheLabel(SELECTEURS.menus.collaborateurEnCharge)),
+  notaireEnCharge: () => surlignerBrievement(trouverDeclencheurProcheLabel(SELECTEURS.menus.notaireEnCharge)),
+};
+
+// Traduit les entrées symboliques {mots, cible} d'une réplique/segment
+// (alfred-config.js) en entrées {motsCles, action} exploitables par
+// speak() (voir programmerSurbrillanceMots dans alfred-voice.js).
+function resoudreSurbrillance(entrees) {
+  if (!entrees || !entrees.length) return null;
+  return entrees
+    .filter(e => typeof SURBRILLANCE_CIBLES[e.cible] === 'function')
+    .map(e => ({ motsCles: e.mots, action: SURBRILLANCE_CIBLES[e.cible] }));
+}
+
 async function attendreFermetureDialogue(dialogue, tentatives = 30, delai = 500) {
   if (!dialogue) return true;
   for (let i = 0; i < tentatives; i++) {
