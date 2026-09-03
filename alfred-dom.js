@@ -40,23 +40,35 @@ function reinitialiserAnnulation() { annulationDemandee = false; }
 // casser d'un coup. Avoir tout au même endroit rend le diagnostic et la
 // correction beaucoup plus rapides — comparer avec une capture DOM fraîche
 // (script de capture fourni séparément) pour repérer ce qui a changé.
+// Chaque entrée texte (boutons/menus/onglets/textes/placeholders) est un
+// TABLEAU de candidats — [FR] pour l'instant, [FR, NL] une fois le texte
+// néerlandais confirmé par capture live (jamais deviné, voir la note plus
+// bas). texteCorrespond()/texteContient() testent tous les candidats, donc
+// le code marche que le site soit affiché en français OU en néerlandais,
+// sans qu'on ait à savoir à l'avance lequel des deux est actif. `champs`
+// reste des chaînes simples : ce sont de vrais attributs HTML id, pas du
+// texte affiché — indépendants de la langue de l'interface.
+//
+// NL PAS ENCORE REMPLI (04/09, démo demandée en néerlandais) — voir
+// capture-selecteurs-nl.js dans le scratchpad pour le script de capture à
+// faire tourner sur le site en néerlandais, écran par écran.
 const SELECTEURS = {
   boutons: {
-    ajouter:             'Ajouter',
-    ajouterManuellement: 'Ajouter manuellement',
-    ajouterBienCadastre: 'Ajouter un bien via le CADASTRE',
-    ajouterNotaire:      'Ajouter un notaire',
-    creerDossier:        'Créer un dossier',
-    enregistrer:         'Enregistrer',
-    personnePhysique:    'Personne physique',
-    personneMorale:      'Personne morale',
-    rechercher:          'Rechercher',
-    confirmerBien:       'Confirmer',
-    rediger:             'Rédiger un document',
-    genererCompromis:    'Générer le compromis',
-    suivant:             'Suivant',
-    validerEtEnvoyer:    'Valider et envoyer',
-    consulter:           'Consulter',
+    ajouter:             ['Ajouter'],
+    ajouterManuellement: ['Ajouter manuellement'],
+    ajouterBienCadastre: ['Ajouter un bien via le CADASTRE'],
+    ajouterNotaire:      ['Ajouter un notaire'],
+    creerDossier:        ['Créer un dossier'],
+    enregistrer:         ['Enregistrer'],
+    personnePhysique:    ['Personne physique'],
+    personneMorale:      ['Personne morale'],
+    rechercher:          ['Rechercher'],
+    confirmerBien:       ['Confirmer'],
+    rediger:             ['Rédiger un document'],
+    genererCompromis:    ['Générer le compromis'],
+    suivant:             ['Suivant'],
+    validerEtEnvoyer:    ['Valider et envoyer'],
+    consulter:           ['Consulter'],
   },
   champs: {
     dossierCode:         'folder-code',
@@ -74,29 +86,30 @@ const SELECTEURS = {
     bienCommune:         'asset-municipality',
   },
   placeholders: {
-    rechercheCommune: 'Rechercher une commune par son nom ou son code postal',
-    rechercheNotaire: 'Rechercher dans votre liste de notaires',
+    rechercheCommune: ['Rechercher une commune par son nom ou son code postal'],
+    rechercheNotaire: ['Rechercher dans votre liste de notaires'],
   },
   menus: {
-    qualitePartie:              'Sélectionnez une qualité',
-    collaborateurEnCharge:      'Collaborateur en charge du dossier',
-    collaborateurAdministratif: 'Collaborateur administratif',
-    notaireEnCharge:            'Notaire en charge du dossier',
+    qualitePartie:              ['Sélectionnez une qualité'],
+    collaborateurEnCharge:      ['Collaborateur en charge du dossier'],
+    collaborateurAdministratif: ['Collaborateur administratif'],
+    notaireEnCharge:            ['Notaire en charge du dossier'],
   },
   onglets: {
-    evenements:   'Événements',
-    conversation: 'Conversation',
-    parties:      'Parties',
+    evenements:   ['Événements'],
+    conversation: ['Conversation'],
+    parties:      ['Parties'],
   },
   textes: {
-    represente: 'REPRÉSENTE',
-    mesClients: 'Mes clients',
-    optionCompromis: 'Compromis',
+    represente: ['REPRÉSENTE'],
+    mesClients: ['Mes clients'],
+    optionCompromis: ['Compromis'],
     // "Proposition d'e-mail" ne correspondait à rien dans le vrai DOM —
     // confirmé par capture d'écran, le vrai titre de la carte est "Email à
     // valider".
-    propositionEmail: "Email à valider",
-    lienDossiers: 'Dossiers',
+    propositionEmail: ["Email à valider"],
+    lienDossiers: ['Dossiers'],
+    ariaParlerAlfred: ['parler avec alfred'], // aria-label (déjà en minuscules, comparé en minuscules)
   },
 };
 
@@ -295,8 +308,12 @@ function validerChamp(input) {
 // confirmé par capture DOM : <p-tab role="tab"> personnalisé). Passé en
 // .includes() insensible à la casse.
 function trouverOnglet(texte) {
+  const candidats = (Array.isArray(texte) ? texte : [texte]).map(t => t.toLowerCase());
   return Array.from(document.querySelectorAll('a, button, [role="tab"]'))
-    .find(el => el.textContent.trim().toLowerCase().includes(texte.toLowerCase()) && el.getBoundingClientRect().width > 0);
+    .find(el => {
+      const t = el.textContent.trim().toLowerCase();
+      return candidats.some(c => t.includes(c)) && el.getBoundingClientRect().width > 0;
+    });
 }
 
 // Le panneau Alfred (Conversation / Événements) n'existe dans le DOM que
@@ -311,7 +328,7 @@ function trouverAvatarAlfred() {
   // Alfred">, pas une icône devinée au pif — cherché en premier avant les
   // anciens repris (gardés au cas où le libellé changerait).
   const bouton = Array.from(document.querySelectorAll('button[aria-label]'))
-    .find(el => (el.getAttribute('aria-label') || '').toLowerCase().includes('parler avec alfred') && el.getBoundingClientRect().width > 0);
+    .find(el => texteContient((el.getAttribute('aria-label') || '').toLowerCase(), SELECTEURS.textes.ariaParlerAlfred) && el.getBoundingClientRect().width > 0);
   if (bouton) return bouton;
 
   const candidats = Array.from(document.querySelectorAll('img, button, [role="button"], div, span'))
@@ -508,10 +525,33 @@ async function seq_montrerEvenements() {
 }
 
 // ── Helpers génériques pour la création de dossier ────────
+// Compare le texte d'un élément à un ou plusieurs textes candidats — pour
+// que le site puisse être en français OU en néerlandais sans qu'on ait à
+// deviner lequel des deux est affiché à l'instant T. `candidats` peut être
+// une simple chaîne (rétrocompatible avec tout le code existant) ou un
+// tableau de chaînes (une par langue) — le premier qui correspond suffit.
+function texteCorrespond(texteEl, candidats) {
+  const liste = Array.isArray(candidats) ? candidats : [candidats];
+  const t = (texteEl || '').trim();
+  return liste.some(c => t === c);
+}
+function texteContient(texteEl, candidats) {
+  const liste = Array.isArray(candidats) ? candidats : [candidats];
+  const t = texteEl || '';
+  return liste.some(c => t.includes(c));
+}
+// Cherche un <input> visible par son placeholder, parmi un ou plusieurs
+// candidats (FR/NL) — un attribut CSS [placeholder="..."] ne peut pas
+// tester plusieurs valeurs à la fois, d'où ce helper dédié.
+function trouverParPlaceholder(candidats) {
+  return Array.from(document.querySelectorAll('input'))
+    .find(i => texteCorrespond(i.placeholder, candidats) && i.getBoundingClientRect().width > 0);
+}
+
 // Cherche un bouton visible dont le texte correspond exactement.
 function trouverBoutonParTexte(texte) {
   return Array.from(document.querySelectorAll('button'))
-    .find(b => b.textContent.trim() === texte && b.getBoundingClientRect().width > 0);
+    .find(b => texteCorrespond(b.textContent, texte) && b.getBoundingClientRect().width > 0);
 }
 
 // Clique un bouton par son texte, avec attente qu'il apparaisse.
@@ -589,7 +629,7 @@ function trouverDeclencheursDropdown() {
 // dépend de champs déjà pré-remplis (Langue, Catégorie) et peut varier.
 function trouverDeclencheurProcheLabel(labelTexte) {
   const label = Array.from(document.querySelectorAll('*'))
-    .find(el => el.children.length === 0 && el.textContent.trim() === labelTexte && el.getBoundingClientRect().width > 0);
+    .find(el => el.children.length === 0 && texteCorrespond(el.textContent, labelTexte) && el.getBoundingClientRect().width > 0);
   if (!label) return null;
   const lr = label.getBoundingClientRect();
   let meilleur = null;
@@ -670,7 +710,7 @@ async function choisirDansDropdownParLabelProche(labelTexte, texteOption, dejaRe
 // ne réagit pas au clic (même bug que pour les menus collaborateur).
 async function choisirDansDropdown(texteDeclencheur, texteOption) {
   const declencheur = Array.from(document.querySelectorAll('span'))
-    .find(s => s.textContent.trim() === texteDeclencheur && s.getBoundingClientRect().width > 0);
+    .find(s => texteCorrespond(s.textContent, texteDeclencheur) && s.getBoundingClientRect().width > 0);
   if (!declencheur) { console.warn('[Alfred DOM] Menu déroulant introuvable:', texteDeclencheur); return false; }
   await curseurVersAsync(declencheur, () => simulerClic(declencheur));
   await attendre(400); // laisse le menu visible un instant, plus lisible en démo live (raccourci, 800 → 400)
@@ -901,9 +941,10 @@ async function cocherBadgeSousSection(titreSection, qualitePartie) {
   // vrai texte du DOM est "Représente" (casse normale) — la comparaison
   // stricte en majuscules ne matchait donc jamais, depuis le début (pas
   // un problème de timing, malgré le budget élargi ci-dessous).
+  const candidatsSection = (Array.isArray(titreSection) ? titreSection : [titreSection]).map(t => t.toLowerCase());
   for (let i = 0; i < 16; i++) {
     titre = Array.from(document.querySelectorAll('*'))
-      .find(el => el.children.length === 0 && el.textContent.trim().toLowerCase() === titreSection.toLowerCase() && el.getBoundingClientRect().width > 0);
+      .find(el => el.children.length === 0 && candidatsSection.includes(el.textContent.trim().toLowerCase()) && el.getBoundingClientRect().width > 0);
     if (titre) break;
     await attendre(500);
   }
@@ -983,7 +1024,7 @@ async function rattacherNotaire(nomNotaire, qualitePartie) {
   await attendre(600);
   let input = null;
   for (let i = 0; i < 15; i++) {
-    input = document.querySelector(`input[placeholder="${SELECTEURS.placeholders.rechercheNotaire}"]`);
+    input = trouverParPlaceholder(SELECTEURS.placeholders.rechercheNotaire);
     if (input) break;
     await attendre(300);
   }
@@ -1085,7 +1126,7 @@ async function lancerRedactionCompromis() {
   let opt = null;
   for (let i = 0; i < 15; i++) {
     opt = Array.from(document.querySelectorAll('li'))
-      .find(li => li.textContent.trim() === SELECTEURS.textes.optionCompromis && li.getBoundingClientRect().width > 0);
+      .find(li => texteCorrespond(li.textContent, SELECTEURS.textes.optionCompromis) && li.getBoundingClientRect().width > 0);
     if (opt) break;
     await attendre(300);
   }
@@ -1150,13 +1191,13 @@ async function lancerRedactionCompromis() {
 // "Consulter" propre à ce sous-arbre.
 function trouverConsulterPourEvenement(titreEvenement) {
   const candidats = Array.from(document.querySelectorAll('*'))
-    .filter(el => el.getBoundingClientRect().width > 0 && el.textContent.includes(titreEvenement));
+    .filter(el => el.getBoundingClientRect().width > 0 && texteContient(el.textContent, titreEvenement));
   if (!candidats.length) return null;
   candidats.sort((a, b) => a.textContent.length - b.textContent.length);
   let carte = candidats[0];
   for (let i = 0; i < 8 && carte; i++) {
     const bouton = Array.from(carte.querySelectorAll('button'))
-      .find(b => b.textContent.trim() === SELECTEURS.boutons.consulter && b.getBoundingClientRect().width > 0);
+      .find(b => texteCorrespond(b.textContent, SELECTEURS.boutons.consulter) && b.getBoundingClientRect().width > 0);
     if (bouton) return bouton;
     carte = carte.parentElement;
   }
@@ -1294,8 +1335,7 @@ async function essayerAjouterBienParCadastre(bien) {
   let input = null;
   for (let i = 0; i < 10; i++) {
     input = document.getElementById(SELECTEURS.champs.communeCadastre)
-      || Array.from(document.querySelectorAll('input'))
-        .find(i => i.placeholder === SELECTEURS.placeholders.rechercheCommune && i.getBoundingClientRect().width > 0);
+      || trouverParPlaceholder(SELECTEURS.placeholders.rechercheCommune);
     if (input) break;
     await attendre(400);
   }
@@ -1545,7 +1585,7 @@ async function seq_creationDossier_ouvrir_dossiers() {
   // naviguerVers/trouverNav qui est trop large et peut cliquer sur le
   // mauvais élément.
   const navLinks = document.querySelectorAll('a.nav-link.uppercase');
-  const dossiers = Array.from(navLinks).find(el => el.textContent.trim() === SELECTEURS.textes.lienDossiers);
+  const dossiers = Array.from(navLinks).find(el => texteCorrespond(el.textContent, SELECTEURS.textes.lienDossiers));
   if (dossiers) {
     curseurVers(dossiers, () => dossiers.click());
   } else {
@@ -1911,12 +1951,15 @@ async function seq_creationDossier_redaction_scrollDroite() {
 // Trouve, dans la colonne droite (le compromis généré), le titre de la
 // clause PEB ("La performance énergétique" / "Certificat énergétique") —
 // capturé en direct (clics + scroll réels) : c'est un simple <h3> dans le
-// contenu de l'éditeur CKEditor.
+// contenu de l'éditeur CKEditor. Le texte de l'acte lui-même suit la
+// "Taal van de akte" du dossier (pas la langue de l'interface du site) —
+// termes NL "EPC"/"energieprestatie" repris du script officiel NL
+// (v3_8.docx : "het EPC"), pas devinés.
 function trouverTitrePEB() {
   const conteneur = trouverColonneDefilante('droite');
   if (!conteneur) return null;
   const titres = conteneur.querySelectorAll('h1, h2, h3, h4');
-  return Array.from(titres).find(t => /performance énergétique|certificat énergétique/i.test(t.textContent));
+  return Array.from(titres).find(t => /performance énergétique|certificat énergétique|energieprestatie|\bEPC\b/i.test(t.textContent));
 }
 
 // Utilisé en toute fin d'acte 2 (réplique ExportWord), une fois les pièces
