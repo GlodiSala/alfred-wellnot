@@ -537,6 +537,14 @@ function resetMouth() {
 // l'inverse, ça devient perceptible en retard sur la voix.
 const DELAI_AUDIO_PERCEPTIBLE_MS = 600;
 
+// Vitesse de lecture globale d'Alfred — demandé explicitement ("ralentir un
+// peu"), en réglage général plutôt que par réplique. 1 = vitesse normale de
+// l'audio généré. Voir son utilisation dans speak() (audio.playbackRate) —
+// afficherSousTitresSync et programmerSurbrillanceMots en tiennent compte
+// pour leur calcul de durée réelle (audio.duration ne change PAS avec
+// playbackRate, seul le temps réel écoulé à l'écran change).
+const VITESSE_PAROLE = 0.93;
+
 // ── Afficher sous-titres avec sync audio ──────────────────
 // timerRef : objet mutable { id } dans lequel on écrit l'id du setTimeout en
 // cours, pour que l'appelant (speak(), dans onended) puisse toujours
@@ -570,8 +578,12 @@ function afficherSousTitresSync(sousTitre, audio, timerRef) {
     // lecture n'a pas commencé (bug connu, pas spécifique à ce projet).
     // Repli sur une estimation (~150 mots/min, un débit de parole normal)
     // si la durée réelle n'est pas exploitable.
+    // ÷ playbackRate : audio.duration reste la durée de l'audio à vitesse
+    // normale, mais le temps RÉEL écoulé à l'écran est plus long si Alfred
+    // parle ralenti (voir VITESSE_PAROLE dans speak()) — sans ça, les
+    // sous-titres suivants s'afficheraient trop tôt par rapport à la voix.
     dureeSecondes = isFinite(audio.duration) && audio.duration > 0
-      ? audio.duration
+      ? audio.duration / (audio.playbackRate || 1)
       : totalMots * 0.4;
   }, { once: true });
 
@@ -634,8 +646,11 @@ function programmerSurbrillanceMots(texteComplet, audio, entrees, timersRef) {
 
   let dureeSecondes = null;
   audio.addEventListener('loadedmetadata', () => {
-    // Repli identique à afficherSousTitresSync (~150 mots/min) si la durée réelle n'est pas exploitable.
-    dureeSecondes = isFinite(audio.duration) && audio.duration > 0 ? audio.duration : total * 0.4;
+    // ÷ playbackRate — même raison que dans afficherSousTitresSync
+    // ci-dessus (VITESSE_PAROLE ralentit la lecture réelle, pas la durée
+    // "nominale" de l'audio). Repli identique (~150 mots/min) si la durée
+    // réelle n'est pas exploitable.
+    dureeSecondes = isFinite(audio.duration) && audio.duration > 0 ? audio.duration / (audio.playbackRate || 1) : total * 0.4;
   }, { once: true });
 
   audio.addEventListener('playing', () => {
@@ -717,6 +732,15 @@ async function speak(text, langue, sousTitre, moteurForce, surbrillanceMots, tex
   try {
     const audio = await obtenirAudio(text, langue, moteurForce);
     currentAudio = audio;
+    // Ralenti léger de toute la voix — demandé explicitement ("synchroniser
+    // l'audio, le ralentir un peu"), en réglage global plutôt que par
+    // réplique. audio.playbackRate est une fonctionnalité standard du
+    // navigateur (relit l'audio déjà généré plus lentement), sans toucher
+    // à la génération/au cache — plus sûr qu'un paramètre de vitesse envoyé
+    // à l'API Gemini-TTS elle-même (dont le support n'est pas confirmé, et
+    // un paramètre audio non supporté a déjà fait planter TOUS les appels
+    // TTS une fois cette session, voir la note sur "pitch" plus haut).
+    audio.playbackRate = VITESSE_PAROLE;
 
     // Sous-titres synchronisés sur la durée audio. phraseTimerRef est un
     // objet mutable (voir afficherSousTitresSync) car l'id du setTimeout
