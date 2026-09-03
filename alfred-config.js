@@ -187,10 +187,19 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // sur un seul appui sur →, pour que la personne qui gère la démo
     // reprenne la main entre chaque écran (tableau de bord → fiche de
     // création → champs remplis).
-    { acte: 2, label: 'Ouvrir', texte: "Voici d'abord le tableau de bord : tous les dossiers en cours, les collaborateurs, les statuts.", action: 'CreationOuvrir_Dossiers', surbrillance: [
-      { mots: ['dossiers'], cible: 'colDossiers' },
-      { mots: ['collaborateurs'], cible: 'colCollaborateur' },
-      { mots: ['statuts'], cible: 'colStatut' },
+    // parlerDepuisAction : Alfred n'annonce plus le tableau de bord dès
+    // l'appui sur → — il attend que le tableau soit vraiment chargé
+    // (voir seq_creationDossier_ouvrir_dossiers dans alfred-dom.js) avant de
+    // parler, demandé explicitement ("attendre qu'il y ait du contenu dans
+    // le tableau avant de parler"). Repliée en segments (1 seul élément) —
+    // seule façon de passer parlerDepuisAction, même mécanisme que
+    // PartiesNotaireV/CreationEmail_Envoyer plus bas.
+    { acte: 2, label: 'Ouvrir', segments: [
+      { texte: "Voici d'abord le tableau de bord : tous les dossiers en cours, les collaborateurs, les statuts.", action: 'CreationOuvrir_Dossiers', parlerDepuisAction: true, surbrillance: [
+        { mots: ['dossiers'], cible: 'colDossiers' },
+        { mots: ['collaborateurs'], cible: 'colCollaborateur' },
+        { mots: ['statuts'], cible: 'colStatut' },
+      ] },
     ] },
     { acte: 2, label: 'OuvrirCreer', texte: "Pour créer un dossier, rien de plus simple : je clique sur « Créer un dossier » et j'arrive sur la fiche de création.", action: 'CreationOuvrir_CreerBouton' },
     // surbrillance : met le champ en évidence au moment estimé où Alfred
@@ -466,10 +475,13 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Corrigée le 31/08 : c'était une traduction du FR, pas le vrai texte
     // néerlandais officiel (v3_8) — retrouvé en revérifiant mot à mot.
     // DÉCOMPOSÉ le 03/09 (2e passe) — voir la note FR équivalente.
-    { acte: 2, label: 'Ouvrir', texte: "We beginnen bij het dashboard: hier ziet u al uw lopende dossiers, de medewerkers en de actuele statussen.", action: 'CreationOuvrir_Dossiers', surbrillance: [
-      { mots: ['dossiers'], cible: 'colDossiers' },
-      { mots: ['medewerkers'], cible: 'colCollaborateur' },
-      { mots: ['statussen'], cible: 'colStatut' },
+    // parlerDepuisAction — voir la note FR équivalente.
+    { acte: 2, label: 'Ouvrir', segments: [
+      { texte: "We beginnen bij het dashboard: hier ziet u al uw lopende dossiers, de medewerkers en de actuele statussen.", action: 'CreationOuvrir_Dossiers', parlerDepuisAction: true, surbrillance: [
+        { mots: ['dossiers'], cible: 'colDossiers' },
+        { mots: ['medewerkers'], cible: 'colCollaborateur' },
+        { mots: ['statussen'], cible: 'colStatut' },
+      ] },
     ] },
     { acte: 2, label: 'OuvrirCreer', texte: "Een nieuw dossier starten is kinderspel. Ik klik op 'Dossier aanmaken' en de fiche staat klaar.", action: 'CreationOuvrir_CreerBouton' },
     // surbrillance — voir la note FR équivalente.

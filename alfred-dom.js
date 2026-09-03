@@ -1890,6 +1890,14 @@ async function ajouterBienManuel(bien) {
 // 1a. Cliquer sur "Dossiers" — calé sur le tout premier segment parlé
 // ("Voici d'abord le tableau de bord..."), pas sur celui qui parle du
 // clic sur "Créer un dossier".
+// Segment marqué parlerDepuisAction (voir alfred-brain.js, alfred-config.js
+// — réplique 'Ouvrir') : Alfred ne parle plus dès l'appui sur → comme
+// partout ailleurs, il ATTEND vraiment que le tableau soit chargé avant de
+// commencer sa phrase — demandé explicitement : "il faut attendre qu'il y
+// ait du contenu dans le tableau avant de parler". Même principe déjà
+// utilisé pour l'email ("Email à valider") ou la réponse du vendeur : le
+// texte n'est plus déclenché automatiquement en parallèle de l'action,
+// c'est cette fonction qui appelle speak() elle-même, au bon moment.
 async function seq_creationDossier_ouvrir_dossiers() {
   // Même sélecteur fiable que seq_ouvrirDossier, plutôt que
   // naviguerVers/trouverNav qui est trop large et peut cliquer sur le
@@ -1901,23 +1909,39 @@ async function seq_creationDossier_ouvrir_dossiers() {
   } else {
     console.warn('[Alfred DOM] Lien "Dossiers" introuvable');
   }
-  // Attend que le tableau soit VRAIMENT affiché (au moins une ligne), au
-  // lieu d'un délai fixe à l'aveugle — question posée explicitement :
-  // "vérifier si la page a fini de charger avant" de mettre quoi que ce
-  // soit en évidence. tbody.p-datatable-tbody : même sélecteur PrimeNG
-  // confirmé ailleurs (voir compterDocumentsEnAttente). La mise en évidence
-  // elle-même ne se fait plus ici — demandé explicitement ("hilight la
-  // colonne quand il en parle") : colonne par colonne, synchronisée sur le
-  // mot prononcé, voir surlignerColonneDossiers + SURBRILLANCE_CIBLES plus
-  // bas. Cette attente reste un filet de sécurité pour la suite.
-  let tbody = null;
-  for (let i = 0; i < 15; i++) {
+  // Attend que le tableau soit vraiment STABLE (même nombre de lignes sur
+  // deux vérifications de suite), pas juste "au moins une ligne" — même
+  // logique que surlignerColonneDossiers plus bas, appliquée ici en amont
+  // pour retarder la PAROLE elle-même, pas juste la mise en évidence.
+  let tbody = null, dernierCompte = -1, stable = 0;
+  for (let i = 0; i < 25; i++) {
+    if (annulationDemandee) return;
     tbody = document.querySelector('tbody.p-datatable-tbody');
-    if (tbody && tbody.querySelector('tr')) break;
-    tbody = null;
+    const compte = tbody ? tbody.querySelectorAll('tr').length : 0;
+    if (compte > 0 && compte === dernierCompte) {
+      if (++stable >= 2) break;
+    } else {
+      stable = 0;
+    }
+    dernierCompte = compte;
     await attendre(200);
   }
-  if (!tbody) await attendre(1800); // repli : comportement d'avant si le tableau n'apparaît jamais
+  if (!tbody || !tbody.querySelector('tr')) await attendre(1800); // repli : comportement d'avant si le tableau n'apparaît jamais
+
+  // Déclenche la parole ICI (voir la note en tête de fonction) — cherché
+  // dans la config plutôt que codé en dur, pour rester en phase avec le
+  // FR/NL et un futur changement de texte sans toucher au JS. Même schéma
+  // que montrerPropositionEmail_envoyer/seq_creationDossier_attenteReponseVendeur.
+  if (typeof speak === 'function' && typeof ALFRED_CONFIG !== 'undefined') {
+    const liste = (typeof currentLangue !== 'undefined' && currentLangue === 'nl') ? ALFRED_CONFIG.REPLIQUES_NL : ALFRED_CONFIG.REPLIQUES_FR;
+    const replique = liste?.find(r => r.label === 'Ouvrir');
+    const segment = replique?.segments?.find(s => s.action === 'CreationOuvrir_Dossiers');
+    if (segment?.texte) {
+      if (typeof addToHistory === 'function') addToHistory('alfred', segment.texte);
+      const surbrillance = (typeof resoudreSurbrillance === 'function') ? resoudreSurbrillance(segment.surbrillance) : null;
+      speak(typeof naturaliserTexte === 'function' ? naturaliserTexte(segment.texte) : segment.texte, currentLangue, segment.texte, undefined, surbrillance, segment.texte);
+    }
+  }
 }
 
 // 1b. Cliquer sur "Créer un dossier" — calé sur le segment qui en parle.
