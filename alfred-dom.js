@@ -1079,7 +1079,13 @@ async function surlignerColonneDossiers(indexColonne) {
   const right  = Math.max(...rects.map(r => r.right));
   const top    = Math.min(...rects.map(r => r.top));
   const bottom = Math.max(...rects.map(r => r.bottom));
-  surlignerRectangle({ left, top, width: right - left, height: bottom - top }, 1500);
+  // Durée raccourcie (1500 → 800ms) — remonté en test live : "ça se
+  // précipite", les 3 mots-repères de cette phrase ("dossiers",
+  // "medewerkers", "statussen") sont naturellement rapprochés en fin de
+  // phrase (une énumération) — avec un halo de 1500ms, celui d'une colonne
+  // n'avait pas fini de s'estomper que le suivant démarrait déjà, donnant
+  // une impression de fouillis plutôt que 3 flashs nets l'un après l'autre.
+  surlignerRectangle({ left, top, width: right - left, height: bottom - top }, 800);
 }
 
 // Cadre autour d'une ZONE (rectangle en coordonnées viewport, ex. tout un
