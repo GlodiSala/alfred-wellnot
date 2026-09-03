@@ -473,10 +473,12 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Tekst afgestemd op Alfreds exacte repliek in het officiële script
     // "Script_scene_Wellnot_InsideAI26" — niet herformuleren zonder ook
     // Cyrils papieren script bij te werken.
+    // Corrigée le 31/08 : c'était une traduction du FR, pas le vrai texte
+    // néerlandais officiel (v3_8) — retrouvé en revérifiant mot à mot.
     { acte: 2, label: 'Ouvrir', segments: [
-      { texte: "Hier eerst het dashboard: alle lopende dossiers, de medewerkers, de statussen.", action: 'CreationOuvrir_Dossiers' },
-      { texte: "Om een dossier aan te maken, niets eenvoudiger: ik klik op « Dossier aanmaken » en ik kom op de aanmaakfiche.", action: 'CreationOuvrir_CreerBouton' },
-      { texte: "Geef me het dossiernummer, de opstellingstaal, de verantwoordelijke medewerker en de verantwoordelijke notaris, en we gaan naar de aanmaak van de partijen.", action: 'CreationOuvrir_Champs' },
+      { texte: "We beginnen bij het dashboard: hier ziet u al uw lopende dossiers, de medewerkers en de actuele statussen.", action: 'CreationOuvrir_Dossiers' },
+      { texte: "Een nieuw dossier starten is kinderspel. Ik klik op 'Dossier aanmaken' en de fiche staat klaar.", action: 'CreationOuvrir_CreerBouton' },
+      { texte: "Geef mij gewoon het dossiernummer, de taal van de akte, de bevoegde medewerker en de notaris dan voeg ik meteen de partijen toe.", action: 'CreationOuvrir_Champs' },
     ] },
     // OuvrirOK supprimée — voir la note FR équivalente (ligne inexistante
     // dans l'officiel v3_8, DOUTE signalé).
@@ -506,12 +508,21 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // FARIËL "Dus al die informatie haal je automatisch op?" / ALFRED
     // "Alles wat er in de databank klaarstaat, ja."
     { acte: 2, label: 'RecupAuto', texte: "Alles wat er in de databank klaarstaat, ja." },
+    // Corrigée le 31/08 — même souci que les autres : traduction du FR au
+    // lieu du vrai v3_8 ("kadastrale legger", pas "kadastrale matrix" —
+    // terme officiel différent, à garder partout où le concept revient).
+    // "'PAUSE'" retiré du texte officiel : une note de mise en scène qui
+    // s'est retrouvée collée dans le texte de la réplique, pas un mot à
+    // prononcer (même logique que "(pauze)" ailleurs dans le document).
     { acte: 2, label: 'Bien', segments: [
-      { texte: "Voor het onroerend goed selecteert u gewoon het juiste, en ik haal automatisch de kadastrale matrix op. Het bevindt zich in Vlaanderen, in 8670 Koksijde.", action: 'CreationBien_Rechercher' },
-      { texte: "Kadastrale matrix opgehaald. Partijen, notarissen, kadaster — alles staat er al.", action: 'CreationBien_Finaliser' },
+      { texte: "U duidt simpelweg het pand aan, en ik haal meteen de kadastrale legger op. Het goed ligt in Vlaanderen, in Koksijde.", action: 'CreationBien_Rechercher' },
+      { texte: "Partijen gekoppeld, notarissen toegewezen en kadastrale legger opgevraagd. We zijn helemaal klaar.", action: 'CreationBien_Finaliser' },
     ] },
-    { acte: 2, label: 'DocumentsReponse', texte: "Er is nog niets geüpload. Twee opties: u laadt ze zelf op, of ik vraag ze op bij de partij die ze heeft — hier, de verkoper." },
-    { acte: 2, label: 'DocumentsSave', texte: "Dossier geregistreerd.", action: 'CreationDocuments_Enregistrer' },
+    // Corrigée le 31/08 — traduction du FR au lieu du vrai v3_8.
+    { acte: 2, label: 'DocumentsReponse', texte: "Die ontbreken nog. Maar geen probleem: u kunt ze zelf uploaden, óf ik stuur meteen een verzoek naar de verkoper om ze aan te leveren." },
+    // "Dossier geregistreerd." → "Dossier bewaard en opgeslagen" : c'est
+    // ce que dit vraiment v3_8, pas une traduction du FR "enregistré".
+    { acte: 2, label: 'DocumentsSave', texte: "Dossier bewaard en opgeslagen.", action: 'CreationDocuments_Enregistrer' },
     { acte: 2, label: 'RedactionOK', texte: "Ik ben klaar geboren. Laat maar komen!" },
     // Segments 2 et 3 complétés le 31/08 — même raison que côté FR
     // (monologue tronqué). Retour explicite : mot pour mot le document
@@ -531,14 +542,22 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { texte: "Links op het scherm: de opgevraagde data uit de databanken.", action: 'CreationRedaction_ScrollGauche' },
       { texte: "Rechts: de akte die zich live opbouwt. Straks haalt Check_r daar ook nog eens alle eventuele fouten uit. De ontbrekende stukken van de verkoper voeg ik automatisch toe zodra ze binnenkomen. Geen blanco pagina meer waar u van nul moet starten. U leest na, u stelt bij en u valideert. Ik neem het handwerk over, u behoudt de leiding.", action: 'CreationRedaction_ScrollDroite' },
     ] },
+    // Corrigée le 31/08 — traduction du FR au lieu du vrai v3_8. Lead-in
+    // "De ontbrekende stukken van de verkoper —" gardé (même principe que
+    // le FR "Il manque encore les pièces du vendeur —") : ce n'est pas du
+    // FARIËL, c'est la propre phrase d'Alfred de la scène 10 (v3_8),
+    // réutilisée ici comme transition — cette répétition existe déjà
+    // telle quelle côté FR officiel.
     { acte: 2, label: 'Email', segments: [
-      { texte: "De stukken van de verkoper ontbreken nog — ik heb een e-mailontwerp klaargemaakt voor BIMBIMMO, met de vraag naar het EPC, de elektrische keuring en het bodemattest. Eén enkele vraag, nooit twee keer dezelfde. Bevestigt u de verzending?", action: 'CreationEmail_Ouverture' },
+      { texte: "De ontbrekende stukken van de verkoper — Ik heb een conceptmail klaargezet voor BIMBIMMO, de verkoper, met de vraag om het EPC, de elektrische keuring en het bodemattest te bezorgen. Één gerichte vraag, nooit twee keer hetzelfde. Valideert u de verzending?", action: 'CreationEmail_Ouverture' },
       { texte: "Daar is het, ik bekijk het e-mailontwerp en verstuur het.", action: 'CreationEmail_Envoyer', parlerDepuisAction: true },
     ] },
-    // Laatste officiële zin ("Ik bereid alles voor en u beslist.")
-    // toegevoegd op 31/08 — ontbrak t.o.v. v3_8.
+    // Corrigée le 31/08 — traduction du FR au lieu du vrai v3_8 (à
+    // commencer par "Verzonden" au lieu de "Verstuurd", le vrai mot
+    // officiel). Dernière phrase officielle ("Ik bereid alles voor en u
+    // beslist.") déjà correcte depuis le 31/08 précédent.
     { acte: 2, label: 'ReponseVendeur', segments: [
-      { texte: "Verzonden. De verkoper heeft geantwoord — de documenten zijn geladen. Ontvangen, geanalyseerd, gerangschikt. Bekijk de verkoopbelofte: de gegevens uit de stukken staan in de juiste clausules. Het ontwerp is volledig. Ik bereid alles voor en u beslist.", action: 'CreationReponseVendeur', parlerDepuisAction: true },
+      { texte: "Verstuurd. En kijk eens aan: de verkoper heeft al geantwoord, de documenten zijn binnen. Ontvangen, geanalyseerd en verwerkt. En kijk naar de verkoopovereenkomst: de gegevens uit de stukken zijn in de juiste clausules verwerkt. Het ontwerp is klaar. Ik bereid alles voor en u beslist.", action: 'CreationReponseVendeur', parlerDepuisAction: true },
     ] },
     { acte: 2, label: 'ExportWord', segments: [
       { texte: "Het PEB-certificaat is goed geïntegreerd in de verkoopbelofte.", action: 'CreationRedaction_ScrollPEB' },
