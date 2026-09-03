@@ -201,7 +201,15 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
         { mots: ['statuts'], cible: 'colStatut' },
       ] },
     ] },
-    { acte: 2, label: 'OuvrirCreer', texte: "Pour créer un dossier, rien de plus simple : je clique sur « Créer un dossier » et j'arrive sur la fiche de création.", action: 'CreationOuvrir_CreerBouton' },
+    // Le clic ne part plus dès le début de la réplique (action: retiré) —
+    // demandé explicitement : "il faut cliquer créer quand on le dit, là
+    // il le fait direct". Déclenché maintenant au mot "clique", via
+    // surbrillance (voir creerDossierClic dans SURBRILLANCE_CIBLES,
+    // alfred-dom.js — ce registre ne fait pas QUE du surlignage, il peut
+    // aussi déclencher une vraie action).
+    { acte: 2, label: 'OuvrirCreer', texte: "Pour créer un dossier, rien de plus simple : je clique sur « Créer un dossier » et j'arrive sur la fiche de création.", surbrillance: [
+      { mots: ['clique'], cible: 'creerDossierClic' },
+    ] },
     // surbrillance : met le champ en évidence au moment estimé où Alfred
     // prononce le mot correspondant (voir resoudreSurbrillance/
     // SURBRILLANCE_CIBLES dans alfred-dom.js) — demandé explicitement.
@@ -490,7 +498,10 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
         { mots: ['statussen'], cible: 'colStatut' },
       ] },
     ] },
-    { acte: 2, label: 'OuvrirCreer', texte: "Een nieuw dossier starten is kinderspel. Ik klik op 'Dossier aanmaken' en de fiche staat klaar.", action: 'CreationOuvrir_CreerBouton' },
+    // Voir la note FR équivalente.
+    { acte: 2, label: 'OuvrirCreer', texte: "Een nieuw dossier starten is kinderspel. Ik klik op 'Dossier aanmaken' en de fiche staat klaar.", surbrillance: [
+      { mots: ['klik'], cible: 'creerDossierClic' },
+    ] },
     // surbrillance — voir la note FR équivalente.
     // surbrillance réduite — voir la note FR équivalente.
     { acte: 2, label: 'OuvrirChamps', texte: "Geef mij gewoon het dossiernummer, de taal van de akte, de bevoegde medewerker en de notaris dan voeg ik meteen de partijen toe.", action: 'CreationOuvrir_Champs', surbrillance: [

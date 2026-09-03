@@ -991,6 +991,13 @@ const SURBRILLANCE_CIBLES = {
   colDossiers:      () => surlignerColonneDossiers(3), // "Dossiernummer" (capture d'écran 03/09)
   colCollaborateur: () => surlignerColonneDossiers(6), // "Medewerker"
   colStatut:        () => surlignerColonneDossiers(2), // "In uitvoering"
+  // Pas juste un surlignage cette fois : une vraie ACTION (le clic sur
+  // "Créer un dossier"), synchronisée sur le mot "clique"/"klik" — demandé
+  // explicitement : "il faut cliquer créer quand on le dit, là il le fait
+  // direct". Ce registre accepte n'importe quelle fonction, pas seulement
+  // un surlignage — voir seq_creationDossier_ouvrir_creerBouton, qui ne
+  // clique plus lui-même immédiatement.
+  creerDossierClic: () => cliquerBouton(SELECTEURS.boutons.creerDossier),
 };
 
 // Met en évidence une colonne entière (en-tête + toutes les cellules
