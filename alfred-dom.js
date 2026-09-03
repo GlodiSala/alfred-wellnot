@@ -95,7 +95,7 @@ const SELECTEURS = {
   },
   placeholders: {
     rechercheCommune: ['Rechercher une commune par son nom ou son code postal'],
-    rechercheNotaire: ['Rechercher dans votre liste de notaires'],
+    rechercheNotaire: ['Rechercher dans votre liste de notaires', 'Zoeken in uw notarissenlijst'], // NL confirmé (capture d'écran, modale "Een notaris toevoegen")
   },
   menus: {
     qualitePartie:              ['Sélectionnez une qualité', 'Selecteer een h'], // NL confirmé — préfixe volontairement tronqué : la capture d'écran montrait "Selecteer een h..." coupé par ellipsis CSS (boîte trop étroite), donc "..." n'est PAS le vrai texte du DOM. Matché en startsWith (voir choisirDansDropdown) plutôt qu'en deviner la fin ("hoedanigheid" probable mais non confirmé caractère par caractère).
@@ -1041,9 +1041,16 @@ async function cocherBadgeSousSection(titreSection, qualitePartie) {
   await attendre(300);
 
   const tr = titre.getBoundingClientRect();
+  // startsWith plutôt que "contient" — même piège que "Koper"/"Verkoper"
+  // dans choisirDansDropdown() : le badge cherché ('Koper') est un sous-mot
+  // du badge de l'AUTRE partie ('Verkoper vertegenwoordigd door uw studie'),
+  // donc une comparaison "contient" pouvait matcher le mauvais badge. Le
+  // vrai suffixe (FR "représenté(e) par votre étude", NL "vertegenwoordigd
+  // door uw studie") vient toujours APRÈS le mot de qualité, jamais dedans
+  // — startsWith reste donc correct pour ce cas tout en excluant l'autre.
   const candidatsQualite = (Array.isArray(qualitePartie) ? qualitePartie : [qualitePartie]).map(q => q.toLowerCase());
   const badge = Array.from(document.querySelectorAll('*'))
-    .filter(el => el.children.length === 0 && candidatsQualite.some(q => el.textContent.trim().toLowerCase().includes(q)) && el.getBoundingClientRect().width > 0)
+    .filter(el => el.children.length === 0 && candidatsQualite.some(q => el.textContent.trim().toLowerCase().startsWith(q)) && el.getBoundingClientRect().width > 0)
     .filter(el => el.getBoundingClientRect().top >= tr.bottom - 5)
     .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top)[0];
   if (!badge) { console.warn('[Alfred DOM] Badge de partie introuvable sous', titreSection, ':', qualitePartie); return false; }
