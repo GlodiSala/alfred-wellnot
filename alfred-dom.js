@@ -994,7 +994,20 @@ async function surlignerColonneDossiers(indexColonne) {
   // semblait pas être la bonne. Cette ligne dit exactement quel en-tête
   // est visé à cet index, pour confirmer/corriger avec de vraies preuves.
   console.log('[Alfred DOM] Colonne dossiers surlignée — index', indexColonne, '→ en-tête:', enTete ? JSON.stringify(enTete.textContent.trim()) : '(introuvable)', '— en-têtes disponibles:', Array.from(enTetes).map(e => JSON.stringify(e.textContent.trim())));
-  if (enTete) surlignerBrievement(enTete, 1200);
+  if (enTete) {
+    // Défilement HORIZONTAL — remonté en test live : avec le panneau Alfred
+    // ouvert, le site est rétréci et ce tableau déborde ; la colonne visée
+    // (surtout Medewerker/Notaris, plus à droite) peut être hors champ sans
+    // faire défiler la molette latéralement. defilerVersElement (utilisé
+    // ailleurs) ne gère que le défilement VERTICAL — scrollIntoView natif
+    // gère nativement les deux à la fois (inline: horizontal, block:
+    // vertical), sans avoir besoin de retrouver le conteneur défilant
+    // nous-mêmes : suffisant ici (déplacement court, contrairement aux gros
+    // scrolls narratifs qui ont besoin d'une durée maîtrisée).
+    enTete.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+    await attendre(500);
+    surlignerBrievement(enTete, 1200);
+  }
   Array.from(tbody.querySelectorAll('tr'))
     .map(tr => tr.children[indexColonne])
     .filter(td => td && td.getBoundingClientRect().width > 0)

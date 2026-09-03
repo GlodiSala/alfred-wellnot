@@ -743,10 +743,18 @@ async function speak(text, langue, sousTitre, moteurForce, surbrillanceMots, tex
       // répliques (le verrou anti-double-déclenchement ne se relâcherait
       // plus). On écoute donc aussi "pause" ; resolve() est sans risque à
       // appeler deux fois (la 2e est ignorée).
-      audio.onpause = () => resolve();
+      // stopAudio()/Échap coupe la parole en cours — là seulement, on annule
+      // aussi les surbrillances pas encore déclenchées (sinon un champ
+      // s'allumerait plus tard, hors contexte, sur un écran qu'on a déjà
+      // quitté). PAS dans onended ci-dessous : trouvé en test live — le
+      // dernier mot d'une phrase (souvent le plus important, ex. "statuts")
+      // est parfois programmé quelques centaines de ms APRÈS la vraie fin de
+      // l'audio mesurée (l'estimation mot/durée n'est jamais parfaite) ; le
+      // vider systématiquement à "ended" annulait ce tout dernier surlignage
+      // avant même qu'il ait eu la chance de se déclencher.
+      audio.onpause = () => { surbrillanceTimersRef.ids.forEach(clearTimeout); resolve(); };
       audio.onended = () => {
         clearInterval(phraseTimerRef.id);
-        surbrillanceTimersRef.ids.forEach(clearTimeout);
         clearInterval(talkTick);
         updateVolBar(0);
         resetMouth();
