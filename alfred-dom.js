@@ -750,8 +750,26 @@ async function choisirDansDropdown(texteDeclencheur, texteOption) {
   // h..." en NL) — le "..." visible n'est pas forcément dans le vrai
   // textContent, donc une égalité stricte contre un candidat qui l'inclut
   // rate le match (même bug que "Taal", voir trouverDeclencheurProcheLabel).
-  const declencheur = Array.from(document.querySelectorAll('span'))
+  let declencheur = Array.from(document.querySelectorAll('span'))
     .find(s => texteCommencePar(s.textContent, texteDeclencheur) && s.getBoundingClientRect().width > 0);
+  if (!declencheur) {
+    // Repli — bug trouvé en test live (échec du rattachement du notaire
+    // après un ajout d'acquéreur en échec) : ce même menu, une fois déjà
+    // utilisé pour une autre partie (Vendeur/Acquéreur), n'affiche plus le
+    // texte de départ mais la valeur précédemment choisie — donc le
+    // matching ci-dessus ne le retrouve plus du tout. On le cherche alors
+    // par cette valeur, mais UNIQUEMENT parmi les vrais menus déroulants
+    // ([role="combobox"], via trouverDeclencheursDropdown), jamais parmi
+    // les badges déjà affichés sur les fiches des parties déjà ajoutées
+    // (qui portent le même texte mais ne sont pas cliquables comme menu).
+    const valeursDejaChoisies = [
+      ...SELECTEURS.textes.qualiteVendeur,
+      ...SELECTEURS.textes.qualiteAcquereur,
+      ...SELECTEURS.textes.qualiteNotaire,
+    ];
+    declencheur = trouverDeclencheursDropdown().find(c => texteCorrespond(c.textContent, valeursDejaChoisies));
+    if (declencheur) console.warn('[Alfred DOM] Menu qualité retrouvé via son ancienne valeur:', JSON.stringify(declencheur.textContent.trim()));
+  }
   if (!declencheur) { console.warn('[Alfred DOM] Menu déroulant introuvable:', texteDeclencheur); return false; }
   await curseurVersAsync(declencheur, () => simulerClic(declencheur));
   await attendre(400); // laisse le menu visible un instant, plus lisible en démo live (raccourci, 800 → 400)
