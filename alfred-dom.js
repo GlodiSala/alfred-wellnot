@@ -2136,7 +2136,17 @@ async function seq_creationDossier_redaction_scrollPEB() {
 // (data-cke-tooltip-text), plus stable que sa classe générique ck-button
 // partagée par tous les autres boutons de la barre d'outils.
 function trouverBoutonExporterWord() {
-  return document.querySelector('[data-cke-tooltip-text="Exporter en Word"]');
+  const exact = document.querySelector('[data-cke-tooltip-text="Exporter en Word"]');
+  if (exact) return exact;
+  // Repli NL — remonté en test live : "toutes les actions ont marché en NL
+  // sauf l'export Word". L'infobulle CKEditor complète n'a jamais été
+  // capturée en néerlandais (probablement traduite, ex. "Exporteren naar
+  // Word") — plutôt que deviner le libellé exact, on cherche n'importe
+  // quelle infobulle CKEditor contenant "word" : c'est un nom de produit
+  // Microsoft, qui reste "Word" quelle que soit la langue de l'interface
+  // (même principe que "Alfred", qui reste "Alfred" en NL).
+  return Array.from(document.querySelectorAll('[data-cke-tooltip-text]'))
+    .find(el => (el.getAttribute('data-cke-tooltip-text') || '').toLowerCase().includes('word'));
 }
 
 // Étape supplémentaire (hors script papier, demandée en test live) : export
