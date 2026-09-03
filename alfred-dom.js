@@ -756,6 +756,25 @@ function trouverDialogueOuvert() {
     .find(el => el.getBoundingClientRect().width > 0);
 }
 
+// Attire brièvement l'œil sur un élément (ex: la fenêtre "Ajouter une
+// partie" juste après que la recherche RN/BCE ait rempli le formulaire) —
+// un halo qui apparaît puis disparaît, sans toucher aux champs
+// individuels (pas besoin de connaître leurs sélecteurs). Demandé en
+// retour : "Alfred ne montre pas assez ce qu'il fait" — avant, le clic
+// "Enregistrer" arrivait quasi tout de suite après le remplissage
+// automatique, sans laisser le temps au public de le voir vraiment.
+function surlignerBrievement(el, dureeMs = 1500) {
+  if (!el) return;
+  const boxShadowOriginal = el.style.boxShadow;
+  const transitionOriginale = el.style.transition;
+  el.style.transition = 'box-shadow 0.3s ease';
+  el.style.boxShadow = '0 0 0 3px rgba(20,176,189,.6), 0 0 24px rgba(20,176,189,.5)';
+  setTimeout(() => {
+    el.style.boxShadow = boxShadowOriginal;
+    setTimeout(() => { el.style.transition = transitionOriginale; }, 300);
+  }, dureeMs);
+}
+
 async function attendreFermetureDialogue(dialogue, tentatives = 30, delai = 500) {
   if (!dialogue) return true;
   for (let i = 0; i < tentatives; i++) {
@@ -791,6 +810,11 @@ async function ajouterPartieParRN(qualite, rn) {
   // qu'elle se referme vraiment (jusqu'à 15s) — c'est ce que fait l'appli
   // elle-même une fois l'enregistrement terminé côté serveur.
   const dialogue = trouverDialogueOuvert();
+  // Halo + vraie pause avant "Enregistrer" — retour : "Alfred ne montre
+  // pas assez ce qu'il fait, ça va trop vite". Avant, le clic partait
+  // quasi tout de suite après le remplissage automatique du formulaire.
+  surlignerBrievement(dialogue);
+  await attendre(1500);
   await cliquerBouton(SELECTEURS.boutons.enregistrer);
   if (!await attendreFermetureDialogue(dialogue, 30, 500)) {
     console.warn(`[Alfred DOM] La fenêtre d'ajout de "${qualite}" ne s'est pas refermée après 15s — l'enregistrement a peut-être échoué ou pris trop de temps.`);
@@ -821,6 +845,10 @@ async function ajouterPartieParBCE(qualite, bce) {
   // ici pour ne pas continuer sur "Enregistrer" après une annulation.
   if (annulationDemandee) return false;
   const dialogue = trouverDialogueOuvert();
+  // Halo + vraie pause avant "Enregistrer" — voir la note équivalente dans
+  // ajouterPartieParRN juste au-dessus.
+  surlignerBrievement(dialogue);
+  await attendre(1500);
   await cliquerBouton(SELECTEURS.boutons.enregistrer);
   if (!await attendreFermetureDialogue(dialogue, 30, 500)) {
     console.warn(`[Alfred DOM] La fenêtre d'ajout de "${qualite}" ne s'est pas refermée après 15s — l'enregistrement a peut-être échoué ou pris trop de temps.`);
