@@ -363,7 +363,11 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // dans le vrai chatbot de l'appli — voir note ci-dessous, ce trou
     // reste volontairement non scripté, la flèche suivante enchaîne
     // simplement sur la réplique d'après une fois le Q&A terminé en live.
-    { acte: 2, label: 'InvitationQuestions', texte: "N'importe qui dans l'étude peut me la poser, à toute heure. Allez-y." },
+    // action OuvrirChatConversation ajoutée le 04/09 : ouvre le panneau
+    // Alfred sur l'onglet Conversation pile à ce moment, pour que Fariël
+    // n'ait plus à cliquer elle-même dessus en plein direct avant de poser
+    // sa question.
+    { acte: 2, label: 'InvitationQuestions', texte: "N'importe qui dans l'étude peut me la poser, à toute heure. Allez-y.", action: 'OuvrirChatConversation' },
     { acte: 2, label: 'ConnaissanceDossier',  texte: "Je connais ce dossier mieux que personne." },
     { acte: 2, label: 'Autonomie',            texte: "Exactement." },
 
@@ -541,7 +545,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     ] },
     // Scène 11 (suite) : voir la note FR équivalente — même 3 lignes
     // fixes, sourcées directement de v3_8 (pas traduites du FR).
-    { acte: 2, label: 'InvitationQuestions', texte: "Iedereen op kantoor kan mij dag en nacht vragen stellen. Stel ze maar!" },
+    { acte: 2, label: 'InvitationQuestions', texte: "Iedereen op kantoor kan mij dag en nacht vragen stellen. Stel ze maar!", action: 'OuvrirChatConversation' },
     // ConnaissanceDossier CORRIGÉE le 03/09 : "Ik ken dit dossier tot in de
     // verste uithoeken." (v3_8.docx) remplacée par "Ik heb je vragen
     // beantwoord in de Chatbot." — texte différent trouvé dans le vrai

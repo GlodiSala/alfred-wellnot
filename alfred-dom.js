@@ -120,7 +120,7 @@ const SELECTEURS = {
     // "Proposition d'e-mail" ne correspondait à rien dans le vrai DOM —
     // confirmé par capture d'écran, le vrai titre de la carte est "Email à
     // valider".
-    propositionEmail: ["Email à valider"],
+    propositionEmail: ["Email à valider", "E-mail ter validatie"], // NL confirmé (capture d'écran 04/09, panneau Alfred)
     lienDossiers: ['Dossiers'], // identique en NL, confirmé par capture d'écran (nav "DOSSIERS")
     // Qualité de partie (menu déroulant ET badges affichés) — confirmés
     // par capture d'écran (04/09, menu "Een persoon toevoegen" : Verkoper/
@@ -1245,6 +1245,20 @@ function trouverConsulterPourEvenement(titreEvenement) {
   return null;
 }
 
+// Ouvre le panneau Alfred sur l'onglet "Conversation" (le vrai chatbot de
+// l'appli, différent du micro du bookmarklet) — utilisé par la réplique
+// InvitationQuestions, pour que le panneau soit déjà ouvert et prêt au
+// moment où Alfred invite à poser une question en direct (zone inondable,
+// régime matrimonial, surface cadastrale — voir la note sur InvitationQuestions
+// dans alfred-config.js). Sans ça, Fariël devait cliquer elle-même sur
+// l'icône Alfred en plein direct avant de pouvoir taper sa question.
+async function seq_ouvrirChatConversation() {
+  await ouvrirPanneauAlfred();
+  const onglet = trouverOnglet(SELECTEURS.onglets.conversation);
+  if (onglet) curseurVers(onglet, () => onglet.click());
+  await attendre(600);
+}
+
 // Découpé en deux (ouverture / consultation+envoi) pour être calé sur deux
 // segments de réplique — demandé explicitement : avant, la réplique
 // parlait une fois puis tout le reste (attente + clic Consulter + clic
@@ -2199,6 +2213,7 @@ const DOM_ACTIONS = {
   'CreationEmail_Ouverture': montrerPropositionEmail_ouverture,
   'CreationEmail_Envoyer':   montrerPropositionEmail_envoyer,
   'CreationReponseVendeur': seq_creationDossier_attenteReponseVendeur,
+  'OuvrirChatConversation': seq_ouvrirChatConversation,
   // Geste unique, purement visuel (voir clinDoeil dans alfred-ui.js) — pas
   // d'automatisation de l'appli, juste le clin d'œil de clôture.
   'ClosingWink': (typeof clinDoeil === 'function') ? clinDoeil : async () => {},
