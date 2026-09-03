@@ -657,6 +657,47 @@ function ouvrirPanneauVoix() {
   zoneTest.appendChild(btnTesterNL);
   panel.appendChild(zoneTest);
 
+  // ── Voix ElevenLabs pour le néerlandais BELGE (nl-BE) ──────
+  // Ni Gemini-TTS ni Cloud TTS (Google) n'ont de voix nl-BE, seulement
+  // nl-NL (accent différent, confirmé par une vraie erreur API) —
+  // ElevenLabs a de vraies voix flamandes dans sa bibliothèque
+  // (elevenlabs.io/voice-library, chercher "Flemish"). Collée ici, sans
+  // repasser par le code : dès qu'un Voice ID est renseigné, obtenirAudio()
+  // (alfred-voice.js) l'utilise en PREMIER pour le NL, avant même Gemini.
+  panel.appendChild(champLabel('Voix ElevenLabs — néerlandais BELGE (optionnel)'));
+  const inputElevenLabsNL = document.createElement('input');
+  inputElevenLabsNL.type = 'text';
+  inputElevenLabsNL.placeholder = 'Voice ID ElevenLabs (ex. depuis elevenlabs.io/voice-library)';
+  inputElevenLabsNL.value = (typeof voixElevenLabsNL === 'function') ? voixElevenLabsNL() : '';
+  inputElevenLabsNL.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:12px;font-family:monospace;margin-bottom:8px;';
+  inputElevenLabsNL.oninput = () => localStorage.setItem(ALFRED_ELEVENLABS_VOIX_NL_KEY, inputElevenLabsNL.value.trim());
+  panel.appendChild(inputElevenLabsNL);
+
+  const zoneTestElevenLabs = document.createElement('div');
+  zoneTestElevenLabs.style.cssText = 'display:flex;gap:6px;margin-bottom:14px;';
+  const btnTesterElevenLabsNL = document.createElement('button');
+  btnTesterElevenLabsNL.textContent = '▶ Tester (ElevenLabs, NL)';
+  btnTesterElevenLabsNL.style.cssText = 'flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:12px;cursor:pointer;';
+  btnTesterElevenLabsNL.onclick = async () => {
+    const voiceId = inputElevenLabsNL.value.trim();
+    if (!voiceId) { alert('Colle d\'abord un Voice ID ElevenLabs (depuis elevenlabs.io/voice-library).'); return; }
+    const original = btnTesterElevenLabsNL.textContent;
+    btnTesterElevenLabsNL.disabled = true;
+    btnTesterElevenLabsNL.textContent = '… génération';
+    try {
+      const audio = await genererAudioElevenLabs("Goeiedag, ik ben Alfred. Dit is een voorbeeld van mijn stem.", voiceId);
+      await audio.play();
+    } catch (e) {
+      console.warn('[Alfred Voice] Test de voix ElevenLabs échoué:', e);
+      alert('Cette voix n\'a pas pu être générée — vérifie le Voice ID, ou que ELEVENLABS_API_KEY est bien configurée côté serveur (Vercel). Regarde la console pour le détail.');
+    } finally {
+      btnTesterElevenLabsNL.disabled = false;
+      btnTesterElevenLabsNL.textContent = original;
+    }
+  };
+  zoneTestElevenLabs.appendChild(btnTesterElevenLabsNL);
+  panel.appendChild(zoneTestElevenLabs);
+
   const boutons = document.createElement('div');
   boutons.style.cssText = 'display:flex;gap:8px;';
 

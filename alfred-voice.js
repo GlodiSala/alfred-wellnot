@@ -32,18 +32,6 @@
 // ensuite sur fallbackSpeak() — la voix robotique native du navigateur,
 // nettement moins bonne, sans que ce soit visible autrement qu'en
 // console. Remonté en test live ("le micro d'Alfred" sonne mal/différent).
-// Voix ElevenLabs pour le néerlandais BELGE (nl-BE/flamand) — recherche
-// confirmée : ni Gemini-TTS ni Chirp3 HD (Google, voir VOIX_CONFIG.nl plus
-// bas) n'ont de voix nl-BE, seulement nl-NL (Pays-Bas, accent différent).
-// ElevenLabs, lui, a de vraies voix flamandes nommées dans sa bibliothèque
-// vocale (ex. "Jann", "Jan Schevenels", "Petra Vlaams" — à écouter et
-// choisir sur elevenlabs.io/voice-library). À REMPLIR une fois la voix
-// choisie et son Voice ID copié depuis ElevenLabs — laissé vide tant que ce
-// n'est pas fait : voir son utilisation dans obtenirAudio() ci-dessous,
-// qui n'essaie ElevenLabs QUE si cette valeur est renseignée, sinon
-// continue de se rabattre sur Gemini/Cloud TTS (nl-NL) comme avant.
-const VOIX_ELEVENLABS_NL_ID = ''; // ex. 'XXXXXXXXXXXXXXXXXXXXXXXX'
-
 const VOIX_CONFIG = {
   fr: {
     languageCode: 'fr-FR',
@@ -231,6 +219,22 @@ function voixGeminiActuelle() {
     // Pas du JSON : c'est déjà le nouveau format (id de voix simple).
   }
   return raw;
+}
+
+// Voix ElevenLabs pour le néerlandais BELGE (nl-BE/flamand) — recherche
+// confirmée : ni Gemini-TTS ni Chirp3 HD (Google, voir VOIX_CONFIG.nl plus
+// haut) n'ont de voix nl-BE, seulement nl-NL (Pays-Bas, accent différent).
+// ElevenLabs, lui, a de vraies voix flamandes nommées dans sa bibliothèque
+// vocale (ex. "Jann", "Jan Schevenels", "Petra Vlaams" — à écouter et
+// choisir sur elevenlabs.io/voice-library). Réglable depuis le panneau
+// "Voix d'Alfred" (voir ouvrirPanneauVoix dans alfred-ui.js), pas codé en
+// dur — vide tant que personne n'a collé de Voice ID : voir son usage dans
+// obtenirAudio()/prechargerScript() ci-dessous, qui n'essaient ElevenLabs
+// QUE si cette valeur est renseignée, sinon se rabattent sur Gemini/Cloud
+// TTS (nl-NL) comme avant.
+const ALFRED_ELEVENLABS_VOIX_NL_KEY = 'alfred_elevenlabs_voix_nl';
+function voixElevenLabsNL() {
+  return (localStorage.getItem(ALFRED_ELEVENLABS_VOIX_NL_KEY) || '').trim();
 }
 
 // Hache une clé de cache en SHA-256 hexadécimal — nécessaire pour le cache
@@ -440,14 +444,16 @@ async function genererAudioElevenLabs(text, voiceId) {
 // (préchargeables, donc la lenteur ne se voit jamais en direct).
 //
 // nl-BE (flamand) : ni Gemini-TTS ni Cloud TTS n'ont de voix belge (voir
-// VOIX_ELEVENLABS_NL_ID plus haut) — dès que cette constante est renseignée,
-// le néerlandais passe par ElevenLabs en PREMIER (avant même Gemini), pour
-// avoir le bon accent. Repli sur Gemini/Cloud TTS (nl-NL) si ElevenLabs
-// échoue (quota, réseau...) — jamais de silence total en démo live.
+// voixElevenLabsNL() plus haut) — dès qu'une voix est choisie dans le
+// panneau "Voix d'Alfred", le néerlandais passe par ElevenLabs en PREMIER
+// (avant même Gemini), pour avoir le bon accent. Repli sur Gemini/Cloud TTS
+// (nl-NL) si ElevenLabs échoue (quota, réseau...) — jamais de silence
+// total en démo live.
 async function obtenirAudio(text, langue, moteurForce) {
-  if (langue === 'nl' && VOIX_ELEVENLABS_NL_ID) {
+  const voixElevenLabs = langue === 'nl' ? voixElevenLabsNL() : '';
+  if (voixElevenLabs) {
     try {
-      return await genererAudioElevenLabs(text, VOIX_ELEVENLABS_NL_ID);
+      return await genererAudioElevenLabs(text, voixElevenLabs);
     } catch (e) {
       console.warn('[Alfred Voice] ElevenLabs (nl-BE) indisponible, repli sur Gemini/Cloud TTS (nl-NL):', e);
     }
@@ -513,7 +519,17 @@ async function prechargerScript(voixFr, voixNl, ton, onProgress) {
     while (tracker.index < liste.length) {
       const ligne = liste[tracker.index++];
       try {
-        await genererAudioGemini(ligne.texte, ligne.voix, ton, ligne.langue);
+        // NL + voix ElevenLabs configurée : précharge CETTE voix (celle
+        // vraiment utilisée en direct, voir obtenirAudio), pas Gemini —
+        // sinon le cache serait à côté (nl-NL Gemini) alors que la démo
+        // joue nl-BE ElevenLabs en direct, avec la latence d'un vrai appel
+        // API à chaque réplique plutôt que servie depuis le cache.
+        const voixElevenLabsPrechargement = ligne.langue === 'nl' ? voixElevenLabsNL() : '';
+        if (voixElevenLabsPrechargement) {
+          await genererAudioElevenLabs(ligne.texte, voixElevenLabsPrechargement);
+        } else {
+          await genererAudioGemini(ligne.texte, ligne.voix, ton, ligne.langue);
+        }
       } catch (e) {
         tracker.echecs++;
         lignesEchouees.push(ligne);
