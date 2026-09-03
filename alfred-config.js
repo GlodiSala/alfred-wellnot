@@ -185,14 +185,17 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { texte: "Pour créer un dossier, rien de plus simple : je clique sur « Créer un dossier » et j'arrive sur la fiche de création.", action: 'CreationOuvrir_CreerBouton' },
       { texte: "Donnez-moi le numéro de dossier, la langue de rédaction, le collaborateur en charge et le notaire en charge, et on passe à la création des parties.", action: 'CreationOuvrir_Champs' },
     ] },
-    // OuvrirOK (ex-"Parfait, passons à la création des parties.") SUPPRIMÉE
-    // le 31/08 : en recomparant vraiment à v3_9 (pas juste "de mémoire"),
-    // cette ligne n'existe pas dans l'officiel — Fariël donne les numéros
-    // et on enchaîne directement scène 7. DOUTE signalé à l'utilisatrice :
-    // si elle manque à l'usage comme respiration avant "Les parties", elle
-    // peut être remise (comme CreationEmail_Envoyer, une ligne ajoutée
-    // sciemment pour caler la démo) — mais ce ne serait alors plus une
-    // ligne "officielle", à traiter comme telle.
+    // OuvrirOK ("Parfait, passons à la création des parties.") RESTAURÉE le
+    // 03/09 : supprimée le 31/08 sur base de v3_9 qui semblait ne pas
+    // l'avoir — mais le document "Script_scene_Wellnot_InsideAI26_v3.pdf"
+    // (comparaison demandée par l'utilisatrice après un nouveau retour "le
+    // script ne correspond pas") la contient bien, scène 6 : "FARIËL :
+    // [numéro, langue, collaborateur, notaire]. ALFRED : Parfait, passons à
+    // la création des parties." Confirmé aussi côté NL (v3_8 avait déjà
+    // "Genoteerd! Tijd om de partijen erin te zetten." — jamais repris côté
+    // NL non plus jusqu'ici, ajouté maintenant en miroir, voir plus bas).
+    // Pas d'action : juste une confirmation orale avant la scène des parties.
+    { acte: 2, label: 'OuvrirOK', texte: "Parfait, passons à la création des parties." },
     // Retour Cyril (capture d'écran à l'appui) : rattacher le notaire de
     // chaque partie se fait en fait directement sur l'onglet Parties, juste
     // après avoir ajouté vendeur et acquéreur.
@@ -239,8 +242,13 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // base, oui." — avant, "Bien" enchaînait directement sur "Pour le
     // bien..." sans cette réponse.
     { acte: 2, label: 'RecupAuto', texte: "Tout ce qui est disponible en base, oui." },
+    // "Il se situe en Flandre, à 8670 Coxyde." retiré le 03/09 : recomparé
+    // au document "v3.pdf", c'est la ligne de FARIËL, pas celle d'Alfred —
+    // même souci que PartiesVendeur/PartiesAcquereur/PartiesNotaireA
+    // corrigés le 31/08, resté non détecté ici jusqu'à cette nouvelle
+    // comparaison (DOUTE explicitement signalé, maintenant tranché).
     { acte: 2, label: 'Bien', segments: [
-      { texte: "Pour le bien, vous sélectionnez le bon, et je récupère automatiquement la matrice cadastrale. Il se situe en Flandre, à 8670 Coxyde.", action: 'CreationBien_Rechercher' },
+      { texte: "Pour le bien, vous sélectionnez le bon, et je récupère automatiquement la matrice cadastrale.", action: 'CreationBien_Rechercher' },
       { texte: "Matrice cadastrale récupérée. Parties, notaires, cadastre — tout est déjà là.", action: 'CreationBien_Finaliser' },
     ] },
     // Ajouté suite au retour de Cyril (script officiel, séquence 9 —
@@ -265,34 +273,39 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // real magic. Lance la rédaction.") avant le clic réel. Réplique
     // séparée exprès (vrai tour de parole de Fariël avant et après).
     { acte: 2, label: 'RedactionOK', texte: "Je suis né prêt. Allez-y." },
-    // Même texte que la version à plat (aucun mot changé), redécoupé en 2
-    // segments : le 2e ("À gauche/À droite...") ne se joue qu'une fois le
-    // 1er (avec son attente de chargement) bien terminé — sinon la
-    // narration décrivait un écran qui n'était pas encore affiché.
+    // Même texte que la version à plat (aucun mot changé) — Segments 2 et
+    // 3 complétés le 31/08 : nettement tronqués par rapport au monologue
+    // officiel de la scène 10 (recomparaison à v3_9) — il manquait toute
+    // la fin (mention de Check_r, "il manque encore les pièces du
+    // vendeur", "fini la page blanche... vous gardez le contrôle"). Texte
+    // complété mot pour mot.
     // La ligne "rien n'est encore chargé..." vivait ici avant — déplacée
     // dans CreationDocuments juste au-dessus (retour Cyril), pour ne plus
     // être noyée dans l'ouverture de la rédaction.
-    // Segments 2 et 3 complétés le 31/08 : nettement tronqués par rapport
-    // au monologue officiel de la scène 10 (recomparaison à v3_9) — il
-    // manquait toute la fin (mention de Check_r, "il manque encore les
-    // pièces du vendeur", "fini la page blanche... vous gardez le
-    // contrôle"). Texte complété mot pour mot, juste redécoupé.
     // "Et maintenant le moment qu'on attend : la rédaction." retiré le
     // 31/08 : c'était la ligne de FARIËL ("Et maintenant le moment qu'on
     // attend : la rédaction. Toujours pas peur des experts ?"), pas
     // celle d'Alfred.
-    { acte: 2, label: 'Redaction', segments: [
-      { texte: "Un clic. Je réunis les parties, les notaires et le cadastre, et je génère le compromis de vente.", action: 'CreationRedaction' },
-      { texte: "À gauche, toutes les données collectées via les bases ou extraites des documents — tout est classé dans ma base de données.", action: 'CreationRedaction_ScrollGauche' },
-      // ScrollDroite s'arrête sur le titre PEB (voir trouverTitrePEB dans
-      // alfred-dom.js) et n'en repart plus tout seul — l'export Word,
-      // ajouté juste après à la demande de l'utilisatrice, est resté trop
-      // rapproché dans un 1er temps (montré tout de suite après le
-      // scroll). Retour explicite : laisser le temps de bien voir "PEB" à
-      // l'écran, et déplacer l'export à la toute fin de l'acte 2 (réplique
-      // ExportWord, après ReponseVendeur) plutôt que de l'enchaîner ici.
-      { texte: "À droite, le compromis qui se construit en direct — et bientôt, ces données seront vérifiées par Check_r, qui attire l'attention du collaborateur sur les erreurs ou incohérences. Il manque encore les pièces du vendeur, je les intègre dès réception. Fini la page blanche : vous relisez, vous ajustez, vous validez. Je fais le gros du travail, vous gardez le contrôle.", action: 'CreationRedaction_ScrollDroite' },
-    ] },
+    // DÉCOMPOSÉ le 03/09 : ces 3 répliques (auparavant des segments d'un
+    // seul groupe, enchaînés automatiquement sur UN appui sur →) sont
+    // maintenant 3 vraies répliques séparées. Remonté en test live :
+    // "à gauche" s'affichait bien, mais "à droite" (qui parle du compromis
+    // qui se construit) s'enchaînait après un délai fixe, pas après que la
+    // vraie génération du compromis (qui prend un temps variable côté
+    // appli) soit visuellement terminée — la narration décrivait parfois
+    // un écran pas encore prêt. Avec 3 répliques séparées, c'est la
+    // personne qui gère la démo qui décide quand appuyer sur → pour
+    // chacune, au rythme réel de ce qui s'affiche à l'écran.
+    { acte: 2, label: 'Redaction', texte: "Un clic. Je réunis les parties, les notaires et le cadastre, et je génère le compromis de vente.", action: 'CreationRedaction' },
+    { acte: 2, label: 'RedactionGauche', texte: "À gauche, toutes les données collectées via les bases ou extraites des documents — tout est classé dans ma base de données.", action: 'CreationRedaction_ScrollGauche' },
+    // ScrollDroite s'arrête sur le titre PEB (voir trouverTitrePEB dans
+    // alfred-dom.js) et n'en repart plus tout seul — l'export Word, ajouté
+    // juste après à la demande de l'utilisatrice, est resté trop rapproché
+    // dans un 1er temps (montré tout de suite après le scroll). Retour
+    // explicite : laisser le temps de bien voir "PEB" à l'écran, et
+    // déplacer l'export à la toute fin de l'acte 2 (réplique ExportWord,
+    // après ReponseVendeur) plutôt que de l'enchaîner ici.
+    { acte: 2, label: 'RedactionDroite', texte: "À droite, le compromis qui se construit en direct — et bientôt, ces données seront vérifiées par Check_r, qui attire l'attention du collaborateur sur les erreurs ou incohérences. Il manque encore les pièces du vendeur, je les intègre dès réception. Fini la page blanche : vous relisez, vous ajustez, vous validez. Je fais le gros du travail, vous gardez le contrôle.", action: 'CreationRedaction_ScrollDroite' },
     // Découpé en 2 segments — avant, la réplique parlait une fois puis
     // tout le reste (attente de l'événement + Consulter + Valider et
     // envoyer) se passait en silence total. Le 2e segment est en
@@ -300,15 +313,15 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // dès le début de l'attente, mais seulement quand l'événement "Email à
     // valider" apparaît vraiment (voir montrerPropositionEmail_envoyer
     // dans alfred-dom.js, qui appelle speak() lui-même au bon moment).
-    // "Il manque encore les pièces du vendeur —" : contrairement aux
-    // autres cas corrigés le 31/08, ce ne sont pas les mots de FARIËL —
-    // c'est repris tel quel de la propre ligne d'Alfred en scène 10 ("Il
-    // manque encore les pièces du vendeur — je les intègre dès
-    // réception."), réutilisé ici comme transition. Gardé tel quel, mais
-    // "le vendeur," et "de m'envoyer" rajoutés dans la suite : absents par
-    // rapport à l'officiel, trouvés en revérifiant mot à mot.
+    // "Il manque encore les pièces du vendeur —" RETIRÉ le 03/09 : le
+    // 31/08, gardé volontairement en le croyant réutilisé des propres mots
+    // d'Alfred (scène 10) — mais en recomparant au document "v3.pdf", la
+    // vraie ligne officielle de la scène 11 commence directement par "J'ai
+    // préparé un projet de mail...", sans ce lead-in. Ponctuation de la
+    // liste des pièces alignée aussi ("le PEB, le contrôle électrique,
+    // l'attestation du sol." — virgules, pas de "et", comme l'officiel).
     { acte: 2, label: 'Email', segments: [
-      { texte: "Il manque encore les pièces du vendeur — j'ai préparé un projet de mail à BIMBIMMO, le vendeur, en lui demandant de m'envoyer le PEB, le contrôle électrique et l'attestation du sol. Une seule demande, jamais deux fois la même question. Vous validez l'envoi ?", action: 'CreationEmail_Ouverture' },
+      { texte: "J'ai préparé un projet de mail à BIMBIMMO, le vendeur, en lui demandant de m'envoyer le PEB, le contrôle électrique, l'attestation du sol. Une seule demande, jamais deux fois la même question. Vous validez l'envoi ?", action: 'CreationEmail_Ouverture' },
       { texte: "Voilà, je consulte le projet de mail et je l'envoie.", action: 'CreationEmail_Envoyer', parlerDepuisAction: true },
     ] },
     // Étape A20-A21 du séquencier. Texte basé sur le script d'origine
@@ -318,11 +331,17 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // réellement détecté dans la liste Documents (voir
     // attendreNouveauxDocuments dans alfred-dom.js), pas avant — même
     // principe que CreationEmail_Envoyer juste au-dessus.
-    // Dernière phrase officielle ("Je prépare, vous décidez.") rajoutée le
-    // 31/08 — manquante par rapport à v3_9.
+    // SÉPARÉE EN DEUX le 03/09 : recomparé au document "v3.pdf", il y a un
+    // vrai tour de parole de Fariël ("Déjà ?") entre "les documents sont
+    // chargés." et "Réceptionnés, analysés, classés..." — même principe
+    // que PartiesVendeur/PartiesAcquereur (vrai tour de Fariël = vraie
+    // réplique séparée, pas un enchaînement automatique). ProjetComplet
+    // (juste après) reprend la suite, sans action : dite par la personne
+    // qui gère la démo une fois que Fariël a relancé.
     { acte: 2, label: 'ReponseVendeur', segments: [
-      { texte: "Envoyé. Le vendeur a répondu — les documents sont chargés. Réceptionnés, analysés, classés. Regardez le compromis : les données des pièces se sont placées dans les bonnes clauses. Le projet est complet. Je prépare, vous décidez.", action: 'CreationReponseVendeur', parlerDepuisAction: true },
+      { texte: "Envoyé. Le vendeur a répondu — les documents sont chargés.", action: 'CreationReponseVendeur', parlerDepuisAction: true },
     ] },
+    { acte: 2, label: 'ProjetComplet', texte: "Réceptionnés, analysés, classés. Et regardez le compromis : les données des pièces se sont placées dans les bonnes clauses. Le projet est complet. Je prépare, vous décidez." },
     // Étape supplémentaire hors script papier (demandée en test live) :
     // montrer l'export Word du compromis. Placée en toute fin d'acte 2,
     // pas juste après le scroll sur PEB (essayé d'abord, mais montré trop
@@ -404,8 +423,11 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { texte: "Een nieuw dossier starten is kinderspel. Ik klik op 'Dossier aanmaken' en de fiche staat klaar.", action: 'CreationOuvrir_CreerBouton' },
       { texte: "Geef mij gewoon het dossiernummer, de taal van de akte, de bevoegde medewerker en de notaris dan voeg ik meteen de partijen toe.", action: 'CreationOuvrir_Champs' },
     ] },
-    // OuvrirOK supprimée — voir la note FR équivalente (ligne inexistante
-    // dans l'officiel v3_8, DOUTE signalé).
+    // OuvrirOK ajoutée le 03/09 — voir la note FR équivalente. v3_8 a
+    // toujours eu cette ligne ("Genoteerd! Tijd om de partijen erin te
+    // zetten.", juste après que Fariël donne le numéro/langue/médewerker/
+    // notaris), jamais reprise côté NL jusqu'ici.
+    { acte: 2, label: 'OuvrirOK', texte: "Genoteerd! Tijd om de partijen erin te zetten." },
     // Corrigées le 31/08 — même raison que côté FR : le lead-in venait de
     // FARIËL, pas d'Alfred, et le texte d'Alfred lui-même n'était pas mot
     // pour mot le v3_8 ("Ik haal op" au lieu de "Ik haal de gegevens
@@ -438,8 +460,11 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // "'PAUSE'" retiré du texte officiel : une note de mise en scène qui
     // s'est retrouvée collée dans le texte de la réplique, pas un mot à
     // prononcer (même logique que "(pauze)" ailleurs dans le document).
+    // "Het goed ligt in Vlaanderen, in Koksijde." retiré le 03/09 — même
+    // souci que le FR équivalent : c'est FARIËL qui le dit dans v3_8, pas
+    // Alfred.
     { acte: 2, label: 'Bien', segments: [
-      { texte: "U duidt simpelweg het pand aan, en ik haal meteen de kadastrale legger op. Het goed ligt in Vlaanderen, in Koksijde.", action: 'CreationBien_Rechercher' },
+      { texte: "U duidt simpelweg het pand aan, en ik haal meteen de kadastrale legger op.", action: 'CreationBien_Rechercher' },
       { texte: "Partijen gekoppeld, notarissen toegewezen en kadastrale legger opgevraagd. We zijn helemaal klaar.", action: 'CreationBien_Finaliser' },
     ] },
     // Corrigée le 31/08 — traduction du FR au lieu du vrai v3_8.
@@ -461,28 +486,30 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // "En nu het moment waar we op wachten: de opstelling." retiré le
     // 31/08 : paraphrase de la ligne de FARIËL, pas les mots d'Alfred —
     // remplacé par sa vraie ligne officielle (v3_8).
-    { acte: 2, label: 'Redaction', segments: [
-      { texte: "Eén muisklik. Partijen, notarissen en kadastrale gegevens. Ik breng alles samen en genereer de compromis.", action: 'CreationRedaction' },
-      { texte: "Links op het scherm: de opgevraagde data uit de databanken.", action: 'CreationRedaction_ScrollGauche' },
-      { texte: "Rechts: de akte die zich live opbouwt. Straks haalt Check_r daar ook nog eens alle eventuele fouten uit. De ontbrekende stukken van de verkoper voeg ik automatisch toe zodra ze binnenkomen. Geen blanco pagina meer waar u van nul moet starten. U leest na, u stelt bij en u valideert. Ik neem het handwerk over, u behoudt de leiding.", action: 'CreationRedaction_ScrollDroite' },
-    ] },
-    // Corrigée le 31/08 — traduction du FR au lieu du vrai v3_8. Lead-in
-    // "De ontbrekende stukken van de verkoper —" gardé (même principe que
-    // le FR "Il manque encore les pièces du vendeur —") : ce n'est pas du
-    // FARIËL, c'est la propre phrase d'Alfred de la scène 10 (v3_8),
-    // réutilisée ici comme transition — cette répétition existe déjà
-    // telle quelle côté FR officiel.
+    // DÉCOMPOSÉ le 03/09 — voir la note FR équivalente : 3 vraies répliques
+    // séparées au lieu d'un seul groupe enchaîné automatiquement, pour
+    // laisser la main à la personne qui gère la démo entre chaque étape
+    // (le temps réel de génération du compromis varie).
+    { acte: 2, label: 'Redaction', texte: "Eén muisklik. Partijen, notarissen en kadastrale gegevens. Ik breng alles samen en genereer de compromis.", action: 'CreationRedaction' },
+    { acte: 2, label: 'RedactionGauche', texte: "Links op het scherm: de opgevraagde data uit de databanken.", action: 'CreationRedaction_ScrollGauche' },
+    { acte: 2, label: 'RedactionDroite', texte: "Rechts: de akte die zich live opbouwt. Straks haalt Check_r daar ook nog eens alle eventuele fouten uit. De ontbrekende stukken van de verkoper voeg ik automatisch toe zodra ze binnenkomen. Geen blanco pagina meer waar u van nul moet starten. U leest na, u stelt bij en u valideert. Ik neem het handwerk over, u behoudt de leiding.", action: 'CreationRedaction_ScrollDroite' },
+    // Lead-in "De ontbrekende stukken van de verkoper —" RETIRÉ le 03/09 :
+    // gardé le 31/08 en le croyant repris de la scène 10 (comme côté FR) —
+    // mais en relisant v3_8 (scène 11) directement, la vraie ligne
+    // commence par "Heel eenvoudig.", pas par ce lead-in.
     { acte: 2, label: 'Email', segments: [
-      { texte: "De ontbrekende stukken van de verkoper — Ik heb een conceptmail klaargezet voor BIMBIMMO, de verkoper, met de vraag om het EPC, de elektrische keuring en het bodemattest te bezorgen. Één gerichte vraag, nooit twee keer hetzelfde. Valideert u de verzending?", action: 'CreationEmail_Ouverture' },
+      { texte: "Heel eenvoudig. Ik heb een conceptmail klaargezet voor BIMBIMMO, de verkoper, met de vraag om het EPC, de elektrische keuring en het bodemattest te bezorgen. Één gerichte vraag, nooit twee keer hetzelfde. Valideert u de verzending?", action: 'CreationEmail_Ouverture' },
       { texte: "Daar is het, ik bekijk het e-mailontwerp en verstuur het.", action: 'CreationEmail_Envoyer', parlerDepuisAction: true },
     ] },
     // Corrigée le 31/08 — traduction du FR au lieu du vrai v3_8 (à
     // commencer par "Verzonden" au lieu de "Verstuurd", le vrai mot
-    // officiel). Dernière phrase officielle ("Ik bereid alles voor en u
-    // beslist.") déjà correcte depuis le 31/08 précédent.
+    // officiel).
+    // SÉPARÉE EN DEUX le 03/09 — voir la note FR équivalente : vrai tour de
+    // parole de Fariël ("Nu Al?") entre les deux phrases dans v3_8.
     { acte: 2, label: 'ReponseVendeur', segments: [
-      { texte: "Verstuurd. En kijk eens aan: de verkoper heeft al geantwoord, de documenten zijn binnen. Ontvangen, geanalyseerd en verwerkt. En kijk naar de verkoopovereenkomst: de gegevens uit de stukken zijn in de juiste clausules verwerkt. Het ontwerp is klaar. Ik bereid alles voor en u beslist.", action: 'CreationReponseVendeur', parlerDepuisAction: true },
+      { texte: "Verstuurd. En kijk eens aan: de verkoper heeft al geantwoord, de documenten zijn binnen.", action: 'CreationReponseVendeur', parlerDepuisAction: true },
     ] },
+    { acte: 2, label: 'ProjetComplet', texte: "Ontvangen, geanalyseerd en verwerkt. En kijk naar de verkoopovereenkomst: de gegevens uit de stukken zijn in de juiste clausules verwerkt. Het ontwerp is klaar. Ik bereid alles voor en u beslist." },
     // Scène 11 (suite) : voir la note FR équivalente — même 3 lignes
     // fixes, sourcées directement de v3_8 (pas traduites du FR).
     { acte: 2, label: 'InvitationQuestions', texte: "Iedereen op kantoor kan mij dag en nacht vragen stellen. Stel ze maar!" },
