@@ -74,7 +74,7 @@ const SELECTEURS = {
     confirmerBien:       ['Confirmer', 'Bevestigen'], // estimation
     rediger:             ['Rédiger un document'],
     genererCompromis:    ['Générer le compromis'],
-    suivant:             ['Suivant', 'Volgende'], // estimation très fiable (mot standard de navigation)
+    suivant:             ['Suivant', 'Volgende'], // confirmé par capture d'écran (04/09)
     validerEtEnvoyer:    ['Valider et envoyer'],
     consulter:           ['Consulter'],
   },
@@ -99,9 +99,11 @@ const SELECTEURS = {
   },
   menus: {
     qualitePartie:              ['Sélectionnez une qualité'],
-    collaborateurEnCharge:      ['Collaborateur en charge du dossier'],
-    collaborateurAdministratif: ['Collaborateur administratif'],
-    notaireEnCharge:            ['Notaire en charge du dossier'],
+    // NL confirmés par capture d'écran (04/09, fiche "Nieuw dossier
+    // aanmaken") — libellés plus courts qu'en FR, normal, pas une erreur.
+    collaborateurEnCharge:      ['Collaborateur en charge du dossier', 'Verantwoordelijke medewerker'],
+    collaborateurAdministratif: ['Collaborateur administratif', 'Administratieve medewerker'],
+    notaireEnCharge:            ['Notaire en charge du dossier', 'Verantwoordelijke notaris'],
   },
   onglets: {
     evenements:   ['Événements', 'Gebeurtenissen'], // estimation
