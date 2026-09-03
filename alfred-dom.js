@@ -1013,8 +1013,16 @@ const SURBRILLANCE_CIBLES = {
 // Repli sur le dernier état trouvé si ça ne se stabilise jamais dans le
 // budget (~7s), plutôt que de bloquer indéfiniment.
 async function attendreTableauDossiersCharge() {
-  let tbody = null, dernierCompte = -1, stable = 0;
-  for (let i = 0; i < 32; i++) {
+  let tbody = null, dernierCompte = -1, stable = 0, confirme = false;
+  // Budget monté 8s → 25s — cause trouvée : le plafond précédent (32 x
+  // 250ms) était atteint EXACTEMENT (remonté en test live : "action:
+  // 8103ms", pile ce plafond) sans jamais avoir confirmé la stabilité —
+  // la fonction abandonnait donc et laissait parler Alfred sur un tableau
+  // dont on n'était pas sûr qu'il ait fini de charger. Avec beaucoup de
+  // dossiers de test accumulés (5 pages), le vrai chargement peut prendre
+  // plus que 8s. Priorité à la fiabilité plutôt qu'à la vitesse (décision
+  // explicite : encore deux semaines avant le pitch).
+  for (let i = 0; i < 100; i++) {
     if (annulationDemandee) return null;
     tbody = document.querySelector('tbody.p-datatable-tbody');
     // Vraie cause trouvée par capture d'écran en direct : ce tableau
@@ -1032,13 +1040,17 @@ async function attendreTableauDossiersCharge() {
       || !!document.querySelector('.p-datatable-loading-overlay, .p-datatable-loading-icon, .p-datatable-loading, .p-datatable-mask');
     const compte = tbody ? tbody.querySelectorAll('tr').length : 0;
     if (!enChargement && compte > 0 && compte === dernierCompte) {
-      if (++stable >= 3) break;
+      if (++stable >= 3) { confirme = true; break; }
     } else {
       stable = 0;
     }
     dernierCompte = compte;
     await attendre(250);
   }
+  // Traçage — pour savoir avec certitude, la prochaine fois qu'Alfred
+  // parle "trop tôt", si c'est parce que ce plafond a été atteint sans
+  // jamais confirmer la stabilité (plutôt que deviner encore).
+  if (!confirme) console.warn('[Alfred DOM] Tableau dossiers : plafond d\'attente (25s) atteint SANS confirmer le chargement — lignes:', dernierCompte, 'squelettes encore présents ?', tbody ? tbody.querySelectorAll('.p-skeleton, [class*="skeleton" i]').length > 0 : '(tbody introuvable)');
   return (tbody && tbody.querySelector('tr')) ? tbody : null;
 }
 
