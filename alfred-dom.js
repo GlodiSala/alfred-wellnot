@@ -104,6 +104,9 @@ const SELECTEURS = {
     collaborateurEnCharge:      ['Collaborateur en charge du dossier', 'Verantwoordelijke medewerker'],
     collaborateurAdministratif: ['Collaborateur administratif', 'Administratieve medewerker'],
     notaireEnCharge:            ['Notaire en charge du dossier', 'Verantwoordelijke notaris'],
+    // "Taal" confirmé par capture d'écran (04/09) — jamais eu besoin de FR
+    // ("Frans" est déjà la valeur par défaut du champ, jamais touché avant).
+    langueActe:                 ['Taal'],
   },
   onglets: {
     evenements:   ['Événements', 'Gebeurtenissen'], // estimation
@@ -691,6 +694,10 @@ async function choisirDansDropdownParLabelProche(labelTexte, texteOption, dejaRe
     if (opt) {
       await curseurVersAsync(opt, () => simulerClic(opt));
       await attendre(300);
+      // Retour direct : mettre en évidence la valeur sélectionnée, en
+      // rythme avec ce qu'Alfred est en train de dire (langue, notaire,
+      // collaborateur...) — même halo que sur les fiches Vendeur/Acquéreur.
+      surlignerBrievement(declencheur);
       console.log('[Alfred DOM] Après sélection, texte du déclencheur:', JSON.stringify(declencheur.textContent.trim()));
       return true;
     }
@@ -1080,6 +1087,10 @@ async function rattacherNotaire(nomNotaire, qualitePartie) {
         await attendre(500);
       }
       trouve = true;
+      // Retour direct : mettre en évidence le notaire trouvé/sélectionné,
+      // en rythme avec la réplique ("Je le retrouve dans la base de tous
+      // les notaires belges...").
+      surlignerBrievement(opt);
       break;
     }
     console.warn('[Alfred DOM] Notaire introuvable avec le terme de recherche:', terme);
@@ -1097,7 +1108,7 @@ async function rattacherNotaire(nomNotaire, qualitePartie) {
   let btnConfirmer = null;
   for (let i = 0; i < 15; i++) {
     btnConfirmer = Array.from(document.querySelectorAll('button'))
-      .find(b => b.textContent.trim() === 'Ajouter' && b.getBoundingClientRect().width > 0 && b.closest('.justify-end'));
+      .find(b => texteCorrespond(b.textContent, SELECTEURS.boutons.ajouter) && b.getBoundingClientRect().width > 0 && b.closest('.justify-end'));
     if (btnConfirmer) break;
     await attendre(300);
   }
@@ -1650,6 +1661,17 @@ async function seq_creationDossier_ouvrir_champs() {
   const champCode = document.getElementById(SELECTEURS.champs.dossierCode);
   if (champCode) validerChamp(champCode);
   await attendre(400);
+  // "Taal" (langue de l'acte) — actif seulement pour la démo NL, jamais
+  // touché en FR où "Frans" est déjà la valeur par défaut du champ
+  // (confirmé par capture d'écran : même sur le site en néerlandais, ce
+  // champ reste sur "Frans" tant qu'on ne le change pas). Demandé
+  // explicitement : le dossier doit être en néerlandais quand la démo
+  // l'est, comme le dit Fariël dans le script officiel NL ("Taal:
+  // Nederlands").
+  if (typeof currentLangue !== 'undefined' && currentLangue === 'nl') {
+    await choisirDansDropdownParLabelProche(SELECTEURS.menus.langueActe, 'Nederlands');
+    await attendre(300);
+  }
   // Pauses encore raccourcies (500ms → 300ms, et 800ms → 400ms côté
   // choisirDansDropdownParLabelProche) : une fois speak() corrigé pour
   // attendre la vraie fin de l'audio (voir alfred-voice.js), la comparaison
