@@ -180,11 +180,16 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // (aucun mot changé — juste redécoupé en 3 segments), mais chaque
     // segment déclenche son action au bon moment, plutôt que tout le DOM
     // d'un coup dès le premier mot de la réplique complète.
-    { acte: 2, label: 'Ouvrir', segments: [
-      { texte: "Voici d'abord le tableau de bord : tous les dossiers en cours, les collaborateurs, les statuts.", action: 'CreationOuvrir_Dossiers' },
-      { texte: "Pour créer un dossier, rien de plus simple : je clique sur « Créer un dossier » et j'arrive sur la fiche de création.", action: 'CreationOuvrir_CreerBouton' },
-      { texte: "Donnez-moi le numéro de dossier, la langue de rédaction, le collaborateur en charge et le notaire en charge, et on passe à la création des parties.", action: 'CreationOuvrir_Champs' },
-    ] },
+    // DÉCOMPOSÉ le 03/09 (2e passe) — retour Cyril en test live : "les
+    // actions vont trop vite, pas le temps de voir, trop de blocs auto".
+    // Même traitement que Redaction/Bien/Email juste en dessous : 3 vraies
+    // répliques séparées au lieu d'un seul groupe enchaîné automatiquement
+    // sur un seul appui sur →, pour que la personne qui gère la démo
+    // reprenne la main entre chaque écran (tableau de bord → fiche de
+    // création → champs remplis).
+    { acte: 2, label: 'Ouvrir', texte: "Voici d'abord le tableau de bord : tous les dossiers en cours, les collaborateurs, les statuts.", action: 'CreationOuvrir_Dossiers' },
+    { acte: 2, label: 'OuvrirCreer', texte: "Pour créer un dossier, rien de plus simple : je clique sur « Créer un dossier » et j'arrive sur la fiche de création.", action: 'CreationOuvrir_CreerBouton' },
+    { acte: 2, label: 'OuvrirChamps', texte: "Donnez-moi le numéro de dossier, la langue de rédaction, le collaborateur en charge et le notaire en charge, et on passe à la création des parties.", action: 'CreationOuvrir_Champs' },
     // OuvrirOK ("Parfait, passons à la création des parties.") RESTAURÉE le
     // 03/09 : supprimée le 31/08 sur base de v3_9 qui semblait ne pas
     // l'avoir — mais le document "Script_scene_Wellnot_InsideAI26_v3.pdf"
@@ -247,10 +252,9 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // même souci que PartiesVendeur/PartiesAcquereur/PartiesNotaireA
     // corrigés le 31/08, resté non détecté ici jusqu'à cette nouvelle
     // comparaison (DOUTE explicitement signalé, maintenant tranché).
-    { acte: 2, label: 'Bien', segments: [
-      { texte: "Pour le bien, vous sélectionnez le bon, et je récupère automatiquement la matrice cadastrale.", action: 'CreationBien_Rechercher' },
-      { texte: "Matrice cadastrale récupérée. Parties, notaires, cadastre — tout est déjà là.", action: 'CreationBien_Finaliser' },
-    ] },
+    // DÉCOMPOSÉ le 03/09 (2e passe) — même raison que Ouvrir ci-dessus.
+    { acte: 2, label: 'Bien', texte: "Pour le bien, vous sélectionnez le bon, et je récupère automatiquement la matrice cadastrale.", action: 'CreationBien_Rechercher' },
+    { acte: 2, label: 'BienOK', texte: "Matrice cadastrale récupérée. Parties, notaires, cadastre — tout est déjà là.", action: 'CreationBien_Finaliser' },
     // Ajouté suite au retour de Cyril (script officiel, séquence 9 —
     // "Documents") : sans cet échange, la démo enchaînait directement sur
     // la rédaction sans jamais dire que rien n'est encore chargé côté
@@ -320,8 +324,13 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // préparé un projet de mail...", sans ce lead-in. Ponctuation de la
     // liste des pièces alignée aussi ("le PEB, le contrôle électrique,
     // l'attestation du sol." — virgules, pas de "et", comme l'officiel).
-    { acte: 2, label: 'Email', segments: [
-      { texte: "J'ai préparé un projet de mail à BIMBIMMO, le vendeur, en lui demandant de m'envoyer le PEB, le contrôle électrique, l'attestation du sol. Une seule demande, jamais deux fois la même question. Vous validez l'envoi ?", action: 'CreationEmail_Ouverture' },
+    // DÉCOMPOSÉ le 03/09 (2e passe) — même raison que Ouvrir/Bien ci-dessus.
+    // EmailEnvoyer reste un segment (pas un texte+action à plat) : c'est le
+    // seul moyen de passer parlerDepuisAction (voir la note plus haut sur
+    // PartiesNotaireV) — le texte n'est dit que lorsque l'événement "Email
+    // à valider" apparaît vraiment, pas dès l'appui sur →.
+    { acte: 2, label: 'Email', texte: "J'ai préparé un projet de mail à BIMBIMMO, le vendeur, en lui demandant de m'envoyer le PEB, le contrôle électrique, l'attestation du sol. Une seule demande, jamais deux fois la même question. Vous validez l'envoi ?", action: 'CreationEmail_Ouverture' },
+    { acte: 2, label: 'EmailEnvoyer', segments: [
       { texte: "Voilà, je consulte le projet de mail et je l'envoie.", action: 'CreationEmail_Envoyer', parlerDepuisAction: true },
     ] },
     // Étape A20-A21 du séquencier. Texte basé sur le script d'origine
@@ -433,11 +442,10 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Cyrils papieren script bij te werken.
     // Corrigée le 31/08 : c'était une traduction du FR, pas le vrai texte
     // néerlandais officiel (v3_8) — retrouvé en revérifiant mot à mot.
-    { acte: 2, label: 'Ouvrir', segments: [
-      { texte: "We beginnen bij het dashboard: hier ziet u al uw lopende dossiers, de medewerkers en de actuele statussen.", action: 'CreationOuvrir_Dossiers' },
-      { texte: "Een nieuw dossier starten is kinderspel. Ik klik op 'Dossier aanmaken' en de fiche staat klaar.", action: 'CreationOuvrir_CreerBouton' },
-      { texte: "Geef mij gewoon het dossiernummer, de taal van de akte, de bevoegde medewerker en de notaris dan voeg ik meteen de partijen toe.", action: 'CreationOuvrir_Champs' },
-    ] },
+    // DÉCOMPOSÉ le 03/09 (2e passe) — voir la note FR équivalente.
+    { acte: 2, label: 'Ouvrir', texte: "We beginnen bij het dashboard: hier ziet u al uw lopende dossiers, de medewerkers en de actuele statussen.", action: 'CreationOuvrir_Dossiers' },
+    { acte: 2, label: 'OuvrirCreer', texte: "Een nieuw dossier starten is kinderspel. Ik klik op 'Dossier aanmaken' en de fiche staat klaar.", action: 'CreationOuvrir_CreerBouton' },
+    { acte: 2, label: 'OuvrirChamps', texte: "Geef mij gewoon het dossiernummer, de taal van de akte, de bevoegde medewerker en de notaris dan voeg ik meteen de partijen toe.", action: 'CreationOuvrir_Champs' },
     // OuvrirOK ajoutée le 03/09 — voir la note FR équivalente. v3_8 a
     // toujours eu cette ligne ("Genoteerd! Tijd om de partijen erin te
     // zetten.", juste après que Fariël donne le numéro/langue/médewerker/
@@ -478,10 +486,9 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // "Het goed ligt in Vlaanderen, in Koksijde." retiré le 03/09 — même
     // souci que le FR équivalent : c'est FARIËL qui le dit dans v3_8, pas
     // Alfred.
-    { acte: 2, label: 'Bien', segments: [
-      { texte: "U duidt simpelweg het pand aan, en ik haal meteen de kadastrale legger op.", action: 'CreationBien_Rechercher' },
-      { texte: "Partijen gekoppeld, notarissen toegewezen en kadastrale legger opgevraagd. We zijn helemaal klaar.", action: 'CreationBien_Finaliser' },
-    ] },
+    // DÉCOMPOSÉ le 03/09 (2e passe) — voir la note FR équivalente.
+    { acte: 2, label: 'Bien', texte: "U duidt simpelweg het pand aan, en ik haal meteen de kadastrale legger op.", action: 'CreationBien_Rechercher' },
+    { acte: 2, label: 'BienOK', texte: "Partijen gekoppeld, notarissen toegewezen en kadastrale legger opgevraagd. We zijn helemaal klaar.", action: 'CreationBien_Finaliser' },
     // Corrigée le 31/08 — traduction du FR au lieu du vrai v3_8.
     { acte: 2, label: 'DocumentsReponse', texte: "Die ontbreken nog. Maar geen probleem: u kunt ze zelf uploaden, óf ik stuur meteen een verzoek naar de verkoper om ze aan te leveren." },
     // "Dossier geregistreerd." → "Dossier bewaard en opgeslagen" : c'est
@@ -524,8 +531,9 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // gardé le 31/08 en le croyant repris de la scène 10 (comme côté FR) —
     // mais en relisant v3_8 (scène 11) directement, la vraie ligne
     // commence par "Heel eenvoudig.", pas par ce lead-in.
-    { acte: 2, label: 'Email', segments: [
-      { texte: "Heel eenvoudig. Ik heb een conceptmail klaargezet voor BIMBIMMO, de verkoper, met de vraag om het EPC, de elektrische keuring en het bodemattest te bezorgen. Één gerichte vraag, nooit twee keer hetzelfde. Valideert u de verzending?", action: 'CreationEmail_Ouverture' },
+    // DÉCOMPOSÉ le 03/09 (2e passe) — voir la note FR équivalente.
+    { acte: 2, label: 'Email', texte: "Heel eenvoudig. Ik heb een conceptmail klaargezet voor BIMBIMMO, de verkoper, met de vraag om het EPC, de elektrische keuring en het bodemattest te bezorgen. Één gerichte vraag, nooit twee keer hetzelfde. Valideert u de verzending?", action: 'CreationEmail_Ouverture' },
+    { acte: 2, label: 'EmailEnvoyer', segments: [
       { texte: "Daar is het, ik bekijk het e-mailontwerp en verstuur het.", action: 'CreationEmail_Envoyer', parlerDepuisAction: true },
     ] },
     // Corrigée le 31/08 — traduction du FR au lieu du vrai v3_8 (à
