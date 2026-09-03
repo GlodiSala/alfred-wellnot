@@ -1844,6 +1844,18 @@ async function seq_creationDossier_ouvrir_champs() {
     await choisirDansDropdownParLabelProche(SELECTEURS.menus.notaireEnCharge, cfg.notaire);
     await attendre(300);
   }
+  // Le clic "Suivant" vivait ici avant — sorti dans sa propre fonction/
+  // réplique (seq_creationDossier_ouvrir_suivant, juste en dessous) : retour
+  // Cyril, "chaque action doit avoir sa propre flèche" — sans ça, l'écran
+  // passait à la suite tout de suite après le dernier champ rempli, sans
+  // laisser le temps de le voir avant que "Suivant" ne soit cliqué.
+}
+
+// Clic "Suivant" de la fiche de création — séparé de
+// seq_creationDossier_ouvrir_champs (voir la note juste au-dessus). Réplique
+// silencieuse côté script (voir 'OuvrirSuivant' dans alfred-config.js) :
+// aucune ligne officielle à ce moment précis, juste ce clic.
+async function seq_creationDossier_ouvrir_suivant() {
   // "Suivant" reste désactivé tant que les champs requis ne sont pas valides —
   // on attend qu'il s'active plutôt que de cliquer trop tôt sur un bouton inactif.
   // On s'arrête ici si ça échoue : continuer sur le mauvais écran ne fait
@@ -1860,6 +1872,7 @@ async function seq_creationDossier_ouvrir_champs() {
 async function seq_creationDossier_ouvrir() {
   await seq_creationDossier_ouvrir_ecran();
   await seq_creationDossier_ouvrir_champs();
+  await seq_creationDossier_ouvrir_suivant();
 }
 
 // Étape 2 — Parties : vendeur (morale via BCE, ou physique via RN) puis
@@ -1931,6 +1944,16 @@ async function seq_creationDossier_parties_notaireAcquereur() {
   // l'ancien code d'avant ce soir.
   if (cfg.acquereur_notaire) await rattacherNotaire(cfg.acquereur_notaire, SELECTEURS.textes.qualiteAcquereur);
   await attendre(500);
+  // Le clic "Suivant" vivait ici avant — sorti dans sa propre fonction/
+  // réplique (seq_creationDossier_parties_suivant, juste en dessous), même
+  // raison que pour "Ouvrir" (retour Cyril, une flèche par action).
+}
+
+// Clic "Suivant" de l'onglet Parties — séparé de
+// seq_creationDossier_parties_notaireAcquereur (voir la note juste
+// au-dessus). Réplique silencieuse côté script (voir 'PartiesSuivant' dans
+// alfred-config.js).
+async function seq_creationDossier_parties_suivant() {
   // "Suivant" reste désactivé tant que le vendeur n'a pas été ajouté avec succès.
   if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.suivant)) {
     console.warn('[Alfred DOM] Étape "parties" bloquée — arrêt de la séquence.');
@@ -1945,6 +1968,7 @@ async function seq_creationDossier_parties_notaires() {
   await seq_creationDossier_parties_notaireVendeur();
   await attendre(600);
   await seq_creationDossier_parties_notaireAcquereur();
+  await seq_creationDossier_parties_suivant();
 }
 
 // Rétrocompatibilité — enchaîne les trois sous-étapes (test manuel en
@@ -2321,6 +2345,7 @@ const DOM_ACTIONS = {
   'CreationOuvrir_Dossiers':    seq_creationDossier_ouvrir_dossiers,
   'CreationOuvrir_CreerBouton': seq_creationDossier_ouvrir_creerBouton,
   'CreationOuvrir_Champs':      seq_creationDossier_ouvrir_champs,
+  'CreationOuvrir_Suivant':     seq_creationDossier_ouvrir_suivant,
   'CreationParties':   seq_creationDossier_parties,
   'CreationParties_Vendeur':   seq_creationDossier_parties_vendeur,
   'CreationParties_Acquereur': seq_creationDossier_parties_acquereur,
@@ -2332,6 +2357,7 @@ const DOM_ACTIONS = {
   'CreationParties_Notaires':  seq_creationDossier_parties_notaires, // rétrocompat, plus utilisé par le script
   'CreationParties_NotaireVendeur':   seq_creationDossier_parties_notaireVendeur,
   'CreationParties_NotaireAcquereur': seq_creationDossier_parties_notaireAcquereur,
+  'CreationParties_Suivant':   seq_creationDossier_parties_suivant,
   'CreationBien':      seq_creationDossier_bien,
   'CreationBien_Rechercher': seq_creationDossier_bien_ajouter,
   'CreationBien_Finaliser':  seq_creationDossier_bien_finaliser,

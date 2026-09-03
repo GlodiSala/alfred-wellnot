@@ -208,6 +208,12 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // "Genoteerd! Tijd om de partijen erin te zetten." — jamais repris côté
     // NL non plus jusqu'ici, ajouté maintenant en miroir, voir plus bas).
     // Pas d'action : juste une confirmation orale avant la scène des parties.
+    // Réplique silencieuse (juste le clic "Suivant") — séparée de
+    // OuvrirChamps le 03/09 (2e passe), retour Cyril : "chaque action doit
+    // avoir sa propre flèche". Pas de ligne officielle à ce moment précis.
+    { acte: 2, label: 'OuvrirSuivant', segments: [
+      { texte: "", action: 'CreationOuvrir_Suivant', parlerDepuisAction: true },
+    ] },
     { acte: 2, label: 'OuvrirOK', texte: "Parfait, passons à la création des parties." },
     // Retour Cyril (capture d'écran à l'appui) : rattacher le notaire de
     // chaque partie se fait en fait directement sur l'onglet Parties, juste
@@ -249,6 +255,11 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Maxime Van der Straten.") reformulée à la 1re personne — l'officiel
     // ne l'attribue pas à Alfred.
     { acte: 2, label: 'PartiesNotaireA', texte: "Je le retrouve dans la base de tous les notaires belges et je le rattache à l'acquéreur. Chaque partie a son notaire.", action: 'CreationParties_NotaireAcquereur' },
+    // Réplique silencieuse (juste le clic "Suivant") — même raison que
+    // OuvrirSuivant plus haut.
+    { acte: 2, label: 'PartiesSuivant', segments: [
+      { texte: "", action: 'CreationParties_Suivant', parlerDepuisAction: true },
+    ] },
     // Ajoutée le 31/08 (échange manquant en tout début de scène 8, trouvé
     // en recomparant à v3_9) : FARIËL "Donc toutes ces informations, tu les
     // récupères automatiquement ?" / ALFRED "Tout ce qui est disponible en
@@ -464,6 +475,10 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // toujours eu cette ligne ("Genoteerd! Tijd om de partijen erin te
     // zetten.", juste après que Fariël donne le numéro/langue/médewerker/
     // notaris), jamais reprise côté NL jusqu'ici.
+    // Réplique silencieuse — voir la note FR équivalente.
+    { acte: 2, label: 'OuvrirSuivant', segments: [
+      { texte: "", action: 'CreationOuvrir_Suivant', parlerDepuisAction: true },
+    ] },
     { acte: 2, label: 'OuvrirOK', texte: "Genoteerd! Tijd om de partijen erin te zetten." },
     // Corrigées le 31/08 — même raison que côté FR : le lead-in venait de
     // FARIËL, pas d'Alfred, et le texte d'Alfred lui-même n'était pas mot
@@ -487,6 +502,10 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // FR, pas le vrai texte néerlandais officiel (qui existe bel et bien
     // dans v3_8, différent : "Hij staat in de databank...").
     { acte: 2, label: 'PartiesNotaireA', texte: "Hij staat in de databank van alle Belgische notarissen. Ik koppel hem meteen aan de koper. Voila, nu zijn beide partijen vertegenwoordigd.", action: 'CreationParties_NotaireAcquereur' },
+    // Réplique silencieuse — voir la note FR équivalente.
+    { acte: 2, label: 'PartiesSuivant', segments: [
+      { texte: "", action: 'CreationParties_Suivant', parlerDepuisAction: true },
+    ] },
     // Ajoutée — échange officiel manquant en début de scène 8 (v3_8) :
     // FARIËL "Dus al die informatie haal je automatisch op?" / ALFRED
     // "Alles wat er in de databank klaarstaat, ja."
