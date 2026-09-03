@@ -26,7 +26,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { text, voiceId, modelId, stability, similarityBoost } = req.body || {};
+    const { text, voiceId, modelId, stability, similarityBoost, style, useSpeakerBoost } = req.body || {};
     if (!text || !voiceId) {
       return res.status(400).json({ error: 'text et voiceId sont requis' });
     }
@@ -49,9 +49,15 @@ export default async function handler(req, res) {
         // d'ElevenLabs couvrant le néerlandais (voir leur documentation) —
         // remplaçable via modelId si un autre est préférable à l'usage.
         model_id: modelId || 'eleven_multilingual_v2',
+        // Valeurs par défaut alignées sur ELEVENLABS_REGLAGES_VOIX
+        // (alfred-voice.js), qui les envoie explicitement à chaque appel —
+        // ces défauts ne servent qu'en secours (appel direct à l'API sans
+        // passer par le client, ex. test manuel).
         voice_settings: {
-          stability:        typeof stability === 'number' ? stability : 0.5,
-          similarity_boost: typeof similarityBoost === 'number' ? similarityBoost : 0.75,
+          stability:          typeof stability === 'number' ? stability : 0.42,
+          similarity_boost:   typeof similarityBoost === 'number' ? similarityBoost : 0.75,
+          style:              typeof style === 'number' ? style : 0.35,
+          use_speaker_boost:  typeof useSpeakerBoost === 'boolean' ? useSpeakerBoost : true,
         },
       }),
     });

@@ -398,12 +398,28 @@ async function genererAudioCloud(text, voix) {
   return new Audio('data:audio/mp3;base64,' + audioContent);
 }
 
+// Réglages de voix ElevenLabs — centralisés ici (source unique, envoyés
+// explicitement au serveur) pour pouvoir les ajuster sans dépendre des
+// valeurs par défaut d'api/tts-elevenlabs.js. Stabilité un peu baissée +
+// style ajouté par rapport aux réglages neutres (50/75/0) : demandé
+// explicitement, la voix par défaut sonnait "trop monotone" — stabilité
+// plus basse = plus de variation naturelle d'intonation, style > 0 =
+// exagère un peu l'expressivité de la voix (voir recherche ElevenLabs :
+// stabilité 40-55% + style pour du contenu qui doit sonner vivant, à
+// l'inverse de 65-75%/style 0 recommandé pour du narratif neutre).
+const ELEVENLABS_REGLAGES_VOIX = { stability: 0.42, similarityBoost: 0.75, style: 0.35 };
+// Incrémenter cette version à chaque changement de ELEVENLABS_REGLAGES_VOIX
+// : elle fait partie de la clé de cache, donc un changement de réglages
+// régénère automatiquement l'audio au lieu de servir de l'ancien depuis le
+// cache (local ou partagé) — pas besoin de vider quoi que ce soit à la main.
+const ELEVENLABS_REGLAGES_VERSION = 2;
+
 // Équivalent ElevenLabs — même logique de cache (local puis partagé) que
 // genererAudioGemini/genererAudioCloud ci-dessus, juste un moteur différent
-// derrière (voir api/tts-elevenlabs.js). Clé de cache distincte ('el-')
+// derrière (voir api/tts-elevenlabs.js). Clé de cache distincte ('elevenlabs-')
 // pour ne jamais confondre avec de l'audio Google même à texte identique.
 async function genererAudioElevenLabs(text, voiceId) {
-  const cle = cleTTS({ languageCode: 'nl-BE', name: 'elevenlabs-' + voiceId }, text);
+  const cle = cleTTS({ languageCode: 'nl-BE', name: 'elevenlabs-' + voiceId + '-v' + ELEVENLABS_REGLAGES_VERSION }, text);
 
   let audioContent = await lireCacheTTS(cle);
   if (audioContent) {
@@ -418,7 +434,7 @@ async function genererAudioElevenLabs(text, voiceId) {
       const res = await fetch(ALFRED_CONFIG.API_TTS_ELEVENLABS, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, voiceId }),
+        body: JSON.stringify({ text, voiceId, ...ELEVENLABS_REGLAGES_VOIX }),
       });
       const data = await res.json();
       if (data.error) throw new Error(`ElevenLabs: ${data.error}`);
