@@ -498,7 +498,19 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // (le temps réel de génération du compromis varie).
     { acte: 2, label: 'Redaction', texte: "Eén muisklik. Partijen, notarissen en kadastrale gegevens. Ik breng alles samen en genereer de compromis.", action: 'CreationRedaction' },
     { acte: 2, label: 'RedactionGauche', texte: "Links op het scherm: de opgevraagde data uit de databanken.", action: 'CreationRedaction_ScrollGauche' },
-    { acte: 2, label: 'RedactionDroite', texte: "Rechts: de akte die zich live opbouwt. Straks haalt Check_r daar ook nog eens alle eventuele fouten uit. De ontbrekende stukken van de verkoper voeg ik automatisch toe zodra ze binnenkomen. Geen blanco pagina meer waar u van nul moet starten. U leest na, u stelt bij en u valideert. Ik neem het handwerk over, u behoudt de leiding.", action: 'CreationRedaction_ScrollDroite' },
+    // CORRIGÉE le 03/09 : la version précédente ("Straks haalt Check_r daar
+    // ook nog eens alle eventuele fouten uit.") était MA PROPRE paraphrase,
+    // pas les mots du document — repéré en revérifiant contre le vrai
+    // document dédié à la scène Alfred NL. La vraie phrase officielle
+    // ("Binnenkort wordt Check_r geïntegreerd in Alfred...") dit autre
+    // chose de plus précis (Check_r pas encore intégré à Alfred
+    // aujourd'hui) — restaurée mot à mot. Gardée aussi la phrase
+    // "Zodra de ontbrekende documenten binnen zijn, verwerk ik die
+    // meteen." — écartée à tort le 03/09 comme "doublon" ; par prudence
+    // (démo jouée en NL), tout le texte du document est repris ici, sans
+    // aucune coupe éditoriale de notre part. "geintegreerd" (sans tréma
+    // dans le document) corrigé en "geïntegreerd" — coquille évidente.
+    { acte: 2, label: 'RedactionDroite', texte: "Rechts: de akte die zich live opbouwt. Zodra de ontbrekende documenten binnen zijn, verwerk ik die meteen. Binnenkort wordt Check_r geïntegreerd in Alfred en worden al deze gegevens meteen op fouten of tegenstrijdigheden gecontroleerd. De ontbrekende stukken van de verkoper voeg ik automatisch toe zodra ze binnenkomen. Geen blanco pagina meer waar u van nul moet starten. U leest na, u stelt bij en u valideert. Ik neem het handwerk over, u behoudt de leiding.", action: 'CreationRedaction_ScrollDroite' },
     // Lead-in "De ontbrekende stukken van de verkoper —" RETIRÉ le 03/09 :
     // gardé le 31/08 en le croyant repris de la scène 10 (comme côté FR) —
     // mais en relisant v3_8 (scène 11) directement, la vraie ligne
