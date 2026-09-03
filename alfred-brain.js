@@ -46,6 +46,23 @@ function naturaliserTexte(text) {
     .trim();
 }
 
+// ── Contexte répliques (référence officielle) ─────────────
+// Construit le bloc "RÉPLIQUES DE RÉFÉRENCE" directement depuis
+// ALFRED_CONFIG.REPLIQUES_FR/REPLIQUES_NL — la même source vérifiée mot à
+// mot sur les documents officiels que celle jouée à la flèche — plutôt que
+// depuis un texte séparé codé en dur dans SYSTEM_PROMPT. Élimine pour de
+// bon le risque de désynchronisation (voir la note dans SYSTEM_PROMPT,
+// section RÈGLE FONDAMENTALE, sur le bug que ça corrige).
+function getContexteRepliquesReference(langue) {
+  const liste = (langue === 'nl') ? ALFRED_CONFIG.REPLIQUES_NL : ALFRED_CONFIG.REPLIQUES_FR;
+  if (!Array.isArray(liste) || !liste.length) return '';
+  const lignes = liste.map(r => {
+    const texte = r.segments ? r.segments.map(s => s.texte).filter(Boolean).join(' ') : r.texte;
+    return texte ? `${r.label} : ${texte}` : null;
+  }).filter(Boolean);
+  return '\n\nRÉPLIQUES DE RÉFÉRENCE :\n' + lignes.join('\n');
+}
+
 // ── Contexte dossier démo ─────────────────────────────────
 // Injecte les vraies données FIXES du dossier de démo (vendeur, acquéreur,
 // bien, notaire, collaborateur) — tout, SAUF le numéro de dossier, qui lui
@@ -145,6 +162,7 @@ async function askAlfred(text, retries = 2) {
 
   const fullPrompt = langInstruction
     + ALFRED_CONFIG.SYSTEM_PROMPT
+    + getContexteRepliquesReference(langue)
     + getContexteDossierDemo()
     + getContexteEcran()
     + '\n\nQuestion : ' + text;

@@ -352,6 +352,23 @@ async function ouvrirPanneauAlfred() {
   return ouvert;
 }
 
+// Ferme le panneau Alfred (Conversation/Événements) s'il est ouvert — sans
+// effet sinon. Remonté en test live : si ce panneau reste ouvert (laissé
+// ouvert depuis Email/ReponseVendeur juste avant), le défilement "colonne
+// de droite" (voir trouverColonneDefilante) cible le panneau au lieu du
+// vrai document compromis — d'où le besoin de le fermer explicitement
+// avant tout scroll (voir seq_creationDossier_redaction_scrollPEB).
+async function fermerPanneauAlfred() {
+  if (!trouverOnglet(SELECTEURS.onglets.evenements)) return true; // déjà fermé
+  const ferme = fermerFenetreOuverte();
+  await attendre(500);
+  if (trouverOnglet(SELECTEURS.onglets.evenements)) {
+    console.warn('[Alfred DOM] Panneau Alfred toujours ouvert après tentative de fermeture.');
+    return false;
+  }
+  return ferme;
+}
+
 // ── Trouver un élément de navigation par texte ────────────
 function trouverNav(textes) {
   const candidats = Array.from(document.querySelectorAll(
@@ -1871,6 +1888,7 @@ function trouverTitrePEB() {
 // à ce moment que la clause PEB est vraiment remplie, donc c'est là qu'on
 // montre qu'elle "a bien été rajoutée" — pas pendant la 1re rédaction.
 async function seq_creationDossier_redaction_scrollPEB() {
+  await fermerPanneauAlfred();
   let titre = null;
   for (let i = 0; i < 15; i++) {
     if (annulationDemandee) return;
