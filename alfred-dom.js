@@ -971,13 +971,29 @@ const SURBRILLANCE_CIBLES = {
 // 6=Medewerker — confirmé par capture d'écran 03/09). Pas d'erreur si le
 // tableau n'est pas encore affiché (ex: mot prononcé avant la fin du
 // chargement de la page) — simple no-op silencieux, comme surlignerBrievement.
-function surlignerColonneDossiers(indexColonne) {
-  const tbody = document.querySelector('tbody.p-datatable-tbody');
+async function surlignerColonneDossiers(indexColonne) {
+  // Attend le tableau, avec un vrai budget — remonté en test live : "il le
+  // dit avant que le tableau apparaisse la 1re fois". Le mot déclencheur
+  // (estimé sur la durée de la parole) peut tomber avant que la toute
+  // première navigation vers cet écran ait fini de charger — cette attente
+  // absorbe ce décalage au lieu d'abandonner tout de suite.
+  let tbody = null;
+  for (let i = 0; i < 20; i++) {
+    if (annulationDemandee) return;
+    tbody = document.querySelector('tbody.p-datatable-tbody');
+    if (tbody && tbody.querySelector('tr')) break;
+    tbody = null;
+    await attendre(200);
+  }
   if (!tbody) return;
   const table = tbody.closest('table') || tbody.closest('[role="table"]');
   if (!table) return;
   const enTetes = table.querySelectorAll('thead th');
   const enTete = enTetes[indexColonne];
+  // Traçage — remonté en test live : la colonne mise en évidence ne
+  // semblait pas être la bonne. Cette ligne dit exactement quel en-tête
+  // est visé à cet index, pour confirmer/corriger avec de vraies preuves.
+  console.log('[Alfred DOM] Colonne dossiers surlignée — index', indexColonne, '→ en-tête:', enTete ? JSON.stringify(enTete.textContent.trim()) : '(introuvable)', '— en-têtes disponibles:', Array.from(enTetes).map(e => JSON.stringify(e.textContent.trim())));
   if (enTete) surlignerBrievement(enTete, 1200);
   Array.from(tbody.querySelectorAll('tr'))
     .map(tr => tr.children[indexColonne])
