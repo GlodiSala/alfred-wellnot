@@ -911,14 +911,28 @@ function surlignerBrievement(el, dureeMs = 1500) {
 // exacte. Repli sur le halo global (surlignerBrievement) si rien n'est
 // trouvé (ex: le formulaire affiche les valeurs autrement que via de
 // vrais <input>) — pas de régression si ce ciblage plus fin ne matche pas.
-function surlignerChampsRemplis(conteneur, dureeMs = 1500) {
+// Balayage séquentiel plutôt qu'un flash unique sur tout le formulaire —
+// demandé explicitement (retour Cyril) : "quand on dit le nom, il faut
+// surligner, pareil pour tous les autres champs". On ne connaît pas quel
+// <input> correspond à quel mot précis d'Alfred, donc pas de synchronisation
+// mot-à-mot possible — mais on peut faire mieux qu'un seul freeze-frame :
+// mettre en évidence les champs UN PAR UN, dans l'ordre visuel (haut → bas)
+// qui correspond en pratique à l'ordre où Alfred les énumère à l'oral (nom,
+// adresse, date de naissance...), pour un effet de lecture au fil du texte.
+async function surlignerChampsRemplis(conteneur, dureeMs = 1500) {
   if (!conteneur) return;
   const champs = Array.from(conteneur.querySelectorAll('input, textarea, select'))
-    .filter(el => el.value && el.value.trim() && el.getBoundingClientRect().width > 0);
-  if (champs.length) {
-    champs.forEach(el => surlignerBrievement(el, dureeMs));
-  } else {
-    surlignerBrievement(conteneur, dureeMs);
+    .filter(el => el.value && el.value.trim() && el.getBoundingClientRect().width > 0)
+    .sort((a, b) => {
+      const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+      return Math.abs(ra.top - rb.top) > 5 ? ra.top - rb.top : ra.left - rb.left;
+    });
+  if (!champs.length) { surlignerBrievement(conteneur, dureeMs); return; }
+  const dureeParChamp = Math.max(350, Math.round(dureeMs / champs.length));
+  for (const champ of champs) {
+    if (annulationDemandee) return;
+    surlignerBrievement(champ, dureeParChamp + 200); // léger chevauchement, transition plus fluide entre deux champs
+    await attendre(dureeParChamp);
   }
 }
 
@@ -961,8 +975,7 @@ async function ajouterPartieParRN(qualite, rn) {
   // retour : "Alfred ne montre pas assez ce qu'il fait, ça va trop vite".
   // Avant, le clic partait quasi tout de suite après le remplissage
   // automatique du formulaire.
-  surlignerChampsRemplis(dialogue);
-  await attendre(1500);
+  await surlignerChampsRemplis(dialogue, 2400);
   await cliquerBouton(SELECTEURS.boutons.enregistrer);
   if (!await attendreFermetureDialogue(dialogue, 30, 500)) {
     console.warn(`[Alfred DOM] La fenêtre d'ajout de "${qualite}" ne s'est pas refermée après 15s — l'enregistrement a peut-être échoué ou pris trop de temps.`);
@@ -995,8 +1008,7 @@ async function ajouterPartieParBCE(qualite, bce) {
   const dialogue = trouverDialogueOuvert();
   // Halo sur les champs remplis + vraie pause avant "Enregistrer" — voir
   // la note équivalente dans ajouterPartieParRN juste au-dessus.
-  surlignerChampsRemplis(dialogue);
-  await attendre(1500);
+  await surlignerChampsRemplis(dialogue, 2400);
   await cliquerBouton(SELECTEURS.boutons.enregistrer);
   if (!await attendreFermetureDialogue(dialogue, 30, 500)) {
     console.warn(`[Alfred DOM] La fenêtre d'ajout de "${qualite}" ne s'est pas refermée après 15s — l'enregistrement a peut-être échoué ou pris trop de temps.`);
