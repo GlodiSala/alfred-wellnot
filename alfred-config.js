@@ -228,7 +228,13 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // ces 3 champs créait un doublon : un 1er flash trop tôt (estimé sur
     // la parole, sur un champ pas encore rempli), puis un 2e flash plus
     // tard quand la vraie valeur arrivait — d'où l'impression de retard.
-    { acte: 2, label: 'OuvrirChamps', texte: "Donnez-moi le numéro de dossier, la langue de rédaction, le collaborateur en charge et le notaire en charge, et on passe à la création des parties.", action: 'CreationOuvrir_Champs', surbrillance: [
+    // Pauses ajoutées (points de suspension) entre les 4 éléments énumérés
+    // — demandé explicitement, l'énumération enchaînée d'un trait donnait
+    // l'impression d'aller trop vite pour suivre le remplissage à l'écran.
+    // Mots inchangés (fidélité au texte officiel), seule la ponctuation
+    // bouge — les moteurs TTS marquent une pause nettement plus longue sur
+    // "..." que sur une simple virgule.
+    { acte: 2, label: 'OuvrirChamps', texte: "Donnez-moi le numéro de dossier... la langue de rédaction... le collaborateur en charge... et le notaire en charge, et on passe à la création des parties.", action: 'CreationOuvrir_Champs', surbrillance: [
       { mots: ['numéro'], cible: 'dossierCode' },
     ] },
     // OuvrirOK ("Parfait, passons à la création des parties.") RESTAURÉE le
@@ -509,7 +515,8 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     ] },
     // surbrillance — voir la note FR équivalente.
     // surbrillance réduite — voir la note FR équivalente.
-    { acte: 2, label: 'OuvrirChamps', texte: "Geef mij gewoon het dossiernummer, de taal van de akte, de bevoegde medewerker en de notaris dan voeg ik meteen de partijen toe.", action: 'CreationOuvrir_Champs', surbrillance: [
+    // Pauses — voir la note FR équivalente.
+    { acte: 2, label: 'OuvrirChamps', texte: "Geef mij gewoon het dossiernummer... de taal van de akte... de bevoegde medewerker... en de notaris, dan voeg ik meteen de partijen toe.", action: 'CreationOuvrir_Champs', surbrillance: [
       { mots: ['dossiernummer'], cible: 'dossierCode' },
     ] },
     // OuvrirOK ajoutée le 03/09 — voir la note FR équivalente. v3_8 a
