@@ -114,8 +114,8 @@ const SELECTEURS = {
     parties:      ['Parties', 'Partijen'], // confirmé (capture d'écran 04/09, onglet dossier)
   },
   textes: {
-    represente: ['REPRÉSENTE'],
-    mesClients: ['Mes clients', 'Mijn cliënten'], // estimation ("cliënten" confirmé par capture d'écran, nav "CLIËNTEN")
+    represente: ['REPRÉSENTE', 'VERTEGENWOORDIGT'], // NL confirmé (capture d'écran, fiche notaire de Maxime dans Partijen)
+    mesClients: ['Mes clients', 'Mijn cliënten'], // confirmé (capture d'écran, fiche notaire Alain Caprasse dans Partijen : "MIJN CLIËNTEN")
     optionCompromis: ['Compromis'], // "Compromis" reste identique en NL, confirmé par capture d'écran (badge dossier)
     // "Proposition d'e-mail" ne correspondait à rien dans le vrai DOM —
     // confirmé par capture d'écran, le vrai titre de la carte est "Email à
