@@ -291,8 +291,12 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // notaires) — les enchaîner automatiquement sur un seul appui sur →
     // ne lui laissait aucun tour de parole prévu, juste le hasard du
     // temps que prenait chaque action réseau.
-    { acte: 2, label: 'PartiesVendeur', texte: "Le vendeur est une société : BIMBIMMO. Je récupère : dénomination, siège, forme juridique, représentants. Rattaché au dossier.", action: 'CreationParties_Vendeur' },
-    { acte: 2, label: 'PartiesAcquereur', texte: "L'acquéreur est une personne physique : Alain Caprasse. Je récupère : nom, adresse, date de naissance, nationalité, état civil, régime matrimonial. Tout remonte, prêt pour la rédaction du compromis.", action: 'CreationParties_Acquereur' },
+    // "Le vendeur est une société : BIMBIMMO." / "L'acquéreur est une
+    // personne physique : Alain Caprasse." retirés le 31/08 : c'était du
+    // FARIËL collé en tête de la réplique d'Alfred (même souci que
+    // PartiesNotaireV) — l'officiel n'a plus que la vraie ligne d'Alfred.
+    { acte: 2, label: 'PartiesVendeur', texte: "Je récupère : dénomination, siège, forme juridique, représentants. Rattaché au dossier.", action: 'CreationParties_Vendeur' },
+    { acte: 2, label: 'PartiesAcquereur', texte: "Je récupère : nom, adresse, date de naissance, nationalité, état civil, régime matrimonial. Tout remonte, prêt pour la rédaction du compromis.", action: 'CreationParties_Acquereur' },
     // Ajoutée le 31/08 (échange manquant, trouvé en recomparant à v3_9) :
     // FARIËL "Le régime matrimonial aussi ?" / ALFRED "Aussi." — vrai tour
     // de parole de Fariël juste avant, réplique séparée exprès. Pas
@@ -313,7 +317,11 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'PartiesNotaireV', segments: [
       { texte: "", action: 'CreationParties_NotaireVendeur', parlerDepuisAction: true },
     ] },
-    { acte: 2, label: 'PartiesNotaireA', texte: "Pour l'acquéreur, j'ajoute Maxime Van der Straten — je le retrouve dans la base de tous les notaires belges et je le rattache à l'acquéreur. Chaque partie a son notaire.", action: 'CreationParties_NotaireAcquereur' },
+    // "Pour l'acquéreur, j'ajoute Maxime Van der Straten —" retiré le
+    // 31/08 : c'était l'instruction de FARIËL ("Pour l'acquéreur, ajoute
+    // Maxime Van der Straten.") reformulée à la 1re personne — l'officiel
+    // ne l'attribue pas à Alfred.
+    { acte: 2, label: 'PartiesNotaireA', texte: "Je le retrouve dans la base de tous les notaires belges et je le rattache à l'acquéreur. Chaque partie a son notaire.", action: 'CreationParties_NotaireAcquereur' },
     // Ajoutée le 31/08 (échange manquant en tout début de scène 8, trouvé
     // en recomparant à v3_9) : FARIËL "Donc toutes ces informations, tu les
     // récupères automatiquement ?" / ALFRED "Tout ce qui est disponible en
@@ -358,8 +366,12 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // manquait toute la fin (mention de Check_r, "il manque encore les
     // pièces du vendeur", "fini la page blanche... vous gardez le
     // contrôle"). Texte complété mot pour mot, juste redécoupé.
+    // "Et maintenant le moment qu'on attend : la rédaction." retiré le
+    // 31/08 : c'était la ligne de FARIËL ("Et maintenant le moment qu'on
+    // attend : la rédaction. Toujours pas peur des experts ?"), pas
+    // celle d'Alfred.
     { acte: 2, label: 'Redaction', segments: [
-      { texte: "Et maintenant le moment qu'on attend : la rédaction. Un clic. Je réunis les parties, les notaires et le cadastre, et je génère le compromis de vente.", action: 'CreationRedaction' },
+      { texte: "Un clic. Je réunis les parties, les notaires et le cadastre, et je génère le compromis de vente.", action: 'CreationRedaction' },
       { texte: "À gauche, toutes les données collectées via les bases ou extraites des documents — tout est classé dans ma base de données.", action: 'CreationRedaction_ScrollGauche' },
       // ScrollDroite s'arrête sur le titre PEB (voir trouverTitrePEB dans
       // alfred-dom.js) et n'en repart plus tout seul — l'export Word,
@@ -370,16 +382,22 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       // ExportWord, après ReponseVendeur) plutôt que de l'enchaîner ici.
       { texte: "À droite, le compromis qui se construit en direct — et bientôt, ces données seront vérifiées par Check_r, qui attire l'attention du collaborateur sur les erreurs ou incohérences. Il manque encore les pièces du vendeur, je les intègre dès réception. Fini la page blanche : vous relisez, vous ajustez, vous validez. Je fais le gros du travail, vous gardez le contrôle.", action: 'CreationRedaction_ScrollDroite' },
     ] },
-    // Découpé en 2 segments (aucun mot changé sur le 1er) — avant, la
-    // réplique parlait une fois puis tout le reste (attente de l'événement
-    // + Consulter + Valider et envoyer) se passait en silence total. Le 2e
-    // segment est en parlerDepuisAction : demandé explicitement, le texte
-    // n'est PAS dit dès le début de l'attente, mais seulement quand
-    // l'événement "Email à valider" apparaît vraiment (voir
-    // montrerPropositionEmail_envoyer dans alfred-dom.js, qui appelle
-    // speak() lui-même au bon moment).
+    // Découpé en 2 segments — avant, la réplique parlait une fois puis
+    // tout le reste (attente de l'événement + Consulter + Valider et
+    // envoyer) se passait en silence total. Le 2e segment est en
+    // parlerDepuisAction : demandé explicitement, le texte n'est PAS dit
+    // dès le début de l'attente, mais seulement quand l'événement "Email à
+    // valider" apparaît vraiment (voir montrerPropositionEmail_envoyer
+    // dans alfred-dom.js, qui appelle speak() lui-même au bon moment).
+    // "Il manque encore les pièces du vendeur —" : contrairement aux
+    // autres cas corrigés le 31/08, ce ne sont pas les mots de FARIËL —
+    // c'est repris tel quel de la propre ligne d'Alfred en scène 10 ("Il
+    // manque encore les pièces du vendeur — je les intègre dès
+    // réception."), réutilisé ici comme transition. Gardé tel quel, mais
+    // "le vendeur," et "de m'envoyer" rajoutés dans la suite : absents par
+    // rapport à l'officiel, trouvés en revérifiant mot à mot.
     { acte: 2, label: 'Email', segments: [
-      { texte: "Il manque encore les pièces du vendeur — j'ai préparé un projet de mail à BIMBIMMO, en lui demandant le PEB, le contrôle électrique et l'attestation du sol. Une seule demande, jamais deux fois la même question. Vous validez l'envoi ?", action: 'CreationEmail_Ouverture' },
+      { texte: "Il manque encore les pièces du vendeur — j'ai préparé un projet de mail à BIMBIMMO, le vendeur, en lui demandant de m'envoyer le PEB, le contrôle électrique et l'attestation du sol. Une seule demande, jamais deux fois la même question. Vous validez l'envoi ?", action: 'CreationEmail_Ouverture' },
       { texte: "Voilà, je consulte le projet de mail et je l'envoie.", action: 'CreationEmail_Envoyer', parlerDepuisAction: true },
     ] },
     // Étape A20-A21 du séquencier. Texte basé sur le script d'origine
@@ -462,8 +480,13 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     ] },
     // OuvrirOK supprimée — voir la note FR équivalente (ligne inexistante
     // dans l'officiel v3_8, DOUTE signalé).
-    { acte: 2, label: 'PartiesVendeur', texte: "De verkoper is een vennootschap: BIMBIMMO. Ik haal op: benaming, zetel, rechtsvorm, vertegenwoordigers. Gekoppeld aan het dossier.", action: 'CreationParties_Vendeur' },
-    { acte: 2, label: 'PartiesAcquereur', texte: "De koper is een natuurlijke persoon: Alain Caprasse. Ik haal op: naam, adres, geboortedatum, nationaliteit, burgerlijke staat, huwelijksvermogensstelsel. Alles is klaar voor de opstelling van de verkoopbelofte.", action: 'CreationParties_Acquereur' },
+    // Corrigées le 31/08 — même raison que côté FR : le lead-in venait de
+    // FARIËL, pas d'Alfred, et le texte d'Alfred lui-même n'était pas mot
+    // pour mot le v3_8 ("Ik haal op" au lieu de "Ik haal de gegevens
+    // meteen op" ; "Gekoppeld aan het dossier." n'existe pas en NL, c'était
+    // une trace de traduction du FR "Rattaché au dossier.").
+    { acte: 2, label: 'PartiesVendeur', texte: "Ik haal de gegevens meteen op: benaming, zetel, rechtsvorm, vertegenwoordigers...", action: 'CreationParties_Vendeur' },
+    { acte: 2, label: 'PartiesAcquereur', texte: "Ik haal het volgende op: naam, adres, geboortedatum, nationaliteit, burgerlijke staat en huwelijksvermogensstelsel. Alles staat klaar voor het opstellen van de compromis.", action: 'CreationParties_Acquereur' },
     // Ajoutée — échange officiel manquant (v3_8) : FARIËL "Het
     // huwelijksvermogensstelsel ook?" / ALFRED "Ja, zelfs het
     // huwelijksvermogensstelsel." (plus long qu'en FR "Aussi." — officiel
@@ -475,7 +498,10 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'PartiesNotaireV', segments: [
       { texte: "", action: 'CreationParties_NotaireVendeur', parlerDepuisAction: true },
     ] },
-    { acte: 2, label: 'PartiesNotaireA', texte: "Voor de koper voeg ik Maxime Van der Straten toe — ik vind hem in de databank van alle Belgische notarissen en koppel hem aan de koper. Elke partij heeft haar notaris.", action: 'CreationParties_NotaireAcquereur' },
+    // Corrigée le 31/08 — l'ancien texte était en fait une traduction du
+    // FR, pas le vrai texte néerlandais officiel (qui existe bel et bien
+    // dans v3_8, différent : "Hij staat in de databank...").
+    { acte: 2, label: 'PartiesNotaireA', texte: "Hij staat in de databank van alle Belgische notarissen. Ik koppel hem meteen aan de koper. Voila, nu zijn beide partijen vertegenwoordigd.", action: 'CreationParties_NotaireAcquereur' },
     // Ajoutée — échange officiel manquant en début de scène 8 (v3_8) :
     // FARIËL "Dus al die informatie haal je automatisch op?" / ALFRED
     // "Alles wat er in de databank klaarstaat, ja."
@@ -497,8 +523,11 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // phrases complètes équivalentes ; la seconde, plus propre, gardée) —
     // dédupliqué en choisissant à chaque fois la formulation la plus nette
     // du document, jamais en inventant ou en retraduisant depuis le FR.
+    // "En nu het moment waar we op wachten: de opstelling." retiré le
+    // 31/08 : paraphrase de la ligne de FARIËL, pas les mots d'Alfred —
+    // remplacé par sa vraie ligne officielle (v3_8).
     { acte: 2, label: 'Redaction', segments: [
-      { texte: "En nu het moment waar we op wachten: de opstelling. Eén klik. Ik verzamel de partijen, de notarissen en het kadaster, en ik genereer de verkoopbelofte.", action: 'CreationRedaction' },
+      { texte: "Eén muisklik. Partijen, notarissen en kadastrale gegevens. Ik breng alles samen en genereer de compromis.", action: 'CreationRedaction' },
       { texte: "Links op het scherm: de opgevraagde data uit de databanken.", action: 'CreationRedaction_ScrollGauche' },
       { texte: "Rechts: de akte die zich live opbouwt. Straks haalt Check_r daar ook nog eens alle eventuele fouten uit. De ontbrekende stukken van de verkoper voeg ik automatisch toe zodra ze binnenkomen. Geen blanco pagina meer waar u van nul moet starten. U leest na, u stelt bij en u valideert. Ik neem het handwerk over, u behoudt de leiding.", action: 'CreationRedaction_ScrollDroite' },
     ] },
