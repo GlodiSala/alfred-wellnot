@@ -953,7 +953,37 @@ const SURBRILLANCE_CIBLES = {
   langueActe:    () => defilerPuisSurligner(trouverDeclencheurProcheLabel(SELECTEURS.menus.langueActe)),
   collaborateur: () => defilerPuisSurligner(trouverDeclencheurProcheLabel(SELECTEURS.menus.collaborateurEnCharge)),
   notaireEnCharge: () => defilerPuisSurligner(trouverDeclencheurProcheLabel(SELECTEURS.menus.notaireEnCharge)),
+  // Tableau de bord (liste des dossiers) — demandé explicitement : mettre
+  // en évidence la COLONNE dont Alfred parle, pas tout le tableau. Ciblage
+  // par POSITION de colonne (voir surlignerColonneDossiers), pas par texte
+  // d'en-tête : le libellé FR de ce tableau n'a jamais été confirmé par
+  // capture d'écran (seul le NL l'a été) — l'ordre des colonnes, lui, est
+  // le même composant des deux côtés, donc fiable sans deviner de texte.
+  colDossiers:      () => surlignerColonneDossiers(3), // "Dossiernummer" (capture d'écran 03/09)
+  colCollaborateur: () => surlignerColonneDossiers(6), // "Medewerker"
+  colStatut:        () => surlignerColonneDossiers(2), // "In uitvoering"
 };
+
+// Met en évidence une colonne entière (en-tête + toutes les cellules
+// visibles) du tableau des dossiers — indexColonne : position 0-based dans
+// <thead><tr><th>...</th></tr></thead> (0=case à cocher, 1=Categorie,
+// 2=In uitvoering, 3=Dossiernummer, 4=Cliënten, 5=Aangemaakt op,
+// 6=Medewerker — confirmé par capture d'écran 03/09). Pas d'erreur si le
+// tableau n'est pas encore affiché (ex: mot prononcé avant la fin du
+// chargement de la page) — simple no-op silencieux, comme surlignerBrievement.
+function surlignerColonneDossiers(indexColonne) {
+  const tbody = document.querySelector('tbody.p-datatable-tbody');
+  if (!tbody) return;
+  const table = tbody.closest('table') || tbody.closest('[role="table"]');
+  if (!table) return;
+  const enTetes = table.querySelectorAll('thead th');
+  const enTete = enTetes[indexColonne];
+  if (enTete) surlignerBrievement(enTete, 1200);
+  Array.from(tbody.querySelectorAll('tr'))
+    .map(tr => tr.children[indexColonne])
+    .filter(td => td && td.getBoundingClientRect().width > 0)
+    .forEach(td => surlignerBrievement(td, 1200));
+}
 
 // Défilement AUTOMATIQUE (pas une réplique à part, pas de flèche dédiée) —
 // question posée explicitement : "pour les surligneurs, faut pas faire les
@@ -1787,7 +1817,11 @@ async function seq_creationDossier_ouvrir_dossiers() {
   // lieu d'un délai fixe à l'aveugle — question posée explicitement :
   // "vérifier si la page a fini de charger avant" de mettre quoi que ce
   // soit en évidence. tbody.p-datatable-tbody : même sélecteur PrimeNG
-  // confirmé ailleurs (voir compterDocumentsEnAttente).
+  // confirmé ailleurs (voir compterDocumentsEnAttente). La mise en évidence
+  // elle-même ne se fait plus ici — demandé explicitement ("hilight la
+  // colonne quand il en parle") : colonne par colonne, synchronisée sur le
+  // mot prononcé, voir surlignerColonneDossiers + SURBRILLANCE_CIBLES plus
+  // bas. Cette attente reste un filet de sécurité pour la suite.
   let tbody = null;
   for (let i = 0; i < 15; i++) {
     tbody = document.querySelector('tbody.p-datatable-tbody');
@@ -1795,18 +1829,7 @@ async function seq_creationDossier_ouvrir_dossiers() {
     tbody = null;
     await attendre(200);
   }
-  if (tbody) {
-    // Un seul surlignage sur TOUT le tableau, pas colonne par colonne :
-    // "les collaborateurs"/"les statuts" ne pointent pas vers UNE valeur
-    // précise ici (une liste de plusieurs dossiers, chacun avec son propre
-    // collaborateur/statut) — contrairement aux champs de la fiche de
-    // création juste après, où chaque mot correspond à un seul champ.
-    // Déclenché dès que le tableau est confirmé chargé (pas sur un timing
-    // estimé par la parole, qui ne sait pas si la page a fini de charger).
-    await defilerPuisSurligner(tbody.closest('table') || tbody);
-  } else {
-    await attendre(1800); // repli : comportement d'avant si le tableau n'apparaît jamais
-  }
+  if (!tbody) await attendre(1800); // repli : comportement d'avant si le tableau n'apparaît jamais
 }
 
 // 1b. Cliquer sur "Créer un dossier" — calé sur le segment qui en parle.
