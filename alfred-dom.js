@@ -553,6 +553,15 @@ function texteContient(texteEl, candidats) {
   const t = texteEl || '';
   return liste.some(c => t.includes(c));
 }
+// Préfixe plutôt qu'égalité stricte — un libellé de champ obligatoire
+// s'affiche parfois avec un astérisque collé au texte ("Taal *", "Taal*"),
+// remonté en test live sur le champ Taal : la comparaison stricte ne
+// matchait jamais alors que le libellé était bien "Taal" au début.
+function texteCommencePar(texteEl, candidats) {
+  const liste = Array.isArray(candidats) ? candidats : [candidats];
+  const t = (texteEl || '').trim();
+  return liste.some(c => t.startsWith(c));
+}
 // Cherche un <input> visible par son placeholder, parmi un ou plusieurs
 // candidats (FR/NL) — un attribut CSS [placeholder="..."] ne peut pas
 // tester plusieurs valeurs à la fois, d'où ce helper dédié.
@@ -642,7 +651,7 @@ function trouverDeclencheursDropdown() {
 // dépend de champs déjà pré-remplis (Langue, Catégorie) et peut varier.
 function trouverDeclencheurProcheLabel(labelTexte) {
   const label = Array.from(document.querySelectorAll('*'))
-    .find(el => el.children.length === 0 && texteCorrespond(el.textContent, labelTexte) && el.getBoundingClientRect().width > 0);
+    .find(el => el.children.length === 0 && texteCommencePar(el.textContent, labelTexte) && el.getBoundingClientRect().width > 0);
   if (!label) return null;
   const lr = label.getBoundingClientRect();
   let meilleur = null;
