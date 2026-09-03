@@ -965,6 +965,52 @@ async function surlignerChampsRemplis(conteneur, dureeMs = 1500) {
   }
 }
 
+// Version VRAIMENT synchronisée au mot (contrairement à surlignerChampsRemplis
+// ci-dessus, qui balaie tous les champs sur un budget fixe indépendant de ce
+// qu'Alfred dit) — demandé explicitement : "il faut hilight bien les champs
+// qu'on parle quand c'est dit". Utilisée pour les fiches Vendeur/Acquéreur
+// (voir champDialogue1..6 dans SURBRILLANCE_CIBLES plus bas), dont les champs
+// sont dans une fenêtre PrimeNG ouverte dynamiquement (pas d'ID stable connu
+// à l'avance) — on retrouve donc "le Nième champ rempli, dans l'ordre visuel
+// haut → bas" de la fenêtre actuellement ouverte, même tri que
+// surlignerChampsRemplis, au moment où le mot correspondant est prononcé.
+// defilerPuisSurligner (pas surlignerBrievement directement) : couvre aussi
+// "il faut scroller doucement si le champ est en bas" (défilement doux avant
+// le halo si le champ ciblé est hors écran, no-op sinon).
+function surlignerChampDialogueOuvert(index) {
+  const dialogue = typeof trouverDialogueOuvert === 'function' ? trouverDialogueOuvert() : null;
+  if (!dialogue) return;
+  const champs = Array.from(dialogue.querySelectorAll('input, textarea, select'))
+    .filter(el => el.value && el.value.trim() && el.getBoundingClientRect().width > 0)
+    .sort((a, b) => {
+      const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+      return Math.abs(ra.top - rb.top) > 5 ? ra.top - rb.top : ra.left - rb.left;
+    });
+  defilerPuisSurligner(champs[index]); // no-op silencieux si l'index dépasse (champ pas encore rempli/visible)
+}
+
+// Déclenche la parole d'un segment 'parlerDepuisAction' (fiches Vendeur/
+// Acquéreur — voir seq_creationDossier_parties_vendeur/acquereur) une fois
+// les champs VRAIMENT remplis, exactement le même schéma que
+// seq_creationDossier_ouvrir_dossiers pour 'Ouvrir' : cherché dans la config
+// par label + nom d'action plutôt que codé en dur, pour rester en phase avec
+// le FR/NL et un futur changement de texte sans toucher au JS.
+async function parlerPartieDepuisAction(label, actionNom) {
+  if (typeof speak !== 'function' || typeof ALFRED_CONFIG === 'undefined') return;
+  const liste = (typeof currentLangue !== 'undefined' && currentLangue === 'nl') ? ALFRED_CONFIG.REPLIQUES_NL : ALFRED_CONFIG.REPLIQUES_FR;
+  const replique = liste?.find(r => r.label === label);
+  const segment = replique?.segments?.find(s => s.action === actionNom);
+  if (!segment?.texte) return;
+  if (typeof addToHistory === 'function') addToHistory('alfred', segment.texte);
+  const surbrillance = (typeof resoudreSurbrillance === 'function') ? resoudreSurbrillance(segment.surbrillance) : null;
+  // Attendu (pas fire-and-forget comme pour 'Ouvrir') : contrairement à
+  // 'Ouvrir', il reste une action à faire ENSUITE (cliquer "Enregistrer",
+  // qui referme la fenêtre) — il faut laisser la parole/le surlignage se
+  // terminer avant, sinon la fenêtre se refermerait pendant qu'Alfred énumère
+  // encore les champs.
+  await speak(typeof naturaliserTexte === 'function' ? naturaliserTexte(segment.texte) : segment.texte, currentLangue, segment.texte, undefined, surbrillance, segment.texte);
+}
+
 // ── Surbrillance synchronisée sur la parole ────────────────
 // Demandé explicitement : "quand il dit notaire en charge, il faut le
 // mettre en évidence" — pour les champs qu'on remplit NOUS-MÊMES (donc au
@@ -998,6 +1044,21 @@ const SURBRILLANCE_CIBLES = {
   // un surlignage — voir seq_creationDossier_ouvrir_creerBouton, qui ne
   // clique plus lui-même immédiatement.
   creerDossierClic: () => cliquerBouton(SELECTEURS.boutons.creerDossier),
+  // Fiches Vendeur/Acquéreur (fenêtre "Ajouter une partie") — demandé
+  // explicitement : surligner le bon champ pile quand Alfred le nomme, avec
+  // défilement doux si besoin (voir surlignerChampDialogueOuvert). Champs
+  // GÉNÉRIQUES par POSITION (1er, 2e... champ rempli, haut → bas dans la
+  // fenêtre actuellement ouverte), pas par nom : la même fenêtre sert au
+  // Vendeur (4 champs : dénomination/siège/forme juridique/représentants) et
+  // à l'Acquéreur (6 champs : nom/adresse/naissance/nationalité/état
+  // civil/régime matrimonial) — un seul jeu de cibles réutilisé pour les
+  // deux, l'ordre visuel du formulaire suit l'ordre énuméré à l'oral.
+  champDialogue1: () => surlignerChampDialogueOuvert(0),
+  champDialogue2: () => surlignerChampDialogueOuvert(1),
+  champDialogue3: () => surlignerChampDialogueOuvert(2),
+  champDialogue4: () => surlignerChampDialogueOuvert(3),
+  champDialogue5: () => surlignerChampDialogueOuvert(4),
+  champDialogue6: () => surlignerChampDialogueOuvert(5),
 };
 
 // Met en évidence une colonne entière (en-tête + toutes les cellules
@@ -1161,7 +1222,16 @@ async function attendreFermetureDialogue(dialogue, tentatives = 30, delai = 500)
   return false;
 }
 
-async function ajouterPartieParRN(qualite, rn) {
+// options.quandChampsRemplis(dialogue) : appelé UNE FOIS le formulaire
+// vraiment rempli, à la place du balayage générique surlignerChampsRemplis —
+// utilisé par seq_creationDossier_parties_vendeur/acquereur pour déclencher
+// la parole ('parlerDepuisAction') pile à ce moment-là et surligner chaque
+// champ en vraie synchro avec le mot prononcé (voir parlerPartieDepuisAction
+// et champDialogue1..6 dans SURBRILLANCE_CIBLES) — demandé explicitement :
+// "il a pas le temps de cliquer que les champs s'affichent quand il parle".
+// Repli sur l'ancien balayage générique si non fourni (aucun appelant ne
+// perd son comportement).
+async function ajouterPartieParRN(qualite, rn, options = {}) {
   // Compté AVANT tout changement : le menu QUALITÉ choisi juste après
   // (choisirDansDropdown) affiche déjà ce même texte à l'écran — sans
   // cette référence, la vérification de succès plus bas serait faussée
@@ -1189,7 +1259,11 @@ async function ajouterPartieParRN(qualite, rn) {
   // retour : "Alfred ne montre pas assez ce qu'il fait, ça va trop vite".
   // Avant, le clic partait quasi tout de suite après le remplissage
   // automatique du formulaire.
-  await surlignerChampsRemplis(dialogue, 2400);
+  if (typeof options.quandChampsRemplis === 'function') {
+    await options.quandChampsRemplis(dialogue);
+  } else {
+    await surlignerChampsRemplis(dialogue, 2400);
+  }
   await cliquerBouton(SELECTEURS.boutons.enregistrer);
   if (!await attendreFermetureDialogue(dialogue, 30, 500)) {
     console.warn(`[Alfred DOM] La fenêtre d'ajout de "${qualite}" ne s'est pas refermée après 15s — l'enregistrement a peut-être échoué ou pris trop de temps.`);
@@ -1205,7 +1279,7 @@ async function ajouterPartieParRN(qualite, rn) {
 // Ajoute une partie (Vendeur/Acquéreur) via recherche par numéro BCE — pour
 // une "Personne morale" (société). Même logique que ajouterPartieParRN, mais
 // cible "Personne morale" puis le champ de recherche BCE.
-async function ajouterPartieParBCE(qualite, bce) {
+async function ajouterPartieParBCE(qualite, bce, options = {}) {
   const occurrencesAvant = compterOccurrencesTexte(qualite);
   await choisirDansDropdown(SELECTEURS.menus.qualitePartie, qualite);
   await attendre(500);
@@ -1221,8 +1295,13 @@ async function ajouterPartieParBCE(qualite, bce) {
   if (annulationDemandee) return false;
   const dialogue = trouverDialogueOuvert();
   // Halo sur les champs remplis + vraie pause avant "Enregistrer" — voir
-  // la note équivalente dans ajouterPartieParRN juste au-dessus.
-  await surlignerChampsRemplis(dialogue, 2400);
+  // la note équivalente dans ajouterPartieParRN juste au-dessus (même
+  // options.quandChampsRemplis, même raison).
+  if (typeof options.quandChampsRemplis === 'function') {
+    await options.quandChampsRemplis(dialogue);
+  } else {
+    await surlignerChampsRemplis(dialogue, 2400);
+  }
   await cliquerBouton(SELECTEURS.boutons.enregistrer);
   if (!await attendreFermetureDialogue(dialogue, 30, 500)) {
     console.warn(`[Alfred DOM] La fenêtre d'ajout de "${qualite}" ne s'est pas refermée après 15s — l'enregistrement a peut-être échoué ou pris trop de temps.`);
@@ -2093,27 +2172,46 @@ async function seq_creationDossier_ouvrir() {
 // Découpée en deux sous-étapes (comme CreationOuvrir) pour un calage sur
 // deux segments : "vendeur" pendant qu'on parle du vendeur, "acquéreur"
 // pendant qu'on parle de l'acquéreur.
+// parlerDepuisAction (voir PartiesVendeur dans alfred-config.js) : la parole
+// ne part plus dès l'appui sur → — demandé explicitement ("il a pas le
+// temps de cliquer que les champs s'affichent quand il parle"), même
+// principe que seq_creationDossier_ouvrir_dossiers. quandChampsRemplis
+// n'est appelé qu'une fois le formulaire vraiment rempli (voir
+// ajouterPartieParRN/BCE) — c'est SEULEMENT à ce moment qu'Alfred parle.
 async function seq_creationDossier_parties_vendeur() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) return;
+  const quandChampsRemplis = () => parlerPartieDepuisAction('PartiesVendeur', 'CreationParties_Vendeur');
   if (cfg.vendeur_type === 'morale' && cfg.vendeur_bce) {
-    await ajouterPartieParBCE(SELECTEURS.textes.qualiteVendeur, cfg.vendeur_bce);
+    await ajouterPartieParBCE(SELECTEURS.textes.qualiteVendeur, cfg.vendeur_bce, { quandChampsRemplis });
   } else {
-    await ajouterPartieParRN(SELECTEURS.textes.qualiteVendeur, cfg.vendeur_rn);
+    await ajouterPartieParRN(SELECTEURS.textes.qualiteVendeur, cfg.vendeur_rn, { quandChampsRemplis });
   }
 }
 
+// parlerDepuisAction — voir la note équivalente dans
+// seq_creationDossier_parties_vendeur juste au-dessus. dejaParle : garde-fou
+// pour le nouvel essai ci-dessous (retour "acquéreur pas confirmé") — sans
+// lui, un 2e essai reparlerait la réplique en double ; sur ce 2e essai, les
+// champs sont quand même mis en évidence (balayage générique en repli), sans
+// reparler par-dessus.
 async function seq_creationDossier_parties_acquereur() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) return;
+  let dejaParle = false;
+  const quandChampsRemplis = async (dialogue) => {
+    if (dejaParle) { await surlignerChampsRemplis(dialogue, 2400); return; }
+    dejaParle = true;
+    await parlerPartieDepuisAction('PartiesAcquereur', 'CreationParties_Acquereur');
+  };
   // Le résultat n'était pas vérifié ici avant — on avançait vers "Suivant"
   // (donc vers l'étape "bien") même si l'acquéreur n'avait pas vraiment
   // été enregistré, ce qui faisait échouer toute la suite en cascade
   // (remonté en test live). Un seul nouvel essai avant d'abandonner.
-  let ok = await ajouterPartieParRN(SELECTEURS.textes.qualiteAcquereur, cfg.acquereur_rn);
+  let ok = await ajouterPartieParRN(SELECTEURS.textes.qualiteAcquereur, cfg.acquereur_rn, { quandChampsRemplis });
   if (!ok) {
     console.warn('[Alfred DOM] Acquéreur pas confirmé après le premier essai — nouvelle tentative.');
-    ok = await ajouterPartieParRN(SELECTEURS.textes.qualiteAcquereur, cfg.acquereur_rn);
+    ok = await ajouterPartieParRN(SELECTEURS.textes.qualiteAcquereur, cfg.acquereur_rn, { quandChampsRemplis });
   }
   if (!ok) {
     console.warn('[Alfred DOM] Acquéreur toujours pas confirmé — on continue quand même vers le rattachement des notaires (l\'ajout a peut-être réussi malgré la vérification).');
@@ -2314,6 +2412,11 @@ function trouverColonneDefilante(cote) {
 // Vitesse cible du défilement, en pixels/seconde — remplace une durée
 // fixe. Ralentie pour être vraiment lisible (1200 → 200 px/s).
 const VITESSE_SCROLL_COLONNE_PX_PAR_SEC = 200;
+// Encore plus lent spécifiquement à DROITE (retour explicite : "trop
+// rapide") — le compromis généré (colonne droite) est du texte dense à
+// lire, contrairement à la gauche (données déjà connues, juste un aperçu),
+// qui n'a pas eu cette remontée et garde la vitesse générique ci-dessus.
+const VITESSE_SCROLL_COLONNE_DROITE_PX_PAR_SEC = 130;
 const DUREE_MIN_SCROLL_COLONNE_MS = 1500;
 // Aller jusqu'au vrai bas du document rendait la démo interminable pour
 // un long compromis (ex. la colonne de droite peut faire 5x la gauche —
@@ -2326,7 +2429,7 @@ const ECRANS_A_DEFILER = 4;
 // Défile lentement du haut jusqu'au vrai bas de la colonne, à vitesse
 // constante (donc plus long pour un document plus long) — remonté en test
 // live comme n'allant pas jusqu'au bout ("super important de lire").
-async function defilerColonneLentement(cote) {
+async function defilerColonneLentement(cote, vitessePxParSec = VITESSE_SCROLL_COLONNE_PX_PAR_SEC) {
   // Le clic sur "Rédaction" vient de lancer la génération du compromis —
   // les deux colonnes (et leur contenu réel, donc leur vraie hauteur) ne
   // sont pas forcément déjà affichées au moment où ce segment démarre.
@@ -2347,7 +2450,7 @@ async function defilerColonneLentement(cote) {
   // Quelques hauteurs d'écran seulement, pas le vrai bas du document (voir
   // ECRANS_A_DEFILER) — sauf si le document est déjà plus court que ça.
   const cible = Math.min(veritableBas, conteneur.clientHeight * ECRANS_A_DEFILER);
-  const dureeMs = Math.max(DUREE_MIN_SCROLL_COLONNE_MS, (cible / VITESSE_SCROLL_COLONNE_PX_PAR_SEC) * 1000);
+  const dureeMs = Math.max(DUREE_MIN_SCROLL_COLONNE_MS, (cible / vitessePxParSec) * 1000);
   await new Promise(resolve => {
     const debut = performance.now();
     function etape(m) {
@@ -2370,7 +2473,7 @@ async function seq_creationDossier_redaction_scrollGauche() {
 // vendeur n'arrivent que plus tard, voir Email/ReponseVendeur), donc viser
 // spécifiquement son titre ici n'aurait montré qu'une clause vide.
 async function seq_creationDossier_redaction_scrollDroite() {
-  await defilerColonneLentement('droite');
+  await defilerColonneLentement('droite', VITESSE_SCROLL_COLONNE_DROITE_PX_PAR_SEC);
 }
 
 // Trouve, dans la colonne droite (le compromis généré), le titre de la

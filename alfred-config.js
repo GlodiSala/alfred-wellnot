@@ -270,8 +270,38 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // personne physique : Alain Caprasse." retirés le 31/08 : c'était du
     // FARIËL collé en tête de la réplique d'Alfred (même souci que
     // PartiesNotaireV) — l'officiel n'a plus que la vraie ligne d'Alfred.
-    { acte: 2, label: 'PartiesVendeur', texte: "Je récupère : dénomination... siège... forme juridique... représentants. Rattaché au dossier.", action: 'CreationParties_Vendeur' },
-    { acte: 2, label: 'PartiesAcquereur', texte: "Je récupère : nom... adresse... date de naissance... nationalité... état civil... régime matrimonial. Tout remonte, prêt pour la rédaction du compromis.", action: 'CreationParties_Acquereur' },
+    // parlerDepuisAction (03/09, 3e passe) — demandé explicitement : "il a
+    // pas le temps de cliquer que les champs s'affichent quand il parle".
+    // Avant, la parole partait dès l'appui sur →, en même temps que la
+    // recherche BCE/RN (qui prend plusieurs secondes) — Alfred énumérait
+    // les champs avant même que la fenêtre d'ajout soit ouverte. Même
+    // principe que 'Ouvrir' plus haut : c'est maintenant la séquence DOM
+    // (ajouterPartieParBCE/RN, alfred-dom.js) qui déclenche la parole
+    // elle-même, une fois le formulaire vraiment rempli. surbrillance : un
+    // champ par mot-clé, dans l'ordre où ils sont énumérés — voir
+    // champDialogue1..4 dans SURBRILLANCE_CIBLES (alfred-dom.js), qui
+    // retrouve le Nième champ rempli de la fenêtre ouverte, avec défilement
+    // doux si besoin.
+    { acte: 2, label: 'PartiesVendeur', segments: [
+      { texte: "Je récupère : dénomination... siège... forme juridique... représentants. Rattaché au dossier.", action: 'CreationParties_Vendeur', parlerDepuisAction: true, surbrillance: [
+        { mots: ['dénomination'], cible: 'champDialogue1' },
+        { mots: ['siège'], cible: 'champDialogue2' },
+        { mots: ['juridique'], cible: 'champDialogue3' },
+        { mots: ['représentants'], cible: 'champDialogue4' },
+      ] },
+    ] },
+    // parlerDepuisAction — voir la note équivalente sur PartiesVendeur
+    // juste au-dessus. 6 champs cette fois (champDialogue1..6).
+    { acte: 2, label: 'PartiesAcquereur', segments: [
+      { texte: "Je récupère : nom... adresse... date de naissance... nationalité... état civil... régime matrimonial. Tout remonte, prêt pour la rédaction du compromis.", action: 'CreationParties_Acquereur', parlerDepuisAction: true, surbrillance: [
+        { mots: ['nom'], cible: 'champDialogue1' },
+        { mots: ['adresse'], cible: 'champDialogue2' },
+        { mots: ['naissance'], cible: 'champDialogue3' },
+        { mots: ['nationalité'], cible: 'champDialogue4' },
+        { mots: ['civil'], cible: 'champDialogue5' },
+        { mots: ['matrimonial'], cible: 'champDialogue6' },
+      ] },
+    ] },
     // Ajoutée le 31/08 (échange manquant, trouvé en recomparant à v3_9) :
     // FARIËL "Le régime matrimonial aussi ?" / ALFRED "Aussi." — vrai tour
     // de parole de Fariël juste avant, réplique séparée exprès. Pas
@@ -537,8 +567,26 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // pour mot le v3_8 ("Ik haal op" au lieu de "Ik haal de gegevens
     // meteen op" ; "Gekoppeld aan het dossier." n'existe pas en NL, c'était
     // une trace de traduction du FR "Rattaché au dossier.").
-    { acte: 2, label: 'PartiesVendeur', texte: "Ik haal de gegevens meteen op: benaming... zetel... rechtsvorm... vertegenwoordigers...", action: 'CreationParties_Vendeur' },
-    { acte: 2, label: 'PartiesAcquereur', texte: "Ik haal het volgende op: naam... adres... geboortedatum... nationaliteit... burgerlijke staat... en huwelijksvermogensstelsel. Alles staat klaar voor het opstellen van de compromis.", action: 'CreationParties_Acquereur' },
+    // parlerDepuisAction — voir la note FR équivalente.
+    { acte: 2, label: 'PartiesVendeur', segments: [
+      { texte: "Ik haal de gegevens meteen op: benaming... zetel... rechtsvorm... vertegenwoordigers...", action: 'CreationParties_Vendeur', parlerDepuisAction: true, surbrillance: [
+        { mots: ['benaming'], cible: 'champDialogue1' },
+        { mots: ['zetel'], cible: 'champDialogue2' },
+        { mots: ['rechtsvorm'], cible: 'champDialogue3' },
+        { mots: ['vertegenwoordigers'], cible: 'champDialogue4' },
+      ] },
+    ] },
+    // parlerDepuisAction — voir la note FR équivalente.
+    { acte: 2, label: 'PartiesAcquereur', segments: [
+      { texte: "Ik haal het volgende op: naam... adres... geboortedatum... nationaliteit... burgerlijke staat... en huwelijksvermogensstelsel. Alles staat klaar voor het opstellen van de compromis.", action: 'CreationParties_Acquereur', parlerDepuisAction: true, surbrillance: [
+        { mots: ['naam'], cible: 'champDialogue1' },
+        { mots: ['adres'], cible: 'champDialogue2' },
+        { mots: ['geboortedatum'], cible: 'champDialogue3' },
+        { mots: ['nationaliteit'], cible: 'champDialogue4' },
+        { mots: ['burgerlijke'], cible: 'champDialogue5' },
+        { mots: ['huwelijksvermogensstelsel'], cible: 'champDialogue6' },
+      ] },
+    ] },
     // Ajoutée — échange officiel manquant (v3_8) : FARIËL "Het
     // huwelijksvermogensstelsel ook?" / ALFRED "Ja, zelfs het
     // huwelijksvermogensstelsel." (plus long qu'en FR "Aussi." — officiel
