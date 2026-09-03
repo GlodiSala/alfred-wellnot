@@ -652,18 +652,29 @@ function programmerSurbrillanceMots(texteComplet, audio, entrees, timersRef) {
       // légère anticipation généralisée réduit ce décalage sans fausser
       // sensiblement les tout premiers mots.
       const msParMot = (dureeMs / total) * 0.93;
-      // Filet de sécurité : ne JAMAIS programmer un repère après la fin
-      // réelle de l'audio (moins une marge) — sur une phrase où le dernier
-      // mot-repère tombe très près de la fin, un tout petit écart
-      // d'estimation suffisait à le faire dépasser la durée réelle, donc à
-      // ne jamais se déclencher (repéré : "statut" ne s'allumait jamais).
-      const plafondMs = Math.max(0, dureeMs - 250);
+      // Écart minimum entre deux déclenchements — demandé explicitement :
+      // "ça se superpose, tu peux prendre plus de temps que l'audio non ?".
+      // Remplace l'ancien plafond dur (qui empêchait un repère de dépasser
+      // la fin de l'audio) : rien n'oblige vraiment à rester dans cette
+      // fenêtre — seul un espacement visuel confortable entre deux
+      // surlignages compte. Les repères sont donc calculés, triés, puis
+      // chacun est repoussé si besoin pour garder au moins ECART_MIN_MS
+      // avec le précédent — quitte à déclencher après la fin réelle de
+      // l'audio pour le(s) dernier(s) mot(s) d'une énumération serrée.
+      const ECART_MIN_MS = 1000;
+      const candidats = [];
       for (const entree of entrees) {
         const cles = (entree.motsCles || []).map((m) => m.toLowerCase());
         const idx = motsNettoyes.findIndex((m) => cles.some((c) => m === c || m.startsWith(c)));
         if (idx === -1 || typeof entree.action !== 'function') continue;
-        const delai = Math.min(idx * msParMot, plafondMs);
-        const id = setTimeout(entree.action, delai);
+        candidats.push({ delai: idx * msParMot, action: entree.action });
+      }
+      candidats.sort((a, b) => a.delai - b.delai);
+      let dernierDelai = -Infinity;
+      for (const c of candidats) {
+        const delai = Math.max(c.delai, dernierDelai + ECART_MIN_MS);
+        dernierDelai = delai;
+        const id = setTimeout(c.action, delai);
         if (timersRef) timersRef.ids.push(id);
       }
     }, DELAI_AUDIO_PERCEPTIBLE_MS);
