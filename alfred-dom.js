@@ -1000,27 +1000,39 @@ const SURBRILLANCE_CIBLES = {
 // 6=Medewerker — confirmé par capture d'écran 03/09). Pas d'erreur si le
 // tableau n'est pas encore affiché (ex: mot prononcé avant la fin du
 // chargement de la page) — simple no-op silencieux, comme surlignerBrievement.
-async function surlignerColonneDossiers(indexColonne) {
-  // Attend que le tableau soit vraiment STABLE (même nombre de lignes sur
-  // deux vérifications de suite), pas juste "au moins une ligne" — remonté
-  // en test live : le surlignage se déclenchait pendant que le tableau
-  // finissait encore de charger ses données (une 1re ligne apparaît avant
-  // les autres). Repli sur le dernier état trouvé si ça ne se stabilise
-  // jamais dans le budget (~5s), plutôt que de bloquer indéfiniment.
+// Attend que le tableau des dossiers soit VRAIMENT chargé, pas juste "au
+// moins une ligne" — remonté en test live à deux reprises : "il parle trop
+// tôt, le tableau n'est pas plein". Deux signaux combinés :
+// 1) le nombre de lignes reste identique sur PLUSIEURS lectures de suite
+//    (3, espacées de 250ms — env. 750ms de stabilité confirmée, contre 400ms
+//    avant, remonté comme insuffisant) ;
+// 2) aucun indicateur de chargement PrimeNG visible. Classes standards de la
+//    librairie (déjà confirmée utilisée ici via p-datatable-tbody,
+//    p-multiselect...), pas du texte applicatif deviné — plusieurs noms
+//    possibles selon la version de PrimeNG, on les couvre tous par sécurité.
+// Repli sur le dernier état trouvé si ça ne se stabilise jamais dans le
+// budget (~7s), plutôt que de bloquer indéfiniment.
+async function attendreTableauDossiersCharge() {
   let tbody = null, dernierCompte = -1, stable = 0;
-  for (let i = 0; i < 25; i++) {
-    if (annulationDemandee) return;
+  for (let i = 0; i < 28; i++) {
+    if (annulationDemandee) return null;
     tbody = document.querySelector('tbody.p-datatable-tbody');
+    const enChargement = !!document.querySelector('.p-datatable-loading-overlay, .p-datatable-loading-icon, .p-datatable-loading, .p-datatable-mask');
     const compte = tbody ? tbody.querySelectorAll('tr').length : 0;
-    if (compte > 0 && compte === dernierCompte) {
-      if (++stable >= 2) break;
+    if (!enChargement && compte > 0 && compte === dernierCompte) {
+      if (++stable >= 3) break;
     } else {
       stable = 0;
     }
     dernierCompte = compte;
-    await attendre(200);
+    await attendre(250);
   }
-  if (!tbody || !tbody.querySelector('tr')) return;
+  return (tbody && tbody.querySelector('tr')) ? tbody : null;
+}
+
+async function surlignerColonneDossiers(indexColonne) {
+  const tbody = await attendreTableauDossiersCharge();
+  if (!tbody) return;
   const table = tbody.closest('table') || tbody.closest('[role="table"]');
   if (!table) return;
   const enTetes = table.querySelectorAll('thead th');
@@ -1909,24 +1921,12 @@ async function seq_creationDossier_ouvrir_dossiers() {
   } else {
     console.warn('[Alfred DOM] Lien "Dossiers" introuvable');
   }
-  // Attend que le tableau soit vraiment STABLE (même nombre de lignes sur
-  // deux vérifications de suite), pas juste "au moins une ligne" — même
-  // logique que surlignerColonneDossiers plus bas, appliquée ici en amont
-  // pour retarder la PAROLE elle-même, pas juste la mise en évidence.
-  let tbody = null, dernierCompte = -1, stable = 0;
-  for (let i = 0; i < 25; i++) {
-    if (annulationDemandee) return;
-    tbody = document.querySelector('tbody.p-datatable-tbody');
-    const compte = tbody ? tbody.querySelectorAll('tr').length : 0;
-    if (compte > 0 && compte === dernierCompte) {
-      if (++stable >= 2) break;
-    } else {
-      stable = 0;
-    }
-    dernierCompte = compte;
-    await attendre(200);
-  }
-  if (!tbody || !tbody.querySelector('tr')) await attendre(1800); // repli : comportement d'avant si le tableau n'apparaît jamais
+  // Attend que le tableau soit vraiment chargé (même fonction que
+  // surlignerColonneDossiers plus bas — voir attendreTableauDossiersCharge),
+  // appliquée ici en amont pour retarder la PAROLE elle-même, pas juste la
+  // mise en évidence. Remonté deux fois en test live : "il parle trop tôt".
+  const tbody = await attendreTableauDossiersCharge();
+  if (!tbody) await attendre(1800); // repli : comportement d'avant si le tableau n'apparaît jamais
 
   // Déclenche la parole ICI (voir la note en tête de fonction) — cherché
   // dans la config plutôt que codé en dur, pour rester en phase avec le
