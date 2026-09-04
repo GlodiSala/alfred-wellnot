@@ -1046,19 +1046,35 @@ async function surlignerChampsRemplis(conteneur, dureeMs = 1500) {
 // aussi les champs texte classiques, pas seulement les menus déroulants.
 function trouverChampProcheLabelDans(conteneur, labelTexte) {
   if (!conteneur) return null;
-  const label = Array.from(conteneur.querySelectorAll('*'))
+  // Repli texteContient si texteCommencePar ne trouve rien : certains
+  // libellés peuvent être précédés d'une icône/espace insécable invisible
+  // dans le texte brut, ce que startsWith raterait mais includes attrape.
+  let label = Array.from(conteneur.querySelectorAll('*'))
     .find(el => el.children.length === 0 && texteCommencePar(el.textContent, labelTexte) && el.getBoundingClientRect().width > 0);
+  if (!label) {
+    label = Array.from(conteneur.querySelectorAll('*'))
+      .find(el => el.children.length === 0 && texteContient(el.textContent, labelTexte) && el.getBoundingClientRect().width > 0);
+  }
   if (!label) return null;
   const lr = label.getBoundingClientRect();
   const candidats = [
     ...conteneur.querySelectorAll('input, textarea, select'),
     ...conteneur.querySelectorAll('[role="combobox"]'),
   ].filter(el => el.getBoundingClientRect().width > 0);
+  // Distance euclidienne entre centres, avec une légère pénalité (pas une
+  // exclusion totale) si le champ est nettement AU-DESSUS du libellé —
+  // remplace un filtre strict "doit être en dessous" qui excluait TOUT
+  // (remonté en test live : 100% des champs introuvables alors que les
+  // libellés eux-mêmes étaient corrects) — probablement un formulaire où
+  // le libellé est à CÔTÉ du champ (ou dedans, libellé flottant), pas
+  // au-dessus comme pour les menus déroulants (trouverDeclencheurProcheLabel).
+  const centreLabel = { x: lr.left + lr.width / 2, y: lr.top + lr.height / 2 };
   let meilleur = null, meilleureDistance = Infinity;
   for (const c of candidats) {
     const r = c.getBoundingClientRect();
-    if (r.top < lr.bottom - 5) continue; // le champ est censé être sous (ou juste à côté de) son libellé
-    const distance = (r.top - lr.bottom) + Math.abs(r.left - lr.left);
+    const centreChamp = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    let distance = Math.hypot(centreChamp.x - centreLabel.x, centreChamp.y - centreLabel.y);
+    if (r.top < lr.top - 5) distance += 1000;
     if (distance < meilleureDistance) { meilleureDistance = distance; meilleur = c; }
   }
   return meilleur;
@@ -1086,10 +1102,12 @@ function trouverChampProcheLabelDans(conteneur, labelTexte) {
 // directement) : couvre aussi "il faut scroller doucement si le champ est
 // en bas".
 async function surlignerChampParLabelDialogue(labelTexte, tentatives = 30, delai = 250) {
+  let dernierChamp = null;
   for (let i = 0; i < tentatives; i++) {
     if (annulationDemandee) return;
     const dialogue = trouverDialogueOuvert();
     const champ = dialogue ? trouverChampProcheLabelDans(dialogue, labelTexte) : null;
+    dernierChamp = champ;
     if (champ && champ.value && champ.value.trim()) {
       defilerPuisSurligner(champ);
       return;
@@ -1098,10 +1116,15 @@ async function surlignerChampParLabelDialogue(labelTexte, tentatives = 30, delai
   }
   // Traçage — remonté en test live : un surlignage manquant passait
   // jusqu'ici totalement inaperçu (le halo n'apparaît juste jamais, rien
-  // dans la console pour dire pourquoi). Cette ligne dit exactement quel
-  // libellé était cherché et si la fenêtre était encore ouverte à ce
-  // moment, pour diagnostiquer avec de vraies preuves plutôt que deviner.
-  console.warn('[Alfred DOM] Champ introuvable pour le libellé:', labelTexte, '— fenêtre "Ajouter une partie" encore ouverte ?', !!trouverDialogueOuvert());
+  // dans la console pour dire pourquoi). Distingue maintenant 3 cas : le
+  // libellé lui-même reste introuvable (dernierChamp null), un champ a
+  // été trouvé près du libellé mais sans valeur (dernierChamp existe, pas
+  // de .value — probablement le mauvais élément ciblé), ou la fenêtre
+  // s'est refermée entre-temps.
+  console.warn('[Alfred DOM] Champ introuvable pour le libellé:', labelTexte,
+    '— fenêtre encore ouverte ?', !!trouverDialogueOuvert(),
+    '— un élément a été trouvé près du libellé ?', !!dernierChamp,
+    dernierChamp ? { tag: dernierChamp.tagName, value: dernierChamp.value, texte: dernierChamp.textContent?.trim().slice(0, 40) } : null);
 }
 
 // Déclenche la parole d'un segment 'parlerDepuisAction' une fois les champs
