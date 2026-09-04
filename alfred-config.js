@@ -16,14 +16,16 @@ const ALFRED_CONFIG = {
   // Demandé explicitement le 04/09 : avant, ce Q&A restait volontairement
   // non scripté (Fariël tapait elle-même en direct) — voir la note
   // historique juste avant ConnaissanceDossier dans REPLIQUES_FR/NL
-  // ci-dessous. NL sourcé mot pour mot du script officiel (v3_8.docx). FR :
-  // aucun texte figé équivalent trouvé dans l'officiel (seuls les 3 sujets
-  // étaient notés) — traduction directe des mêmes sujets, à corriger si un
-  // texte FR officiel apparaît.
+  // ci-dessous. FR et NL sourcés mot pour mot de l'officiel (le FR avait
+  // été manqué une 1re fois — trouvé en repassant sur Script_scene_
+  // Wellnot_InsideAI26_v3_9.docx : "Le bien est-il en zone inondable ?
+  // Quel est le régime matrimonial de l'acquéreur ? Quelle surface au
+  // cadastre ?", même paragraphe pour les 3 dans le Word, redécoupé ici en
+  // 3 questions séparées pour l'envoi une à une ; NL confirmé v3_8.docx).
   QUESTIONS_LIVE_FR: [
-    "Est-ce que le bien se trouve en zone inondable ?",
+    "Le bien est-il en zone inondable ?",
     "Quel est le régime matrimonial de l'acquéreur ?",
-    "Quelle est la superficie selon le cadastre ?",
+    "Quelle surface au cadastre ?",
   ],
   QUESTIONS_LIVE_NL: [
     "Ligt het goed in overstromingsgevoelig gebied?",
