@@ -1356,18 +1356,32 @@ function surlignerRectangle(rect, dureeMs = 1500) {
   setTimeout(() => calque.remove(), dureeMs + 100);
 }
 
+// Vitesse cible (au lieu d'une durée fixe) pour defilerPuisSurligner — voir
+// la note ci-dessous.
+const VITESSE_DEFILEMENT_CHAMP_PX_PAR_SEC = 900;
+
 // Défilement AUTOMATIQUE (pas une réplique à part, pas de flèche dédiée) —
 // question posée explicitement : "pour les surligneurs, faut pas faire les
 // scrolls auto ?". Différent des gros scrolls narratifs (RedactionGauche/
 // Droite, ClausePEB), qui restent volontairement des répliques séparées
 // pilotées à la flèche : ici, c'est juste un filet de sécurité — si le champ
 // visé est déjà visible (cas normal sur cet écran), defilerVersElement() ne
-// fait RIEN ; s'il est hors champ, un petit défilement doux (700ms, plus
-// rapide que le défilement narratif à 4,5s) le ramène à l'écran juste avant
-// de s'allumer, sinon le surlignage se déclencherait invisible pour le public.
+// fait RIEN ; s'il est hors champ, un petit défilement doux le ramène à
+// l'écran juste avant de s'allumer, sinon le surlignage se déclencherait
+// invisible pour le public.
+// Durée PROPORTIONNELLE à la distance (au lieu d'une durée fixe à 700ms) —
+// remonté en test live sur les fiches Vendeur/Acquéreur : "parfois il
+// scrolle vite et puis lentement" — avec une durée fixe, un champ tout
+// proche et un champ à l'autre bout du formulaire mettaient le MÊME temps
+// à arriver, donc l'un semblait glisser doucement et l'autre foncer —
+// vitesse perçue incohérente d'un champ à l'autre. Bornée (400-1200ms)
+// pour ne jamais être ni saccadée ni traînante.
 async function defilerPuisSurligner(el) {
   if (!el) return;
-  await defilerVersElement(el, 700);
+  const r = el.getBoundingClientRect();
+  const distanceApprox = Math.abs((r.top + r.height / 2) - (window.innerHeight / 2));
+  const dureeMs = Math.min(1200, Math.max(400, (distanceApprox / VITESSE_DEFILEMENT_CHAMP_PX_PAR_SEC) * 1000));
+  await defilerVersElement(el, dureeMs);
   surlignerBrievement(el);
 }
 
