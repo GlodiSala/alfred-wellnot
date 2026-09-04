@@ -7,7 +7,18 @@ export const config = { maxDuration: 60 };
 
 const REPO_PIECES  = process.env.ASSETS_REPO   || 'GlodiSala/alfred-demo-assets';
 const CHEMIN_PIECES = process.env.ASSETS_PATH  || 'pieces-vendeur';
-const ADRESSE_ALFRED = process.env.ALFRED_SENDER || 'alfred@alfred.be';
+// 'alfred@alfred.be' → 'test@alfred.be' (04/09) — confirmé par capture de
+// boîte réelle en test live : le vrai mail envoyé par l'appli pour CETTE
+// démo ("Verkoop door BIMBIMMO aan Caprasse (C-...)") part bien de
+// test@alfred.be, pas de alfred@alfred.be. Avec l'ancienne valeur, la
+// recherche par expéditeur ne trouvait AUCUNE demande réelle — seulement
+// un très vieux mail d'invitation ("Vous êtes invité(e) à rejoindre
+// Alfred", 17/08) resté seul dans la boîte sous ce vieil expéditeur — et y
+// répondait à chaque fois, sans jamais toucher le vrai fil de la démo. Le
+// symptôme ("je ne vois pas de réponse auto") était donc un envoi réussi,
+// mais sur le mauvais mail. ALFRED_SENDER reste disponible pour resserrer/
+// changer sans toucher au code si l'adresse change encore.
+const ADRESSE_ALFRED = process.env.ALFRED_SENDER || 'test@alfred.be';
 // Vide par défaut (04/09) — l'ancienne valeur ('Documents et informations')
 // ne correspondait à aucun vrai sujet observé : le vrai mail envoyé par
 // l'appli suit le format "Verkoop door BIMBIMMO aan Caprasse
