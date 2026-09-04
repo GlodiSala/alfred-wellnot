@@ -98,7 +98,15 @@ const ALFRED_CONFIG = {
     acquereur_rn:      '84.02.13-307.14',      // Alain Caprasse, personne physique
     acquereur_notaire: 'Maxime Van der Straten',
     bien: {
+      // type_nl ajouté le 04/09 — retour explicite en test live : en NL,
+      // le script cherchait quand même "Maison" (l'option du dropdown "Type
+      // de bien" est réellement "Huis" côté NL, comparaison stricte dans
+      // ajouterBienManuel, alfred-dom.js) — ne trouvait donc jamais l'option
+      // à cliquer, dossier NL bloqué avec le type de bien resté vide (et,
+      // en cascade, la matrice cadastrale ensuite introuvable/non
+      // récupérable puisque le type n'avait jamais été sélectionné).
       type:             'Maison',
+      type_nl:          'Huis',
       parcelle:         '0419XP0000',
       section:          'A',
       division:         '00141',

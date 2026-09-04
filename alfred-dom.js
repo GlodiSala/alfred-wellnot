@@ -2354,12 +2354,21 @@ async function ajouterBienManuel(bien) {
     // conteneur trop large qui ne réagit pas au clic).
     await curseurVersAsync(typeSpan, () => simulerClic(typeSpan));
     await attendre(250);
+    // type_nl (bien.type_nl, alfred-config.js) : l'option du dropdown n'est
+    // PAS "Maison" côté NL, c'est "Huis" — comparaison stricte ci-dessous,
+    // donc un seul texte codé en dur pour les deux langues ne pouvait
+    // jamais matcher en NL. Remonté en test live le 04/09 : le type de
+    // bien restait vide côté NL, et avec lui la matrice cadastrale,
+    // jamais récupérable puisque le type n'avait jamais été sélectionné.
+    const typeTexte = (typeof currentLangue !== 'undefined' && currentLangue === 'nl' && bien.type_nl) ? bien.type_nl : bien.type;
+    let trouve = false;
     for (let i = 0; i < 15; i++) {
       const opt = Array.from(document.querySelectorAll('li'))
-        .find(li => li.textContent.trim() === bien.type && li.getBoundingClientRect().width > 0);
-      if (opt) { await curseurVersAsync(opt, () => simulerClic(opt)); await attendre(200); break; }
+        .find(li => li.textContent.trim() === typeTexte && li.getBoundingClientRect().width > 0);
+      if (opt) { await curseurVersAsync(opt, () => simulerClic(opt)); await attendre(200); trouve = true; break; }
       await attendre(200);
     }
+    if (!trouve) console.warn('[Alfred DOM] Option de type de bien introuvable dans le dropdown :', typeTexte);
   }
   await taperDansChamp(SELECTEURS.champs.bienParcelle, bien.parcelle, 15, 35);
   await taperDansChamp(SELECTEURS.champs.bienSection, bien.section, 15, 35);
