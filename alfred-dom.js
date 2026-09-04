@@ -1151,7 +1151,22 @@ function trouverChampProcheLabelDans(conteneur, labelTexte, apresElement) {
 // dénomination cherchée par BCE (donc pas vide — la règle générale "1er
 // libellé rempli" retomberait dessus par erreur, à distinguer du cas
 // RN où le doublon en haut reste, lui, vide).
+// File d'attente PARTAGÉE entre tous les champPartieXxx (Vendeur/Acquéreur)
+// — remonté en test live : "les champs s'allument en même temps, faudrait
+// chacun à son tour". Deux causes cumulées : (1) defilerPuisSurligner
+// n'était pas attendu (await manquant) — la fonction rendait la main dès
+// le lancement du scroll, pas une fois le halo vraiment affiché, donc rien
+// n'empêchait deux champs de démarrer en même temps ; (2) même sans ça,
+// rien ne sérialisait deux appels déclenchés à ~1s d'écart (voir
+// ECART_MIN_MS, alfred-voice.js) alors que le scroll+halo d'un seul champ
+// prend plus longtemps que ça. Même principe que
+// filesSurlignageColonne pour le tableau de bord.
+let fileSurlignageChamp = Promise.resolve();
 async function surlignerChampParLabelDialogue(labelTexte, tentatives = 30, delai = 250, sectionTexte) {
+  fileSurlignageChamp = fileSurlignageChamp.then(() => surlignerChampParLabelDialogueMaintenant(labelTexte, tentatives, delai, sectionTexte));
+  return fileSurlignageChamp;
+}
+async function surlignerChampParLabelDialogueMaintenant(labelTexte, tentatives, delai, sectionTexte) {
   let dernierChamp = null;
   for (let i = 0; i < tentatives; i++) {
     if (annulationDemandee) return;
@@ -1162,7 +1177,7 @@ async function surlignerChampParLabelDialogue(labelTexte, tentatives = 30, delai
     const champ = dialogue ? trouverChampProcheLabelDans(dialogue, labelTexte, section) : null;
     dernierChamp = champ;
     if (champ && valeurChamp(champ)) {
-      defilerPuisSurligner(champ);
+      await defilerPuisSurligner(champ);
       return;
     }
     await attendre(delai);
@@ -1421,9 +1436,18 @@ const DUREE_DEFILEMENT_CHAMP_MS = 1200;
 // fait RIEN ; s'il est hors champ, un défilement doux et lent le ramène à
 // l'écran juste avant de s'allumer, sinon le surlignage se déclencherait
 // invisible pour le public.
+// defilerVersElement (vertical) ne vérifiait QUE r.top/r.bottom pour
+// décider si l'élément était "déjà visible" (et donc sauter le scroll) —
+// avec le panneau Alfred ouvert, un champ peut être dans les bonnes
+// limites verticales mais coupé HORIZONTALEMENT (site rétréci) : le
+// scroll vertical se sautait alors entièrement, et le halo s'allumait sur
+// un champ pas vraiment visible à l'écran — remonté en test live ("zetel"
+// notamment) comme un flash trop rapide/rushed. defilerVersElementHorizontal
+// couvre ce cas (no-op silencieux si déjà visible horizontalement aussi).
 async function defilerPuisSurligner(el) {
   if (!el) return;
   await defilerVersElement(el, DUREE_DEFILEMENT_CHAMP_MS);
+  await defilerVersElementHorizontal(el, DUREE_DEFILEMENT_CHAMP_MS);
   surlignerBrievement(el);
 }
 
