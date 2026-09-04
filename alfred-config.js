@@ -537,7 +537,14 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'PoserQuestions', segments: [
       { action: 'CreationPoserQuestions', parlerDepuisAction: true },
     ] },
-    { acte: 2, label: 'ConnaissanceDossier',  texte: "Je connais ce dossier mieux que personne." },
+    // ConnaissanceDossier ALIGNÉE le 04/09 sur le NL (voir la note NL
+    // équivalente plus bas) — retour explicite en test live : "la réplique
+    // FR et NL ne correspondent pas" (l'ancien texte FR, "Je connais ce
+    // dossier mieux que personne", ne parle plus du tout du Q&A qui vient
+    // de se dérouler dans le chatbot, contrairement au NL). Traduction du
+    // NL ("Ik heb je vragen beantwoord in de Chatbot"), au "vous" pour
+    // rester dans le registre du reste du script FR.
+    { acte: 2, label: 'ConnaissanceDossier',  texte: "J'ai répondu à vos questions dans le chatbot." },
     { acte: 2, label: 'Autonomie',            texte: "Exactement." },
 
     // ScrollPEB retiré d'ici — déplacé juste après ProjetComplet (voir
@@ -749,12 +756,9 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // verste uithoeken." (v3_8.docx) remplacée par "Ik heb je vragen
     // beantwoord in de Chatbot." — texte différent trouvé dans le vrai
     // document dédié à la scène Alfred NL ("Onglet Demo Alfred"), marqué en
-    // rouge comme changement là-bas. DOUTE signalé : le FR équivalent
-    // (v3FR.pdf) garde encore l'ancienne idée ("(répond à chaque question
-    // au fil) Je connais ce dossier mieux que personne.") — pas
-    // d'équivalent FR à ce changement vu pour l'instant. Gardé tel quel
-    // côté NL (sourcé du bon document, pas une invention), mais l'asymétrie
-    // FR/NL n'est pas expliquée — à confirmer si le FR doit suivre aussi.
+    // rouge comme changement là-bas. DOUTE (asymétrie FR/NL) levé le 04/09 :
+    // le FR a été aligné dessus (voir la note FR équivalente), confirmé
+    // nécessaire en test live.
     { acte: 2, label: 'ConnaissanceDossier',  texte: "Ik heb je vragen beantwoord in de Chatbot." },
     { acte: 2, label: 'Autonomie',            texte: "Precies!" },
 

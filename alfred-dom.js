@@ -1940,8 +1940,14 @@ async function poserQuestionAlfred(texte) {
   if (bouton) {
     await curseurVersAsync(bouton, () => simulerClic(bouton));
   } else {
+    console.warn('[Alfred DOM] Bouton d\'envoi introuvable — repli sur Entrée pour :', texte);
     validerChamp(champ);
   }
+  // Log de confirmation explicite — demandé (« comment savoir si ça
+  // marche ? ») : sans lui, rien ne prouvait dans la console qu'une
+  // question avait vraiment été tapée + envoyée (le seul log existant
+  // avant ne couvrait que l'échec).
+  console.log('[Alfred DOM] Question posée dans le chatbot :', texte, bouton ? '(envoyée via le bouton)' : '(envoyée via Entrée)');
   return true;
 }
 
@@ -1957,11 +1963,13 @@ async function seq_poserQuestionsAlfred() {
   await seq_ouvrirChatConversation();
   const liste = (typeof currentLangue !== 'undefined' && currentLangue === 'nl') ? ALFRED_CONFIG.QUESTIONS_LIVE_NL : ALFRED_CONFIG.QUESTIONS_LIVE_FR;
   if (!Array.isArray(liste) || !liste.length) { console.warn('[Alfred DOM] QUESTIONS_LIVE introuvable dans la config.'); return; }
+  let reussies = 0;
   for (const question of liste) {
     if (annulationDemandee) return;
-    await poserQuestionAlfred(question);
+    if (await poserQuestionAlfred(question)) reussies++;
     await attendre(4000);
   }
+  console.log(`[Alfred DOM] Q&A live terminé : ${reussies}/${liste.length} question(s) posée(s) dans le chatbot.`);
 }
 
 // Découpé en deux (ouverture / consultation+envoi) pour être calé sur deux

@@ -474,23 +474,28 @@ async function genererAudioElevenLabs(text, voiceId) {
 // (avant même Gemini), pour avoir le bon accent. Repli sur Gemini/Cloud TTS
 // (nl-NL) si ElevenLabs échoue (quota, réseau...) — jamais de silence
 // total en démo live.
+// Renvoie {audio, moteur} et non plus juste l'audio — depuis le 04/09,
+// speak() a besoin de savoir QUEL moteur a réellement servi cette ligne
+// (pas forcément celui demandé : un repli peut changer de moteur en cours
+// de route) pour appliquer la bonne vitesse de lecture (voir
+// VITESSE_PAROLE/VITESSE_PAROLE_ELEVENLABS plus haut).
 async function obtenirAudio(text, langue, moteurForce) {
   const voixElevenLabs = langue === 'nl' ? voixElevenLabsNL() : '';
   if (voixElevenLabs) {
     try {
-      return await genererAudioElevenLabs(text, voixElevenLabs);
+      return { audio: await genererAudioElevenLabs(text, voixElevenLabs), moteur: 'elevenlabs' };
     } catch (e) {
       console.warn('[Alfred Voice] ElevenLabs (nl-BE) indisponible, repli sur Gemini/Cloud TTS (nl-NL):', e);
     }
   }
   if (moteurForce !== 'cloud' && moteurVoixActuel() === 'gemini') {
     try {
-      return await genererAudioGemini(text, voixGeminiActuelle(), tonGemini(), langue);
+      return { audio: await genererAudioGemini(text, voixGeminiActuelle(), tonGemini(), langue), moteur: 'gemini' };
     } catch (e) {
       console.warn('[Alfred Voice] Gemini TTS indisponible, repli sur Cloud TTS:', e);
     }
   }
-  return genererAudioCloud(text, VOIX_CONFIG[langue] || VOIX_CONFIG.fr);
+  return { audio: await genererAudioCloud(text, VOIX_CONFIG[langue] || VOIX_CONFIG.fr), moteur: 'cloud' };
 }
 
 // Pré-génère l'audio de toutes les répliques du script (FR + NL) avec la
@@ -642,9 +647,13 @@ const DELAI_AUDIO_PERCEPTIBLE_MS = 600;
 // afficherSousTitresSync et programmerSurbrillanceMots en tiennent compte
 // pour leur calcul de durée réelle (audio.duration ne change PAS avec
 // playbackRate, seul le temps réel écoulé à l'écran change).
-// Remonté 0,85 → 0,93 — retour explicite le 04/09 : trop lent pour
-// Gemini-TTS en FR ("remettre à 93%").
+// Séparée en deux réglages le 04/09 (retour explicite : "la vitesse juste
+// pour Gemini à 0.93, mais pour ElevenLabs c'est ok") — un seul réglage
+// commun aux deux moteurs ne convenait plus aux deux à la fois. Gemini/
+// Cloud TTS (VITESSE_PAROLE) remonté 0,85 → 0,93 : trop lent en FR.
+// ElevenLabs (VITESSE_PAROLE_ELEVENLABS) reste à 0,85, déjà jugé bon.
 const VITESSE_PAROLE = 0.93;
+const VITESSE_PAROLE_ELEVENLABS = 0.85;
 
 // ── Afficher sous-titres avec sync audio ──────────────────
 // timerRef : objet mutable { id } dans lequel on écrit l'id du setTimeout en
@@ -831,7 +840,7 @@ async function speak(text, langue, sousTitre, moteurForce, surbrillanceMots, tex
   animateMouth(0.3);
 
   try {
-    const audio = await obtenirAudio(text, langue, moteurForce);
+    const { audio, moteur } = await obtenirAudio(text, langue, moteurForce);
     currentAudio = audio;
     // Ralenti léger de toute la voix — demandé explicitement ("synchroniser
     // l'audio, le ralentir un peu"), en réglage global plutôt que par
@@ -841,7 +850,10 @@ async function speak(text, langue, sousTitre, moteurForce, surbrillanceMots, tex
     // à l'API Gemini-TTS elle-même (dont le support n'est pas confirmé, et
     // un paramètre audio non supporté a déjà fait planter TOUS les appels
     // TTS une fois cette session, voir la note sur "pitch" plus haut).
-    audio.playbackRate = VITESSE_PAROLE;
+    // Par MOTEUR (voir la note sur VITESSE_PAROLE/VITESSE_PAROLE_ELEVENLABS
+    // plus haut) depuis le 04/09 — un seul réglage commun ne convenait plus
+    // aux deux à la fois ("juste pour Gemini à 0.93, pour ElevenLabs c'est ok").
+    audio.playbackRate = (moteur === 'elevenlabs') ? VITESSE_PAROLE_ELEVENLABS : VITESSE_PAROLE;
 
     // Sous-titres synchronisés sur la durée audio. phraseTimerRef est un
     // objet mutable (voir afficherSousTitresSync) car l'id du setTimeout
