@@ -113,6 +113,12 @@ const SELECTEURS = {
     // l'assujettissement TVA ("Assujetti à la TVA"), pas à la forme
     // juridique — aucun champ "Forme juridique" n'existe sur la fiche
     // BIMBIMMO, donc pas de cible possible ici, laissé sans surlignage.
+    // Section précédant les représentants (Vendeur) — confirmée par
+    // capture FR/NL ("Relations"/"Relaties"). Sert à ne chercher le
+    // libellé "Nom" qu'APRÈS cette section (voir champPartieRepresentants) :
+    // "Nom" existe aussi tout en haut de la fiche, déjà rempli avec la
+    // dénomination cherchée par BCE.
+    sectionRepresentants: ['Relations', 'Relaties'],
   },
   placeholders: {
     rechercheCommune: ['Rechercher une commune par son nom ou son code postal'],
@@ -1055,8 +1061,15 @@ function valeurChamp(el) {
   return (el.value ?? el.textContent ?? '').trim();
 }
 
-function trouverChampProcheLabelDans(conteneur, labelTexte) {
+// apresElement (optionnel) : ignore tout libellé situé AU-DESSUS de cet
+// élément — utilisé pour lever une ambiguïté quand "le premier libellé
+// rempli" ne suffit pas (voir champPartieRepresentants plus bas : "Nom"
+// existe aussi tout en haut de la fiche Vendeur, DÉJÀ rempli avec la
+// dénomination de l'entreprise cherchée par BCE — donc pas vide, la
+// méthode "on garde le 1er rempli" retomberait dessus par erreur).
+function trouverChampProcheLabelDans(conteneur, labelTexte, apresElement) {
   if (!conteneur) return null;
+  const limiteHaut = apresElement ? apresElement.getBoundingClientRect().bottom : -Infinity;
   // PLUSIEURS libellés identiques peuvent exister dans la même fenêtre — la
   // fiche "Une personne avec ce numéro de registre national existe déjà"
   // garde affichés les champs de RECHERCHE d'origine (Nom/Rue/Date de
@@ -1067,13 +1080,13 @@ function trouverChampProcheLabelDans(conteneur, labelTexte) {
   // garde le premier dont le champ le plus proche a une VALEUR — pas
   // seulement le tout premier libellé venu.
   let labels = Array.from(conteneur.querySelectorAll('*'))
-    .filter(el => el.children.length === 0 && texteCommencePar(el.textContent, labelTexte) && el.getBoundingClientRect().width > 0);
+    .filter(el => el.children.length === 0 && texteCommencePar(el.textContent, labelTexte) && el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().top >= limiteHaut);
   if (!labels.length) {
     // Repli texteContient : certains libellés peuvent être précédés d'une
     // icône/espace insécable invisible dans le texte brut, ce que
     // startsWith raterait mais includes attrape.
     labels = Array.from(conteneur.querySelectorAll('*'))
-      .filter(el => el.children.length === 0 && texteContient(el.textContent, labelTexte) && el.getBoundingClientRect().width > 0);
+      .filter(el => el.children.length === 0 && texteContient(el.textContent, labelTexte) && el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().top >= limiteHaut);
   }
   if (!labels.length) return null;
 
@@ -1131,12 +1144,22 @@ function trouverChampProcheLabelDans(conteneur, labelTexte) {
 // flash sur du vide. defilerPuisSurligner (pas surlignerBrievement
 // directement) : couvre aussi "il faut scroller doucement si le champ est
 // en bas".
-async function surlignerChampParLabelDialogue(labelTexte, tentatives = 30, delai = 250) {
+// sectionTexte (optionnel) : ne cherche le libellé QU'APRÈS cette section
+// (voir apresElement dans trouverChampProcheLabelDans) — utilisé pour
+// "représentants" (Vendeur), qui réutilise le libellé "Nom" alors que
+// celui-ci existe AUSSI tout en haut de la fiche, déjà rempli avec la
+// dénomination cherchée par BCE (donc pas vide — la règle générale "1er
+// libellé rempli" retomberait dessus par erreur, à distinguer du cas
+// RN où le doublon en haut reste, lui, vide).
+async function surlignerChampParLabelDialogue(labelTexte, tentatives = 30, delai = 250, sectionTexte) {
   let dernierChamp = null;
   for (let i = 0; i < tentatives; i++) {
     if (annulationDemandee) return;
     const dialogue = trouverDialogueOuvert();
-    const champ = dialogue ? trouverChampProcheLabelDans(dialogue, labelTexte) : null;
+    const section = (dialogue && sectionTexte)
+      ? Array.from(dialogue.querySelectorAll('*')).find(el => el.children.length === 0 && texteCommencePar(el.textContent, sectionTexte) && el.getBoundingClientRect().width > 0)
+      : null;
+    const champ = dialogue ? trouverChampProcheLabelDans(dialogue, labelTexte, section) : null;
     dernierChamp = champ;
     if (champ && valeurChamp(champ)) {
       defilerPuisSurligner(champ);
@@ -1230,7 +1253,7 @@ const SURBRILLANCE_CIBLES = {
   champPartieEtatCivil:         () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.etatCivil),
   champPartieRegimeMatrimonial: () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.regimeMatrimonial),
   champPartieDenomination:      () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.denomination),
-  champPartieRepresentants:     () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.nom),
+  champPartieRepresentants:     () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.nom, 30, 250, SELECTEURS.labelsPartie.sectionRepresentants),
 };
 
 // Met en évidence une colonne entière (en-tête + toutes les cellules
@@ -1294,7 +1317,23 @@ async function attendreTableauDossiersCharge() {
   return (tbody && tbody.querySelector('tr')) ? tbody : null;
 }
 
-async function surlignerColonneDossiers(indexColonne) {
+// File d'attente : quand les 3 colonnes (dossiers/collaborateurs/statuts)
+// sont ciblées coup sur coup, l'écart minimum entre déclenchements au mot
+// (ECART_MIN_MS, 1000ms — voir programmerSurbrillanceMots, alfred-voice.js)
+// est plus COURT que le temps réel d'un défilement+halo complet (~1800ms
+// de scroll + halo) — sans file d'attente, le scroll vers la 2e colonne
+// démarrait donc AVANT que le halo de la 1re ait eu le temps de s'afficher,
+// donnant l'impression de "ça scrolle à droite, à gauche, et après [le
+// premier] sélecteur [s'affiche seulement là]" (remonté en test live).
+// Chaque appel attend maintenant que le précédent soit VRAIMENT terminé
+// (scroll + halo affiché) avant de démarrer le sien.
+let filesSurlignageColonne = Promise.resolve();
+function surlignerColonneDossiers(indexColonne) {
+  filesSurlignageColonne = filesSurlignageColonne.then(() => surlignerColonneDossiersMaintenant(indexColonne));
+  return filesSurlignageColonne;
+}
+
+async function surlignerColonneDossiersMaintenant(indexColonne) {
   const tbody = await attendreTableauDossiersCharge();
   if (!tbody) return;
   const table = tbody.closest('table') || tbody.closest('[role="table"]');
@@ -1339,6 +1378,11 @@ async function surlignerColonneDossiers(indexColonne) {
   // chevauchement visuel entre deux colonnes proches n'est pas un
   // problème en soi, la lisibilité passe avant.
   surlignerRectangle({ left, top, width: right - left, height: bottom - top }, 1000);
+  // Attend que le halo ait vraiment eu le temps de s'afficher avant de
+  // considérer cette colonne "terminée" — sinon la file d'attente
+  // ci-dessus ne servirait à rien : le prochain scroll pourrait démarrer
+  // dès l'appel de surlignerRectangle (non-bloquant), pas après.
+  await attendre(1000);
 }
 
 // Cadre autour d'une ZONE (rectangle en coordonnées viewport, ex. tout un
