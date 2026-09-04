@@ -2086,7 +2086,17 @@ async function montrerPropositionEmail_envoyer() {
     const segment = replique?.segments?.find(s => s.action === 'CreationEmail_Envoyer');
     if (segment?.texte) {
       if (typeof addToHistory === 'function') addToHistory('alfred', segment.texte);
-      speak(typeof naturaliserTexte === 'function' ? naturaliserTexte(segment.texte) : segment.texte, currentLangue, segment.texte);
+      // await ajouté le 04/09 — SANS lui, cette fonction (donc toute la
+      // réplique EmailEnvoyer aux yeux de jouerSecoursInterne, voir
+      // alfred-brain.js) pouvait rendre la main avant la fin réelle de la
+      // narration : en Jouer tout, la réplique suivante démarrait alors
+      // que celle-ci parlait encore — remonté en test live comme un
+      // mélange de voix (avant le filet de sécurité stopAudio ajouté
+      // entre-temps) puis, une fois ce filet en place, comme une narration
+      // coupée en plein milieu ("il est abort en plein milieu, il continue
+      // direct pour la suite"). Même correctif que CreationOuvrir_Dossiers
+      // et CreationReponseVendeur plus bas dans ce fichier.
+      await speak(typeof naturaliserTexte === 'function' ? naturaliserTexte(segment.texte) : segment.texte, currentLangue, segment.texte);
     }
   }
 
@@ -2510,7 +2520,19 @@ async function seq_creationDossier_ouvrir_dossiers() {
     if (segment?.texte) {
       if (typeof addToHistory === 'function') addToHistory('alfred', segment.texte);
       const surbrillance = (typeof resoudreSurbrillance === 'function') ? resoudreSurbrillance(segment.surbrillance) : null;
-      speak(typeof naturaliserTexte === 'function' ? naturaliserTexte(segment.texte) : segment.texte, currentLangue, segment.texte, undefined, surbrillance, segment.texte);
+      // await ajouté le 04/09 — vrai coupable du "il ne dit pas le
+      // dashboard en entier, il est abort en plein milieu, il continue
+      // direct pour dossier aanmaken" remonté en test live, uniquement en
+      // Jouer tout : SANS lui, cette fonction (donc toute la réplique
+      // 'Ouvrir' aux yeux de jouerSecoursInterne) rendait la main dès le
+      // clic + le chargement du tableau, bien AVANT la fin réelle de la
+      // narration lancée juste ici — Jouer tout enchaînait alors sur la
+      // réplique suivante ('OuvrirCreer') pendant que celle-ci parlait
+      // encore. Ça se manifestait d'abord en mélange de voix (avant le
+      // filet de sécurité stopAudio ajouté depuis dans jouerSecoursInterne)
+      // puis, une fois ce filet en place, en coupure nette — mais la
+      // vraie cause était ici depuis le début, pas dans stopAudio.
+      await speak(typeof naturaliserTexte === 'function' ? naturaliserTexte(segment.texte) : segment.texte, currentLangue, segment.texte, undefined, surbrillance, segment.texte);
     }
   }
 }
@@ -3163,7 +3185,9 @@ async function seq_creationDossier_attenteReponseVendeur() {
     const segment = replique?.segments?.find(s => s.action === 'CreationReponseVendeur');
     if (segment?.texte) {
       if (typeof addToHistory === 'function') addToHistory('alfred', segment.texte);
-      speak(typeof naturaliserTexte === 'function' ? naturaliserTexte(segment.texte) : segment.texte, currentLangue, segment.texte);
+      // await ajouté le 04/09 — même correctif que CreationOuvrir_Dossiers/
+      // CreationEmail_Envoyer plus haut dans ce fichier (voir leurs notes).
+      await speak(typeof naturaliserTexte === 'function' ? naturaliserTexte(segment.texte) : segment.texte, currentLangue, segment.texte);
     }
   }
 
