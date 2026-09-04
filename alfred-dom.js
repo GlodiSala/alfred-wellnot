@@ -476,19 +476,30 @@ async function ouvrirPanneauAlfred() {
 // vrai document compromis — d'où le besoin de le fermer explicitement
 // avant tout scroll (voir seq_creationDossier_redaction_scrollPEB).
 async function fermerPanneauAlfred() {
-  if (!trouverOnglet(SELECTEURS.onglets.evenements)) return true; // déjà fermé
+  // Logs de diagnostic ajoutés le 04/09 — remonté en test live : "tu ne
+  // fermes pas avant et ça clique pas sur le logo" (réplique ProjetComplet).
+  // Sans ces logs, impossible de distinguer depuis la console "panneau déjà
+  // fermé, rien à faire" (return true silencieux avant) de "avatar
+  // introuvable" ou "clic fait mais panneau resté ouvert" — les trois se
+  // traduisaient de la même façon à l'écran ("rien ne se passe").
+  if (!trouverOnglet(SELECTEURS.onglets.evenements)) {
+    console.log('[Alfred DOM] fermerPanneauAlfred : panneau déjà fermé (onglet Événements introuvable), rien à faire.');
+    return true;
+  }
   // PAS de croix de fermeture (essayé via fermerFenetreOuverte, introuvable
   // en test live) — c'est un panneau à bascule (toggle) : le même bouton
   // logo/avatar qui l'ouvre (trouverAvatarAlfred, voir ouvrirPanneauAlfred
   // juste au-dessus) le referme aussi. Confirmé par l'utilisatrice.
   const avatar = trouverAvatarAlfred();
   if (!avatar) { console.warn('[Alfred DOM] Icône Alfred (pour fermer le panneau Événements) introuvable.'); return false; }
+  console.log('[Alfred DOM] fermerPanneauAlfred : clic sur', avatar.tagName, avatar.getAttribute('aria-label') || avatar.className || '(sans libellé)');
   await curseurVersAsync(avatar, () => simulerClic(avatar));
   await attendre(500);
   if (trouverOnglet(SELECTEURS.onglets.evenements)) {
     console.warn('[Alfred DOM] Panneau Alfred toujours ouvert après re-clic sur le logo.');
     return false;
   }
+  console.log('[Alfred DOM] fermerPanneauAlfred : panneau fermé avec succès.');
   return true;
 }
 
@@ -1946,16 +1957,20 @@ function trouverBoutonEnvoyerQuestion(champ) {
   return null;
 }
 
-// Ancêtre du champ de question englobant tout le panneau (titre, onglets,
-// messages, champ) — sert de zone de mesure à attendreReponseChatbot,
-// plus localisée que document.body entier (moins de risque de faux
-// positif si autre chose bouge ailleurs sur la page pendant l'attente).
-// Remonte un nombre de niveaux fixe : pas de sélecteur connu et fiable
-// pour la vraie liste de messages du chatbot (jamais capturé en direct).
-function zonePanneauConversation(champ) {
-  let el = champ;
-  for (let i = 0; i < 8 && el.parentElement; i++) el = el.parentElement;
-  return el;
+// Zone de mesure pour attendreReponseChatbot — document.body ENTIER,
+// PAS un ancêtre du champ. Une 1re version remontait un nombre fixe de
+// niveaux (8) depuis le champ pour rester "locale" — mais sans sélecteur
+// confirmé pour la vraie liste de messages du chatbot (composant PrimeNG,
+// potentiellement rendu ailleurs dans le DOM, ex. en overlay/portal), rien
+// ne garantissait que la réponse d'Alfred apparaisse bien À L'INTÉRIEUR de
+// ces 8 niveaux — remonté en test live le 04/09 : le Q&A restait "toujours
+// trop vite" même après ce 1er correctif, signe que la zone mesurée ne
+// voyait probablement jamais la vraie réponse arriver (donc "stabilisée"
+// dès le début, à tort). document.body est moins précis (risque de faux
+// positif si autre chose bouge ailleurs sur la page) mais au moins
+// GARANTI de contenir la réponse, où qu'elle s'affiche réellement.
+function zonePanneauConversation() {
+  return document.body;
 }
 
 // Attend que la réponse d'Alfred arrive ET cesse de changer (fin d'un
@@ -2000,7 +2015,7 @@ async function poserQuestionAlfred(texte) {
     await attendre(300);
   }
   if (!champ) { console.warn('[Alfred DOM] Champ de question (onglet Conversation) introuvable — question non posée :', texte); return false; }
-  const zone = zonePanneauConversation(champ);
+  const zone = zonePanneauConversation();
   await curseurVersAsync(champ, () => champ.focus());
   await taper(champ, texte);
   await attendre(300);
