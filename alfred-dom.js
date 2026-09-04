@@ -1351,8 +1351,9 @@ async function surlignerColonneDossiersMaintenant(indexColonne) {
   // faire défiler la molette latéralement. Utilisait scrollIntoView natif
   // (durée non réglable) — remonté en test live comme trop rapide, remplacé
   // par defilerVersElementHorizontal (même durée maîtrisée que les autres
-  // défilements du script).
-  await defilerVersElementHorizontal(enTete, 1800);
+  // défilements du script). Durée réduite (1800 → 1100ms) — remonté en test
+  // live comme trop lent sur cette réplique précise (Ouvrir/tableau de bord).
+  await defilerVersElementHorizontal(enTete, 1100);
   await attendre(300);
   // UN seul cadre autour de TOUTE la colonne (en-tête + lignes visibles),
   // pas un flash par cellule — demandé explicitement : "juste entourer la
@@ -1400,13 +1401,16 @@ function surlignerRectangle(rect, dureeMs = 1500) {
   setTimeout(() => calque.remove(), dureeMs + 100);
 }
 
-// Vitesse cible (au lieu d'une durée fixe) pour defilerPuisSurligner — voir
-// la note ci-dessous. Remontée (900 → 1400) et bornes resserrées
-// (400-1200ms → 300-700ms) — retour explicite : "pas consistant la
-// vitesse" et "un peu trop lent" — un écart de 400 à 1200ms restait large,
-// resserrer l'écart ET accélérer la moyenne rendent le mouvement plus
-// rapide ET plus régulier d'un champ à l'autre.
-const VITESSE_DEFILEMENT_CHAMP_PX_PAR_SEC = 1400;
+// Durée FIXE, volontairement lente, pour defilerPuisSurligner — HISTORIQUE :
+// une version basée sur la distance (vitesse constante en px/s) avait été
+// essayée entre-temps pour corriger "parfois vite, parfois lentement" —
+// annulée : retour explicite, ce n'était PAS le bon réglage ("il faut
+// vraiment prendre le temps de sélectionner chaque champ indépendamment et
+// descendre petit à petit... des fois encore plus rapide, pourquoi ?").
+// Ce qui est demandé, c'est une durée CONSTANTE et délibérément lente pour
+// CHAQUE champ, peu importe sa distance — pas une vitesse de défilement
+// constante (qui fait varier la durée). Zéro variabilité par construction.
+const DUREE_DEFILEMENT_CHAMP_MS = 1200;
 
 // Défilement AUTOMATIQUE (pas une réplique à part, pas de flèche dédiée) —
 // question posée explicitement : "pour les surligneurs, faut pas faire les
@@ -1414,22 +1418,12 @@ const VITESSE_DEFILEMENT_CHAMP_PX_PAR_SEC = 1400;
 // Droite, ClausePEB), qui restent volontairement des répliques séparées
 // pilotées à la flèche : ici, c'est juste un filet de sécurité — si le champ
 // visé est déjà visible (cas normal sur cet écran), defilerVersElement() ne
-// fait RIEN ; s'il est hors champ, un petit défilement doux le ramène à
+// fait RIEN ; s'il est hors champ, un défilement doux et lent le ramène à
 // l'écran juste avant de s'allumer, sinon le surlignage se déclencherait
 // invisible pour le public.
-// Durée PROPORTIONNELLE à la distance (au lieu d'une durée fixe à 700ms) —
-// remonté en test live sur les fiches Vendeur/Acquéreur : "parfois il
-// scrolle vite et puis lentement" — avec une durée fixe, un champ tout
-// proche et un champ à l'autre bout du formulaire mettaient le MÊME temps
-// à arriver, donc l'un semblait glisser doucement et l'autre foncer —
-// vitesse perçue incohérente d'un champ à l'autre. Bornée (300-700ms) pour
-// ne jamais être ni saccadée ni traînante.
 async function defilerPuisSurligner(el) {
   if (!el) return;
-  const r = el.getBoundingClientRect();
-  const distanceApprox = Math.abs((r.top + r.height / 2) - (window.innerHeight / 2));
-  const dureeMs = Math.min(700, Math.max(300, (distanceApprox / VITESSE_DEFILEMENT_CHAMP_PX_PAR_SEC) * 1000));
-  await defilerVersElement(el, dureeMs);
+  await defilerVersElement(el, DUREE_DEFILEMENT_CHAMP_MS);
   surlignerBrievement(el);
 }
 
