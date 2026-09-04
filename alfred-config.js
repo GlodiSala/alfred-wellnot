@@ -502,12 +502,21 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // chargés." et "Réceptionnés, analysés, classés..." — même principe
     // que PartiesVendeur/PartiesAcquereur (vrai tour de Fariël = vraie
     // réplique séparée, pas un enchaînement automatique). ProjetComplet
-    // (juste après) reprend la suite, sans action : dite par la personne
-    // qui gère la démo une fois que Fariël a relancé.
+    // (juste après) reprend la suite.
     { acte: 2, label: 'ReponseVendeur', segments: [
       { texte: "Envoyé. Le vendeur a répondu — les documents sont chargés.", action: 'CreationReponseVendeur', parlerDepuisAction: true },
     ] },
-    { acte: 2, label: 'ProjetComplet', texte: "Réceptionnés, analysés, classés. Et regardez le compromis : les données des pièces se sont placées dans les bonnes clauses. Le projet est complet. Je prépare, vous décidez." },
+    // action ajoutée le 04/09 — demandé explicitement : "il ne faut pas
+    // appuyer sur rédaction mais sur le logo d'Alfred, comme ça on ferme et
+    // on voit la rédaction en pleine écran". Avant, le panneau Alfred
+    // (ouvert depuis Email/EmailEnvoyer) restait ouvert par-dessus le
+    // compromis jusqu'à ClausePEB, DEUX répliques plus tard — donc rien ne
+    // révélait vraiment le compromis pendant que cette réplique en parle
+    // ("regardez le compromis"), il fallait fermer le panneau à la main.
+    // fermerPanneauAlfred() (déjà utilisée par ClausePEB juste après) est
+    // idempotente — l'appel qui reste dans ClausePEB ne fait donc rien si
+    // le panneau est déjà fermé ici.
+    { acte: 2, label: 'ProjetComplet', texte: "Réceptionnés, analysés, classés. Et regardez le compromis : les données des pièces se sont placées dans les bonnes clauses. Le projet est complet. Je prépare, vous décidez.", action: 'CreationRedaction_ProjetComplet' },
     // ClausePEB REPOSITIONNÉE le 03/09 : le document officiel a une vraie
     // didascalie à CET endroit précis, juste après "Ontvangen, geanalyseerd
     // en verwerkt... Ik bereid alles voor en u beslist." (= ProjetComplet) :
@@ -745,7 +754,9 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'ReponseVendeur', segments: [
       { texte: "Verstuurd. En kijk eens aan: de verkoper heeft al geantwoord, de documenten zijn binnen.", action: 'CreationReponseVendeur', parlerDepuisAction: true },
     ] },
-    { acte: 2, label: 'ProjetComplet', texte: "Ontvangen, geanalyseerd en verwerkt. En kijk naar de verkoopovereenkomst: de gegevens uit de stukken zijn in de juiste clausules verwerkt. Het ontwerp is klaar. Ik bereid alles voor en u beslist." },
+    // action : voir la note FR équivalente (fermerPanneauAlfred, même
+    // correctif).
+    { acte: 2, label: 'ProjetComplet', texte: "Ontvangen, geanalyseerd en verwerkt. En kijk naar de verkoopovereenkomst: de gegevens uit de stukken zijn in de juiste clausules verwerkt. Het ontwerp is klaar. Ik bereid alles voor en u beslist.", action: 'CreationRedaction_ProjetComplet' },
     // ClausePEB — voir la note FR équivalente : repositionnée le 03/09,
     // didascalie officielle "⇒ Montrer ici la clause EPC" trouvée en rouge
     // exactement à cet endroit du document.

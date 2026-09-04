@@ -1921,10 +1921,52 @@ function trouverBoutonEnvoyerQuestion(champ) {
   return null;
 }
 
+// Ancêtre du champ de question englobant tout le panneau (titre, onglets,
+// messages, champ) — sert de zone de mesure à attendreReponseChatbot,
+// plus localisée que document.body entier (moins de risque de faux
+// positif si autre chose bouge ailleurs sur la page pendant l'attente).
+// Remonte un nombre de niveaux fixe : pas de sélecteur connu et fiable
+// pour la vraie liste de messages du chatbot (jamais capturé en direct).
+function zonePanneauConversation(champ) {
+  let el = champ;
+  for (let i = 0; i < 8 && el.parentElement; i++) el = el.parentElement;
+  return el;
+}
+
+// Attend que la réponse d'Alfred arrive ET cesse de changer (fin d'un
+// éventuel effet de frappe/stream côté chatbot) avant de continuer —
+// remplace une pause fixe, demandé explicitement en test live le 04/09 :
+// "il va trop vite, alfred prend beaucoup de temps à répondre". Pas de
+// sélecteur connu pour repérer un message précis : heuristique générique
+// (longueur de texte de la zone) plutôt qu'un sélecteur probablement faux.
+// maxMs : plafond de sécurité si jamais rien ne se stabilise (ne bloque
+// jamais la démo indéfiniment). Renvoie true si une réponse a bien été
+// détectée avant ce plafond, false sinon (l'appelant continue quand même).
+async function attendreReponseChatbot(zone, maxMs = 25000, stabiliteMs = 1500) {
+  if (!zone) { await attendre(4000); return false; }
+  const debut = performance.now();
+  await attendre(700); // laisse d'abord la bulle de la question elle-même s'afficher
+  let derniereLongueur = zone.textContent.length;
+  let dernierChangement = performance.now();
+  while (performance.now() - debut < maxMs) {
+    if (annulationDemandee) return false;
+    await attendre(400);
+    const longueur = zone.textContent.length;
+    if (longueur !== derniereLongueur) {
+      derniereLongueur = longueur;
+      dernierChangement = performance.now();
+    } else if (performance.now() - dernierChangement >= stabiliteMs) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // Tape (effet de frappe, voir taper()) puis envoie une question dans le
 // vrai chatbot de l'appli (onglet Conversation), pour de vrai — clic sur
 // le bouton d'envoi si trouvé, sinon repli sur Entrée (comportement
-// standard de la plupart des chats).
+// standard de la plupart des chats). Attend ensuite la réponse (voir
+// attendreReponseChatbot) avant de rendre la main à l'appelant.
 async function poserQuestionAlfred(texte) {
   let champ = null;
   for (let i = 0; i < 10; i++) {
@@ -1933,6 +1975,7 @@ async function poserQuestionAlfred(texte) {
     await attendre(300);
   }
   if (!champ) { console.warn('[Alfred DOM] Champ de question (onglet Conversation) introuvable — question non posée :', texte); return false; }
+  const zone = zonePanneauConversation(champ);
   await curseurVersAsync(champ, () => champ.focus());
   await taper(champ, texte);
   await attendre(300);
@@ -1948,6 +1991,10 @@ async function poserQuestionAlfred(texte) {
   // question avait vraiment été tapée + envoyée (le seul log existant
   // avant ne couvrait que l'échec).
   console.log('[Alfred DOM] Question posée dans le chatbot :', texte, bouton ? '(envoyée via le bouton)' : '(envoyée via Entrée)');
+  const reponseDetectee = await attendreReponseChatbot(zone);
+  console.log(reponseDetectee
+    ? '[Alfred DOM] Réponse détectée (contenu stabilisé) pour : ' + texte
+    : '[Alfred DOM] Aucune réponse détectée après le délai max — on enchaîne quand même : ' + texte);
   return true;
 }
 
@@ -1955,10 +2002,9 @@ async function poserQuestionAlfred(texte) {
 // à 1"), les 3 questions fixes du Q&A live (QUESTIONS_LIVE_FR/NL, voir
 // alfred-config.js) dans le vrai chatbot de l'appli — remplace le Q&A
 // jusqu'ici volontairement non scripté (Fariël tapait elle-même en
-// direct, voir réplique PoserQuestions). Chaque question est tapée puis
-// envoyée pour de vrai ; pas d'attente d'une vraie réponse détectée dans
-// le DOM (pas de sélecteur fiable connu côté messages du chatbot), juste
-// une pause raisonnable pour laisser le temps de lire avant d'enchaîner.
+// direct, voir réplique PoserQuestions). Chaque question attend la
+// réponse précédente (voir poserQuestionAlfred/attendreReponseChatbot)
+// avant d'être posée.
 async function seq_poserQuestionsAlfred() {
   await seq_ouvrirChatConversation();
   const liste = (typeof currentLangue !== 'undefined' && currentLangue === 'nl') ? ALFRED_CONFIG.QUESTIONS_LIVE_NL : ALFRED_CONFIG.QUESTIONS_LIVE_FR;
@@ -1967,7 +2013,7 @@ async function seq_poserQuestionsAlfred() {
   for (const question of liste) {
     if (annulationDemandee) return;
     if (await poserQuestionAlfred(question)) reussies++;
-    await attendre(4000);
+    await attendre(800);
   }
   console.log(`[Alfred DOM] Q&A live terminé : ${reussies}/${liste.length} question(s) posée(s) dans le chatbot.`);
 }
@@ -3070,6 +3116,17 @@ function compterDocumentsEnAttente() {
 // vendeur sera gérée manuellement (Cyril répond depuis sa propre boîte,
 // comme avant l'automatisation), donc plus besoin d'une vérification DOM
 // ici, juste la narration et le retour au compromis.
+// Ferme le panneau Alfred (fermerPanneauAlfred, définie plus haut) pile au
+// moment où Alfred dit "regardez le compromis..." (réplique ProjetComplet)
+// — demandé explicitement en test live le 04/09 : "il ne faut pas appuyer
+// sur rédaction mais sur le logo d'Alfred, comme ça on ferme et on voit la
+// rédaction en pleine écran". Avant, rien ne fermait le panneau à ce
+// moment précis (resté ouvert depuis Email/EmailEnvoyer), il fallait le
+// faire à la main pour voir le compromis derrière.
+async function seq_creationDossier_redaction_projetComplet() {
+  await fermerPanneauAlfred();
+}
+
 async function seq_creationDossier_attenteReponseVendeur() {
   // Segment marqué parlerDepuisAction (voir alfred-brain.js) : le texte
   // n'est pas dit automatiquement au début du segment, il est dit ICI,
@@ -3162,6 +3219,7 @@ const DOM_ACTIONS = {
   'CreationEmail':     seq_creationDossier_email,
   'CreationEmail_Ouverture': montrerPropositionEmail_ouverture,
   'CreationEmail_Envoyer':   montrerPropositionEmail_envoyer,
+  'CreationRedaction_ProjetComplet': seq_creationDossier_redaction_projetComplet,
   'CreationReponseVendeur': seq_creationDossier_attenteReponseVendeur,
   'OuvrirChatConversation': seq_ouvrirChatConversation,
   'CreationPoserQuestions': seq_poserQuestionsAlfred,
