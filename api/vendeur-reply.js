@@ -8,17 +8,23 @@ export const config = { maxDuration: 60 };
 const REPO_PIECES  = process.env.ASSETS_REPO   || 'GlodiSala/alfred-demo-assets';
 const CHEMIN_PIECES = process.env.ASSETS_PATH  || 'pieces-vendeur';
 const ADRESSE_ALFRED = process.env.ALFRED_SENDER || 'alfred@alfred.be';
-const SUJET_RECHERCHE = process.env.ALFRED_SUBJECT_MATCH || 'Documents et informations';
+// Vide par défaut (04/09) — l'ancienne valeur ('Documents et informations')
+// ne correspondait à aucun vrai sujet observé : le vrai mail envoyé par
+// l'appli suit le format "Verkoop door BIMBIMMO aan Caprasse
+// (C-20260904-202749)" — vendeur/acquéreur/CODE DE DOSSIER, ce dernier
+// généré à chaque lancement (voir seq_creationDossier_ouvrir_champs,
+// alfred-dom.js) donc JAMAIS le même deux fois. Filtrer sur un sujet fixe
+// ne pouvait plus jamais matcher après le tout premier test — d'où
+// l'impression que "l'auto-réponse n'existe plus". On cherche donc par
+// EXPÉDITEUR + le plus récent uniquement (voir trouverMailAlfred), fiable
+// quel que soit le libellé exact du sujet ; ALFRED_SUBJECT_MATCH reste
+// disponible pour resserrer la recherche si jamais plusieurs boîtes
+// partagent la même adresse expéditrice.
+const SUJET_RECHERCHE = process.env.ALFRED_SUBJECT_MATCH || '';
 
-const CORPS = `Bonjour,
-
-Suite à votre demande, vous trouverez ci-joint les documents en notre possession
-concernant la vente du bien sis Daalakker 22, 2200 Herentals.
-
-Nous restons à votre disposition pour tout complément d'information.
-
-Bien à vous,
-BIMBIMMO`;
+// Vide (04/09) — demandé explicitement : répondre SANS texte, seulement
+// les pièces jointes.
+const CORPS = '';
 
 const TYPES_MIME = {
   pdf:  'application/pdf',
@@ -49,13 +55,17 @@ async function trouverMailAlfred(user, pass) {
   await client.connect();
   const verrou = await client.getMailboxLock('INBOX');
   try {
-    const uids = await client.search(
-      { from: ADRESSE_ALFRED, subject: SUJET_RECHERCHE },
-      { uid: true }
-    );
+    // Filtre sujet seulement si explicitement configuré (voir la note sur
+    // SUJET_RECHERCHE plus haut : le sujet réel contient un code de
+    // dossier différent à chaque test, un filtre fixe ne matcherait
+    // jamais deux fois).
+    const criteres = SUJET_RECHERCHE ? { from: ADRESSE_ALFRED, subject: SUJET_RECHERCHE } : { from: ADRESSE_ALFRED };
+    const uids = await client.search(criteres, { uid: true });
     if (!uids || uids.length === 0) {
       throw new Error(
-        `Aucun mail de ${ADRESSE_ALFRED} avec « ${SUJET_RECHERCHE} » dans le sujet`
+        SUJET_RECHERCHE
+          ? `Aucun mail de ${ADRESSE_ALFRED} avec « ${SUJET_RECHERCHE} » dans le sujet`
+          : `Aucun mail de ${ADRESSE_ALFRED} trouvé dans la boîte`
       );
     }
     // Le dernier UID est le plus récent : une démo rejouée renvoie un nouveau
