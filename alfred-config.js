@@ -253,17 +253,14 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // la création des parties." Confirmé aussi côté NL (v3_8 avait déjà
     // "Genoteerd! Tijd om de partijen erin te zetten." — jamais repris côté
     // NL non plus jusqu'ici, ajouté maintenant en miroir, voir plus bas).
-    // Pas d'action : juste une confirmation orale avant la scène des parties.
     // Ordre inversé le 03/09 (3e passe) — demandé explicitement : OuvrirOK
     // (la confirmation orale) doit être dite AVANT le clic sur "Suivant",
-    // pas après.
-    { acte: 2, label: 'OuvrirOK', texte: "Parfait, passons à la création des parties." },
-    // Réplique silencieuse (juste le clic "Suivant") — séparée de
-    // OuvrirChamps le 03/09 (2e passe), retour Cyril : "chaque action doit
-    // avoir sa propre flèche". Pas de ligne officielle à ce moment précis.
-    { acte: 2, label: 'OuvrirSuivant', segments: [
-      { texte: "", action: 'CreationOuvrir_Suivant', parlerDepuisAction: true },
-    ] },
+    // pas après. FUSIONNÉE avec OuvrirSuivant le 04/09 — demandé
+    // explicitement : "pas besoin d'avoir deux flèches pour ça" (dire
+    // "Parfait, passons..." ET cliquer "Suivant" sont maintenant sur la
+    // même flèche, en concurrence par défaut — le clic n'a besoin d'aucune
+    // narration particulière, contrairement à OuvrirChamps/PartiesVendeur).
+    { acte: 2, label: 'OuvrirOK', texte: "Parfait, passons à la création des parties.", action: 'CreationOuvrir_Suivant' },
     // Retour Cyril (capture d'écran à l'appui) : rattacher le notaire de
     // chaque partie se fait en fait directement sur l'onglet Parties, juste
     // après avoir ajouté vendeur et acquéreur.
@@ -590,12 +587,8 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // toujours eu cette ligne ("Genoteerd! Tijd om de partijen erin te
     // zetten.", juste après que Fariël donne le numéro/langue/médewerker/
     // notaris), jamais reprise côté NL jusqu'ici.
-    // Ordre inversé — voir la note FR équivalente.
-    { acte: 2, label: 'OuvrirOK', texte: "Genoteerd! Tijd om de partijen erin te zetten." },
-    // Réplique silencieuse — voir la note FR équivalente.
-    { acte: 2, label: 'OuvrirSuivant', segments: [
-      { texte: "", action: 'CreationOuvrir_Suivant', parlerDepuisAction: true },
-    ] },
+    // Ordre inversé / fusionnée avec OuvrirSuivant — voir la note FR équivalente.
+    { acte: 2, label: 'OuvrirOK', texte: "Genoteerd! Tijd om de partijen erin te zetten.", action: 'CreationOuvrir_Suivant' },
     // Corrigées le 31/08 — même raison que côté FR : le lead-in venait de
     // FARIËL, pas d'Alfred, et le texte d'Alfred lui-même n'était pas mot
     // pour mot le v3_8 ("Ik haal op" au lieu de "Ik haal de gegevens
