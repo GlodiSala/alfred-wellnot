@@ -1044,40 +1044,70 @@ async function surlignerChampsRemplis(conteneur, dureeMs = 1500) {
 // de proximité géométrique que trouverDeclencheurProcheLabel, mais scopée à
 // un conteneur (jamais un champ de la page derrière la fenêtre) et couvrant
 // aussi les champs texte classiques, pas seulement les menus déroulants.
+// Valeur "réelle" d'un champ, qu'il s'agisse d'un <input>/<textarea>/<select>
+// (.value) ou d'un déclencheur de menu PrimeNG ([role="combobox"], souvent
+// un <span>/<div> sans .value du tout — affiche sa valeur via .textContent).
+// Remonté en test live : Nationalité/Régime matrimonial sont des MENUS
+// (Belgisch/Scheiding van goederen... bien présents dans .textContent),
+// pas des champs texte — .value seul valait toujours undefined pour eux.
+function valeurChamp(el) {
+  if (!el) return '';
+  return (el.value ?? el.textContent ?? '').trim();
+}
+
 function trouverChampProcheLabelDans(conteneur, labelTexte) {
   if (!conteneur) return null;
-  // Repli texteContient si texteCommencePar ne trouve rien : certains
-  // libellés peuvent être précédés d'une icône/espace insécable invisible
-  // dans le texte brut, ce que startsWith raterait mais includes attrape.
-  let label = Array.from(conteneur.querySelectorAll('*'))
-    .find(el => el.children.length === 0 && texteCommencePar(el.textContent, labelTexte) && el.getBoundingClientRect().width > 0);
-  if (!label) {
-    label = Array.from(conteneur.querySelectorAll('*'))
-      .find(el => el.children.length === 0 && texteContient(el.textContent, labelTexte) && el.getBoundingClientRect().width > 0);
+  // PLUSIEURS libellés identiques peuvent exister dans la même fenêtre — la
+  // fiche "Une personne avec ce numéro de registre national existe déjà"
+  // garde affichés les champs de RECHERCHE d'origine (Nom/Rue/Date de
+  // naissance..., vides) AU-DESSUS des vraies infos remplies plus bas.
+  // Remonté en test live : le premier libellé "Nom" trouvé menait
+  // systématiquement au champ de recherche vide, pas au vrai champ rempli.
+  // On essaie donc TOUS les libellés correspondants, dans l'ordre, et on
+  // garde le premier dont le champ le plus proche a une VALEUR — pas
+  // seulement le tout premier libellé venu.
+  let labels = Array.from(conteneur.querySelectorAll('*'))
+    .filter(el => el.children.length === 0 && texteCommencePar(el.textContent, labelTexte) && el.getBoundingClientRect().width > 0);
+  if (!labels.length) {
+    // Repli texteContient : certains libellés peuvent être précédés d'une
+    // icône/espace insécable invisible dans le texte brut, ce que
+    // startsWith raterait mais includes attrape.
+    labels = Array.from(conteneur.querySelectorAll('*'))
+      .filter(el => el.children.length === 0 && texteContient(el.textContent, labelTexte) && el.getBoundingClientRect().width > 0);
   }
-  if (!label) return null;
-  const lr = label.getBoundingClientRect();
+  if (!labels.length) return null;
+
   const candidats = [
     ...conteneur.querySelectorAll('input, textarea, select'),
     ...conteneur.querySelectorAll('[role="combobox"]'),
   ].filter(el => el.getBoundingClientRect().width > 0);
-  // Distance euclidienne entre centres, avec une légère pénalité (pas une
-  // exclusion totale) si le champ est nettement AU-DESSUS du libellé —
-  // remplace un filtre strict "doit être en dessous" qui excluait TOUT
-  // (remonté en test live : 100% des champs introuvables alors que les
-  // libellés eux-mêmes étaient corrects) — probablement un formulaire où
-  // le libellé est à CÔTÉ du champ (ou dedans, libellé flottant), pas
-  // au-dessus comme pour les menus déroulants (trouverDeclencheurProcheLabel).
-  const centreLabel = { x: lr.left + lr.width / 2, y: lr.top + lr.height / 2 };
-  let meilleur = null, meilleureDistance = Infinity;
-  for (const c of candidats) {
-    const r = c.getBoundingClientRect();
-    const centreChamp = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-    let distance = Math.hypot(centreChamp.x - centreLabel.x, centreChamp.y - centreLabel.y);
-    if (r.top < lr.top - 5) distance += 1000;
-    if (distance < meilleureDistance) { meilleureDistance = distance; meilleur = c; }
+
+  let meilleurGlobal = null, meilleureDistanceGlobale = Infinity;
+  for (const label of labels) {
+    const lr = label.getBoundingClientRect();
+    // Distance euclidienne entre centres, avec une légère pénalité (pas une
+    // exclusion totale) si le champ est nettement AU-DESSUS du libellé —
+    // remplace un filtre strict "doit être en dessous" qui excluait TOUT
+    // (remonté en test live : 100% des champs introuvables alors que les
+    // libellés eux-mêmes étaient corrects) — probablement un formulaire où
+    // le libellé est à CÔTÉ du champ (ou dedans, libellé flottant), pas
+    // au-dessus comme pour les menus déroulants (trouverDeclencheurProcheLabel).
+    const centreLabel = { x: lr.left + lr.width / 2, y: lr.top + lr.height / 2 };
+    let meilleur = null, meilleureDistance = Infinity;
+    for (const c of candidats) {
+      const r = c.getBoundingClientRect();
+      const centreChamp = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      let distance = Math.hypot(centreChamp.x - centreLabel.x, centreChamp.y - centreLabel.y);
+      if (r.top < lr.top - 5) distance += 1000;
+      if (distance < meilleureDistance) { meilleureDistance = distance; meilleur = c; }
+    }
+    if (meilleur && valeurChamp(meilleur)) return meilleur; // trouvé un vrai champ rempli, on s'arrête là
+    if (meilleur && meilleureDistance < meilleureDistanceGlobale) { meilleurGlobal = meilleur; meilleureDistanceGlobale = meilleureDistance; }
   }
-  return meilleur;
+  // Aucun des libellés ne mène (encore) à un champ rempli — repli sur le
+  // meilleur candidat trouvé quand même, pour laisser la boucle d'attente
+  // de surlignerChampParLabelDialogue réessayer pendant qu'il se remplit.
+  return meilleurGlobal;
 }
 
 // Version VRAIMENT synchronisée au mot (contrairement à surlignerChampsRemplis
@@ -1108,7 +1138,7 @@ async function surlignerChampParLabelDialogue(labelTexte, tentatives = 30, delai
     const dialogue = trouverDialogueOuvert();
     const champ = dialogue ? trouverChampProcheLabelDans(dialogue, labelTexte) : null;
     dernierChamp = champ;
-    if (champ && champ.value && champ.value.trim()) {
+    if (champ && valeurChamp(champ)) {
       defilerPuisSurligner(champ);
       return;
     }
@@ -1124,7 +1154,7 @@ async function surlignerChampParLabelDialogue(labelTexte, tentatives = 30, delai
   console.warn('[Alfred DOM] Champ introuvable pour le libellé:', labelTexte,
     '— fenêtre encore ouverte ?', !!trouverDialogueOuvert(),
     '— un élément a été trouvé près du libellé ?', !!dernierChamp,
-    dernierChamp ? { tag: dernierChamp.tagName, value: dernierChamp.value, texte: dernierChamp.textContent?.trim().slice(0, 40) } : null);
+    dernierChamp ? { tag: dernierChamp.tagName, valeur: valeurChamp(dernierChamp).slice(0, 40) } : null);
 }
 
 // Déclenche la parole d'un segment 'parlerDepuisAction' une fois les champs
@@ -2616,7 +2646,11 @@ const DUREE_MIN_SCROLL_COLONNE_MS = 1500;
 // pour montrer/lire le contenu, pas tout le document. On défile donc au
 // maximum quelques hauteurs d'écran, pas jusqu'au bout — durée prévisible
 // et identique des deux côtés, peu importe la longueur réelle du texte.
-const ECRANS_A_DEFILER = 4;
+// Réduit (4 → 2,5) — retour explicite : "le scroll est trop long" —
+// combiné à la vitesse déjà ralentie à droite, 4 écrans prenait trop de
+// temps ; 2,5 reste largement assez pour montrer le contenu qui défile,
+// sans traîner en longueur.
+const ECRANS_A_DEFILER = 2.5;
 
 // Défile lentement du haut jusqu'au vrai bas de la colonne, à vitesse
 // constante (donc plus long pour un document plus long) — remonté en test
