@@ -1525,11 +1525,16 @@ async function cocherMesClients(qualitePartie) {
   return cocherBadgeSousSection(SELECTEURS.textes.mesClients, qualitePartie);
 }
 
-// Rattache un notaire (recherche dans la liste de l'étude) via la modale
-// "Rechercher dans votre liste de notaires", puis coche la case
-// "REPRÉSENTE" pour l'associer à la bonne partie (qualitePartie: 'Vendeur'
-// ou 'Acquéreur').
-async function rattacherNotaire(nomNotaire, qualitePartie) {
+// Cherche puis ajoute un notaire (recherche dans la liste de l'étude) via
+// la modale "Rechercher dans votre liste de notaires" — NE coche PAS la
+// case "REPRÉSENTE" (voir cocherRepresentation, séparée, à appeler par
+// l'appelant une fois prêt). Séparée exprès (04/09) — demandé
+// explicitement : chercher/ajouter le notaire doit se faire AVANT les
+// cases à cocher (Vendeur ET Acquéreur), qui se font maintenant ensemble
+// dans une étape séparée (voir seq_creationDossier_parties_notaireVendeur/
+// notaireAcquereur) — auparavant, tout (recherche + case) se faisait d'un
+// coup ici.
+async function rechercherEtAjouterNotaire(nomNotaire) {
   if (!nomNotaire) return false;
   // Le bouton "Ajouter un notaire" (SELECTEURS.boutons.ajouterNotaire)
   // n'existe pas sur cet écran — confirmé par capture de clics en direct :
@@ -1627,9 +1632,8 @@ async function rattacherNotaire(nomNotaire, qualitePartie) {
     console.warn('[Alfred DOM] Bouton "Ajouter" de confirmation (justify-end) introuvable — repli sur la recherche générique.');
     await cliquerBouton(SELECTEURS.boutons.ajouter, 6);
   }
-  await attendre(1000); // légèrement remonté (800→1000) : la section "REPRÉSENTE" qui suit met parfois plus longtemps à apparaître
+  await attendre(1000); // légèrement remonté (800→1000) : la section "REPRÉSENTE" (cochée séparément par l'appelant, voir cocherRepresentation) met parfois plus longtemps à apparaître
 
-  if (qualitePartie) await cocherRepresentation(qualitePartie);
   return true;
 }
 
@@ -2366,28 +2370,39 @@ async function seq_creationDossier_parties_acquereur() {
 // Rattache les notaires des deux parties — retour Cyril (script/
 // séquencier officiels, capture d'écran à l'appui) : inutile d'attendre
 // plus tard dans la démo et de revenir sur l'onglet Parties pour ça,
-// exactement les mêmes fonctions (cocherMesClients/rattacherNotaire,
+// exactement les mêmes fonctions (cocherMesClients/cocherRepresentation,
 // déjà utilisées avant) marchent très bien ici, tant qu'on n'a pas encore
 // quitté l'onglet Parties.
 // Découpée en 2 segments (même principe que CreationBien/CreationOuvrir) :
-// cocher BIMBIMMO (rapide) et chercher/ajouter Maxime (recherche +
-// sélection + confirmation + case + "Suivant" — plusieurs secondes) ont
-// des durées très différentes ; les garder dans une seule réplique aurait
-// fait finir la narration bien avant la fin de l'action à l'écran.
+// la recherche/ajout de Maxime (plusieurs secondes) et les deux cases à
+// cocher (rapides) ont des durées très différentes ; les garder dans une
+// seule réplique aurait fait finir la narration bien avant la fin de
+// l'action à l'écran.
+// RÔLES ÉCHANGÉS le 04/09 — demandé explicitement : "d'abord chercher le
+// notaire, et après cliquer pour vendeur et acheteur". Avant, cette 1re
+// flèche (silencieuse) cochait "Mes clients" (Vendeur), et la 2e (parlée)
+// cherchait/ajoutait Maxime PUIS cochait "REPRÉSENTE" (Acquéreur) — donc
+// "clic, recherche, clic". Maintenant : cette 1re flèche cherche/ajoute
+// Maxime EN SILENCE, et la 2e flèche (le texte de la réplique ne change
+// pas : "Je le retrouve dans la base...") coche les DEUX cases (Vendeur
+// ET Acquéreur) pendant qu'Alfred parle — comportement de la 2e flèche
+// par ailleurs inchangé (toujours action + parole en concurrence, comme
+// avant).
 async function seq_creationDossier_parties_notaireVendeur() {
+  const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
+  if (!cfg) return;
+  if (cfg.acquereur_notaire) await rechercherEtAjouterNotaire(cfg.acquereur_notaire);
+}
+
+async function seq_creationDossier_parties_notaireAcquereur() {
   // Confirmé par capture live (HTML complet, état par défaut vraiment
   // vérifié) : panneau "Mes clients" sur la fiche d'Alain Caprasse
   // (notaire en charge, déjà sur le dossier) — case décochée par défaut.
   await cocherMesClients(SELECTEURS.textes.qualiteVendeur);
-}
-
-async function seq_creationDossier_parties_notaireAcquereur() {
-  const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
-  if (!cfg) return;
-  // Panneau "Représente" sur la fiche de Maxime (ajoutée par
-  // rattacherNotaire) — case décochée par défaut, même distinction que
+  // Panneau "Représente" sur la fiche de Maxime (ajoutée par la flèche
+  // précédente) — case décochée par défaut, même distinction que
   // l'ancien code d'avant ce soir.
-  if (cfg.acquereur_notaire) await rattacherNotaire(cfg.acquereur_notaire, SELECTEURS.textes.qualiteAcquereur);
+  await cocherRepresentation(SELECTEURS.textes.qualiteAcquereur);
   await attendre(500);
   // Le clic "Suivant" vivait ici avant — sorti dans sa propre fonction/
   // réplique (seq_creationDossier_parties_suivant, juste en dessous), même
@@ -2475,8 +2490,9 @@ async function seq_creationDossier_bien() {
 // des notaires se fait maintenant DANS seq_creationDossier_parties_notaires
 // (voir plus haut), pendant qu'on est encore sur l'onglet Parties — plus
 // besoin d'y revenir plus tard via naviguerOnglet. Gardées ici pour
-// référence (mêmes fonctions cocherMesClients/rattacherNotaire réutilisées),
-// mais plus aucune réplique ne les déclenche.
+// référence (mêmes fonctions cocherMesClients/rechercherEtAjouterNotaire/
+// cocherRepresentation réutilisées), mais plus aucune réplique ne les
+// déclenche.
 // Étape 4 — Rattacher les notaires (vendeur et acquéreur) depuis l'onglet Parties.
 // Découpée en deux sous-étapes (comme CreationOuvrir/CreationParties) pour
 // un calage sur deux segments : le notaire du vendeur (BIMBIMMO) pendant
@@ -2502,8 +2518,12 @@ async function seq_creationDossier_notaires_vendeur() {
 async function seq_creationDossier_notaires_acquereur() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) return;
+  // Superseded (voir la note plus bas) — reproduit ici le comportement
+  // équivalent avec les fonctions séparées désormais utilisées par le
+  // vrai flux (rechercherEtAjouterNotaire + cocherRepresentation).
   if (cfg.acquereur_notaire) {
-    await rattacherNotaire(cfg.acquereur_notaire, SELECTEURS.textes.qualiteAcquereur);
+    await rechercherEtAjouterNotaire(cfg.acquereur_notaire);
+    await cocherRepresentation(SELECTEURS.textes.qualiteAcquereur);
   }
 }
 
