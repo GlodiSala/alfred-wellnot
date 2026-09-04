@@ -638,7 +638,21 @@ function ouvrirPanneauVoix() {
       btn.disabled = true;
       btn.textContent = '… génération';
       try {
+        // stopAudio() AVANT de jouer : ce bouton de test jouait l'audio en
+        // direct (audio.play()) sans jamais passer par currentAudio/speak()
+        // — rien ne l'arrêtait donc si on lançait "Jouer tout" juste après
+        // un test, pendant que ce clip jouait encore : les deux voix se
+        // mélangeaient. Remonté en test live le 04/09 ("la première
+        // réplique se mélange avec une autre réplique, seulement en Jouer
+        // tout") — le vrai coupable n'était pas un audio caché défectueux
+        // (déjà écarté : le bug persiste même après régénération), mais ce
+        // test resté audible en arrière-plan. currentAudio = audio ici
+        // permet à un stopAudio() ultérieur (voir le même filet ajouté au
+        // début de jouerSecoursInterne, alfred-brain.js) de couper CE clip
+        // aussi, pas seulement les vraies répliques.
+        if (typeof stopAudio === 'function') stopAudio();
         const audio = await genererAudioGemini(texte, selectVoix.value, taTon.value, langue);
+        currentAudio = audio;
         await audio.play();
       } catch (e) {
         console.warn('[Alfred Voice] Test de voix échoué:', e);
@@ -723,7 +737,11 @@ function ouvrirPanneauVoix() {
       btnTester.disabled = true;
       btnTester.textContent = '…';
       try {
+        // Voir la note équivalente sur testerVoix (Gemini) un peu plus
+        // haut dans ce fichier — même correctif, même bug.
+        if (typeof stopAudio === 'function') stopAudio();
         const audio = await genererAudioElevenLabs("Goeiedag, ik ben Alfred. Dit is een voorbeeld van mijn stem.", voiceId);
+        currentAudio = audio;
         await audio.play();
       } catch (e) {
         console.warn('[Alfred Voice] Test de voix ElevenLabs échoué:', e);

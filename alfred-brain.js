@@ -365,6 +365,16 @@ async function jouerSecoursInterne() {
   // annulée dès sa première vérification, sans même avoir commencé.
   if (typeof reinitialiserAnnulation === 'function') reinitialiserAnnulation();
 
+  // Filet de sécurité : coupe tout audio encore actif (ex. un test de voix
+  // lancé depuis le panneau "Voix d'Alfred", voir testerVoix/btnTester dans
+  // alfred-ui.js) avant de commencer CETTE réplique — remonté en test live
+  // le 04/09 ("la première réplique se mélange avec une autre réplique,
+  // seulement en Jouer tout") : le vrai coupable n'était pas un audio caché
+  // défectueux (déjà écarté, le bug persistait même après régénération),
+  // mais un clip de test resté audible en arrière-plan, jamais suivi par
+  // currentAudio ni arrêté par rien. Sans effet si rien ne joue déjà.
+  if (typeof stopAudio === 'function') stopAudio();
+
   const list = currentLangue === 'nl'
     ? ALFRED_CONFIG.REPLIQUES_NL
     : ALFRED_CONFIG.REPLIQUES_FR;

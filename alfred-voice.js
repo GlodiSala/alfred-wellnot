@@ -642,7 +642,9 @@ const DELAI_AUDIO_PERCEPTIBLE_MS = 600;
 // afficherSousTitresSync et programmerSurbrillanceMots en tiennent compte
 // pour leur calcul de durée réelle (audio.duration ne change PAS avec
 // playbackRate, seul le temps réel écoulé à l'écran change).
-const VITESSE_PAROLE = 0.85;
+// Remonté 0,85 → 0,93 — retour explicite le 04/09 : trop lent pour
+// Gemini-TTS en FR ("remettre à 93%").
+const VITESSE_PAROLE = 0.93;
 
 // ── Afficher sous-titres avec sync audio ──────────────────
 // timerRef : objet mutable { id } dans lequel on écrit l'id du setTimeout en
