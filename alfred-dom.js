@@ -1425,7 +1425,10 @@ function surlignerRectangle(rect, dureeMs = 1500) {
 // Ce qui est demandé, c'est une durée CONSTANTE et délibérément lente pour
 // CHAQUE champ, peu importe sa distance — pas une vitesse de défilement
 // constante (qui fait varier la durée). Zéro variabilité par construction.
-const DUREE_DEFILEMENT_CHAMP_MS = 1200;
+// Relevé une 2e fois (1200 → 2000) — retour explicite après test live avec
+// la séquence déjà corrigée (plus de flashs simultanés) : "le scroll est
+// toujours rapide, ça apparaît au fur et à mesure, sois plus lent".
+const DUREE_DEFILEMENT_CHAMP_MS = 2000;
 
 // Défilement AUTOMATIQUE (pas une réplique à part, pas de flèche dédiée) —
 // question posée explicitement : "pour les surligneurs, faut pas faire les
@@ -1935,24 +1938,47 @@ async function montrerPropositionEmail_envoyer() {
   await curseurVersAsync(consulter, () => consulter.click());
   await attendre(1200);
 
+  // Capturé AVANT le clic "Valider et envoyer" (donc avant que le mail
+  // d'Alfred n'existe) — sert de repère pour reconnaître, juste après,
+  // qu'un mail vraiment NOUVEAU est arrivé côté boîte réelle (voir
+  // attendreNouveauMailPuisRepondre, alfred-config.js). Silencieux si le
+  // mot de passe partagé n'est pas encore stocké — ne doit jamais bloquer
+  // ce qui suit.
+  const baselineMessageId = (typeof obtenirDernierMailIdAlfred === 'function') ? await obtenirDernierMailIdAlfred() : null;
+
   if (!await cliquerBoutonQuandActif(SELECTEURS.boutons.validerEtEnvoyer, 10, 500)) {
     console.warn('[Alfred DOM] Bouton "Valider et envoyer" introuvable ou inactif — mail non envoyé.');
     return false;
   }
   await attendre(1200);
 
-  // Réponse automatique du vendeur (attendreNouveauMailPuisRepondre /
-  // envoyerReponseVendeurAutomatique, api/vendeur-reply) RETIRÉE le 03/09 —
-  // reste oublié d'un abandon déjà acté ailleurs (voir
-  // seq_creationDossier_attenteReponseVendeur dans ce même fichier) : le
-  // backend renvoie ERROR.EMAIL, hors de notre contrôle, confirmé par
-  // l'utilisatrice. Ce reste bloquait jusqu'à 3 min (poll d'un nouveau
-  // mail) avant de retenter l'envoi automatique cassé — symptôme remonté
-  // en test live : "on ne passe plus à l'acte 3" après l'e-mail. La
-  // réponse du vendeur se gère maintenant entièrement à la main (Cyril
-  // répond depuis sa propre boîte) — voir ReponseVendeur, joué directement
-  // à la flèche suivante, sans attendre de vraie réponse ici.
-  console.log('[Alfred DOM] Mail envoyé au vendeur. Réponse à faire à la main (voir ReponseVendeur, réplique suivante).');
+  // Réponse automatique du vendeur — REMISE le 04/09, demandé explicitement
+  // ("remets le comportement de répondre auto, on connaît le format du
+  // sujet maintenant"). Avait été retirée le 03/09 : le sujet cherché était
+  // codé en dur ('Documents et informations'), qui ne correspondait à
+  // aucun vrai sujet observé (le vrai format est "Verkoop door X aan Y
+  // (code-dossier-unique-par-run)", jamais deux fois identique) — la
+  // recherche IMAP échouait donc systématiquement après le tout premier
+  // test, confondu à l'époque avec un vrai bug backend ("ERROR.EMAIL").
+  // Corrigé côté api/vendeur-reply.js (recherche par expéditeur + plus
+  // récent, voir trouverMailAlfred). Lancée ici en ARRIÈRE-PLAN, SANS await
+  // : la version précédente bloquait la démo en direct jusqu'à 3 min
+  // (poll d'un nouveau mail) avant de retenter l'envoi — symptôme remonté
+  // en test live ("on ne passe plus à l'acte 3"). La présentation continue
+  // donc tout de suite vers ReponseVendeur (narration manuelle), l'envoi
+  // réel se termine en coulisses ; un échec éventuel (mot de passe pas
+  // stocké, vrai bug backend qui reviendrait...) reste un simple
+  // avertissement console, jamais bloquant.
+  if (typeof attendreNouveauMailPuisRepondre === 'function') {
+    attendreNouveauMailPuisRepondre(baselineMessageId)
+      .then((resultat) => {
+        if (resultat?.ok) console.log('[Alfred DOM] Réponse automatique du vendeur envoyée.', resultat.data);
+        else console.warn('[Alfred DOM] Réponse automatique du vendeur : échec (voir détail).', resultat);
+      })
+      .catch((e) => console.warn('[Alfred DOM] Réponse automatique du vendeur : exception.', e));
+  }
+
+  console.log('[Alfred DOM] Mail envoyé au vendeur. Réponse automatique lancée en arrière-plan (voir ci-dessus pour le résultat).');
   return true;
 }
 
@@ -2760,10 +2786,23 @@ async function defilerColonneLentement(cote, vitessePxParSec = VITESSE_SCROLL_CO
   conteneur.scrollTop = 0;
   await attendre(300);
   const veritableBas = conteneur.scrollHeight - conteneur.clientHeight;
-  // Quelques hauteurs d'écran seulement, pas le vrai bas du document (voir
+  // Quelques hauteurs d'écran par défaut, pas le vrai bas du document (voir
   // ECRANS_A_DEFILER) — sauf si le document est déjà plus court que ça.
-  const cible = Math.min(veritableBas, conteneur.clientHeight * ECRANS_A_DEFILER);
-  const dureeMs = Math.max(DUREE_MIN_SCROLL_COLONNE_MS, dureeMinMs, (cible / vitessePxParSec) * 1000);
+  const cibleParDefaut = Math.min(veritableBas, conteneur.clientHeight * ECRANS_A_DEFILER);
+  // dureeMinMs (durée de la narration, voir estimerDureeParoleMs) donnait
+  // avant SEULEMENT plus de TEMPS pour la même distance plafonnée — donc un
+  // défilement qui ralentissait jusqu'à ramper sur une petite portion pour
+  // une longue réplique. Retour explicite : "tu peux aller plus loin, là tu
+  // scrolles super lentement sur une petite portion, ça a pas de sens".
+  // On calcule maintenant la distance que le temps disponible permet de
+  // couvrir à la vitesse NATURELLE (vitessePxParSec) demandée, et on prend
+  // le plus grand des deux plafonds — la vitesse de défilement reste donc
+  // la même (pas de ralenti artificiel), c'est la PORTION parcourue qui
+  // s'allonge pour une narration plus longue, plafonnée par le vrai bas du
+  // document (jamais au-delà de ce qui existe réellement).
+  const distanceSelonNarration = dureeMinMs > 0 ? (dureeMinMs / 1000) * vitessePxParSec : 0;
+  const cible = Math.min(veritableBas, Math.max(cibleParDefaut, distanceSelonNarration));
+  const dureeMs = Math.max(DUREE_MIN_SCROLL_COLONNE_MS, (cible / vitessePxParSec) * 1000);
   await new Promise(resolve => {
     const debut = performance.now();
     function etape(m) {
