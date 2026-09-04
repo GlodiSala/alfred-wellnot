@@ -1096,6 +1096,12 @@ async function surlignerChampParLabelDialogue(labelTexte, tentatives = 30, delai
     }
     await attendre(delai);
   }
+  // Traçage — remonté en test live : un surlignage manquant passait
+  // jusqu'ici totalement inaperçu (le halo n'apparaît juste jamais, rien
+  // dans la console pour dire pourquoi). Cette ligne dit exactement quel
+  // libellé était cherché et si la fenêtre était encore ouverte à ce
+  // moment, pour diagnostiquer avec de vraies preuves plutôt que deviner.
+  console.warn('[Alfred DOM] Champ introuvable pour le libellé:', labelTexte, '— fenêtre "Ajouter une partie" encore ouverte ?', !!trouverDialogueOuvert());
 }
 
 // Déclenche la parole d'un segment 'parlerDepuisAction' une fois les champs
