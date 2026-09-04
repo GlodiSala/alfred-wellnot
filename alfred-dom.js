@@ -2655,7 +2655,14 @@ const ECRANS_A_DEFILER = 2.5;
 // Défile lentement du haut jusqu'au vrai bas de la colonne, à vitesse
 // constante (donc plus long pour un document plus long) — remonté en test
 // live comme n'allant pas jusqu'au bout ("super important de lire").
-async function defilerColonneLentement(cote, vitessePxParSec = VITESSE_SCROLL_COLONNE_PX_PAR_SEC) {
+// dureeMinMs : allonge la durée du défilement (sans aller plus loin, juste
+// plus lentement) pour qu'il dure au moins aussi longtemps que la parole
+// estimée (voir estimerDureeParoleMs) — demandé explicitement : "ça
+// s'arrête, faut continuer pendant que ça parle". Avant, la durée ne
+// dépendait que de la distance/vitesse : sur une longue réplique
+// (RedactionDroite), le scroll finissait et s'immobilisait bien avant la
+// fin de la narration.
+async function defilerColonneLentement(cote, vitessePxParSec = VITESSE_SCROLL_COLONNE_PX_PAR_SEC, dureeMinMs = 0) {
   // Le clic sur "Rédaction" vient de lancer la génération du compromis —
   // les deux colonnes (et leur contenu réel, donc leur vraie hauteur) ne
   // sont pas forcément déjà affichées au moment où ce segment démarre.
@@ -2676,7 +2683,7 @@ async function defilerColonneLentement(cote, vitessePxParSec = VITESSE_SCROLL_CO
   // Quelques hauteurs d'écran seulement, pas le vrai bas du document (voir
   // ECRANS_A_DEFILER) — sauf si le document est déjà plus court que ça.
   const cible = Math.min(veritableBas, conteneur.clientHeight * ECRANS_A_DEFILER);
-  const dureeMs = Math.max(DUREE_MIN_SCROLL_COLONNE_MS, (cible / vitessePxParSec) * 1000);
+  const dureeMs = Math.max(DUREE_MIN_SCROLL_COLONNE_MS, dureeMinMs, (cible / vitessePxParSec) * 1000);
   await new Promise(resolve => {
     const debut = performance.now();
     function etape(m) {
@@ -2689,8 +2696,38 @@ async function defilerColonneLentement(cote, vitessePxParSec = VITESSE_SCROLL_CO
   });
 }
 
+// Texte d'une réplique à PLAT (pas segments) par label + nom d'action —
+// même esprit que parlerSegmentDepuisAction, mais pour lire le texte sans
+// déclencher la parole soi-même (ici, c'est jouerSecoursInterne qui s'en
+// charge normalement, en concurrence avec l'action — on veut juste estimer
+// sa durée depuis ici).
+function texteRepliqueParAction(label, actionNom) {
+  if (typeof ALFRED_CONFIG === 'undefined') return null;
+  const liste = (typeof currentLangue !== 'undefined' && currentLangue === 'nl') ? ALFRED_CONFIG.REPLIQUES_NL : ALFRED_CONFIG.REPLIQUES_FR;
+  const replique = liste?.find(r => r.label === label);
+  if (!replique) return null;
+  if (replique.action === actionNom) return replique.texte || null;
+  const segment = replique.segments?.find(s => s.action === actionNom);
+  return segment?.texte || null;
+}
+
+// Estimation grossière de la durée réelle de la parole (~150 mots/min,
+// même repli que programmerSurbrillanceMots/afficherSousTitresSync dans
+// alfred-voice.js quand la vraie durée audio n'est pas connue), ajustée
+// pour la vitesse de parole globale ralentie (VITESSE_PAROLE, alfred-voice.js
+// — dupliquée ici en dur : ce fichier ne dépend pas d'alfred-voice.js).
+// Sert uniquement à faire durer un défilement AU MOINS aussi longtemps que
+// la narration qui l'accompagne (voir dureeMinMs dans defilerColonneLentement).
+function estimerDureeParoleMs(texte) {
+  if (!texte) return 0;
+  const mots = texte.trim().split(/\s+/).filter(Boolean).length;
+  const VITESSE_PAROLE_ESTIMEE = 0.85;
+  return (mots * 400) / VITESSE_PAROLE_ESTIMEE;
+}
+
 async function seq_creationDossier_redaction_scrollGauche() {
-  await defilerColonneLentement('gauche');
+  const texte = texteRepliqueParAction('RedactionGauche', 'CreationRedaction_ScrollGauche');
+  await defilerColonneLentement('gauche', VITESSE_SCROLL_COLONNE_PX_PAR_SEC, estimerDureeParoleMs(texte));
 }
 
 // Premier passage sur la rédaction (juste après la génération du
@@ -2699,7 +2736,8 @@ async function seq_creationDossier_redaction_scrollGauche() {
 // vendeur n'arrivent que plus tard, voir Email/ReponseVendeur), donc viser
 // spécifiquement son titre ici n'aurait montré qu'une clause vide.
 async function seq_creationDossier_redaction_scrollDroite() {
-  await defilerColonneLentement('droite', VITESSE_SCROLL_COLONNE_DROITE_PX_PAR_SEC);
+  const texte = texteRepliqueParAction('RedactionDroite', 'CreationRedaction_ScrollDroite');
+  await defilerColonneLentement('droite', VITESSE_SCROLL_COLONNE_DROITE_PX_PAR_SEC, estimerDureeParoleMs(texte));
 }
 
 // Trouve, dans la colonne droite (le compromis généré), le titre de la
