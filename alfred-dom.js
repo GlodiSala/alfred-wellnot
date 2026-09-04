@@ -1434,7 +1434,10 @@ function surlignerRectangle(rect, dureeMs = 1500) {
 // Relevé une 2e fois (1200 → 2000) — retour explicite après test live avec
 // la séquence déjà corrigée (plus de flashs simultanés) : "le scroll est
 // toujours rapide, ça apparaît au fur et à mesure, sois plus lent".
-const DUREE_DEFILEMENT_CHAMP_MS = 2000;
+// Relevé une 3e fois (2000 → 2500), plus léger cette fois ("le scroll
+// pourrait être plus lent") — voir aussi le filet de sécurité de
+// visibilité ajouté dans defilerPuisSurligner juste plus bas.
+const DUREE_DEFILEMENT_CHAMP_MS = 2500;
 
 // Défilement AUTOMATIQUE (pas une réplique à part, pas de flèche dédiée) —
 // question posée explicitement : "pour les surligneurs, faut pas faire les
@@ -1457,6 +1460,28 @@ async function defilerPuisSurligner(el) {
   if (!el) return;
   await defilerVersElement(el, DUREE_DEFILEMENT_CHAMP_MS);
   await defilerVersElementHorizontal(el, DUREE_DEFILEMENT_CHAMP_MS);
+  // Filet de sécurité : le scroll horizontal (juste au-dessus) peut, sur
+  // certains champs, rejouer un recentrage vertical (repli scrollIntoView
+  // de defilerVersElementHorizontal quand aucun conteneur horizontal n'est
+  // trouvé) — remonté en test live le 04/09 ("parfois on scrolle trop et
+  // les choses highlight sont au-dessus, faut que tout soit affichable"),
+  // surtout côté Acquéreur, un peu aussi côté Vendeur. Plutôt que
+  // deviner pourquoi le recentrage vertical déjà fait plus haut ne tient
+  // pas toujours, on RE-VÉRIFIE après coup si le champ est réellement dans
+  // le cadre du conteneur (pas la fenêtre entière — un champ peut être
+  // légitimement caché derrière le panneau Alfred sans que ce soit une
+  // erreur) et on corrige d'un coup, sans animation, si besoin — jamais de
+  // surlignage sur un champ resté hors cadre.
+  const conteneurV = trouverConteneurDefilant(el);
+  const rectRef = conteneurV
+    ? conteneurV.getBoundingClientRect()
+    : { top: 0, bottom: window.innerHeight, left: 0, right: window.innerWidth };
+  const r = el.getBoundingClientRect();
+  const visible = r.top >= rectRef.top && r.bottom <= rectRef.bottom && r.left >= rectRef.left && r.right <= rectRef.right;
+  if (!visible) {
+    el.scrollIntoView({ block: 'center', inline: 'center' });
+    await attendre(150);
+  }
   surlignerBrievement(el);
 }
 
