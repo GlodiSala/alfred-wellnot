@@ -339,7 +339,16 @@ async function genererAudioGemini(text, voixId, ton, langue) {
   // l'audio caché lui-même — un raté de génération Gemini TTS, une phrase
   // courte dite deux fois d'affilée dans l'enregistrement. Bumper la clé
   // force une régénération propre pour toutes les répliques.
-  const cle = ['gemini-tts-v3', voixId, ton, languageCode, text].join('|');
+  // "v4" : même symptôme, revenu — "Play auto" : la toute première
+  // réplique ("Ouverture", index 0) mélangée avec une autre voix/réplique,
+  // remonté en test live le 04/09 ("juste la première réplique"). Même
+  // remède : un ancien audio caché défectueux pour CETTE ligne précise,
+  // pas un bug de séquencement JS (speak() attend déjà la vraie fin de
+  // l'audio avant d'enchaîner — voir le commentaire sur audio.onended plus
+  // bas dans ce fichier). Rebump global plutôt que cibler juste
+  // "Ouverture" : plus sûr, et le coût d'une régénération complète reste
+  // négligeable.
+  const cle = ['gemini-tts-v4', voixId, ton, languageCode, text].join('|');
 
   let audioContent = await lireCacheTTS(cle);
   if (audioContent) {
