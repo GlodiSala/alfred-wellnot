@@ -123,6 +123,12 @@ const SELECTEURS = {
   placeholders: {
     rechercheCommune: ['Rechercher une commune par son nom ou son code postal'],
     rechercheNotaire: ['Rechercher dans votre liste de notaires', 'Zoeken in uw notarissenlijst'], // NL confirmé (capture d'écran, modale "Een notaris toevoegen")
+    // Champ de saisie de l'onglet "Conversation"/"Gesprek" du panneau
+    // Alfred (voir seq_poserQuestionsAlfred) — NL confirmé (capture d'écran
+    // 04/09, "Stel uw vraag..."). FR : ESTIMATION (jamais vu en direct),
+    // traduction directe la plus probable — à corriger si le vrai
+    // placeholder diffère.
+    questionAlfred: ['Stel uw vraag', 'Posez votre question'],
   },
   menus: {
     qualitePartie:              ['Sélectionnez une qualité', 'Selecteer een h'], // NL confirmé — préfixe volontairement tronqué : la capture d'écran montrait "Selecteer een h..." coupé par ellipsis CSS (boîte trop étroite), donc "..." n'est PAS le vrai texte du DOM. Matché en startsWith (voir choisirDansDropdown) plutôt qu'en deviner la fin ("hoedanigheid" probable mais non confirmé caractère par caractère).
@@ -1888,6 +1894,76 @@ async function seq_ouvrirChatConversation() {
   await attendre(600);
 }
 
+// Trouve le champ de saisie de l'onglet Conversation/Gesprek (voir
+// SELECTEURS.placeholders.questionAlfred) — pas de nom/id connu, ciblé par
+// son placeholder plutôt que par position.
+function trouverChampQuestionAlfred() {
+  const candidats = Array.from(document.querySelectorAll('input, textarea'));
+  return candidats.find(el => {
+    const ph = (el.getAttribute('placeholder') || '').toLowerCase();
+    return el.getBoundingClientRect().width > 0 && SELECTEURS.placeholders.questionAlfred.some(p => ph.includes(p.toLowerCase()));
+  }) || null;
+}
+
+// Le bouton d'envoi (icône avion en papier, capture d'écran 04/09) n'a ni
+// texte ni aria-label connu — cherché comme le premier bouton visible dans
+// les ancêtres proches du champ de saisie plutôt que deviné par un
+// sélecteur CSS précis.
+function trouverBoutonEnvoyerQuestion(champ) {
+  if (!champ) return null;
+  let parent = champ.parentElement;
+  for (let i = 0; i < 4 && parent; i++) {
+    const bouton = Array.from(parent.querySelectorAll('button, [role="button"]'))
+      .find(el => el !== champ && el.getBoundingClientRect().width > 0);
+    if (bouton) return bouton;
+    parent = parent.parentElement;
+  }
+  return null;
+}
+
+// Tape (effet de frappe, voir taper()) puis envoie une question dans le
+// vrai chatbot de l'appli (onglet Conversation), pour de vrai — clic sur
+// le bouton d'envoi si trouvé, sinon repli sur Entrée (comportement
+// standard de la plupart des chats).
+async function poserQuestionAlfred(texte) {
+  let champ = null;
+  for (let i = 0; i < 10; i++) {
+    champ = trouverChampQuestionAlfred();
+    if (champ) break;
+    await attendre(300);
+  }
+  if (!champ) { console.warn('[Alfred DOM] Champ de question (onglet Conversation) introuvable — question non posée :', texte); return false; }
+  await curseurVersAsync(champ, () => champ.focus());
+  await taper(champ, texte);
+  await attendre(300);
+  const bouton = trouverBoutonEnvoyerQuestion(champ);
+  if (bouton) {
+    await curseurVersAsync(bouton, () => simulerClic(bouton));
+  } else {
+    validerChamp(champ);
+  }
+  return true;
+}
+
+// Pose, une à une (demandé explicitement : "il faut poser les questions 1
+// à 1"), les 3 questions fixes du Q&A live (QUESTIONS_LIVE_FR/NL, voir
+// alfred-config.js) dans le vrai chatbot de l'appli — remplace le Q&A
+// jusqu'ici volontairement non scripté (Fariël tapait elle-même en
+// direct, voir réplique PoserQuestions). Chaque question est tapée puis
+// envoyée pour de vrai ; pas d'attente d'une vraie réponse détectée dans
+// le DOM (pas de sélecteur fiable connu côté messages du chatbot), juste
+// une pause raisonnable pour laisser le temps de lire avant d'enchaîner.
+async function seq_poserQuestionsAlfred() {
+  await seq_ouvrirChatConversation();
+  const liste = (typeof currentLangue !== 'undefined' && currentLangue === 'nl') ? ALFRED_CONFIG.QUESTIONS_LIVE_NL : ALFRED_CONFIG.QUESTIONS_LIVE_FR;
+  if (!Array.isArray(liste) || !liste.length) { console.warn('[Alfred DOM] QUESTIONS_LIVE introuvable dans la config.'); return; }
+  for (const question of liste) {
+    if (annulationDemandee) return;
+    await poserQuestionAlfred(question);
+    await attendre(4000);
+  }
+}
+
 // Découpé en deux (ouverture / consultation+envoi) pour être calé sur deux
 // segments de réplique — demandé explicitement : avant, la réplique
 // parlait une fois puis tout le reste (attente + clic Consulter + clic
@@ -3071,6 +3147,7 @@ const DOM_ACTIONS = {
   'CreationEmail_Envoyer':   montrerPropositionEmail_envoyer,
   'CreationReponseVendeur': seq_creationDossier_attenteReponseVendeur,
   'OuvrirChatConversation': seq_ouvrirChatConversation,
+  'CreationPoserQuestions': seq_poserQuestionsAlfred,
   // Geste unique, purement visuel (voir clinDoeil dans alfred-ui.js) — pas
   // d'automatisation de l'appli, juste le clin d'œil de clôture.
   'ClosingWink': (typeof clinDoeil === 'function') ? clinDoeil : async () => {},

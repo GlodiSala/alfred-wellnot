@@ -8,6 +8,29 @@ const ALFRED_CONFIG = {
   API_DEMO_DATA: 'https://alfred-wellnot.vercel.app/api/demo-data',
   API_VENDEUR_REPLY: 'https://alfred-wellnot.vercel.app/api/vendeur-reply',
 
+  // Les 3 questions fixes que Fariël pose en vrai pendant le Q&A live
+  // (zone inondable / régime matrimonial de l'acquéreur / surface
+  // cadastrale, scène 11) — tapées et envoyées automatiquement dans le
+  // vrai chatbot de l'appli (onglet "Conversation"/"Gesprek" du panneau
+  // Alfred) par seq_poserQuestionsAlfred (alfred-dom.js), une à une.
+  // Demandé explicitement le 04/09 : avant, ce Q&A restait volontairement
+  // non scripté (Fariël tapait elle-même en direct) — voir la note
+  // historique juste avant ConnaissanceDossier dans REPLIQUES_FR/NL
+  // ci-dessous. NL sourcé mot pour mot du script officiel (v3_8.docx). FR :
+  // aucun texte figé équivalent trouvé dans l'officiel (seuls les 3 sujets
+  // étaient notés) — traduction directe des mêmes sujets, à corriger si un
+  // texte FR officiel apparaît.
+  QUESTIONS_LIVE_FR: [
+    "Est-ce que le bien se trouve en zone inondable ?",
+    "Quel est le régime matrimonial de l'acquéreur ?",
+    "Quelle est la superficie selon le cadastre ?",
+  ],
+  QUESTIONS_LIVE_NL: [
+    "Ligt het goed in overstromingsgevoelig gebied?",
+    "Wat is het huwelijksvermogensstelsel van de koper?",
+    "Wat is de oppervlakte volgens het kadaster?",
+  ],
+
   EVENEMENT: {
     nom:          'Congrès des Notaires belges',
     date:         'septembre 2026',
@@ -501,17 +524,19 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // n'ait plus à cliquer elle-même dessus en plein direct avant de poser
     // sa question.
     { acte: 2, label: 'InvitationQuestions', texte: "N'importe qui dans l'étude peut me la poser, à toute heure. Allez-y.", action: 'OuvrirChatConversation' },
+    // Réplique SILENCIEUSE (pas de texte, segments + parlerDepuisAction —
+    // seule façon de déclencher une action DOM sans qu'Alfred parle, voir
+    // jouerSecoursInterne dans alfred-brain.js) : tape et envoie, une à une,
+    // les 3 questions live de Fariël (QUESTIONS_LIVE_FR, voir plus haut)
+    // dans le vrai chatbot de l'appli. Ajoutée le 04/09, remplace le
+    // Q&A jusqu'ici volontairement non scripté (Fariël tapait elle-même en
+    // direct) — demandé explicitement : "écrire dans le chat ces questions
+    // vraiment et les envoyer... poser les questions 1 à 1".
+    { acte: 2, label: 'PoserQuestions', segments: [
+      { action: 'CreationPoserQuestions', parlerDepuisAction: true },
+    ] },
     { acte: 2, label: 'ConnaissanceDossier',  texte: "Je connais ce dossier mieux que personne." },
     { acte: 2, label: 'Autonomie',            texte: "Exactement." },
-
-    // Pas de réplique pour le Q&A live lui-même (3 questions de Fariël :
-    // zone inondable / régime matrimonial de l'acquéreur / surface
-    // cadastrale, entre InvitationQuestions et ConnaissanceDossier
-    // ci-dessus). Choix délibéré, pas un oubli : la didascalie du script
-    // dit "répond à chaque question au fil" — pas de texte figé — et
-    // Fariël pose ces questions dans le vrai chatbot intégré de l'appli
-    // (démontré en Acte 1, réplique Communication), pas dans ce
-    // bookmarklet. Rien à scripter ici.
 
     // ScrollPEB retiré d'ici — déplacé juste après ProjetComplet (voir
     // réplique ClausePEB plus haut). Ne reste ici que l'export Word,
@@ -713,6 +738,11 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Scène 11 (suite) : voir la note FR équivalente — même 3 lignes
     // fixes, sourcées directement de v3_8 (pas traduites du FR).
     { acte: 2, label: 'InvitationQuestions', texte: "Iedereen op kantoor kan mij dag en nacht vragen stellen. Stel ze maar!", action: 'OuvrirChatConversation' },
+    // Réplique SILENCIEUSE — voir la note FR équivalente (même mécanisme,
+    // QUESTIONS_LIVE_NL).
+    { acte: 2, label: 'PoserQuestions', segments: [
+      { action: 'CreationPoserQuestions', parlerDepuisAction: true },
+    ] },
     // ConnaissanceDossier CORRIGÉE le 03/09 : "Ik ken dit dossier tot in de
     // verste uithoeken." (v3_8.docx) remplacée par "Ik heb je vragen
     // beantwoord in de Chatbot." — texte différent trouvé dans le vrai
