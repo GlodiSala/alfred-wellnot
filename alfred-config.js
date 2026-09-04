@@ -328,26 +328,36 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // de parole de Fariël juste avant, réplique séparée exprès. Pas
     // d'action : rien ne se clique, juste une confirmation orale.
     { acte: 2, label: 'RegimeMatrimonial', texte: "Aussi." },
+    // ORDRE ET RÔLES ré-échangés le 04/09 (2e passe) — demandé explicitement
+    // : "il doit rajouter en parlant Maxime ; et ensuite on coche mes
+    // clients, et après représente". La phrase "Je le retrouve dans la
+    // base..." décrit littéralement une recherche, donc doit être dite
+    // PENDANT la recherche/l'ajout de Maxime, pas après — cette réplique
+    // (PartiesNotaireA, action CreationParties_NotaireAcquereur) passe donc
+    // EN PREMIER, parole et action en concurrence comme n'importe quelle
+    // réplique normale (pas de mécanisme spécial nécessaire ici, pas de
+    // surbrillance au mot sur ce segment). "Pour l'acquéreur, j'ajoute
+    // Maxime Van der Straten —" retiré le 31/08 : c'était l'instruction de
+    // FARIËL ("Pour l'acquéreur, ajoute Maxime Van der Straten.")
+    // reformulée à la 1re personne — l'officiel ne l'attribue pas à Alfred.
+    { acte: 2, label: 'PartiesNotaireA', texte: "Je le retrouve dans la base de tous les notaires belges et je le rattache à l'acquéreur. Chaque partie a son notaire.", action: 'CreationParties_NotaireAcquereur' },
     // PartiesNotaireV — le script officiel n'attribue AUCUNE réplique à
-    // Alfred pour ce tour précis (rattacher BIMBIMMO à l'étude via "Mes
-    // clients") : la phrase "Chaque partie doit être représentée par un
-    // notaire. BIMBIMMO, c'est nous." est intégralement dite par FARIËL
-    // dans v3_9, pas par Alfred (sa vraie réplique officielle, elle, ne
-    // concerne QUE l'acquéreur/Maxime — déjà correcte dans PartiesNotaireA
-    // juste en dessous). Retour explicite : rien à inventer — l'action se
-    // déclenche donc en silence, sans texte. Segment à 1 élément (plutôt
-    // que texte+action à plat) exprès : c'est le seul moyen de passer
-    // parlerDepuisAction (repéré uniquement sur les segments, voir
-    // jouerSecoursInterne dans alfred-brain.js) — sans lui, un texte vide
-    // aurait aussi fait sauter l'action elle-même, pas seulement la parole.
+    // Alfred pour ce tour (rattacher BIMBIMMO à l'étude via "Mes clients") :
+    // la phrase "Chaque partie doit être représentée par un notaire.
+    // BIMBIMMO, c'est nous." est intégralement dite par FARIËL dans v3_9,
+    // pas par Alfred. Retour explicite : rien à inventer — l'action se
+    // déclenche donc en silence, sans texte. Passe maintenant EN SECOND
+    // (après PartiesNotaireA, une fois Maxime déjà ajouté) et fait les DEUX
+    // cases à cocher à la suite : "Mes clients" (Vendeur), PUIS "REPRÉSENTE"
+    // (Acquéreur, sur la fiche de Maxime qui vient d'être ajoutée). Segment
+    // à 1 élément (plutôt que texte+action à plat) exprès : c'est le seul
+    // moyen de passer parlerDepuisAction (repéré uniquement sur les
+    // segments, voir jouerSecoursInterne dans alfred-brain.js) — sans lui,
+    // un texte vide aurait aussi fait sauter l'action elle-même, pas
+    // seulement la parole.
     { acte: 2, label: 'PartiesNotaireV', segments: [
       { texte: "", action: 'CreationParties_NotaireVendeur', parlerDepuisAction: true },
     ] },
-    // "Pour l'acquéreur, j'ajoute Maxime Van der Straten —" retiré le
-    // 31/08 : c'était l'instruction de FARIËL ("Pour l'acquéreur, ajoute
-    // Maxime Van der Straten.") reformulée à la 1re personne — l'officiel
-    // ne l'attribue pas à Alfred.
-    { acte: 2, label: 'PartiesNotaireA', texte: "Je le retrouve dans la base de tous les notaires belges et je le rattache à l'acquéreur. Chaque partie a son notaire.", action: 'CreationParties_NotaireAcquereur' },
     // Réplique silencieuse (juste le clic "Suivant") — même raison que
     // OuvrirSuivant plus haut.
     { acte: 2, label: 'PartiesSuivant', segments: [
@@ -611,16 +621,17 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // huwelijksvermogensstelsel." (plus long qu'en FR "Aussi." — officiel
     // respectif à chaque langue, pas une traduction littérale).
     { acte: 2, label: 'RegimeMatrimonial', texte: "Ja, zelfs het huwelijksvermogensstelsel." },
+    // Ordre et rôles ré-échangés — voir la note FR équivalente. Corrigée le
+    // 31/08 — l'ancien texte était en fait une traduction du FR, pas le
+    // vrai texte néerlandais officiel (qui existe bel et bien dans v3_8,
+    // différent : "Hij staat in de databank...").
+    { acte: 2, label: 'PartiesNotaireA', texte: "Hij staat in de databank van alle Belgische notarissen. Ik koppel hem meteen aan de koper. Voila, nu zijn beide partijen vertegenwoordigd.", action: 'CreationParties_NotaireAcquereur' },
     // PartiesNotaireV — même principe que côté FR (voir la note FR
     // équivalente) : pas de réplique officielle d'Alfred pour ce tour,
-    // rien à inventer — action silencieuse.
+    // rien à inventer — action silencieuse, passe maintenant en second.
     { acte: 2, label: 'PartiesNotaireV', segments: [
       { texte: "", action: 'CreationParties_NotaireVendeur', parlerDepuisAction: true },
     ] },
-    // Corrigée le 31/08 — l'ancien texte était en fait une traduction du
-    // FR, pas le vrai texte néerlandais officiel (qui existe bel et bien
-    // dans v3_8, différent : "Hij staat in de databank...").
-    { acte: 2, label: 'PartiesNotaireA', texte: "Hij staat in de databank van alle Belgische notarissen. Ik koppel hem meteen aan de koper. Voila, nu zijn beide partijen vertegenwoordigd.", action: 'CreationParties_NotaireAcquereur' },
     // Réplique silencieuse — voir la note FR équivalente.
     { acte: 2, label: 'PartiesSuivant', segments: [
       { texte: "", action: 'CreationParties_Suivant', parlerDepuisAction: true },

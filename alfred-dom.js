@@ -2378,23 +2378,20 @@ async function seq_creationDossier_parties_acquereur() {
 // cocher (rapides) ont des durées très différentes ; les garder dans une
 // seule réplique aurait fait finir la narration bien avant la fin de
 // l'action à l'écran.
-// RÔLES ÉCHANGÉS le 04/09 — demandé explicitement : "d'abord chercher le
-// notaire, et après cliquer pour vendeur et acheteur". Avant, cette 1re
-// flèche (silencieuse) cochait "Mes clients" (Vendeur), et la 2e (parlée)
-// cherchait/ajoutait Maxime PUIS cochait "REPRÉSENTE" (Acquéreur) — donc
-// "clic, recherche, clic". Maintenant : cette 1re flèche cherche/ajoute
-// Maxime EN SILENCE, et la 2e flèche (le texte de la réplique ne change
-// pas : "Je le retrouve dans la base...") coche les DEUX cases (Vendeur
-// ET Acquéreur) pendant qu'Alfred parle — comportement de la 2e flèche
-// par ailleurs inchangé (toujours action + parole en concurrence, comme
-// avant).
+// RÔLES RE-ÉCHANGÉS le 04/09 (2e passe) — demandé explicitement : "il doit
+// rajouter en parlant Maxime ; et ensuite on coche mes clients, et après
+// représente". La phrase "Je le retrouve dans la base..." décrit
+// littéralement une recherche, donc doit être dite PENDANT qu'on
+// cherche/ajoute Maxime, pas après (1re tentative du même jour annulée).
+// ATTENTION : les noms de ces deux fonctions ne correspondent donc plus à
+// leur rôle actuel (héritage du découpage Vendeur/Acquéreur d'origine) —
+// c'est bien seq_creationDossier_parties_notaireAcquereur (voir plus bas)
+// qui cherche/ajoute Maxime EN PREMIER (action + parole en concurrence,
+// comportement par défaut, rien de spécial à faire ici) ; celle-ci
+// (notaireVendeur) passe donc EN SECOND et coche les DEUX cases à la
+// suite : "Mes clients" (Vendeur), PUIS "REPRÉSENTE" (Acquéreur, sur la
+// fiche de Maxime tout juste ajoutée).
 async function seq_creationDossier_parties_notaireVendeur() {
-  const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
-  if (!cfg) return;
-  if (cfg.acquereur_notaire) await rechercherEtAjouterNotaire(cfg.acquereur_notaire);
-}
-
-async function seq_creationDossier_parties_notaireAcquereur() {
   // Confirmé par capture live (HTML complet, état par défaut vraiment
   // vérifié) : panneau "Mes clients" sur la fiche d'Alain Caprasse
   // (notaire en charge, déjà sur le dossier) — case décochée par défaut.
@@ -2407,6 +2404,15 @@ async function seq_creationDossier_parties_notaireAcquereur() {
   // Le clic "Suivant" vivait ici avant — sorti dans sa propre fonction/
   // réplique (seq_creationDossier_parties_suivant, juste en dessous), même
   // raison que pour "Ouvrir" (retour Cyril, une flèche par action).
+}
+
+// Voir la note ci-dessus : recherche/ajoute Maxime EN PREMIER, pendant que
+// la réplique "Je le retrouve dans la base..." est dite — comportement
+// concurrent par défaut (texte + action), rien de spécial à ajouter ici.
+async function seq_creationDossier_parties_notaireAcquereur() {
+  const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
+  if (!cfg) return;
+  if (cfg.acquereur_notaire) await rechercherEtAjouterNotaire(cfg.acquereur_notaire);
 }
 
 // Clic "Suivant" de l'onglet Parties — séparé de
@@ -2425,9 +2431,12 @@ async function seq_creationDossier_parties_suivant() {
 // Rétrocompatibilité — enchaîne les deux sous-étapes (test manuel en
 // console ; le script normal déclenche chaque sous-étape à part).
 async function seq_creationDossier_parties_notaires() {
-  await seq_creationDossier_parties_notaireVendeur();
-  await attendre(600);
+  // Ordre corrigé (04/09, 2e passe) : notaireAcquereur cherche/ajoute
+  // Maxime — doit passer avant notaireVendeur, qui coche sa case
+  // "REPRÉSENTE" (voir les notes sur ces deux fonctions plus haut).
   await seq_creationDossier_parties_notaireAcquereur();
+  await attendre(600);
+  await seq_creationDossier_parties_notaireVendeur();
   await seq_creationDossier_parties_suivant();
 }
 
