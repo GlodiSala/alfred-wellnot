@@ -54,7 +54,17 @@ function typeMime(nom) {
 // Retrouve le mail envoyé par Alfred et renvoie son Message-ID, indispensable
 // pour que la réponse se greffe sur le fil plutôt que d'ouvrir une conversation
 // séparée (le backend d'Alfred rattache la réponse au dossier par ce fil).
-async function trouverMailAlfred(user, pass) {
+// codeDossier (optionnel, ex. "C-20260904-233504") : le code unique généré
+// par le bookmarklet à l'ouverture de CE lancement (voir
+// dernierCodeDossierGenere, alfred-dom.js), transmis en query ?code=... —
+// demandé explicitement le 04/09 : se fier seulement à "le plus récent
+// dans la boîte" est risqué si un autre test tourne en parallèle sur la
+// même boîte partagée (plausible en plein salon, plusieurs stands/
+// testeurs). Si fourni ET qu'un mail avec ce code existe, on l'utilise en
+// PRIORITÉ ; sinon (absent, ou aucun match — ex. le dry-run tester_
+// vendeur_reply_dry.js qui ne le passe pas) on retombe sur l'ancien
+// comportement (expéditeur + plus récent), jamais bloquant.
+async function trouverMailAlfred(user, pass, codeDossier) {
   const client = new ImapFlow({
     host: 'imap.gmail.com',
     port: 993,
@@ -71,7 +81,14 @@ async function trouverMailAlfred(user, pass) {
     // dossier différent à chaque test, un filtre fixe ne matcherait
     // jamais deux fois).
     const criteres = SUJET_RECHERCHE ? { from: ADRESSE_ALFRED, subject: SUJET_RECHERCHE } : { from: ADRESSE_ALFRED };
-    const uids = await client.search(criteres, { uid: true });
+    let uids = await client.search(criteres, { uid: true });
+
+    let cibleParCode = false;
+    if (codeDossier) {
+      const uidsCode = await client.search({ from: ADRESSE_ALFRED, subject: codeDossier }, { uid: true });
+      if (uidsCode && uidsCode.length) { uids = uidsCode; cibleParCode = true; }
+    }
+
     if (!uids || uids.length === 0) {
       throw new Error(
         SUJET_RECHERCHE
@@ -81,6 +98,8 @@ async function trouverMailAlfred(user, pass) {
     }
     // Le dernier UID est le plus récent : une démo rejouée renvoie un nouveau
     // mail, il faut répondre à celui-là et pas à une répétition précédente.
+    // (Sans effet si cibleParCode : uids ne contient déjà que le mail de ce
+    // code, mais un seul uids[uids.length-1] reste correct dans les deux cas.)
     const dernier = uids[uids.length - 1];
     const message = await client.fetchOne(String(dernier), { envelope: true }, { uid: true });
     return {
@@ -88,6 +107,7 @@ async function trouverMailAlfred(user, pass) {
       sujet: message.envelope.subject,
       date: message.envelope.date,
       total: uids.length,
+      cibleParCode,
     };
   } finally {
     verrou.release();
@@ -182,8 +202,11 @@ export default async function handler(req, res) {
   // partir sur une simple visite d'URL (préchargement, aperçu de lien...).
   const blanc = req.method !== 'POST' || req.query?.dry === '1' || req.query?.dry === 'true';
 
+  // ?code=... : code de dossier de ce lancement (voir trouverMailAlfred).
+  const codeDossier = typeof req.query?.code === 'string' ? req.query.code.trim() : '';
+
   try {
-    const mail = await trouverMailAlfred(user, pass);
+    const mail = await trouverMailAlfred(user, pass, codeDossier);
 
     if (verifierSeulement) {
       return res.status(200).json({ verification: true, mailTrouve: mail });

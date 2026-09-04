@@ -2566,6 +2566,15 @@ async function seq_creationDossier_ouvrir_ecran() {
   await seq_creationDossier_ouvrir_creerBouton();
 }
 
+// Code de dossier de CE lancement (voir seq_creationDossier_ouvrir_champs
+// juste plus bas, qui l'alimente) — mémorisé ici pour que la réponse auto
+// du vendeur (envoyerReponseVendeurAutomatique, alfred-config.js) puisse
+// cibler PRÉCISÉMENT le mail de cette démo par son code plutôt que de se
+// fier seulement à "le plus récent dans la boîte" — demandé explicitement
+// le 04/09 : risqué si un autre test tourne en parallèle sur la même
+// boîte partagée (plausible en plein salon, plusieurs stands/testeurs).
+let dernierCodeDossierGenere = null;
+
 // 1b. Remplir le numéro de dossier, les collaborateurs et le notaire, puis
 // passer à l'étape suivante.
 async function seq_creationDossier_ouvrir_champs() {
@@ -2587,6 +2596,7 @@ async function seq_creationDossier_ouvrir_champs() {
   const dateJour = maintenant.toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
   const horodatage = maintenant.toTimeString().slice(0, 8).replace(/:/g, ''); // HHMMSS
   const codeUnique = `C-${dateJour}-${horodatage}`;
+  dernierCodeDossierGenere = codeUnique;
   // Frappe accélérée (35ms/lettre au lieu de 90) : le suffixe d'horodatage
   // rallonge le code, et voir chaque lettre s'afficher une à une n'apporte
   // rien ici — contrairement à un champ où le "tapé en direct" fait partie

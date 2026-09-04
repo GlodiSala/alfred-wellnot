@@ -1116,8 +1116,18 @@ async function envoyerReponseVendeurAutomatique() {
     localStorage.setItem(ALFRED_SCRIPT_PASSWORD_KEY, mdp);
   }
 
+  // Code du dossier généré à l'ouverture de CE lancement (voir
+  // dernierCodeDossierGenere, alfred-dom.js) — passé au serveur pour
+  // cibler précisément le mail de cette démo (voir trouverMailAlfred,
+  // api/vendeur-reply.js) plutôt que de se fier seulement au plus récent
+  // dans la boîte, risqué si un autre test tourne en parallèle. Absent
+  // (undefined) si jamais appelé avant que le dossier n'ait été ouvert —
+  // le serveur retombe alors sur son ancien comportement.
+  const code = (typeof dernierCodeDossierGenere !== 'undefined' && dernierCodeDossierGenere) || '';
+  const url = ALFRED_CONFIG.API_VENDEUR_REPLY + (code ? '?code=' + encodeURIComponent(code) : '');
+
   try {
-    const res = await fetch(ALFRED_CONFIG.API_VENDEUR_REPLY, {
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'X-Alfred-Password': mdp },
     });
@@ -1145,8 +1155,13 @@ async function envoyerReponseVendeurAutomatique() {
 async function obtenirDernierMailIdAlfred() {
   const mdp = localStorage.getItem(ALFRED_SCRIPT_PASSWORD_KEY);
   if (!mdp) return null;
+  // Même code de dossier que envoyerReponseVendeurAutomatique (voir sa
+  // note) — garde la détection "nouveau mail" (attendreNouveauMailPuisRepondre)
+  // scopée à CE lancement plutôt qu'à toute la boîte partagée.
+  const code = (typeof dernierCodeDossierGenere !== 'undefined' && dernierCodeDossierGenere) || '';
+  const suffixeCode = code ? '&code=' + encodeURIComponent(code) : '';
   try {
-    const res = await fetch(`${ALFRED_CONFIG.API_VENDEUR_REPLY}?check=1`, {
+    const res = await fetch(`${ALFRED_CONFIG.API_VENDEUR_REPLY}?check=1${suffixeCode}`, {
       method: 'POST',
       headers: { 'X-Alfred-Password': mdp },
     });
