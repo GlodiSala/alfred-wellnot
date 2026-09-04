@@ -1401,8 +1401,12 @@ function surlignerRectangle(rect, dureeMs = 1500) {
 }
 
 // Vitesse cible (au lieu d'une durée fixe) pour defilerPuisSurligner — voir
-// la note ci-dessous.
-const VITESSE_DEFILEMENT_CHAMP_PX_PAR_SEC = 900;
+// la note ci-dessous. Remontée (900 → 1400) et bornes resserrées
+// (400-1200ms → 300-700ms) — retour explicite : "pas consistant la
+// vitesse" et "un peu trop lent" — un écart de 400 à 1200ms restait large,
+// resserrer l'écart ET accélérer la moyenne rendent le mouvement plus
+// rapide ET plus régulier d'un champ à l'autre.
+const VITESSE_DEFILEMENT_CHAMP_PX_PAR_SEC = 1400;
 
 // Défilement AUTOMATIQUE (pas une réplique à part, pas de flèche dédiée) —
 // question posée explicitement : "pour les surligneurs, faut pas faire les
@@ -1418,13 +1422,13 @@ const VITESSE_DEFILEMENT_CHAMP_PX_PAR_SEC = 900;
 // scrolle vite et puis lentement" — avec une durée fixe, un champ tout
 // proche et un champ à l'autre bout du formulaire mettaient le MÊME temps
 // à arriver, donc l'un semblait glisser doucement et l'autre foncer —
-// vitesse perçue incohérente d'un champ à l'autre. Bornée (400-1200ms)
-// pour ne jamais être ni saccadée ni traînante.
+// vitesse perçue incohérente d'un champ à l'autre. Bornée (300-700ms) pour
+// ne jamais être ni saccadée ni traînante.
 async function defilerPuisSurligner(el) {
   if (!el) return;
   const r = el.getBoundingClientRect();
   const distanceApprox = Math.abs((r.top + r.height / 2) - (window.innerHeight / 2));
-  const dureeMs = Math.min(1200, Math.max(400, (distanceApprox / VITESSE_DEFILEMENT_CHAMP_PX_PAR_SEC) * 1000));
+  const dureeMs = Math.min(700, Math.max(300, (distanceApprox / VITESSE_DEFILEMENT_CHAMP_PX_PAR_SEC) * 1000));
   await defilerVersElement(el, dureeMs);
   surlignerBrievement(el);
 }
