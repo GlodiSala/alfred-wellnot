@@ -2591,16 +2591,24 @@ let dernierCodeDossierGenere = null;
 // date du jour + heure (HHMMSS, pour rester unique même sur plusieurs
 // lancements le même jour).
 // Laisse le temps à Fariël de vraiment DIRE les 4 informations à voix haute
-// ("Numéro : 2026/18-09. Langue : néerlandais. Collaborateur : ... Notaire :
-// ...") avant qu'Alfred ne les encode en silence — sans ça, l'écriture
-// partait dès la fin de la question d'Alfred, avant que Fariël ait eu le
-// temps de dicter quoi que ce soit. Une seule pause fixe plutôt qu'une
-// flèche supplémentaire (retour explicite le 05/09 : "il faut le temps que
-// Fariël le dise... on attend quelques secondes et on encode ?") — plus
-// simple à gérer en direct qu'un appui de plus à caler pile au bon moment,
-// et cette réplique n'a de toute façon pas d'autre repère sonore/visuel
-// pour savoir "quand" appuyer.
-const DELAI_AVANT_ENCODAGE_CHAMPS_MS = 5000;
+// avant qu'Alfred ne les encode en silence — sans ça, l'écriture partait dès
+// la fin de la question d'Alfred, avant que Fariël ait eu le temps de
+// dicter quoi que ce soit. Une seule pause fixe plutôt qu'une flèche
+// supplémentaire (retour explicite le 05/09 : "il faut le temps que Fariël
+// le dise... on attend quelques secondes et on encode ?") — plus simple à
+// gérer en direct qu'un appui de plus à caler pile au bon moment, et cette
+// réplique n'a de toute façon pas d'autre repère sonore/visuel pour savoir
+// "quand" appuyer.
+// Valeur ESTIMÉE (05/09, "lis la réplique et estime le temps ?") sur ce que
+// Fariël dit vraiment dans NOTRE démo (pas juste l'exemple du script
+// officiel, plus court) : le numéro généré ("C-20260904-233504", plus long
+// que "2026/18-09" et lu en partie chiffre par chiffre, ~4s), la langue
+// ("néerlandais", ~1s), DEUX collaborateurs à énoncer (en charge +
+// administratif, ~3s au total) et le notaire (~1,5s), plus de courtes
+// pauses entre les 4 catégories (~1,5s) — total estimé ~11s, arrondi à 9s
+// pour rester raisonnable en rythme de présentation (à réajuster si trop
+// court/long en test réel).
+const DELAI_AVANT_ENCODAGE_CHAMPS_MS = 9000;
 
 async function seq_creationDossier_ouvrir_champNumero() {
   await attendre(DELAI_AVANT_ENCODAGE_CHAMPS_MS);

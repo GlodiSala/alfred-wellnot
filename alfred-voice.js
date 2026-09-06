@@ -786,7 +786,20 @@ function programmerSurbrillanceMots(texteComplet, audio, entrees, timersRef) {
       // chacun est repoussé si besoin pour garder au moins ECART_MIN_MS
       // avec le précédent — quitte à déclencher après la fin réelle de
       // l'audio pour le(s) dernier(s) mot(s) d'une énumération serrée.
-      const ECART_MIN_MS = 1000;
+      // Relevé 1000 → 2800 le 05/09 : remonté en test live sur Vendeur/
+      // Acquéreur ("pas encore fluide... pas surligner tout en même temps,
+      // pas descendre trop vite") — un champ complet (scroll vertical
+      // DUREE_DEFILEMENT_CHAMP_MS=2500ms, voir alfred-dom.js, + marge)
+      // prend en réalité bien plus que 1000ms à s'afficher. Avec un espacement
+      // trop court, la file d'attente (fileSurlignageChamp) accumulait du
+      // retard sur des répliques à 5-6 mots-clés (ex. PartiesAcquereur) et
+      // finissait par rattraper plusieurs champs coup sur coup, bien après
+      // que l'audio les ait déjà mentionnés — d'où l'impression de tout
+      // voir s'allumer d'un coup. 2800ms colle à la vraie durée d'un champ
+      // (2500ms de scroll + marge) : quitte à finir après la fin de
+      // l'audio sur une réplique à beaucoup de mots-clés, mais chaque champ
+      // reste visible le temps qu'il faut, un par un.
+      const ECART_MIN_MS = 2800;
       const candidats = [];
       for (const entree of entrees) {
         const cles = (entree.motsCles || []).map((m) => m.toLowerCase());
