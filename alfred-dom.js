@@ -3209,6 +3209,13 @@ function compterDocumentsEnAttente() {
 // faire à la main pour voir le compromis derrière.
 async function seq_creationDossier_redaction_projetComplet() {
   await fermerPanneauAlfred();
+  // Puis on descend jusqu'à la clause PEB — repris le 05/09 de l'ancienne
+  // réplique ClausePEB, supprimée (demandé explicitement : "il faut retirer,
+  // et faire l'action là dans ProjetComplet, mets après"). Enchaîné APRÈS la
+  // fermeture du panneau, donc pendant qu'Alfred dit "regardez le
+  // compromis : les données des pièces se sont placées dans les bonnes
+  // clauses" — la clause PEB remplie s'affiche pile sur ces mots.
+  await seq_creationDossier_redaction_scrollPEB();
 }
 
 async function seq_creationDossier_attenteReponseVendeur() {

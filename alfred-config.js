@@ -200,10 +200,10 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // plus qu'un seul tour de parole, le bilinguisme est passé au milieu du
     // parcours ("Dus natuurlijk ben ik tweetalig"). FR adapté du NL, faute de
     // document FR à jour pour cette version.
-    { acte: 1, label: 'Parcours',       texte: "J'ai un parcours vraiment unique. Les notaires Jean-François Ghigny et Alain Caprasse m'ont donné les bases juridiques. Je vis et je respire le notariat belge. Alors bien sûr, je suis bilingue : néerlandais et français. Je connais vos actes, vos bases de données, toutes vos obligations. Je ne suis pas un outil généraliste qu'on a adapté après coup pour le notariat. Je suis conçu pour vous dès le premier jour." },
-    { acte: 1, label: 'Disponibilité',  texte: "Je suis disponible 24h/24, toute l'année. Un dossier qui arrive un vendredi soir à 23h ? Vous cliquez et je m'y mets tout de suite." },
-    { acte: 1, label: 'Competences',    texte: "C'est exactement mon rôle. Je prends en charge le suivi, l'administratif et la collecte des données. Je suis connecté à des bases de données publiques et privées — des numéros de registre national dans e-notariat aux cartes du géoportail et aux rapports d'inondation. Je vais chercher l'information qu'il faut. Beaucoup est déjà en place, et j'apprends un peu plus chaque jour." },
-    { acte: 1, label: 'JeLeMontre',     texte: "Donnez-moi simplement un dossier. Je préfère le montrer plutôt que de l'expliquer." },
+    { acte: 1, label: 'Parcours',       texte: "Je n'ai pas de parcours classique, je l'avoue. Mais Jean-François Ghigny et Alain Caprasse m'ont donné les bases juridiques. Je suis construit pour une seule chose : le notariat belge. Alors bien sûr, je suis bilingue : français et néerlandais. Je connais vos actes, vos bases de données, vos obligations. Je ne suis pas un outil généraliste qu'on a adapté après coup. Je suis conçu pour vous dès le premier jour." },
+    { acte: 1, label: 'Disponibilité',  texte: "24h/24, toute l'année. Un dossier qui arrive un vendredi soir à 23h ? Vous cliquez et je m'y attèle tout de suite." },
+    { acte: 1, label: 'Competences',    texte: "C'est exactement mon rôle. Je prends le suivi, l'administratif et la collecte des données. Je suis connecté aussi bien à des bases de données publiques que privées : les numéros de registre national dans e-notariat, mais aussi des cartes au géoportail, ou encore les rapports d'inondation. Je vais chercher l'information qu'il faut. Beaucoup est déjà en place — mais je ne cesse d'apprendre." },
+    { acte: 1, label: 'JeLeMontre',     texte: "Donnez-moi un dossier. Honnêtement ? Je ne l'explique pas. Je le montre." },
     // 'Montrer' inchangée exprès : ce n'est PAS la ligne officielle de
     // Fariël ("Avec plaisir. Montre-moi.") — c'est une adaptation
     // délibérée (Alfred invite le public à regarder, plutôt que Fariël
@@ -289,7 +289,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // silence — c'est Fariël qui parle en direct entre chaque.
     // Le groupe reste UNE seule entrée dans le panneau des répliques.
     { acte: 2, label: 'OuvrirChamps', segmentsParFleche: true, segments: [
-      { texte: "Donnez-moi simplement le numéro de dossier... la langue de l'acte... le collaborateur en charge... et le notaire.", surbrillance: [
+      { texte: "Donnez-moi le numéro de dossier... la langue de rédaction... le collaborateur en charge... et le notaire en charge.", surbrillance: [
         { mots: ['numéro'], cible: 'dossierCode' },
       ] },
       { action: 'CreationOuvrir_ChampNumero',        parlerDepuisAction: true },
@@ -358,7 +358,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       // v3_1 (05/09) : "rechtsvorm" passe AVANT "zetel", et plus de
       // "Rattaché au dossier" à la fin. Pas de cible pour "forme juridique" :
       // ce champ n'existe pas sur la fiche (voir SELECTEURS.labelsPartie).
-      { texte: "Je récupère les données tout de suite : dénomination... forme juridique... siège... représentants...", action: 'CreationParties_Vendeur', parlerDepuisAction: true, surbrillance: [
+      { texte: "Je récupère : dénomination... forme juridique... siège... représentants...", action: 'CreationParties_Vendeur', parlerDepuisAction: true, surbrillance: [
         { mots: ['dénomination'], cible: 'champPartieDenomination' },
         { mots: ['siège'], cible: 'champPartieAdresseSiege' },
         { mots: ['représentants'], cible: 'champPartieRepresentants' },
@@ -370,7 +370,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       // v3_1 (05/09) : ordre changé (date de naissance et nationalité
       // AVANT l'adresse) + nouvelle phrase de fin qui enchaîne sur les
       // notaires. L'ordre des cibles suit l'ordre des mots prononcés.
-      { texte: "Je récupère : nom... date de naissance... nationalité... adresse... état civil... et régime matrimonial. Tout est prêt pour la rédaction du compromis. Il ne reste plus qu'à désigner les notaires.", action: 'CreationParties_Acquereur', parlerDepuisAction: true, surbrillance: [
+      { texte: "Je récupère : nom... date de naissance... nationalité... adresse... état civil... régime matrimonial. Tout remonte, prêt pour la rédaction du compromis. Il ne reste plus qu'à désigner les notaires.", action: 'CreationParties_Acquereur', parlerDepuisAction: true, surbrillance: [
         { mots: ['nom'], cible: 'champPartieNom' },
         { mots: ['naissance'], cible: 'champPartieDateNaissance' },
         { mots: ['nationalité'], cible: 'champPartieNationalite' },
@@ -449,7 +449,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // sur le clic Enregistrer : il est instantané et sous notre contrôle,
     // pas un événement externe incertain à attendre.
     // v3_1 (05/09) : formulation raccourcie, sans "Deux options".
-    { acte: 2, label: 'DocumentsReponse', texte: "Il manque encore des pièces. Vous pouvez les charger vous-même, ou j'envoie tout de suite une demande au vendeur pour qu'il les fournisse." },
+    { acte: 2, label: 'DocumentsReponse', texte: "Il manque encore des pièces. Soit vous les uploadez, soit je vais les demander tout de suite au vendeur." },
     { acte: 2, label: 'DocumentsSave', texte: "Dossier enregistré.", action: 'CreationDocuments_Enregistrer' },
     // Ligne manquante trouvée en recomparant au script officiel : Fariël
     // demande "Toujours pas peur des experts ?" avant de lancer la
@@ -517,7 +517,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'PasSiVite', texte: "Pas si vite, Fariël !" },
     // Email : v3_1 remplace l'entrée en matière ("J'ai préparé un projet de
     // mail...") par un rappel de la promesse d'Alfred sur l'administratif.
-    { acte: 2, label: 'Email', texte: "Je vous avais bien dit que j'allais alléger votre travail administratif. J'ai déjà préparé un projet de mail pour le vendeur BIMBIMMO, en lui demandant de nous transmettre le PEB... le contrôle électrique... et l'attestation du sol. Une seule demande, jamais deux fois la même question. Vous validez l'envoi ?", action: 'CreationEmail_Ouverture' },
+    { acte: 2, label: 'Email', texte: "Je vous avais bien dit que j'allais alléger votre travail administratif. J'ai préparé un projet de mail à BIMBIMMO, le vendeur, en lui demandant de m'envoyer le PEB... le contrôle électrique... l'attestation du sol. Une seule demande, jamais deux fois la même question. Vous validez l'envoi ?", action: 'CreationEmail_Ouverture' },
     { acte: 2, label: 'EmailEnvoyer', segments: [
       { texte: "Voilà, je consulte le projet de mail et je l'envoie.", action: 'CreationEmail_Envoyer', parlerDepuisAction: true },
     ] },
@@ -558,17 +558,12 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // valable ici (ProjetComplet vient bien après l'intégration des
     // pièces), mais la vraie place officielle, plus précise, est
     // directement ici plutôt qu'après tout le Q&A live qui suit.
-    // ClausePEB devenue SILENCIEUSE le 05/09 (v3_1) : dans la nouvelle
-    // version, Alfred ne commente plus la clause — c'est FARIËL qui la
-    // constate à l'écran ("daarvoor was er geen EPC en nu is het wel
-    // automatisch ingevuld"), et Alfred répond juste après par "Exactement."
-    // (réplique Autonomie, désormais placée ici). On garde donc l'étape
-    // pour le défilement jusqu'à la clause (didascalie officielle
-    // "⇒ Montrer ici la clause PEB (titre 27. Energieprestatie)"), mais
-    // sans texte : Alfred se tait pendant que Fariël commente.
-    { acte: 2, label: 'ClausePEB', segments: [
-      { action: 'CreationRedaction_ScrollPEB', parlerDepuisAction: true },
-    ] },
+    // ClausePEB SUPPRIMÉE le 05/09 : plus de réplique dédiée ("Le certificat
+    // PEB a bien été intégré au compromis." retirée, demandé explicitement).
+    // Son défilement jusqu'à la clause (didascalie officielle "⇒ Montrer ici
+    // la clause PEB (titre 27. Energieprestatie)") est passé DANS l'action de
+    // ProjetComplet juste au-dessus, après la fermeture du panneau — donc
+    // pendant qu'Alfred dit "regardez le compromis...", ce qui tombe pile.
     // Autonomie DÉPLACÉE ici le 05/09 (v3_1) : "Exactement." est la réponse
     // d'Alfred au constat de Fariël sur la clause PEB remplie toute seule —
     // elle vivait avant tout à la fin, après le Q&A, où elle ne répondait
@@ -611,7 +606,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // réplique ClausePEB plus haut). Ne reste ici que l'export Word,
     // toujours hors script officiel, disclosed.
     { acte: 2, label: 'ExportWord', segments: [
-      { texte: "Le compromis est entièrement prêt, et vous pouvez aussi l'exporter directement en Word.", action: 'CreationRedaction_ExporterWord' },
+      { texte: "Le compromis est entièrement prêt, et il peut aussi s'exporter directement en Word.", action: 'CreationRedaction_ExporterWord' },
     ] },
 
     // ACTE 3
@@ -810,10 +805,8 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // ClausePEB — voir la note FR équivalente : repositionnée le 03/09,
     // didascalie officielle "⇒ Montrer ici la clause EPC" trouvée en rouge
     // exactement à cet endroit du document.
-    // ClausePEB silencieuse + Autonomie déplacée — voir les notes FR.
-    { acte: 2, label: 'ClausePEB', segments: [
-      { action: 'CreationRedaction_ScrollPEB', parlerDepuisAction: true },
-    ] },
+    // ClausePEB supprimée (défilement passé dans ProjetComplet) + Autonomie
+    // déplacée — voir les notes FR.
     { acte: 2, label: 'Autonomie',            texte: "Precies!" },
     // Scène 11 (suite) : voir la note FR équivalente — même 3 lignes
     // fixes, sourcées directement de v3_8 (pas traduites du FR).
