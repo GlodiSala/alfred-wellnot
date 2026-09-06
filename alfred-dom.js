@@ -3370,7 +3370,7 @@ const DOM_ACTIONS = {
   'CreationPoserQuestions': seq_poserQuestionsAlfred,
   // Geste unique, purement visuel (voir clinDoeil dans alfred-ui.js) — pas
   // d'automatisation de l'appli, juste le clin d'œil de clôture.
-  'ClosingWink': (typeof clinDoeil === 'function') ? clinDoeil : async () => {},
+  'ClosingWink': (typeof finDeSpectacle === 'function') ? finDeSpectacle : ((typeof clinDoeil === 'function') ? clinDoeil : async () => {}),
   // Idem, purement visuel (voir gesteMontrer dans alfred-ui.js) — le pivot
   // acte 1 → démo ("Avec plaisir. Regardez.").
   // Depuis le 05/09 : geste + "Alfred charge le site" (sortie du mode scène

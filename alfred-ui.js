@@ -135,6 +135,8 @@ const ALFRED_SVG = `
           <g clip-path="url(#alfred-clip-visiere)" style="pointer-events:none;">
             <ellipse id="alfred-gloss-front" cx="150" cy="66" rx="66" ry="16" fill="rgba(255,255,255,0.09)"/>
             <path d="M88,96 Q90,62 122,58" stroke="rgba(255,255,255,0.35)" stroke-width="4" stroke-linecap="round" fill="none"/>
+            <!-- écran qui s'assombrit en veille (voir setAlfredState 'sleep') -->
+            <rect id="alfred-visiere-nuit" x="78" y="52" width="244" height="120" rx="40" fill="#03202a" opacity="0" style="transition:opacity .9s ease;"/>
           </g>
 
           <!-- yeux : chaque œil = un groupe déplaçable (regard) contenant un
@@ -887,7 +889,7 @@ function ouvrirPanneauVoix() {
   panel.appendChild(champLabel('Expressivité ElevenLabs v3 (NL)'));
   const selExpr = document.createElement('select');
   selExpr.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:#0a3b52;color:#fff;font-size:12px;margin-bottom:14px;';
-  [['naturel', 'Naturel (stabilité 0.5) — régulier'], ['creatif', 'Créatif (stabilité 0) — le plus expressif']].forEach(([val, txt]) => {
+  [['naturel', 'Naturel — stable, une indication de jeu par réplique'], ['expressif', 'Expressif — stable, indication de jeu répétée à chaque phrase (recommandé)'], ['creatif', 'Créatif — le plus expressif mais instable (stabilité 0)']].forEach(([val, txt]) => {
     const o = document.createElement('option'); o.value = val; o.textContent = txt; o.style.cssText = 'background:#0a3b52;color:#fff;'; selExpr.appendChild(o);
   });
   selExpr.value = (typeof expressiviteElevenLabs === 'function') ? expressiviteElevenLabs() : 'naturel';
@@ -1604,7 +1606,8 @@ function setAlfredState(state) {
   if (mouthT) { mouthT.style.display='none'; mouthT.setAttribute('ry','0'); }
   // Tête et bras du robot : on coupe leurs animations d'état ; la tête
   // garde aussi son transform inline (hochements pilotés par animateMouth).
-  if (head)   { head.style.animation='none'; head.style.transform=''; }
+  if (head)   { head.style.animation='none'; head.style.transition = 'transform .5s ease'; head.style.transform=''; setTimeout(() => { if (head && curState !== 'sleep') head.style.transition = ''; }, 550); }
+  { const nuit = document.getElementById('alfred-visiere-nuit'); if (nuit) nuit.setAttribute('opacity', '0'); }
   if (armL)   { armL.style.animation='none'; }
   if (armR)   { armR.style.animation='none'; }
 
@@ -1664,8 +1667,14 @@ function setAlfredState(state) {
       if (ext)    ext.style.opacity      = '0.3';
       // Paupières qui se ferment lentement (morphing vers le trait), plus
       // d'yeux qui disparaissent en fondu.
-      if (typeof definirExpression === 'function') definirExpression('ferme', 700);
+      // Visage de veille (revu le 06/09, "pourquoi le visage a été simplifié
+      // pour dormir ?") : paupières détendues en arc, écran de la visière
+      // qui s'assombrit, tête qui tombe un peu sur le côté, respiration
+      // lente (wrap) — pas un simple trait.
+      if (typeof definirExpression === 'function') definirExpression('dormir', 900);
       if (mouth)  mouth.setAttribute('d', ALFRED_BOUCHE_DORMIR_D);
+      { const nuit = document.getElementById('alfred-visiere-nuit'); if (nuit) nuit.setAttribute('opacity', '0.42'); }
+      if (head)   { head.style.transition = 'transform 1.4s ease'; head.style.transform = 'rotate(5deg) translateY(5px)'; }
       if (zzz) {
         zzz.style.opacity='1';
         zzz.querySelectorAll('.alfred-z').forEach((z,i) => {
@@ -1784,14 +1793,19 @@ function startBlinking() {
   setTimeout(blink, 2000);
 }
 
+let dernierMouvementSouris = 0;
 function trackMouse() {
   document.addEventListener('mousemove', e => {
     if (curState !== 'idle') return;
     const svg = document.getElementById('alfred-svg');
     if (!svg) return;
     const rect = svg.getBoundingClientRect();
-    eyeTargetX = Math.max(-8, Math.min(8,  (e.clientX-(rect.left+rect.width/2))/30));
-    eyeTargetY = Math.max(-4, Math.min(4,  (e.clientY-(rect.top+rect.height*.22))/45));
+    // Amplitude relevée (±8/±4 → ±12/±6) et diviseurs réduits le 06/09 : avec
+    // le robot (yeux en "D" sans pupille), le suivi de la souris était à
+    // peine perceptible. La tête suit aussi le regard (voir startEyeLerp).
+    eyeTargetX = Math.max(-12, Math.min(12, (e.clientX-(rect.left+rect.width/2))/22));
+    eyeTargetY = Math.max(-6,  Math.min(6,  (e.clientY-(rect.top+rect.height*.22))/35));
+    dernierMouvementSouris = performance.now();
     resetSleepTimer();
   });
   document.addEventListener('keydown', resetSleepTimer);
@@ -1820,6 +1834,12 @@ function startEyeLerp() {
       const tp = `translate(${(eyeCurX * .9).toFixed(2)}px,${(eyeCurY * .7).toFixed(2)}px)`;
       if (pL) pL.style.transform = tp;
       if (pR) pR.style.transform = tp;
+      // Au repos, la tête tourne légèrement dans le sens du regard (en
+      // parlant c'est animateMouth qui pilote la tête, on ne touche pas).
+      if (curState === 'idle') {
+        const head = document.getElementById('alfred-head');
+        if (head) head.style.transform = `rotate(${(eyeCurX * .28).toFixed(2)}deg) translate(${(eyeCurX * .5).toFixed(1)}px,${(eyeCurY * .4).toFixed(1)}px)`;
+      }
     }
     rafEyes = requestAnimationFrame(lerp);
   }
@@ -1835,11 +1855,21 @@ function startEyeLerp() {
 function balayageRegardEnParlant() {
   // Suspendu pendant gesteMontrer() : sinon ce balayage aléatoire peut
   // retomber pile pendant le geste et écraser le regard dirigé qu'il tient.
+  // Revu le 06/09 : de vraies saccades — la plupart du temps un petit saut
+  // (±4) autour de la cible actuelle toutes les 0,8–2 s, parfois (1 fois
+  // sur 4) un vrai regard ailleurs, puis retour vers la salle (0).
+  let prochain = 2000 + Math.random() * 2000;
   if (curState === 'talk' && !gesteMontrerActif) {
-    eyeTargetX = (Math.random() - 0.5) * 10;
-    eyeTargetY = (Math.random() - 0.5) * 5;
+    if (Math.random() < 0.25) { eyeTargetX = (Math.random() - 0.5) * 16; eyeTargetY = (Math.random() - 0.5) * 6; prochain = 1200 + Math.random() * 1200; }
+    else { eyeTargetX = Math.max(-10, Math.min(10, eyeTargetX * 0.5 + (Math.random() - 0.5) * 6)); eyeTargetY = Math.max(-4, Math.min(4, eyeTargetY * 0.5 + (Math.random() - 0.5) * 3)); prochain = 800 + Math.random() * 1200; }
+  } else if (curState === 'idle' && performance.now() - dernierMouvementSouris > 3500) {
+    // Au repos sans souris : un coup d'œil ailleurs de temps en temps,
+    // puis retour devant — il "regarde la salle" au lieu de fixer le vide.
+    eyeTargetX = (Math.random() - 0.5) * 14; eyeTargetY = (Math.random() - 0.5) * 5;
+    setTimeout(() => { if (curState === 'idle' && performance.now() - dernierMouvementSouris > 3500) { eyeTargetX = 0; eyeTargetY = 0; } }, 900 + Math.random() * 900);
+    prochain = 3500 + Math.random() * 4000;
   }
-  setTimeout(balayageRegardEnParlant, 2000 + Math.random() * 2000);
+  setTimeout(balayageRegardEnParlant, prochain);
 }
 
 function resetSleepTimer() {
@@ -1897,6 +1927,7 @@ const FORMES_OEIL = {
   grand:  [-20,-12, -20,-23, -11,-32, 0,-32, 11,-32, 20,-23, 20,-12, 20,-1, 11,8, 0,8, -11,8, -20,-1],
   joie:   [-25,-4, -18,-18, -8,-25, 0,-25, 8,-25, 18,-18, 25,-4, 22,-6, 10,-16, 0,-17, -10,-16, -22,-6],
   ferme:  [-22,-8, -14,-8, -6,-8, 0,-8, 6,-8, 14,-8, 22,-8, 14,-6.5, 6,-6.5, 0,-6.5, -6,-6.5, -14,-6.5],
+  dormir: [-22,-7, -14,-2, -6,0.5, 0,1, 6,0.5, 14,-2, 22,-7, 14,-1, 6,3.5, 0,4, -6,3.5, -14,-1],
 };
 // Formes où la pupille est visible (yeux "ronds" de la vidéo de Cyril).
 const FORMES_OEIL_AVEC_PUPILLE = { rond: true, grand: true };
@@ -2190,12 +2221,41 @@ function visemeCourant() {
 // ── Rythme du texte ──────────────────────────────────────────────────
 let acteurTimers = [];
 let acteurGeneration = 0;
-function programmerActeur(fn, ms) { acteurTimers.push(setTimeout(fn, Math.max(0, ms))); }
+// Décalage appliqué à tous les temps forts programmés : "playing" précède le
+// son perçu (latence de sortie + perception) — même délai que les
+// sous-titres et surlignages (DELAI_AUDIO_PERCEPTIBLE_MS, alfred-voice.js).
+let acteurRetardMs = 0;
+function programmerActeur(fn, ms) { acteurTimers.push(setTimeout(fn, Math.max(0, ms + acteurRetardMs))); }
+// Attend que la réplique en cours ait atteint une fraction de sa durée
+// (0.7 = 70 %) — utilisé par les gestes de fin de réplique (clin d'œil du
+// Closing). Résout aussi si la parole s'arrête avant, ou après 15 s.
+function attendreMomentReplique(fraction) {
+  const t0 = performance.now();
+  return new Promise(resolve => {
+    (function verifier() {
+      const ecoule = performance.now() - t0;
+      if (acteurDureeMs > 0 && performance.now() >= acteurDebut + acteurDureeMs * fraction) return resolve(true);
+      if (ecoule > 1500 && curState !== 'talk') return resolve(false);
+      if (ecoule > 15000) return resolve(false);
+      setTimeout(verifier, 60);
+    })();
+  });
+}
+function attendreFinParole() {
+  const t0 = performance.now();
+  return new Promise(resolve => {
+    (function verifier() {
+      if (curState !== 'talk' || performance.now() - t0 > 20000) return resolve();
+      setTimeout(verifier, 80);
+    })();
+  });
+}
 
 // Appelé par speak() (alfred-voice.js) dès que l'audio joue réellement,
 // avec la durée RÉELLE (déjà divisée par la vitesse de lecture).
 function demarrerJeuDActeur(opts) {
   arreterJeuDActeur();
+  if (typeof retirerRideauFinal === 'function') retirerRideauFinal();
   const gen     = ++acteurGeneration;
   const texte   = String((opts && opts.texte) || '');
   const dureeMs = Math.max(600, Number(opts && opts.dureeMs) || texte.split(/\s+/).length * 400);
@@ -2203,8 +2263,11 @@ function demarrerJeuDActeur(opts) {
   const vivant  = () => gen === acteurGeneration && curState === 'talk';
   // Visèmes : mots du texte réellement prononcé (lettres seules, minuscules).
   acteurMots = String((opts && opts.texteMots) || texte).trim().split(/\s+/).map(m => m.toLowerCase().replace(/[^a-zà-ÿ]/g, ''));
-  acteurDebut = performance.now();
+  // Visèmes : latence physique seulement (~150 ms) — la bouche doit coller au
+  // son ; les temps forts, eux, prennent le délai "perçu" complet.
+  acteurDebut = performance.now() + 150;
   acteurDureeMs = dureeMs;
+  acteurRetardMs = (typeof DELAI_AUDIO_PERCEPTIBLE_MS !== 'undefined') ? DELAI_AUDIO_PERCEPTIBLE_MS : 300;
 
   // Expression d'entrée puis de base.
   expressionBase = emo.base;
@@ -2328,6 +2391,11 @@ function creerScene() {
     .alfred-scene-ligne:not(.ok) .alfred-scene-ligne-etat::after { content:'…'; }
     #alfred-scene-console .alfred-scene-barre { margin-top:12px; }
     #alfred-scene-holos { position:absolute; inset:0; pointer-events:none; }
+    #alfred-scene-final { position:absolute; left:50%; bottom:9vh; transform:translate(-50%, 20px); text-align:center; opacity:0; transition:opacity .9s ease, transform .9s cubic-bezier(.2,1,.4,1); pointer-events:none; font-family:-apple-system,'Segoe UI',sans-serif; }
+    #alfred-scene-final.actif { opacity:1; transform:translate(-50%, 0); }
+    #alfred-scene-final-merci { font-size:clamp(28px, 4.2vw, 64px); font-weight:800; color:#054561; letter-spacing:-.5px; }
+    #alfred-scene-final-marque { margin-top:.35em; font-size:clamp(12px, 1.1vw, 18px); font-weight:700; letter-spacing:5px; color:#14b0bd; }
+    #alfred-scene-final-stand { margin-top:.9em; display:inline-block; padding:.55em 1.1em; border-radius:999px; background:rgba(255,255,255,.75); border:1.5px solid rgba(20,176,189,.5); color:#054561; font-size:clamp(13px, 1.2vw, 20px); }
     .alfred-holo { position:absolute; width:clamp(230px, 20vw, 330px); font-size:clamp(13px, 1.15vw, 19px); padding:.85em 1em; box-sizing:border-box; display:flex; align-items:center; gap:.8em;
       background:rgba(255,255,255,.78); border:1.5px solid rgba(20,176,189,.55); border-radius:14px; box-shadow:0 14px 40px rgba(5,69,97,.16), 0 0 0 5px rgba(20,176,189,.07);
       backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); font-family:-apple-system,'Segoe UI',sans-serif; color:#054561;
@@ -2377,6 +2445,11 @@ function creerScene() {
     <div id="alfred-scene-marque">ALFRED · WELLNOT</div>
     <div id="alfred-scene-holos"></div>
     <div id="alfred-scene-centre"></div>
+    <div id="alfred-scene-final">
+      <div id="alfred-scene-final-merci"></div>
+      <div id="alfred-scene-final-marque">ALFRED · WELLNOT</div>
+      <div id="alfred-scene-final-stand"></div>
+    </div>
     <div id="alfred-scene-chargement">
       <div class="alfred-scene-barre"><div class="alfred-scene-barre-int"></div></div>
       <div id="alfred-scene-chargement-txt"></div>
@@ -2592,6 +2665,7 @@ async function quitterScene(options = {}) {
 
   const lbl = document.getElementById('alfred-state-lbl');
   await deplacerAvatarAnime(left, '', 800, lbl);
+  retirerRideauFinal();
   scene.classList.remove('actif');
   modeSceneActif = false;
   if (typeof setAlfredState === 'function' && curState === 'think') setAlfredState('idle');
@@ -2628,6 +2702,40 @@ async function gesteMontrerEtOuvrirSite() {
   transitionSceneEnCours = transitionSceneEnCours.then(() => quitterScene({ chargement: true }))
     .catch(e => console.warn('[Alfred UI] Ouverture du site échouée :', e));
   await transitionSceneEnCours;
+}
+
+// Fin de spectacle — action "ClosingWink" (alfred-dom.js). Avant : le clin
+// d'œil partait 600 ms après le début de la réplique, donc bien avant "c'est
+// moi qui vous engage". Maintenant : le clin d'œil tombe aux ~70 % de la
+// réplique (sur la chute), puis quand Alfred a fini de parler il salue de
+// la main et le rideau final apparaît sous lui (Merci / Bedankt, marque,
+// rappel du stand). Reste affiché jusqu'à la prochaine réplique ou
+// changement de scène.
+async function finDeSpectacle() {
+  await attendreMomentReplique(0.68);
+  if (typeof clinDoeil === 'function') await clinDoeil();
+  await attendreFinParole();
+  const nl = (typeof currentLangue !== 'undefined' && currentLangue === 'nl');
+  jouerGeste('saluer');
+  const fin = document.getElementById('alfred-scene-final');
+  const centre = document.getElementById('alfred-scene-centre');
+  if (fin && modeSceneActif) {
+    const merci = document.getElementById('alfred-scene-final-merci');
+    const stand = document.getElementById('alfred-scene-final-stand');
+    if (merci) merci.textContent = nl ? 'Bedankt!' : 'Merci !';
+    if (stand) stand.textContent = nl ? 'Wellnot-stand · in de zaal hiernaast' : "Stand Wellnot · dans la salle d'à côté";
+    if (centre) { centre.style.transition = 'transform 1s cubic-bezier(.2,1,.4,1)'; centre.style.transform = 'translate(-50%,-52%) translateY(-7vh)'; }
+    fin.classList.add('actif');
+    if (typeof definirExpression === 'function') setTimeout(() => { if (curState !== 'talk') definirExpression('joie', 300, { base: true }); }, 900);
+  }
+}
+function retirerRideauFinal() {
+  const fin = document.getElementById('alfred-scene-final');
+  const centre = document.getElementById('alfred-scene-centre');
+  if (fin && fin.classList.contains('actif')) {
+    fin.classList.remove('actif');
+    if (centre) centre.style.transform = 'translate(-50%,-52%)';
+  }
 }
 
 // ── Helpers ───────────────────────────────────────────────

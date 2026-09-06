@@ -432,8 +432,21 @@ const ELEVENLABS_REGLAGES_VOIX = { stability: 0.5, similarityBoost: 0.75, style:
 // est peut-être trop calme"). Fait partie de la clé de cache : changer le
 // réglage régénère l'audio NL (préchargement à relancer).
 const ALFRED_ELEVENLABS_EXPRESSIVITE_KEY = 'alfred_elevenlabs_expressivite';
+// Trois niveaux depuis le 06/09 ("le mode créatif est trop fort, il faut
+// doser") — v3 n'a que trois crans de stabilité (0 / 0.5 / 1), impossible
+// de doser entre les deux par ce réglage. Le niveau intermédiaire garde la
+// stabilité 0.5 mais RÉPÈTE l'indication de jeu au début de chaque phrase
+// (au lieu d'une seule fois en tête) : l'émotion ne s'éteint plus au fil
+// d'une longue réplique, sans l'instabilité du mode créatif.
 function expressiviteElevenLabs() {
-  return localStorage.getItem(ALFRED_ELEVENLABS_EXPRESSIVITE_KEY) === 'creatif' ? 'creatif' : 'naturel';
+  const v = localStorage.getItem(ALFRED_ELEVENLABS_EXPRESSIVITE_KEY);
+  return (v === 'creatif' || v === 'expressif') ? v : 'naturel';
+}
+function texteAvecBalisesV3(text, balise) {
+  if (!balise) return text;
+  if (expressiviteElevenLabs() !== 'expressif') return `${balise} ${text}`;
+  const phrases = String(text).match(/[^.!?…]+[.!?…]+["»]?|[^.!?…]+$/g) || [text];
+  return phrases.map(p => `${balise} ${p.trim()}`).join(' ');
 }
 function reglagesElevenLabs() {
   return { ...ELEVENLABS_REGLAGES_VOIX, stability: expressiviteElevenLabs() === 'creatif' ? 0 : 0.5 };
@@ -479,8 +492,8 @@ async function genererAudioElevenLabs(text, voiceId, emotion) {
   // Balise de jeu v3 devant le texte (voir EMOTIONS_VOIX) — fait partie de
   // la clé de cache : la même phrase dite amusée ou neutre = deux audios.
   const balise = baliseEmotionV3(emotion);
-  const texteMoteur = balise ? `${balise} ${text}` : text;
-  const cle = cleTTS({ languageCode: 'nl-BE', name: 'elevenlabs-' + ELEVENLABS_MODELE + '-' + voiceId + '-v' + ELEVENLABS_REGLAGES_VERSION + (expressiviteElevenLabs() === 'creatif' ? '-creatif' : '') }, texteMoteur);
+  const texteMoteur = texteAvecBalisesV3(text, balise);
+  const cle = cleTTS({ languageCode: 'nl-BE', name: 'elevenlabs-' + ELEVENLABS_MODELE + '-' + voiceId + '-v' + ELEVENLABS_REGLAGES_VERSION + (expressiviteElevenLabs() === 'naturel' ? '' : '-' + expressiviteElevenLabs()) }, texteMoteur);
 
   let audioContent = await lireCacheTTS(cle);
   if (audioContent) {
@@ -657,6 +670,12 @@ async function prechargerScript(voixFr, voixNl, ton, onProgress) {
 // son). Attaque rapide, relâchement plus lent — comme une vraie bouche, qui
 // s'ouvre d'un coup sur une syllabe et se referme plus doucement.
 let boucheOuverture = 0, boucheLargeur = 0.3;
+// Plancher/plafond glissants du volume mesuré : le niveau "silence" de
+// l'analyseur n'est jamais 0 (souffle, réverbération de la génération), ce
+// qui gardait la bouche entrouverte en permanence ("il s'ouvre tout le
+// temps"). On normalise entre le plus bas et le plus haut récents, avec un
+// seuil sous lequel la bouche est franchement fermée.
+let boucheAmpMin = 1, boucheAmpMax = 0;
 function animateMouth(amp, aigus) {
   // Suspendu pendant clinDoeil() (alfred-ui.js) : sinon ce callback, encore
   // déclenché par talkTick pendant que l'audio finit de jouer, réécrit la
@@ -671,7 +690,10 @@ function animateMouth(amp, aigus) {
   // sifflante ou "i" = bouche étirée. Repli sur l'ancienne ellipse si les
   // formes ne sont pas chargées (ce fichier tourne seul).
   if (typeof FORMES_BOUCHE !== 'undefined' && typeof cheminBouche === 'function') {
-    let cibleOuv = amp < 0.07 ? 0 : Math.min(1, amp * 1.15);
+    boucheAmpMin = Math.min(boucheAmpMin * 1.004 + 0.0008, amp);
+    boucheAmpMax = Math.max(boucheAmpMax * 0.994, amp);
+    const norm = (amp - boucheAmpMin) / Math.max(0.10, boucheAmpMax - boucheAmpMin);
+    let cibleOuv = norm < 0.28 ? 0 : Math.min(1, (norm - 0.28) / 0.6);
     let cibleLarg = (typeof aigus === 'number') ? Math.max(0, Math.min(1, aigus)) : 0.3;
     // Forme déduite du TEXTE en cours (visemeCourant, alfred-ui.js) quand
     // une réplique joue : le spectre ne sert plus qu'en repli (chatbot
@@ -681,10 +703,12 @@ function animateMouth(amp, aigus) {
       const LARG = { ah: 0.5, e: 0.72, i: 0.95, o: 0.04, ferme: 0.3 };
       cibleLarg = LARG[vis.forme] != null ? LARG[vis.forme] : 0.4;
       cibleOuv *= vis.gain;
-      if ((vis.forme === 'ah' || vis.forme === 'o') && amp > 0.12) cibleOuv = Math.max(cibleOuv, 0.4);
       if (vis.forme === 'i' || vis.forme === 'e') cibleOuv = Math.min(cibleOuv, vis.forme === 'i' ? 0.4 : 0.6);
     }
-    boucheOuverture += (cibleOuv - boucheOuverture) * (cibleOuv > boucheOuverture ? 0.55 : 0.3);
+    // Attaque rapide, fermeture nette : une bouche qui reste entrouverte
+    // entre les mots lit comme "toujours ouverte".
+    boucheOuverture += (cibleOuv - boucheOuverture) * (cibleOuv > boucheOuverture ? 0.6 : 0.55);
+    if (boucheOuverture < 0.04) boucheOuverture = 0;
     boucheLargeur   += (cibleLarg - boucheLargeur) * 0.3;
     const o = boucheOuverture, w = boucheLargeur;
     const F = FORMES_BOUCHE;
@@ -731,7 +755,7 @@ function resetMouth() {
   const mt = document.getElementById('alfred-mouth-talk');
   const ms = document.getElementById('alfred-mouth');
   if (mt) { mt.style.display = 'none'; mt.setAttribute('ry', '0'); }
-  boucheOuverture = 0; boucheLargeur = 0.3;
+  boucheOuverture = 0; boucheLargeur = 0.3; boucheAmpMin = 1; boucheAmpMax = 0;
   if (ms) { ms.style.display = 'block'; if (typeof ALFRED_BOUCHE_SOURIRE_D !== 'undefined') ms.setAttribute('d', ALFRED_BOUCHE_SOURIRE_D); }
   const mi = document.getElementById('alfred-mouth-int');
   if (mi) mi.setAttribute('opacity', '0');
