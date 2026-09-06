@@ -2255,14 +2255,16 @@ async function essayerAjouterBienParCadastre(bien) {
   // résultat"), seulement le nom ("Coxyde") — confirmé en test live.
   const [codePostal, nomCommune] = bien.commune.split(/[—-]/).map(s => s && s.trim());
   // En néerlandais : la commune belge peut avoir un nom différent
-  // (Coxyde/Koksijde...) — voir bien.commune_nl. On ne tape que les 3
-  // premières lettres du nom NL (demandé explicitement, "juste pour être
-  // logique") ; le FR continue de taper le nom complet, inchangé ("en fr
-  // c'est ok"). Le code postal (identique dans les deux langues) reste ce
-  // qui repère vraiment la bonne suggestion dans le menu — voir plus bas.
+  // (Coxyde/Koksijde...) — voir bien.commune_nl. Revu le 06/09 : d'abord
+  // testé en ne tapant que les 3 premières lettres du nom NL, puis
+  // demandé de taper le nom NL EN ENTIER, comme le FR le fait déjà pour
+  // "Coxyde" ("il peut taper Koksijde en entier si c'était ce qui était
+  // fait en français"). Le code postal (identique dans les deux langues)
+  // reste ce qui repère vraiment la bonne suggestion dans le menu — voir
+  // plus bas.
   const enNL = (typeof currentLangue !== 'undefined' && currentLangue === 'nl');
   const nomCommuneNL = bien.commune_nl && bien.commune_nl.trim();
-  const texteATaper = enNL && nomCommuneNL ? nomCommuneNL.slice(0, 3) : (nomCommune || bien.commune);
+  const texteATaper = enNL && nomCommuneNL ? nomCommuneNL : (nomCommune || bien.commune);
 
   await curseurVersAsync(input, () => input.focus());
   await attendre(200);
@@ -2288,10 +2290,7 @@ async function essayerAjouterBienParCadastre(bien) {
       .find(el => {
         if (el.getBoundingClientRect().width === 0) return false;
         const t = el.textContent.trim().toLowerCase();
-        // Comparaison sur le nom COMPLET (NL si dispo en néerlandais, sinon
-        // FR) même si on n'a tapé que 3 lettres — le menu affiche le nom
-        // en entier, "Kok" ne le matcherait pas tout seul sans le code
-        // postal en repli.
+        // Comparaison sur le nom COMPLET (NL si dispo en néerlandais, sinon FR).
         const nomComplet = (enNL && nomCommuneNL) ? nomCommuneNL : (nomCommune || bien.commune);
         return (codePostal && t.includes(codePostal.toLowerCase())) || t.includes(nomComplet.toLowerCase());
       });
