@@ -740,12 +740,10 @@ function animateMouth(amp, aigus) {
   // bouger quand il parle") — lissés pour ne pas trembler à chaque frame :
   // la tête suit l'amplitude avec un peu d'inertie, penche légèrement et
   // descend d'un ou deux pixels sur les syllabes appuyées.
-  const head = document.getElementById('alfred-head');
-  if (head) {
-    teteAmpLissee += (amp - teteAmpLissee) * 0.25;
-    const a = teteAmpLissee;
-    head.style.transform = `translateY(${(a * 5).toFixed(1)}px) rotate(${(Math.sin(performance.now() / 260) * a * 3).toFixed(2)}deg)`;
-  }
+  // Depuis le 06/09 : la tête est composée ailleurs (composerTete,
+  // alfred-ui.js) — ici on ne fait que signaler les attaques de syllabes.
+  if (typeof impulsionTete === 'function') impulsionTete(amp);
+  teteAmpLissee += (amp - teteAmpLissee) * 0.25;
 }
 // Amplitude lissée pour les hochements de tête (voir animateMouth).
 let teteAmpLissee = 0;
@@ -759,8 +757,6 @@ function resetMouth() {
   if (ms) { ms.style.display = 'block'; if (typeof ALFRED_BOUCHE_SOURIRE_D !== 'undefined') ms.setAttribute('d', ALFRED_BOUCHE_SOURIRE_D); }
   const mi = document.getElementById('alfred-mouth-int');
   if (mi) mi.setAttribute('opacity', '0');
-  const head = document.getElementById('alfred-head');
-  if (head) { head.style.transition = 'transform .35s ease'; head.style.transform = ''; setTimeout(() => { head.style.transition = ''; }, 400); }
   teteAmpLissee = 0;
 }
 

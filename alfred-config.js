@@ -208,14 +208,14 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 1, label: 'Parcours',       hologrammes: [{ mots: ['ghigny'], titre: 'J.-F. Ghigny & A. Caprasse', sous: 'Les bases juridiques', icone: 'notaires' }, { mots: ['bilingue'], titre: 'Bilingue', sous: 'Français · Nederlands', icone: 'FR·NL' }], texte: "Je n'ai pas de parcours classique, je l'avoue. Mais Jean-François Ghigny et Alain Caprasse m'ont donné les bases juridiques. Je suis construit pour une seule chose : le notariat belge. Alors bien sûr, je suis bilingue : français et néerlandais. Je connais vos actes, vos bases de données, vos obligations. Je ne suis pas un outil généraliste qu'on a adapté après coup. Je suis conçu pour vous dès le premier jour." },
     { acte: 1, label: 'Disponibilité',  hologrammes: [{ mots: ['24h/24'], titre: '24h/24, toute l\'année', sous: 'Jamais fermé', icone: 'horloge' }], texte: "24h/24, toute l'année. Un dossier qui arrive un vendredi soir à 23h ? Vous cliquez et je m'y attèle tout de suite." },
     { acte: 1, label: 'Competences',    geste: 'fier', hologrammes: [{ mots: ['e-notariat'], titre: 'e-notariat', sous: 'Numéros de registre national', icone: 'id' }, { mots: ['géoportail'], titre: 'Géoportail', sous: 'Cartes et parcelles', icone: 'carte' }, { mots: ["d'inondation"], titre: 'Rapports d\'inondation', sous: 'Zones inondables', icone: 'inondation' }], texte: "C'est exactement mon rôle. Je prends le suivi, l'administratif et la collecte des données. Je suis connecté aussi bien à des bases de données publiques que privées : les numéros de registre national dans e-notariat, mais aussi des cartes au géoportail, ou encore les rapports d'inondation. Je vais chercher l'information qu'il faut. Beaucoup est déjà en place — mais je ne cesse d'apprendre." },
-    { acte: 1, label: 'JeLeMontre', geste: 'hocher', emotion: 'assure',     texte: "Donnez-moi un dossier. Honnêtement ? Je ne l'explique pas. Je le montre." },
+    { acte: 1, label: 'JeLeMontre', geste: { nom: 'hocher', mot: "montre" }, emotion: 'assure',     texte: "Donnez-moi un dossier. Honnêtement ? Je ne l'explique pas. Je le montre." },
     // 'Montrer' inchangée exprès : ce n'est PAS la ligne officielle de
     // Fariël ("Avec plaisir. Montre-moi.") — c'est une adaptation
     // délibérée (Alfred invite le public à regarder, plutôt que Fariël
     // qui invite Alfred) construite avec le geste clinDoeil/gesteMontrer
     // et testée en direct plus tôt cette session. Ne pas la "corriger"
     // vers le texte officiel de Fariël sans retester le geste.
-    { acte: 1, label: 'Montrer', geste: 'presenter', emotion: 'chaleureux',       texte: "Avec plaisir. Regardez.", action: 'Montrer' },
+    { acte: 1, label: 'Montrer', geste: { nom: 'presenter', mot: "regardez" }, emotion: 'chaleureux',       texte: "Avec plaisir. Regardez.", action: 'Montrer' },
 
     // ACTE 2 — CRÉATION LIVE (démonstration séparée, avant l'ouverture de R426)
     // Décomposée en 6 répliques qui suivent le processus décrit par Cyril :
@@ -517,7 +517,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Alfred la coupe ("Niet te snel Fariel!") avant d'annoncer qu'il l'a
     // déjà fait. Pas d'action : juste ce tour de parole, l'ouverture du
     // panneau reste sur la réplique Email juste après.
-    { acte: 2, label: 'PasSiVite', geste: 'stop', emotion: 'taquin', texte: "Pas si vite, Fariël !" },
+    { acte: 2, label: 'PasSiVite', geste: { nom: 'stop', mot: "vite" }, emotion: 'taquin', texte: "Pas si vite, Fariël !" },
     // Email : v3_1 remplace l'entrée en matière ("J'ai préparé un projet de
     // mail...") par un rappel de la promesse d'Alfred sur l'administratif.
     { acte: 2, label: 'Email', texte: "Je vous avais bien dit que j'allais alléger votre travail administratif. J'ai préparé un projet de mail à BIMBIMMO, le vendeur, en lui demandant de m'envoyer le PEB... le contrôle électrique... l'attestation du sol. Une seule demande, jamais deux fois la même question. Vous validez l'envoi ?", action: 'CreationEmail_Ouverture' },
@@ -582,7 +582,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Alfred sur l'onglet Conversation pile à ce moment, pour que Fariël
     // n'ait plus à cliquer elle-même dessus en plein direct avant de poser
     // sa question.
-    { acte: 2, label: 'InvitationQuestions', geste: 'ouvrir', emotion: 'chaleureux', texte: "N'importe qui dans l'étude peut me la poser, à toute heure. Allez-y.", action: 'OuvrirChatConversation' },
+    { acte: 2, label: 'InvitationQuestions', geste: { nom: 'ouvrir', mot: "allez-y" }, emotion: 'chaleureux', texte: "N'importe qui dans l'étude peut me la poser, à toute heure. Allez-y.", action: 'OuvrirChatConversation' },
     // Réplique SILENCIEUSE (pas de texte, segments + parlerDepuisAction —
     // seule façon de déclencher une action DOM sans qu'Alfred parle, voir
     // jouerSecoursInterne dans alfred-brain.js) : tape et envoie, une à une,
@@ -617,14 +617,14 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Stand changeait de registre (tutoiement) par rapport au reste de
     // l'acte 3 — corrigé, l'officiel vouvoie tout du long côté Alfred.
     { acte: 3, label: 'Sécurité',      hologrammes: [{ mots: ['rgpd'], titre: 'Conforme RGPD', sous: 'Protection des données', icone: 'cadenas' }, { mots: ['privanot'], titre: 'Évalué par Privanot', sous: 'Sécurité vérifiée', icone: 'badge' }, { mots: ['quittent'], titre: 'Vos données restent en Europe', sous: 'Jamais ailleurs', icone: 'globe' }], texte: "Toutes les données sont hébergées sur des serveurs sécurisés en Europe. Je suis conforme RGPD, et ma sécurité a été évaluée dans le cadre de Privanot. Vos données ne quittent jamais l'Europe." },
-    { acte: 3, label: 'Stand', geste: 'presenter', emotion: 'chaleureux',         hologrammes: [{ mots: ['stand'], titre: 'Stand Wellnot', sous: 'Dans la salle d\'à côté', icone: 'carte' }], texte: "Au stand Wellnot, dans la salle d'à côté. Passez, ou demandez une démo directement dans votre étude." },
+    { acte: 3, label: 'Stand', geste: { nom: 'presenter', mot: "stand" }, emotion: 'chaleureux',         hologrammes: [{ mots: ['stand'], titre: 'Stand Wellnot', sous: 'Dans la salle d\'à côté', icone: 'carte' }], texte: "Au stand Wellnot, dans la salle d'à côté. Passez, ou demandez une démo directement dans votre étude." },
     // Closing : DOUTE — la ligne officielle complète ("Ne partez pas trop
     // vite vous-même. Car en réalité, c'est moi qui vous engage.") est plus
     // longue que l'ancienne version. Cette réplique pilote aussi le clin
     // d'œil (ClosingWink), calé en test live sur le texte précédent — à
     // revérifier que le timing du geste tombe toujours bien avec ce texte
     // rallongé.
-    { acte: 3, label: 'Closing', geste: 'ouvrir', emotion: 'malicieux',       texte: "Ne partez pas trop vite vous-même. Car en réalité, c'est moi qui vous engage.", action: 'ClosingWink' }],
+    { acte: 3, label: 'Closing', geste: { nom: 'ouvrir', mot: "partez" }, emotion: 'malicieux',       texte: "Ne partez pas trop vite vous-même. Car en réalité, c'est moi qui vous engage.", action: 'ClosingWink' }],
 
   REPLIQUES_NL: [
     // ACTE 1 — voir la note FR équivalente : réécrit intégralement le
@@ -645,9 +645,9 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // détaillée ("Ik neem het werk over dat uw medewerkers tijd kost...")
     // n'existe plus dans cette version.
     { acte: 1, label: 'Competences',    geste: 'fier', hologrammes: [{ mots: ['e-notariaat'], titre: 'e-notariaat', sous: 'Rijksregisternummers', icone: 'id' }, { mots: ['geoportaal'], titre: 'Geoportaal', sous: 'Kaarten en percelen', icone: 'carte' }, { mots: ['overstromingsrapporten'], titre: 'Overstromingsrapporten', sous: 'Overstromingsgevoelig gebied', icone: 'inondation' }], texte: "Dat is precies mijn rol. Ik neem de opvolging, de administratie en de gegevensverzameling over. Ik ben gekoppeld aan publieke en private databanken — van rijksregisternummers in e-notariaat tot kaarten op het geoportaal en overstromingsrapporten. Ik haal de informatie op die nodig is. Veel staat al op punt, en ik leer elke dag bij." },
-    { acte: 1, label: 'JeLeMontre', geste: 'hocher', emotion: 'assure',     texte: "Geef me gewoon een dossier. Ik laat het liever zien dan dat ik het uitleg." },
+    { acte: 1, label: 'JeLeMontre', geste: { nom: 'hocher', mot: "zien" }, emotion: 'assure',     texte: "Geef me gewoon een dossier. Ik laat het liever zien dan dat ik het uitleg." },
     // 'Montrer' inchangée — même note que côté FR (voir plus haut).
-    { acte: 1, label: 'Montrer', geste: 'presenter', emotion: 'chaleureux',       texte: "Met plezier. Kijk maar.", action: 'Montrer' },
+    { acte: 1, label: 'Montrer', geste: { nom: 'presenter', mot: "kijk" }, emotion: 'chaleureux',       texte: "Met plezier. Kijk maar.", action: 'Montrer' },
 
     // ACTE 2 — CRÉATION LIVE (démonstration séparée, avant l'ouverture van R426)
     // Tekst afgestemd op Alfreds exacte repliek in het officiële script
@@ -776,7 +776,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // commence par "Heel eenvoudig.", pas par ce lead-in.
     // DÉCOMPOSÉ le 03/09 (2e passe) — voir la note FR équivalente.
     // PasSiVite AJOUTÉE le 05/09 (v3_1) — voir la note FR équivalente.
-    { acte: 2, label: 'PasSiVite', geste: 'stop', emotion: 'taquin', texte: "Niet te snel, Fariël!" },
+    { acte: 2, label: 'PasSiVite', geste: { nom: 'stop', mot: "snel" }, emotion: 'taquin', texte: "Niet te snel, Fariël!" },
     { acte: 2, label: 'Email', texte: "Ik had toch aangegeven dat ik jouw administratief werk ging verlichten. Ik heb alvast een conceptmail klaargezet voor de verkoper BIMBIMMO, met de vraag om het EPC... de elektrische keuring... en het bodemattest te bezorgen. Één gerichte vraag, nooit twee keer hetzelfde. Valideert u de verzending?", action: 'CreationEmail_Ouverture' },
     { acte: 2, label: 'EmailEnvoyer', segments: [
       { texte: "Daar is het, ik bekijk het e-mailontwerp en verstuur het.", action: 'CreationEmail_Envoyer', parlerDepuisAction: true }] },
@@ -798,7 +798,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'Autonomie', geste: 'hocher', emotion: 'satisfait',            texte: "Precies!" },
     // Scène 11 (suite) : voir la note FR équivalente — même 3 lignes
     // fixes, sourcées directement de v3_8 (pas traduites du FR).
-    { acte: 2, label: 'InvitationQuestions', geste: 'ouvrir', emotion: 'chaleureux', texte: "Iedereen op kantoor kan mij dag en nacht vragen stellen. Stel ze maar!", action: 'OuvrirChatConversation' },
+    { acte: 2, label: 'InvitationQuestions', geste: { nom: 'ouvrir', mot: "stel" }, emotion: 'chaleureux', texte: "Iedereen op kantoor kan mij dag en nacht vragen stellen. Stel ze maar!", action: 'OuvrirChatConversation' },
     // Réplique SILENCIEUSE — voir la note FR équivalente (même mécanisme,
     // QUESTIONS_LIVE_NL).
     { acte: 2, label: 'PoserQuestions', segments: [
@@ -820,13 +820,13 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // version FR : "certifié" à éviter tant que ce n'est pas acté).
     // Sécurité/Stand/Closing réalignées mot pour mot sur v3_8 le 31/08.
     { acte: 3, label: 'Sécurité',      hologrammes: [{ mots: ['gdpr-conform'], titre: 'GDPR-conform', sous: 'Gegevensbescherming', icone: 'cadenas' }, { mots: ['privanot'], titre: 'Geëvalueerd door Privanot', sous: 'Veiligheid gecontroleerd', icone: 'badge' }, { mots: ['verlaten'], titre: 'Uw gegevens blijven in Europa', sous: 'Nooit elders', icone: 'globe' }], texte: "Alle gegevens worden gehost op beveiligde servers in Europa. Ik ben GDPR-conform, en mijn veiligheid werd geëvalueerd in het kader van Privanot. Uw gegevens verlaten Europa nooit." },
-    { acte: 3, label: 'Stand', geste: 'presenter', emotion: 'chaleureux',         hologrammes: [{ mots: ['wellnot-stand'], titre: 'Wellnot-stand', sous: 'In de zaal hiernaast', icone: 'carte' }], texte: "Heel eenvoudig: op de Wellnot-stand, in de zaal hiernaast. Kom langs, of vraag een demo rechtstreeks in uw kantoor." },
+    { acte: 3, label: 'Stand', geste: { nom: 'presenter', mot: "wellnot-stand" }, emotion: 'chaleureux',         hologrammes: [{ mots: ['wellnot-stand'], titre: 'Wellnot-stand', sous: 'In de zaal hiernaast', icone: 'carte' }], texte: "Heel eenvoudig: op de Wellnot-stand, in de zaal hiernaast. Kom langs, of vraag een demo rechtstreeks in uw kantoor." },
     // Closing — même DOUTE que côté FR (voir la note FR équivalente,
     // timing du clin d'œil à revérifier). Registre "je/jou" (informel,
     // adressé à Fariël) : c'est bien ce que dit l'officiel v3_8 à cet
     // endroit précis, contrairement au FR qui reste vouvoyé — vérifié, pas
     // une incohérence de traduction.
-    { acte: 3, label: 'Closing', geste: 'ouvrir', emotion: 'malicieux',       texte: "Pas maar op dat je zelf niet te snel juicht, Fariël... In werkelijkheid ben ík degene die jou zojuist heeft goedgekeurd.", action: 'ClosingWink' }],
+    { acte: 3, label: 'Closing', geste: { nom: 'ouvrir', mot: "pas" }, emotion: 'malicieux',       texte: "Pas maar op dat je zelf niet te snel juicht, Fariël... In werkelijkheid ben ík degene die jou zojuist heeft goedgekeurd.", action: 'ClosingWink' }],
 
   TRIGGERS_NL: [
     'hoe', 'wat', 'wie', 'waar', 'wanneer', 'waarom', 'welke', 'welk',

@@ -398,7 +398,7 @@ async function jouerSecoursInterne() {
   // Mode scène (Alfred seul en plein écran, Actes 1 et 3 — voir
   // assurerModeScene dans alfred-ui.js) : mis en place AVANT de parler,
   // pour que la transition soit finie quand la réplique démarre.
-  if (typeof assurerModeScene === 'function') await assurerModeScene(r.acte);
+  if (typeof assurerModeScene === 'function') await assurerModeScene(r.acte, r.label);
 
   // Réplique "groupée" (r.segments) : plusieurs petits bouts de texte
   // joués à la suite, chacun avec sa propre action DOM déclenchée en même

@@ -88,16 +88,19 @@ const ALFRED_SVG = `
       </defs>
 
       <g id="alfred-body-main" style="transform-origin:200px 235px;">
+      <!-- groupe de posture (penchés, redressements, ajustements d'appui) :
+           animé par Web Animations API, rien d'autre n'y touche -->
+      <g id="alfred-posture" style="transform-origin:200px 420px;">
 
         <!-- ── Bras (derrière le corps) ─────────────────────────── -->
         <g id="alfred-arm-l" style="transform-origin:76px 244px;">
-          <g transform="rotate(-16 76 244)">
+          <g id="alfred-arm-l-base" transform="rotate(-16 76 244)">
             <rect x="46" y="230" width="60" height="196" rx="30" fill="#ffffff" stroke="#1b1b1b" stroke-width="3.5"/>
             <rect x="60" y="266" width="26" height="132" rx="13" fill="url(#alfred-teal)"/>
           </g>
         </g>
         <g id="alfred-arm-r" style="transform-origin:324px 244px;">
-          <g transform="rotate(16 324 244)">
+          <g id="alfred-arm-r-base" transform="rotate(16 324 244)">
             <rect x="294" y="230" width="60" height="196" rx="30" fill="#ffffff" stroke="#1b1b1b" stroke-width="3.5"/>
             <rect x="314" y="266" width="26" height="132" rx="13" fill="url(#alfred-teal)"/>
           </g>
@@ -168,6 +171,7 @@ const ALFRED_SVG = `
           <path id="alfred-mouth-int" d="${ALFRED_BOUCHE_SOURIRE_D}" fill="#083a44" opacity="0" style="pointer-events:none;"/>
           <ellipse id="alfred-mouth-talk" cx="200" cy="138" rx="14" ry="0" fill="#1ee6d6" style="display:none;"/>
         </g>
+      </g>
       </g>
     </svg>
 
@@ -1466,7 +1470,7 @@ function initAlfredUI() {
 
     @keyframes alfred-breathe {
       0%,100% { transform:translateY(0) scale(1); }
-      50%      { transform:translateY(-6px) scale(1.018); }
+      50%      { transform:translateY(-7px) scale(1.024); }
     }
     @keyframes alfred-gloss-drift {
       0%,100% { transform:translate(0,0); opacity:1; }
@@ -1787,8 +1791,11 @@ function startBlinking() {
   // temps du clignement (l'œil sautait au centre) — remplacé par le
   // morphing de forme (cligner, plus haut).
   function blink() {
-    if (curState === 'idle' && typeof cligner === 'function') cligner();
-    setTimeout(blink, 2500 + Math.random()*4500);
+    if (curState === 'idle' && typeof cligner === 'function' && !robotEteint) {
+      cligner();
+      if (Math.random() < 0.15) setTimeout(cligner, 260); // double clignement, de temps en temps
+    }
+    setTimeout(blink, 2000 + Math.random() * 4000);
   }
   setTimeout(blink, 2000);
 }
@@ -1821,8 +1828,12 @@ function startEyeLerp() {
     // (gesteMontrer() ne touche plus directement ce transform — il passe
     // par eyeTargetX/Y, donc n'a pas besoin d'être exclu ici.)
     if (!clinDoeilActif && (curState === 'idle' || curState === 'talk')) {
-      eyeCurX += (eyeTargetX - eyeCurX) * .12;
-      eyeCurY += (eyeTargetY - eyeCurY) * .12;
+      // Saccade : quand la cible est loin, l'œil y saute vite (balistique),
+      // puis se fixe avec une dérive lente — au lieu d'un glissement mou.
+      const dist = Math.hypot(eyeTargetX - eyeCurX, eyeTargetY - eyeCurY);
+      const k = dist > 1.5 ? 0.5 : 0.08;
+      eyeCurX += (eyeTargetX - eyeCurX) * k;
+      eyeCurY += (eyeTargetY - eyeCurY) * k;
       const eL = document.getElementById('alfred-eye-l');
       const eR = document.getElementById('alfred-eye-r');
       if (eL) eL.style.transform = `translate(${eyeCurX.toFixed(2)}px,${eyeCurY.toFixed(2)}px)`;
@@ -1834,13 +1845,8 @@ function startEyeLerp() {
       const tp = `translate(${(eyeCurX * .9).toFixed(2)}px,${(eyeCurY * .7).toFixed(2)}px)`;
       if (pL) pL.style.transform = tp;
       if (pR) pR.style.transform = tp;
-      // Au repos, la tête tourne légèrement dans le sens du regard (en
-      // parlant c'est animateMouth qui pilote la tête, on ne touche pas).
-      if (curState === 'idle') {
-        const head = document.getElementById('alfred-head');
-        if (head) head.style.transform = `rotate(${(eyeCurX * .28).toFixed(2)}deg) translate(${(eyeCurX * .5).toFixed(1)}px,${(eyeCurY * .4).toFixed(1)}px)`;
-      }
     }
+    composerTete();
     rafEyes = requestAnimationFrame(lerp);
   }
   rafEyes = requestAnimationFrame(lerp);
@@ -1859,6 +1865,10 @@ function balayageRegardEnParlant() {
   // (±4) autour de la cible actuelle toutes les 0,8–2 s, parfois (1 fois
   // sur 4) un vrai regard ailleurs, puis retour vers la salle (0).
   let prochain = 2000 + Math.random() * 2000;
+  if (robotEteint || performance.now() < regardDirigeJusqua) {
+    setTimeout(balayageRegardEnParlant, 600);
+    return;
+  }
   if (curState === 'talk' && !gesteMontrerActif) {
     if (Math.random() < 0.25) { eyeTargetX = (Math.random() - 0.5) * 16; eyeTargetY = (Math.random() - 0.5) * 6; prochain = 1200 + Math.random() * 1200; }
     else { eyeTargetX = Math.max(-10, Math.min(10, eyeTargetX * 0.5 + (Math.random() - 0.5) * 6)); eyeTargetY = Math.max(-4, Math.min(4, eyeTargetY * 0.5 + (Math.random() - 0.5) * 3)); prochain = 800 + Math.random() * 1200; }
@@ -2032,70 +2042,87 @@ function elementsGeste() {
     body: document.getElementById('alfred-body-main'),
   };
 }
+// Images-clés d'un geste de bras avec anticipation (petit mouvement inverse
+// avant), tenue, et retour amorti (léger dépassement de l'autre côté avant
+// de se poser) : rien ne part ni ne s'arrête net.
+function imagesBras(pic) {
+  const s = Math.sign(pic) || 1;
+  return [
+    { transform: 'rotate(0deg)', offset: 0 }, { transform: `rotate(${-s * 7}deg)`, offset: .07 },
+    { transform: `rotate(${pic}deg)`, offset: .27 }, { transform: `rotate(${pic * .93}deg)`, offset: .78 },
+    { transform: `rotate(${-s * 4}deg)`, offset: .94 }, { transform: 'rotate(0deg)', offset: 1 },
+  ];
+}
 const GESTES = {
   // Petit salut de la main droite (Ouverture) — comme dans la vidéo de Cyril.
   saluer() {
-    const { armR, head } = elementsGeste();
+    const { armR } = elementsGeste();
     animerGeste(armR, [
-      { transform: 'rotate(0deg)', offset: 0 }, { transform: 'rotate(-158deg)', offset: .22 },
-      { transform: 'rotate(-136deg)', offset: .38 }, { transform: 'rotate(-162deg)', offset: .54 },
-      { transform: 'rotate(-138deg)', offset: .70 }, { transform: 'rotate(-156deg)', offset: .82 },
+      { transform: 'rotate(0deg)', offset: 0 }, { transform: 'rotate(8deg)', offset: .05 },
+      { transform: 'rotate(-158deg)', offset: .22 }, { transform: 'rotate(-136deg)', offset: .36 },
+      { transform: 'rotate(-162deg)', offset: .50 }, { transform: 'rotate(-138deg)', offset: .64 },
+      { transform: 'rotate(-156deg)', offset: .78 }, { transform: 'rotate(5deg)', offset: .95 },
       { transform: 'rotate(0deg)', offset: 1 },
-    ], { duration: 2600 });
-    animerGeste(head, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(-5deg)', offset: .3 }, { transform: 'rotate(-4deg)', offset: .75 }, { transform: 'rotate(0deg)' }], { duration: 2600 });
+    ], { duration: 2700 });
+    setTimeout(() => { tangage -= 3; definirPostureTete(-4, 0, 0.08); }, 140);
+    setTimeout(() => definirPostureTete(0, 0, 0.03), 2200);
   },
   // Bras droit tendu vers l'extérieur, tenu : "regardez", "au stand".
   presenter() {
-    const { armR, body } = elementsGeste();
-    animerGeste(armR, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(-82deg)', offset: .18 }, { transform: 'rotate(-76deg)', offset: .8 }, { transform: 'rotate(0deg)' }], { duration: 2400 });
-    animerGeste(body, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(2.5deg)', offset: .2 }, { transform: 'rotate(2.5deg)', offset: .8 }, { transform: 'rotate(0deg)' }], { duration: 2400 });
+    const { armR } = elementsGeste();
+    animerGeste(armR, imagesBras(-82), { duration: 2400 });
+    animerGeste(document.getElementById('alfred-posture'), [{ transform: 'none' }, { transform: autour('corps', 'rotate(2.5deg)'), offset: .25 }, { transform: autour('corps', 'rotate(2.3deg)'), offset: .8 }, { transform: 'none' }], { duration: 2400, delay: 180 });
   },
   // Les deux bras qui s'ouvrent ("Allez-y", "Stel ze maar") — invitation.
   ouvrir() {
-    const { armL, armR, head } = elementsGeste();
-    animerGeste(armL, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(74deg)', offset: .22 }, { transform: 'rotate(66deg)', offset: .78 }, { transform: 'rotate(0deg)' }], { duration: 2400 });
-    animerGeste(armR, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(-74deg)', offset: .22 }, { transform: 'rotate(-66deg)', offset: .78 }, { transform: 'rotate(0deg)' }], { duration: 2400, delay: 60 });
-    animerGeste(head, [{ transform: 'translateY(0)' }, { transform: 'translateY(-4px)', offset: .25 }, { transform: 'translateY(0)' }], { duration: 2400 });
+    const { armL, armR } = elementsGeste();
+    animerGeste(armL, imagesBras(74), { duration: 2400 });
+    animerGeste(armR, imagesBras(-74), { duration: 2400, delay: 130 });
+    setTimeout(() => definirPostureTete(0, -4, 0.08), 200);
+    setTimeout(() => definirPostureTete(0, 0, 0.03), 1900);
   },
   // "Pas si vite !" — main droite levée, sèche, tenue un instant.
   stop() {
-    const { armR, head } = elementsGeste();
-    animerGeste(armR, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(-118deg)', offset: .12 }, { transform: 'rotate(-112deg)', offset: .75 }, { transform: 'rotate(0deg)' }], { duration: 1900, easing: 'cubic-bezier(.2,1.4,.5,1)' });
-    animerGeste(head, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(6deg)', offset: .15 }, { transform: 'rotate(5deg)', offset: .75 }, { transform: 'rotate(0deg)' }], { duration: 1900 });
+    const { armR } = elementsGeste();
+    animerGeste(armR, [
+      { transform: 'rotate(0deg)', offset: 0 }, { transform: 'rotate(9deg)', offset: .06 }, { transform: 'rotate(-122deg)', offset: .16 },
+      { transform: 'rotate(-112deg)', offset: .24 }, { transform: 'rotate(-114deg)', offset: .75 }, { transform: 'rotate(4deg)', offset: .94 }, { transform: 'rotate(0deg)', offset: 1 },
+    ], { duration: 1900 });
+    setTimeout(() => { tangage += 4; definirPostureTete(6, 0, 0.1); }, 120);
+    setTimeout(() => definirPostureTete(0, 0, 0.03), 1500);
   },
   // Fier : torse bombé, menton levé, bras légèrement en arrière.
   fier() {
-    const { armL, armR, head, body } = elementsGeste();
-    animerGeste(body, [{ transform: 'scale(1)' }, { transform: 'scale(1.035) translateY(-3px)', offset: .25 }, { transform: 'scale(1.035) translateY(-3px)', offset: .8 }, { transform: 'scale(1)' }], { duration: 2600 });
-    animerGeste(head, [{ transform: 'translateY(0)' }, { transform: 'translateY(-5px) rotate(-2deg)', offset: .25 }, { transform: 'translateY(-5px) rotate(-2deg)', offset: .8 }, { transform: 'translateY(0)' }], { duration: 2600 });
-    animerGeste(armL, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(22deg)', offset: .25 }, { transform: 'rotate(22deg)', offset: .8 }, { transform: 'rotate(0deg)' }], { duration: 2600 });
-    animerGeste(armR, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(-22deg)', offset: .25 }, { transform: 'rotate(-22deg)', offset: .8 }, { transform: 'rotate(0deg)' }], { duration: 2600 });
+    const { armL, armR } = elementsGeste();
+    animerGeste(document.getElementById('alfred-posture'), [{ transform: 'none' }, { transform: autour('corps', 'translateY(2px) scale(.99)'), offset: .08 }, { transform: autour('corps', 'scale(1.035) translateY(-4px)'), offset: .3 }, { transform: autour('corps', 'scale(1.03) translateY(-3px)'), offset: .8 }, { transform: 'none' }], { duration: 2600 });
+    animerGeste(armL, imagesBras(22), { duration: 2600, delay: 150 });
+    animerGeste(armR, imagesBras(-22), { duration: 2600, delay: 270 });
+    setTimeout(() => definirPostureTete(-2, -5, 0.07), 220);
+    setTimeout(() => definirPostureTete(0, 0, 0.03), 2200);
   },
   // Hochement franc ("Exactement.", "Je suis né prêt.").
   hocher() {
-    const { head } = elementsGeste();
-    animerGeste(head, [{ transform: 'translateY(0)' }, { transform: 'translateY(7px) rotate(1deg)', offset: .25 }, { transform: 'translateY(-1px)', offset: .5 }, { transform: 'translateY(6px)', offset: .75 }, { transform: 'translateY(0)' }], { duration: 1100 });
+    hochVel += 7; setTimeout(() => { hochVel += 6; }, 420);
   },
   // Réfléchir : tête penchée, regard en l'air, bras droit à demi levé.
   reflechir() {
-    const { armR, head } = elementsGeste();
-    animerGeste(armR, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(-48deg)', offset: .2 }, { transform: 'rotate(-44deg)', offset: .8 }, { transform: 'rotate(0deg)' }], { duration: 2400 });
-    animerGeste(head, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(8deg) translateY(-2px)', offset: .2 }, { transform: 'rotate(7deg) translateY(-2px)', offset: .8 }, { transform: 'rotate(0deg)' }], { duration: 2400 });
+    const { armR } = elementsGeste();
+    animerGeste(armR, imagesBras(-48), { duration: 2400 });
+    setTimeout(() => definirPostureTete(8, -2, 0.08), 150);
     definirExpression('rond', 220); eyeTargetX = 7; eyeTargetY = -6;
-    setTimeout(() => { if (curState === 'talk') { definirExpression(expressionBase, 220); eyeTargetX = 0; eyeTargetY = 0; } }, 2000);
+    setTimeout(() => { if (curState === 'talk') { definirExpression(expressionBase, 220); eyeTargetX = 0; eyeTargetY = 0; } definirPostureTete(0, 0, 0.03); }, 2000);
   },
   // Petit rebond joyeux (corps + bras) pour une exclamation.
   rebondir() {
-    const { body, armL, armR } = elementsGeste();
-    animerGeste(body, [{ transform: 'translateY(0)' }, { transform: 'translateY(-9px)', offset: .35 }, { transform: 'translateY(0)' }], { duration: 520, easing: 'cubic-bezier(.3,1.5,.5,1)' });
-    animerGeste(armL, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(28deg)', offset: .35 }, { transform: 'rotate(0deg)' }], { duration: 560 });
-    animerGeste(armR, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(-28deg)', offset: .35 }, { transform: 'rotate(0deg)' }], { duration: 560 });
+    const { armL, armR } = elementsGeste();
+    animerGeste(document.getElementById('alfred-posture'), [{ transform: 'none' }, { transform: autour('corps', 'translateY(3px) scale(.985)'), offset: .15 }, { transform: autour('corps', 'translateY(-9px)'), offset: .5 }, { transform: autour('corps', 'translateY(1px)'), offset: .85 }, { transform: 'none' }], { duration: 640 });
+    animerGeste(armL, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(-5deg)', offset: .15 }, { transform: 'rotate(28deg)', offset: .5 }, { transform: 'rotate(-3deg)', offset: .88 }, { transform: 'rotate(0deg)' }], { duration: 680, delay: 60 });
+    animerGeste(armR, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(5deg)', offset: .15 }, { transform: 'rotate(-28deg)', offset: .5 }, { transform: 'rotate(3deg)', offset: .88 }, { transform: 'rotate(0deg)' }], { duration: 680, delay: 160 });
+    hochVel += 3;
   },
   // Légère inclinaison de tête (changement de phrase), sens alterné.
   pencher(sens) {
-    const { head } = elementsGeste();
-    const d = (sens || 1) * 4;
-    animerGeste(head, [{ transform: 'rotate(0deg)' }, { transform: `rotate(${d}deg)`, offset: .3 }, { transform: `rotate(${d * .6}deg)`, offset: .7 }, { transform: 'rotate(0deg)' }], { duration: 900 });
+    tangage += (sens || 1) * 4;
   },
 };
 function jouerGeste(nom, arg) {
@@ -2218,6 +2245,240 @@ function visemeCourant() {
   return { forme, gain: 1 };
 }
 
+// ── Compositeur de tête ──────────────────────────────────────────────
+// Une seule fonction écrit le transform de la tête (à chaque image, depuis
+// startEyeLerp), en additionnant : la tête qui suit le regard avec retard,
+// la respiration, la posture de l'émotion (entrée progressive, sortie plus
+// lente), et les hochements — de vraies impulsions sur les attaques de
+// syllabes (voir impulsionTete), amorties comme un ressort, plus un léger
+// tangage continu. Avant, animateMouth écrivait la tête directement et
+// écrasait tout le reste.
+let teteLagX = 0, teteLagY = 0;
+let hochPos = 0, hochVel = 0, tangage = 0, tangageCur = 0;
+let postureTeteCible = { rot: 0, y: 0 }, postureTeteCur = { rot: 0, y: 0 }, postureTeteVitesse = 0.05;
+let derniereImageTete = 0;
+function composerTete() {
+  const head = document.getElementById('alfred-head');
+  if (!head || curState === 'sleep' || robotEteint) return;
+  const now = performance.now();
+  const dt = Math.min(0.05, (now - (derniereImageTete || now)) / 1000);
+  derniereImageTete = now;
+  teteLagX += (eyeCurX - teteLagX) * 0.06;
+  teteLagY += (eyeCurY - teteLagY) * 0.06;
+  // ressort amorti pour les hochements
+  const k = 180, c = 16;
+  hochVel += (-k * hochPos - c * hochVel) * dt;
+  hochPos += hochVel * dt;
+  // tangage : cible qui s'éteint lentement, suivie avec inertie (pas de saut)
+  tangage *= 0.975;
+  tangageCur += (tangage - tangageCur) * 0.12;
+  postureTeteCur.rot += (postureTeteCible.rot - postureTeteCur.rot) * postureTeteVitesse;
+  postureTeteCur.y   += (postureTeteCible.y   - postureTeteCur.y)   * postureTeteVitesse;
+  const respi = Math.sin(now / 4200 * Math.PI * 2 + 0.6) * (curState === 'idle' ? 1.8 : 0.8);
+  const tx = teteLagX * 0.5;
+  const ty = teteLagY * 0.4 + respi + hochPos * 14 + postureTeteCur.y;
+  const rot = teteLagX * 0.28 + hochPos * 4 + tangageCur + postureTeteCur.rot;
+  head.style.transform = `translate(${tx.toFixed(1)}px,${ty.toFixed(1)}px) rotate(${rot.toFixed(2)}deg)`;
+}
+// Appelé par animateMouth (alfred-voice.js) avec le volume réel : une
+// attaque nette (montée brusque au-dessus du niveau moyen) = une syllabe
+// appuyée = un hochement ; pas plus d'un toutes les 320 ms.
+let ampMoyenneLente = 0, dernierHochement = 0;
+function impulsionTete(amp) {
+  const now = performance.now();
+  if (amp - ampMoyenneLente > 0.16 && now - dernierHochement > 320) {
+    hochVel += 2.6 + Math.random() * 1.2;
+    dernierHochement = now;
+    tangage += (Math.random() - 0.5) * 2.4;
+  }
+  ampMoyenneLente += (amp - ampMoyenneLente) * 0.08;
+}
+function definirPostureTete(rot, y, vitesse) {
+  postureTeteCible = { rot: rot || 0, y: y || 0 };
+  postureTeteVitesse = vitesse || 0.05;
+}
+
+// ── Postures tenues (corps, bras) via Web Animations API ─────────────
+// Chaque clé ('corps', 'brasL', 'brasR') garde une animation "forwards" ;
+// tenir = aller vers la cible, relâcher = revenir à la base plus lentement
+// puis rendre la main à l'attribut transform d'origine.
+const posturesTenues = {};
+// Centre de rotation explicite : mesuré en test, Chrome IGNORE
+// transform-origin pour une animation WAAPI sur un groupe SVG qui porte
+// déjà un attribut transform (la rotation partait du coin (0,0) du viewBox
+// et les bras se retrouvaient n'importe où). On encadre donc chaque
+// transform par translate(centre) … translate(-centre).
+const CENTRES_POSTURE = { corps: [200, 420], brasL: [76, 244], brasR: [324, 244] };
+function autour(cle, t) {
+  if (!t || t === 'none') return 'none';
+  const [cx, cy] = CENTRES_POSTURE[cle];
+  return `translate(${cx}px,${cy}px) ${t} translate(${-cx}px,${-cy}px)`;
+}
+const BASES_POSTURE = { corps: 'none', brasL: autour('brasL', 'rotate(-16deg)'), brasR: autour('brasR', 'rotate(16deg)') };
+function elementPosture(cle) {
+  return document.getElementById(cle === 'corps' ? 'alfred-posture' : (cle === 'brasL' ? 'alfred-arm-l-base' : 'alfred-arm-r-base'));
+}
+// Point de départ d'une posture = la DERNIÈRE CIBLE demandée (chaîne), jamais
+// la matrice calculée par le navigateur : pour un groupe SVG dont le
+// transform d'origine est un attribut rotate(a cx cy), la matrice calculée
+// contient déjà le décalage du centre de rotation, et la ré-appliquer avec
+// un transform-origin CSS décalait les bras (bug vu en test : bras
+// "ouverts" n'importe comment après chaque relâchement).
+const posturesCourantes = {};
+function tenirPosture(cle, transformCible, dureeMs, delaiMs) {
+  const el = elementPosture(cle);
+  if (!el || typeof el.animate !== 'function') return;
+  const depart = posturesCourantes[cle] || BASES_POSTURE[cle];
+  if (posturesTenues[cle]) { try { posturesTenues[cle].cancel(); } catch (e) {} }
+  transformCible = autour(cle, transformCible);
+  posturesCourantes[cle] = transformCible;
+  posturesTenues[cle] = el.animate([{ transform: depart }, { transform: transformCible }], { duration: dureeMs || 500, delay: delaiMs || 0, fill: 'forwards', easing: 'cubic-bezier(.3,.9,.3,1)' });
+}
+function relacherPosture(cle, dureeMs, delaiMs) {
+  const el = elementPosture(cle);
+  if (!el || !posturesTenues[cle]) return;
+  const depart = posturesCourantes[cle] || BASES_POSTURE[cle];
+  try { posturesTenues[cle].cancel(); } catch (e) {}
+  posturesCourantes[cle] = BASES_POSTURE[cle];
+  const a = el.animate([{ transform: depart }, { transform: BASES_POSTURE[cle] }], { duration: dureeMs || 800, delay: delaiMs || 0, fill: 'forwards', easing: 'ease-in-out' });
+  posturesTenues[cle] = a;
+  a.finished.then(() => { if (posturesTenues[cle] === a) { try { a.cancel(); } catch (e) {} delete posturesTenues[cle]; } }).catch(() => {});
+}
+function relacherToutesPostures(dureeMs) {
+  // Sortie plus lente que l'entrée, et décalée d'un élément à l'autre.
+  definirPostureTete(0, 0, 0.03);
+  relacherPosture('brasL', dureeMs || 900, 0);
+  relacherPosture('brasR', dureeMs || 900, 120);
+  relacherPosture('corps', (dureeMs || 900) + 200, 220);
+}
+// Posture complète d'une émotion : yeux (déjà), tête, bras, corps — entrée
+// progressive et décalée (tête 0 ms, bras 150/270 ms, corps 250 ms).
+const POSTURES_PAR_EMOTION = {
+  amuse:      { tete: [4, 0],   bras: [8, -8],   corps: 'rotate(-1deg)' },
+  assure:     { tete: [-1, -3], bras: [-10, 10], corps: 'translateY(-2px) scale(1.02)' },
+  enjoue:     { tete: [0, -4],  bras: [14, -14], corps: 'translateY(-3px)' },
+  taquin:     { tete: [-6, 0],  bras: [4, -26],  corps: 'rotate(1.5deg)' },
+  satisfait:  { tete: [2, -2],  bras: [6, -6],   corps: 'none' },
+  chaleureux: { tete: [3, 0],   bras: [12, -12], corps: 'translateY(2px)' },
+  malicieux:  { tete: [-5, 1],  bras: [6, -18],  corps: 'rotate(2deg) translateY(2px)' },
+  fier:       { tete: [-2, -5], bras: [-18, 18], corps: 'translateY(-4px) scale(1.03)' },
+};
+function prendrePostureEmotion(emotion) {
+  const p = POSTURES_PAR_EMOTION[emotion];
+  if (!p) return;
+  definirPostureTete(p.tete[0], p.tete[1], 0.05);
+  tenirPosture('brasL', `rotate(${-16 + p.bras[0]}deg)`, 650, 150);
+  tenirPosture('brasR', `rotate(${16 + p.bras[1]}deg)`, 650, 270);
+  tenirPosture('corps', p.corps, 700, 250);
+}
+
+// Ajustement de posture au repos, toutes les 20 à 40 s : il change d'appui
+// (petit mouvement inverse d'abord, puis le vrai, puis retour amorti).
+function ajustementPosture() {
+  if (curState === 'idle' && !robotEteint) {
+    const sens = Math.random() < 0.5 ? -1 : 1;
+    const corps = document.getElementById('alfred-posture');
+    animerGeste(corps, [
+      { transform: 'none', offset: 0 }, { transform: autour('corps', `rotate(${-sens * 0.5}deg) translateX(${sens}px)`), offset: .12 },
+      { transform: autour('corps', `rotate(${sens * 1.4}deg) translateX(${-sens * 4}px)`), offset: .45 }, { transform: autour('corps', `rotate(${sens * 1.1}deg) translateX(${-sens * 3}px)`), offset: .8 },
+      { transform: autour('corps', `rotate(${-sens * 0.2}deg)`), offset: .94 }, { transform: 'none', offset: 1 },
+    ], { duration: 2400 });
+    if (!posturesTenues.brasL) animerGeste(document.getElementById('alfred-arm-l-base'), [{ transform: BASES_POSTURE.brasL }, { transform: autour('brasL', `rotate(${-16 + sens * 5}deg)`), offset: .45 }, { transform: BASES_POSTURE.brasL }], { duration: 2400, delay: 140 });
+    if (!posturesTenues.brasR) animerGeste(document.getElementById('alfred-arm-r-base'), [{ transform: BASES_POSTURE.brasR }, { transform: autour('brasR', `rotate(${16 + sens * 5}deg)`), offset: .45 }, { transform: BASES_POSTURE.brasR }], { duration: 2400, delay: 260 });
+    tangage += sens * 1.5;
+  }
+  setTimeout(ajustementPosture, 20000 + Math.random() * 20000);
+}
+setTimeout(ajustementPosture, 12000 + Math.random() * 10000);
+
+// ── Regarder vers un élément de l'appli (acte 2) ──────────────────────
+// Appelé par surlignerBrievement (alfred-dom.js) à chaque champ mis en
+// évidence : les yeux (et la tête, qui suit) se tournent vers l'endroit
+// surligné, puis reviennent vers la salle. Le balayage aléatoire du regard
+// est suspendu pendant ce temps.
+let regardDirigeJusqua = 0;
+function regarderVers(el, dureeMs) {
+  if (!el || robotEteint || curState === 'sleep') return;
+  const svg = document.getElementById('alfred-svg');
+  if (!svg) return;
+  const r = el.getBoundingClientRect ? el.getBoundingClientRect() : null;
+  const s = svg.getBoundingClientRect();
+  if (!r || !s.width) return;
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  const dx = cx - (s.left + s.width / 2), dy = cy - (s.top + s.height * 0.25);
+  eyeTargetX = Math.max(-12, Math.min(12, dx / 40));
+  eyeTargetY = Math.max(-6,  Math.min(6,  dy / 60));
+  const duree = dureeMs || 1600;
+  regardDirigeJusqua = performance.now() + duree;
+  tangage += Math.sign(dx) * 0.8;
+  setTimeout(() => { if (performance.now() >= regardDirigeJusqua - 20) { eyeTargetX = 0; eyeTargetY = 0; } }, duree);
+}
+
+// ── Réveil ────────────────────────────────────────────────────────────
+// Le robot est "éteint" quand on entre en scène pour l'acte 1 (écran noir,
+// paupières closes, tête tombée) et se réveille sur la première réplique :
+// l'écran clignote et s'allume, les yeux s'ouvrent grand puis clignent,
+// il s'étire (bras qui s'ouvrent lentement, torse qui se redresse), et
+// regarde la salle. Version rapide (0,9 s) si on saute directement à une
+// autre réplique de l'acte 1.
+let robotEteint = false;
+function eteindreRobot() {
+  robotEteint = true;
+  const nuit = document.getElementById('alfred-visiere-nuit');
+  const head = document.getElementById('alfred-head');
+  const mouth = document.getElementById('alfred-mouth');
+  if (nuit) nuit.setAttribute('opacity', '0.9');
+  definirExpression('ferme', 300, { base: true });
+  if (mouth && typeof ALFRED_BOUCHE_DORMIR_D !== 'undefined') mouth.setAttribute('d', ALFRED_BOUCHE_DORMIR_D);
+  if (head) { head.style.transition = 'transform .6s ease'; head.style.transform = 'rotate(6deg) translateY(7px)'; }
+  tenirPosture('brasL', 'rotate(-8deg)', 600, 0);
+  tenirPosture('brasR', 'rotate(8deg)', 600, 100);
+  tenirPosture('corps', 'translateY(6px) scale(.985)', 700, 0);
+}
+async function reveil(rapide) {
+  if (!robotEteint) return;
+  const attendreMs = (ms) => new Promise(r => setTimeout(r, ms));
+  const nuit = document.getElementById('alfred-visiere-nuit');
+  const head = document.getElementById('alfred-head');
+  const mouth = document.getElementById('alfred-mouth');
+  if (rapide) {
+    if (nuit) nuit.setAttribute('opacity', '0');
+    robotEteint = false;
+    if (head) { head.style.transition = 'transform .6s ease'; head.style.transform = ''; setTimeout(() => { head.style.transition = ''; }, 650); }
+    definirExpression('normal', 400, { base: true });
+    if (mouth && typeof ALFRED_BOUCHE_SOURIRE_D !== 'undefined') mouth.setAttribute('d', ALFRED_BOUCHE_SOURIRE_D);
+    relacherToutesPostures(700);
+    await attendreMs(700);
+    return;
+  }
+  // 1. l'écran s'allume en clignotant
+  if (nuit) {
+    nuit.style.transition = 'opacity .12s ease';
+    for (const o of ['0.35', '0.85', '0.2', '0.7', '0']) { nuit.setAttribute('opacity', o); await attendreMs(130); }
+    nuit.style.transition = 'opacity .9s ease';
+  }
+  // 2. les yeux s'ouvrent grand, puis clignent, puis se posent
+  definirExpression('grand', 380, { base: true });
+  if (head) { head.style.transition = 'transform .7s cubic-bezier(.2,1.2,.4,1)'; head.style.transform = 'rotate(-3deg) translateY(-4px)'; }
+  await attendreMs(450);
+  definirExpression('ferme', 70); await attendreMs(110); definirExpression('grand', 120); await attendreMs(320);
+  definirExpression('ferme', 70); await attendreMs(110); definirExpression('normal', 260, { base: true });
+  if (mouth && typeof ALFRED_BOUCHE_SOURIRE_D !== 'undefined') mouth.setAttribute('d', ALFRED_BOUCHE_SOURIRE_D);
+  // 3. il s'étire : bras qui s'ouvrent lentement (décalés), torse redressé
+  tenirPosture('corps', 'translateY(-5px) scale(1.035)', 900, 0);
+  tenirPosture('brasL', 'rotate(46deg)', 900, 120);
+  tenirPosture('brasR', 'rotate(-46deg)', 900, 260);
+  await attendreMs(1150);
+  robotEteint = false;
+  if (head) { head.style.transform = ''; setTimeout(() => { head.style.transition = ''; }, 700); }
+  relacherToutesPostures(800);
+  // 4. il regarde la salle : à gauche, à droite, devant
+  eyeTargetX = -9; eyeTargetY = -2; regardDirigeJusqua = performance.now() + 1500;
+  await attendreMs(520);
+  eyeTargetX = 9; await attendreMs(520);
+  eyeTargetX = 0; eyeTargetY = 0; await attendreMs(300);
+}
+
 // ── Rythme du texte ──────────────────────────────────────────────────
 let acteurTimers = [];
 let acteurGeneration = 0;
@@ -2269,13 +2530,28 @@ function demarrerJeuDActeur(opts) {
   acteurDureeMs = dureeMs;
   acteurRetardMs = (typeof DELAI_AUDIO_PERCEPTIBLE_MS !== 'undefined') ? DELAI_AUDIO_PERCEPTIBLE_MS : 300;
 
-  // Expression d'entrée puis de base.
+  // Expression d'entrée puis de base — yeux tout de suite, posture (tête,
+  // bras, corps) 150 ms après : jamais deux mouvements pile en même temps.
   expressionBase = emo.base;
   definirExpression(emo.entree, 240);
   if (emo.entree !== emo.base) programmerActeur(() => { if (vivant()) definirExpression(emo.base, 260); }, emo.entreeMs || 1200);
+  if (opts && opts.emotion && POSTURES_PAR_EMOTION[opts.emotion]) programmerActeur(() => { if (vivant()) prendrePostureEmotion(opts.emotion); }, 150);
 
-  // Geste de la réplique (facultatif), un peu après le début de la voix.
-  if (opts && opts.geste) programmerActeur(() => { if (vivant()) jouerGeste(opts.geste); }, 250);
+  // Geste de la réplique (facultatif) : soit un nom ('stop'), joué un peu
+  // après le début de la voix ; soit { nom, mot } — le geste démarre 200 ms
+  // AVANT le mot qu'il souligne (l'anticipation précède la parole).
+  if (opts && opts.geste) {
+    const g = (typeof opts.geste === 'string') ? { nom: opts.geste } : opts.geste;
+    let quand = 250;
+    if (g.mot) {
+      const motsN = String((opts && opts.texteMots) || texte).trim().split(/\s+/).map(m => m.toLowerCase().replace(/^[«"'‘“(]+|[»"'’”),.;:!?]+$/g, ''));
+      const cible = String(g.mot).toLowerCase();
+      const idx = motsN.findIndex(m => m === cible || m.startsWith(cible));
+      if (idx >= 0) quand = Math.max(0, idx * (dureeMs / Math.max(1, motsN.length)) * 0.93 - 200);
+      else console.warn('[Alfred UI] geste : mot introuvable dans la réplique —', g.mot);
+    }
+    programmerActeur(() => { if (vivant()) jouerGeste(g.nom); }, quand);
+  }
   // Hologrammes sur les mots-clés (mode scène seulement).
   if (opts && opts.hologrammes) programmerHologrammes(opts.texteMots || texte, dureeMs, opts.hologrammes);
 
@@ -2295,11 +2571,15 @@ function demarrerJeuDActeur(opts) {
       programmerActeur(() => { if (!vivant()) return; cligner(); jouerGeste('pencher', sens); eyeTargetX = (Math.random() - .5) * 10; eyeTargetY = (Math.random() - .5) * 4; }, debut - 120);
     }
     if (finPhrase === '?' && longueur > 900) {
-      // Question : yeux ronds qui montent, tête un peu penchée.
+      // Question : yeux ronds qui montent, tête un peu penchée, et le corps
+      // se penche vers le public (tenu le temps de la question).
       programmerActeur(() => { if (!vivant()) return; definirExpression('rond', 220); eyeTargetX = 6; eyeTargetY = -6; }, debut + Math.min(300, longueur * .15));
+      programmerActeur(() => { if (!vivant()) return; tenirPosture('corps', 'translateY(5px) scale(1.025)', 600, 0); }, debut + Math.min(300, longueur * .15) + 180);
       programmerActeur(() => { if (!vivant()) return; definirExpression(expressionBase, 260); eyeTargetX = 0; eyeTargetY = 0; }, debut + longueur - 150);
+      // Il se redresse sur la phrase suivante (affirmation) — plus lentement.
+      programmerActeur(() => { if (!vivant()) return; const p = POSTURES_PAR_EMOTION[opts && opts.emotion]; tenirPosture('corps', p ? p.corps : 'none', 900, 0); }, debut + longueur + 150);
     } else if (finPhrase === '!' && longueur > 700) {
-      // Exclamation : gros yeux très brefs + petit rebond sur la fin.
+      // Exclamation : gros yeux très brefs, redressement net + petit rebond.
       programmerActeur(() => { if (!vivant()) return; definirExpression('grand', 160); }, debut + longueur * .55);
       programmerActeur(() => { if (!vivant()) return; definirExpression(expressionBase, 220); jouerGeste('rebondir'); }, debut + longueur * .55 + 480);
     } else if (suspension && longueur > 1500) {
@@ -2323,6 +2603,8 @@ function arreterJeuDActeur() {
   acteurTimers.splice(0).forEach(clearTimeout);
   annulerGestes();
   effacerHologrammes();
+  if (robotEteint) return; // éteint : on garde paupières closes et posture affaissée
+  relacherToutesPostures(900);
   expressionBase = 'normal';
   if (etatYeux.l.forme !== 'normal' || etatYeux.r.forme !== 'normal') definirExpression('normal', 260);
 }
@@ -2595,6 +2877,8 @@ async function entrerScene(options = {}) {
     await new Promise(r => setTimeout(r, 450));
   }
   scene.classList.add('actif');
+  // Acte 1 : le robot arrive "éteint" (voir eteindreRobot / reveil).
+  if (!options.depuisApp && typeof eteindreRobot === 'function' && curState !== 'talk') eteindreRobot();
   const promesseAvatar = deplacerAvatarAnime(centre, `scale(${echelleScene().toFixed(3)})`, 900);
   if (left) left.classList.remove('visible');
   await promesseAvatar;
@@ -2677,11 +2961,15 @@ async function quitterScene(options = {}) {
 // Le passage Acte 1 → 2 avec la mise en scène complète se fait lui sur
 // l'action de la réplique "Montrer" (voir gesteMontrerEtOuvrirSite) — ici,
 // pour l'Acte 2, on ne fait qu'un repli rapide si la scène est encore là.
-function assurerModeScene(acte) {
+function assurerModeScene(acte, label) {
   transitionSceneEnCours = transitionSceneEnCours.then(async () => {
     if (acte === 1 && !modeSceneActif) await entrerScene({ depuisApp: false });
     else if (acte === 2 && modeSceneActif) await quitterScene({ chargement: false });
     else if (acte === 3 && !modeSceneActif) await entrerScene({ depuisApp: true });
+    // Réveil : complet sur la toute première réplique, rapide si on saute
+    // directement ailleurs dans l'acte 1.
+    if (robotEteint && acte === 1) await reveil(label !== 'Ouverture');
+    else if (robotEteint) await reveil(true);
   }).catch(e => console.warn('[Alfred UI] Transition de scène échouée :', e));
   return transitionSceneEnCours;
 }

@@ -1024,6 +1024,9 @@ function surlignerBrievement(el, dureeMs = 1500) {
   el.classList.remove('alfred-surbrillance');
   void el.offsetWidth;
   el.classList.add('alfred-surbrillance');
+  // Alfred regarde ce qu'il montre (yeux + tête vers le champ), voir
+  // regarderVers dans alfred-ui.js.
+  if (typeof regarderVers === 'function') regarderVers(el, Math.min(2200, dureeMs + 400));
   clearTimeout(el._alfredSurbrillanceTimer);
   el._alfredSurbrillanceTimer = setTimeout(() => el.classList.remove('alfred-surbrillance'), dureeMs);
 }
