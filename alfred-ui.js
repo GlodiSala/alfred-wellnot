@@ -22,8 +22,25 @@ let rafEyes    = null;
 const ALFRED_BOUCHE_CX = 200;
 const ALFRED_BOUCHE_CY = 138;
 const ALFRED_BOUCHE_RX = 14;
-const ALFRED_BOUCHE_SOURIRE_D = 'M186,135 Q200,145 214,135';
-const ALFRED_BOUCHE_DORMIR_D  = 'M190,139 Q200,140 210,139';
+// Formes de bouche (mêmes 12 points que FORMES_OEIL, voir cheminOeil), en
+// coordonnées locales autour de (ALFRED_BOUCHE_CX, ALFRED_BOUCHE_CY) :
+//  repos  = sourire fin ; o = "o" rond ; ah = grande ouverte ; i = large et
+//  plate ("i", sifflantes). animateMouth (alfred-voice.js) mélange ces
+//  quatre formes selon le volume (ouverture) ET la brillance du son
+//  (largeur : les aigus/sifflantes étirent la bouche, les voyelles graves
+//  l'arrondissent) — remplace l'ellipse qui ne faisait que grandir.
+const FORMES_BOUCHE = {
+  repos:  [-14,-4, -9,0, -5,2.5, 0,3, 5,2.5, 9,0, 14,-4, 9,1, 5,5, 0,6.5, -5,5, -9,1],
+  o:      [-10,2, -10,-3.5, -5.5,-8, 0,-8, 5.5,-8, 10,-3.5, 10,2, 10,7.5, 5.5,12, 0,12, -5.5,12, -10,7.5],
+  ah:     [-19,3, -19,-4.4, -10.5,-11, 0,-11, 10.5,-11, 19,-4.4, 19,3, 19,10.4, 10.5,17, 0,17, -10.5,17, -19,10.4],
+  i:      [-18,2, -18,-0.2, -10,-2, 0,-2, 10,-2, 18,-0.2, 18,2, 18,4.2, 10,6, 0,6, -10,6, -18,4.2],
+  dormir: [-10,1, -6,1, -3,1, 0,1, 3,1, 6,1, 10,1, 6,2.5, 3,2.5, 0,2.5, -3,2.5, -6,2.5],
+};
+function cheminBouche(points) {
+  return cheminOeil(points.map((v, i) => v + (i % 2 === 0 ? ALFRED_BOUCHE_CX : ALFRED_BOUCHE_CY)));
+}
+const ALFRED_BOUCHE_SOURIRE_D = cheminBouche(FORMES_BOUCHE.repos);
+const ALFRED_BOUCHE_DORMIR_D  = cheminBouche(FORMES_BOUCHE.dormir);
 
 const ALFRED_SVG = `
 <div id="alfred-avatar-outer" style="position:relative;width:220px;height:250px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -125,7 +142,7 @@ const ALFRED_SVG = `
                + une pupille (visible seulement dans les formes rondes) -->
           <g id="alfred-eye-l" style="transform-origin:142px 104px;">
             <g transform="translate(142,104)">
-              <path id="alfred-eye-l-cercle" d="M-25,0 C-25,-13.8 -13.8,-25 0,-25 C13.8,-25 25,-13.8 25,0 C25,0 16,0 0,0 C-16,0 -25,0 -25,0 Z" fill="url(#alfred-oeil)" stroke="#1ee6d6" stroke-width="3" stroke-linejoin="round"/>
+              <path id="alfred-eye-l-cercle" d="M-25,0 C-25,-13.8 -13.8,-25 0,-25 C13.8,-25 25,-13.8 25,0 C25,0 16,0 0,0 C-16,0 -25,0 -25,0 Z" fill="url(#alfred-oeil)" stroke="#1ee6d6" stroke-width="3" stroke-linejoin="round" style="filter:drop-shadow(0 0 4px rgba(30,230,214,.7));"/>
               <g id="alfred-pupille-l" style="opacity:0;transition:opacity .18s;">
                 <circle cx="0" cy="-9" r="8.5" fill="#0b3f4a"/>
                 <circle cx="3" cy="-12" r="2.8" fill="#ffffff"/>
@@ -134,7 +151,7 @@ const ALFRED_SVG = `
           </g>
           <g id="alfred-eye-r" style="transform-origin:258px 104px;">
             <g transform="translate(258,104)">
-              <path id="alfred-eye-r-cercle" d="M-25,0 C-25,-13.8 -13.8,-25 0,-25 C13.8,-25 25,-13.8 25,0 C25,0 16,0 0,0 C-16,0 -25,0 -25,0 Z" fill="url(#alfred-oeil)" stroke="#1ee6d6" stroke-width="3" stroke-linejoin="round"/>
+              <path id="alfred-eye-r-cercle" d="M-25,0 C-25,-13.8 -13.8,-25 0,-25 C13.8,-25 25,-13.8 25,0 C25,0 16,0 0,0 C-16,0 -25,0 -25,0 Z" fill="url(#alfred-oeil)" stroke="#1ee6d6" stroke-width="3" stroke-linejoin="round" style="filter:drop-shadow(0 0 4px rgba(30,230,214,.7));"/>
               <g id="alfred-pupille-r" style="opacity:0;transition:opacity .18s;">
                 <circle cx="0" cy="-9" r="8.5" fill="#0b3f4a"/>
                 <circle cx="3" cy="-12" r="2.8" fill="#ffffff"/>
@@ -144,7 +161,7 @@ const ALFRED_SVG = `
           <g id="alfred-lids" style="display:none;"></g>
 
           <!-- bouche -->
-          <path id="alfred-mouth" d="M186,135 Q200,145 214,135" stroke="#1ee6d6" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+          <path id="alfred-mouth" d="${ALFRED_BOUCHE_SOURIRE_D}" fill="#1ee6d6" stroke="#1ee6d6" stroke-width="3" stroke-linejoin="round" style="filter:drop-shadow(0 0 4px rgba(30,230,214,.7));"/>
           <ellipse id="alfred-mouth-talk" cx="200" cy="138" rx="14" ry="0" fill="#1ee6d6" style="display:none;"/>
         </g>
       </g>
@@ -839,6 +856,20 @@ function ouvrirPanneauVoix() {
     zoneCandidats.appendChild(ligne);
   });
   panel.appendChild(zoneCandidats);
+
+  // Expressivité ElevenLabs v3 (voir expressiviteElevenLabs, alfred-voice.js).
+  panel.appendChild(champLabel('Expressivité ElevenLabs v3 (NL)'));
+  const selExpr = document.createElement('select');
+  selExpr.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:12px;margin-bottom:14px;';
+  [['naturel', 'Naturel (stabilité 0.5) — régulier'], ['creatif', 'Créatif (stabilité 0) — le plus expressif']].forEach(([val, txt]) => {
+    const o = document.createElement('option'); o.value = val; o.textContent = txt; selExpr.appendChild(o);
+  });
+  selExpr.value = (typeof expressiviteElevenLabs === 'function') ? expressiviteElevenLabs() : 'naturel';
+  selExpr.onchange = () => {
+    localStorage.setItem(ALFRED_ELEVENLABS_EXPRESSIVITE_KEY, selExpr.value);
+    console.log('[Alfred Voice] Expressivité ElevenLabs v3 :', selExpr.value, '— l\'audio NL sera régénéré (relancer le préchargement).');
+  };
+  panel.appendChild(selExpr);
 
   const boutons = document.createElement('div');
   boutons.style.cssText = 'display:flex;gap:8px;';
@@ -2095,6 +2126,25 @@ function creerScene() {
       border:1.5px solid rgba(20,176,189,.18); animation:alfred-anneau-tourne 40s linear infinite; }
     #alfred-scene-anneau::before { content:''; position:absolute; top:-5px; left:50%; width:9px; height:9px; margin-left:-4px; border-radius:50%; background:#14b0bd; box-shadow:0 0 12px rgba(20,176,189,.8); }
     .alfred-scene-part { position:absolute; border-radius:50%; background:#14b0bd; filter:blur(1px); animation:alfred-part-derive ease-in-out infinite; }
+    .alfred-scene-nappe { position:absolute; border-radius:50%; filter:blur(60px); opacity:.55; animation:alfred-nappe-derive ease-in-out infinite alternate; pointer-events:none; }
+    .alfred-scene-picto { position:absolute; width:54px; height:54px; opacity:0; color:#0a6b7a; animation:alfred-picto-flotte linear infinite; pointer-events:none; }
+    .alfred-scene-picto svg { width:100%; height:100%; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+    #alfred-scene-ondes { position:absolute; left:50%; top:50%; width:0; height:0; pointer-events:none; }
+    .alfred-scene-onde { position:absolute; left:0; top:0; width:60vmin; height:60vmin; margin:-30vmin 0 0 -30vmin; border-radius:50%; border:2px solid rgba(20,176,189,.45);
+      transform:translateY(-4%) scale(.55); opacity:0; animation:alfred-onde-voix 1.6s ease-out forwards; }
+    #alfred-scene-console { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) scale(.9); width:min(420px, 70vw); padding:18px 22px 16px; box-sizing:border-box;
+      background:rgba(255,255,255,.72); border:1.5px solid rgba(20,176,189,.45); border-radius:14px; box-shadow:0 20px 60px rgba(5,69,97,.18), 0 0 0 6px rgba(20,176,189,.06);
+      backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); opacity:0; visibility:hidden; transition:opacity .35s ease, transform .45s cubic-bezier(.2,1.2,.4,1), visibility 0s linear .35s; font-family:-apple-system,'Segoe UI',sans-serif; }
+    #alfred-scene-console.actif { opacity:1; visibility:visible; transform:translate(-50%,-50%) scale(1); transition:opacity .35s ease, transform .45s cubic-bezier(.2,1.2,.4,1); }
+    #alfred-scene-console-titre { display:flex; align-items:center; gap:8px; font-size:11px; font-weight:700; letter-spacing:2.5px; color:rgba(5,69,97,.6); text-transform:uppercase; margin-bottom:12px; }
+    #alfred-scene-console-titre::before { content:''; width:8px; height:8px; border-radius:50%; background:#14b0bd; box-shadow:0 0 10px rgba(20,176,189,.9); animation:alfred-halo-pulse 1.2s ease-in-out infinite; }
+    .alfred-scene-ligne { display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:14px; color:#054561; padding:5px 0; opacity:0; transform:translateX(-8px); transition:opacity .3s ease, transform .3s ease; }
+    .alfred-scene-ligne.visible { opacity:1; transform:none; }
+    .alfred-scene-ligne-etat { font-size:12px; color:rgba(5,69,97,.5); min-width:18px; text-align:right; }
+    .alfred-scene-ligne.ok .alfred-scene-ligne-etat { color:#14b0bd; font-weight:700; }
+    .alfred-scene-ligne.ok .alfred-scene-ligne-etat::after { content:'✓'; }
+    .alfred-scene-ligne:not(.ok) .alfred-scene-ligne-etat::after { content:'…'; }
+    #alfred-scene-console .alfred-scene-barre { margin-top:12px; }
     #alfred-scene-marque { position:absolute; top:30px; left:50%; transform:translateX(-50%); font-size:11px; font-weight:700; letter-spacing:4px; color:rgba(5,69,97,.45); }
     #alfred-scene-centre { position:absolute; left:50%; top:50%; transform:translate(-50%,-52%); }
     #alfred-scene-chargement { position:absolute; left:50%; bottom:14vh; transform:translateX(-50%); width:min(360px, 60vw); text-align:center; opacity:0; transition:opacity .35s ease; }
@@ -2109,6 +2159,9 @@ function creerScene() {
     @keyframes alfred-halo-pulse { 0%,100%{transform:translate(-50%,-54%) scale(1); opacity:.9;} 50%{transform:translate(-50%,-54%) scale(1.08); opacity:1;} }
     @keyframes alfred-anneau-tourne { to { transform:translate(-50%,-54%) rotate(360deg); } }
     @keyframes alfred-part-derive { 0%,100%{transform:translate(0,0);} 33%{transform:translate(14px,-26px);} 66%{transform:translate(-10px,-48px);} }
+    @keyframes alfred-nappe-derive { 0%{transform:translate(0,0) scale(1);} 100%{transform:translate(8vw,-6vh) scale(1.15);} }
+    @keyframes alfred-picto-flotte { 0%{transform:translateY(0) rotate(-4deg); opacity:0;} 12%{opacity:.16;} 88%{opacity:.16;} 100%{transform:translateY(-38vh) rotate(5deg); opacity:0;} }
+    @keyframes alfred-onde-voix { 0%{transform:translateY(-4%) scale(.55); opacity:.7;} 100%{transform:translateY(-4%) scale(1.25); opacity:0;} }
   `;
   document.head.appendChild(style);
 
@@ -2116,16 +2169,55 @@ function creerScene() {
   scene.id = 'alfred-scene';
   scene.innerHTML = `
     <div id="alfred-scene-fond"></div>
+    <div id="alfred-scene-nappes"></div>
+    <div id="alfred-scene-pictos"></div>
     <div id="alfred-scene-particules"></div>
     <div id="alfred-scene-halo"></div>
+    <div id="alfred-scene-ondes"></div>
     <div id="alfred-scene-anneau"></div>
     <div id="alfred-scene-marque">ALFRED · WELLNOT</div>
     <div id="alfred-scene-centre"></div>
     <div id="alfred-scene-chargement">
       <div class="alfred-scene-barre"><div class="alfred-scene-barre-int"></div></div>
       <div id="alfred-scene-chargement-txt"></div>
+    </div>
+    <div id="alfred-scene-console">
+      <div id="alfred-scene-console-titre"></div>
+      <div id="alfred-scene-console-lignes"></div>
+      <div class="alfred-scene-barre"><div class="alfred-scene-barre-int"></div></div>
     </div>`;
   document.body.appendChild(scene);
+
+  // Nappes de couleur : deux grandes taches floues (teal / bleu) qui dérivent
+  // très lentement — le fond "respire" au lieu d'être un dégradé fixe.
+  const nappes = scene.querySelector('#alfred-scene-nappes');
+  [['18%', '20%', '46vmin', 'rgba(20,176,189,.22)', 38], ['70%', '65%', '52vmin', 'rgba(5,69,97,.13)', 46], ['60%', '12%', '30vmin', 'rgba(95,227,234,.20)', 30]].forEach(([l, t, s, c, d], i) => {
+    const n = document.createElement('div');
+    n.className = 'alfred-scene-nappe';
+    n.style.cssText = `left:${l}; top:${t}; width:${s}; height:${s}; background:${c}; animation-duration:${d}s; animation-delay:-${i * 11}s;`;
+    nappes.appendChild(n);
+  });
+
+  // Pictos du métier (acte, maison, clé, sceau, signature, dossier) qui
+  // montent lentement en filigrane derrière le robot — un décor qui parle
+  // de notariat sans un mot, très discret (opacité 16 %).
+  const PICTOS = [
+    '<svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M9.5 12h5M9.5 15h5M9.5 18h3"/></svg>',
+    '<svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>',
+    '<svg viewBox="0 0 24 24"><circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v3M15 12v2"/></svg>',
+    '<svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="5"/><path d="M12 6.5v5M9.5 9h5"/><path d="M9 13.5L7 21l5-2 5 2-2-7.5"/></svg>',
+    '<svg viewBox="0 0 24 24"><path d="M3 17c3-6 5-6 6-3s2 5 4 0 3-6 8-1"/><path d="M3 21h18"/></svg>',
+    '<svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v11H3z"/><path d="M3 11h18"/></svg>',
+  ];
+  const pictos = scene.querySelector('#alfred-scene-pictos');
+  for (let i = 0; i < 10; i++) {
+    const p = document.createElement('div');
+    p.className = 'alfred-scene-picto';
+    p.innerHTML = PICTOS[i % PICTOS.length];
+    const gauche = i % 2 === 0 ? 4 + Math.random() * 22 : 74 + Math.random() * 22; // jamais devant le robot
+    p.style.cssText = `left:${gauche.toFixed(0)}%; top:${(60 + Math.random() * 45).toFixed(0)}%; animation-duration:${(26 + Math.random() * 20).toFixed(0)}s; animation-delay:-${(Math.random() * 30).toFixed(0)}s; transform:scale(${(.7 + Math.random() * .7).toFixed(2)});`;
+    pictos.appendChild(p);
+  }
 
   // Particules : quelques points teal translucides qui dérivent lentement —
   // juste assez pour que le fond ne soit pas un aplat mort, pas un feu
@@ -2183,6 +2275,35 @@ async function deplacerAvatarAnime(nouveauParent, transformFinal, dureeMs, avant
 function texteChargementScene() {
   return (typeof currentLangue !== 'undefined' && currentLangue === 'nl') ? 'Interface wordt geladen' : "Chargement de l'interface";
 }
+// Séquence de connexion affichée quand Alfred "ouvre" l'interface (réplique
+// "Montrer") : ce n'est pas un navigateur qui s'ouvre, c'est Alfred qui se
+// connecte à ses sources (celles qu'il vient de citer dans "Competences")
+// puis allume l'interface Wellnot — chaque ligne se coche à son tour.
+function lignesChargementScene() {
+  const nl = (typeof currentLangue !== 'undefined' && currentLangue === 'nl');
+  return nl
+    ? { titre: 'Alfred verbindt', lignes: ['Verbinding met e-notariaat', 'Geoportaal en kadaster', 'Dossiers van het kantoor', 'Wellnot-interface'], fin: 'Interface klaar' }
+    : { titre: 'Alfred se connecte', lignes: ['Connexion à e-notariat', 'Géoportail et cadastre', "Dossiers de l'étude", 'Interface Wellnot'], fin: 'Interface prête' };
+}
+
+// Onde de voix : un anneau qui s'élargit derrière le robot sur les temps
+// forts de la voix (appelé par animateMouth, alfred-voice.js), seulement en
+// mode scène — sur l'appli ça n'aurait aucun sens. Limité à un anneau
+// toutes les ~450 ms pour rester un halo qui pulse, pas des ronds dans l'eau.
+let derniereOndeVoix = 0;
+function emettreOndeVoix(amp) {
+  if (!modeSceneActif || amp < 0.42) return;
+  const now = performance.now();
+  if (now - derniereOndeVoix < 450) return;
+  derniereOndeVoix = now;
+  const zone = document.getElementById('alfred-scene-ondes');
+  if (!zone) return;
+  const o = document.createElement('span');
+  o.className = 'alfred-scene-onde';
+  o.style.borderColor = `rgba(20,176,189,${(0.25 + amp * 0.35).toFixed(2)})`;
+  zone.appendChild(o);
+  setTimeout(() => o.remove(), 1700);
+}
 
 // Entrée en scène. depuisApp = true (Acte 3) : l'appli "s'éteint" d'abord
 // (flou + fondu + léger rétrécissement), puis Alfred revient au centre.
@@ -2221,17 +2342,39 @@ async function quitterScene(options = {}) {
   const charg  = document.getElementById('alfred-scene-chargement');
   if (!scene) { modeSceneActif = false; return; }
 
-  if (options.chargement && charg) {
-    const barre = charg.querySelector('.alfred-scene-barre-int');
-    const txt   = document.getElementById('alfred-scene-chargement-txt');
-    if (txt) txt.textContent = texteChargementScene();
-    if (barre) { barre.style.transition = 'none'; barre.style.width = '0'; void barre.offsetWidth; barre.style.transition = ''; }
-    charg.classList.add('actif');
+  const console_ = document.getElementById('alfred-scene-console');
+  if (options.chargement && console_) {
+    // Console de connexion (voir lignesChargementScene) : le robot glisse un
+    // peu vers la gauche pour lui laisser la place, les lignes se cochent
+    // une à une pendant que la barre se remplit, puis "Interface prête".
+    const textes = lignesChargementScene();
+    const titre  = document.getElementById('alfred-scene-console-titre');
+    const zoneL  = document.getElementById('alfred-scene-console-lignes');
+    const barre  = console_.querySelector('.alfred-scene-barre-int');
+    const centre = document.getElementById('alfred-scene-centre');
+    if (titre) titre.textContent = textes.titre;
+    if (zoneL) zoneL.innerHTML = textes.lignes.map(l => `<div class="alfred-scene-ligne"><span>${l}</span><span class="alfred-scene-ligne-etat"></span></div>`).join('');
+    if (barre) { barre.style.transition = 'none'; barre.style.width = '0'; void barre.offsetWidth; barre.style.transition = 'width 2.4s cubic-bezier(.22,.61,.36,1)'; }
+    if (centre) { centre.style.transition = 'transform .6s cubic-bezier(.32,.72,0,1)'; centre.style.transform = 'translate(-50%,-52%) translateX(-24vw)'; }
+    console_.style.left = '62%';
+    console_.classList.add('actif');
     if (typeof setAlfredState === 'function' && curState !== 'talk') setAlfredState('think');
-    await new Promise(r => setTimeout(r, 80));
+    if (typeof definirExpression === 'function') { definirExpression('rond', 220); eyeTargetX = 8; eyeTargetY = 2; }
+    await new Promise(r => setTimeout(r, 120));
     if (barre) barre.style.width = '100%';
-    await new Promise(r => setTimeout(r, 1600));
-    charg.classList.remove('actif');
+    const lignes = zoneL ? Array.from(zoneL.children) : [];
+    for (const l of lignes) {
+      l.classList.add('visible');
+      await new Promise(r => setTimeout(r, 330));
+      l.classList.add('ok');
+      await new Promise(r => setTimeout(r, 240));
+    }
+    if (titre) titre.textContent = textes.fin;
+    if (typeof definirExpression === 'function') { definirExpression('joie', 220); eyeTargetX = 0; eyeTargetY = 0; }
+    await new Promise(r => setTimeout(r, 520));
+    console_.classList.remove('actif');
+    if (centre) { centre.style.transform = 'translate(-50%,-52%)'; setTimeout(() => { centre.style.transition = ''; }, 700); }
+    if (typeof definirExpression === 'function') definirExpression('normal', 200);
   }
 
   // Le site réapparaît (visible + animation de démarrage) et le panneau

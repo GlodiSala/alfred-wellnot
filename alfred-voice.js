@@ -426,6 +426,18 @@ async function genererAudioCloud(text, voix) {
 // émotion par réplique là où le script s'y prête.
 const ELEVENLABS_MODELE = 'eleven_v3';
 const ELEVENLABS_REGLAGES_VOIX = { stability: 0.5, similarityBoost: 0.75, style: 0.35 };
+// Expressivité v3 réglable depuis le panneau "Voix d'Alfred" (alfred-ui.js) :
+// 'naturel' = stability 0.5 (défaut), 'creatif' = 0 (le plus expressif, un
+// peu moins stable d'une génération à l'autre). Demandé le 06/09 ("la voix
+// est peut-être trop calme"). Fait partie de la clé de cache : changer le
+// réglage régénère l'audio NL (préchargement à relancer).
+const ALFRED_ELEVENLABS_EXPRESSIVITE_KEY = 'alfred_elevenlabs_expressivite';
+function expressiviteElevenLabs() {
+  return localStorage.getItem(ALFRED_ELEVENLABS_EXPRESSIVITE_KEY) === 'creatif' ? 'creatif' : 'naturel';
+}
+function reglagesElevenLabs() {
+  return { ...ELEVENLABS_REGLAGES_VOIX, stability: expressiviteElevenLabs() === 'creatif' ? 0 : 0.5 };
+}
 
 // Émotions de jeu par réplique (champ optionnel `emotion` sur une réplique
 // ou un segment, voir alfred-config.js) — demandé explicitement : "il
@@ -468,7 +480,7 @@ async function genererAudioElevenLabs(text, voiceId, emotion) {
   // la clé de cache : la même phrase dite amusée ou neutre = deux audios.
   const balise = baliseEmotionV3(emotion);
   const texteMoteur = balise ? `${balise} ${text}` : text;
-  const cle = cleTTS({ languageCode: 'nl-BE', name: 'elevenlabs-' + ELEVENLABS_MODELE + '-' + voiceId + '-v' + ELEVENLABS_REGLAGES_VERSION }, texteMoteur);
+  const cle = cleTTS({ languageCode: 'nl-BE', name: 'elevenlabs-' + ELEVENLABS_MODELE + '-' + voiceId + '-v' + ELEVENLABS_REGLAGES_VERSION + (expressiviteElevenLabs() === 'creatif' ? '-creatif' : '') }, texteMoteur);
 
   let audioContent = await lireCacheTTS(cle);
   if (audioContent) {
@@ -483,7 +495,7 @@ async function genererAudioElevenLabs(text, voiceId, emotion) {
       const res = await fetch(ALFRED_CONFIG.API_TTS_ELEVENLABS, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: texteMoteur, voiceId, modelId: ELEVENLABS_MODELE, ...ELEVENLABS_REGLAGES_VOIX }),
+        body: JSON.stringify({ text: texteMoteur, voiceId, modelId: ELEVENLABS_MODELE, ...reglagesElevenLabs() }),
       });
       const data = await res.json();
       if (data.error) throw new Error(`ElevenLabs: ${data.error}`);
@@ -641,33 +653,43 @@ async function prechargerScript(voixFr, voixNl, ton, onProgress) {
 }
 
 // ── Anime la bouche selon amplitude ──────────────────────
-function animateMouth(amp) {
+// État lissé de la bouche : ouverture (volume) et largeur (brillance du
+// son). Attaque rapide, relâchement plus lent — comme une vraie bouche, qui
+// s'ouvre d'un coup sur une syllabe et se referme plus doucement.
+let boucheOuverture = 0, boucheLargeur = 0.3;
+function animateMouth(amp, aigus) {
   // Suspendu pendant clinDoeil() (alfred-ui.js) : sinon ce callback, encore
   // déclenché par talkTick pendant que l'audio finit de jouer, réécrit la
   // bouche "qui parle" à chaque frame et annule aussitôt le sourire forcé
   // du clin d'œil.
   if (typeof clinDoeilActif !== 'undefined' && clinDoeilActif) return;
-  const mt = document.getElementById('alfred-mouth-talk');
   const ms = document.getElementById('alfred-mouth');
-  if (!mt || !ms) return;
-  ms.style.display = 'none';
-  mt.style.display = 'block';
-  // La largeur (rx) variait jamais — l'ellipse ne faisait que s'étirer en
-  // hauteur, toujours à la même largeur (20 fixé dans le markup). Une vraie
-  // bouche qui parle change aussi de largeur (un "o" est plus étroit qu'un
-  // "ah" mi-ouvert) : rx varie maintenant un peu à l'inverse de ry, toujours
-  // piloté par le volume réel de l'audio (voir talkTick dans speak()), pas
-  // du hasard — juste une forme de sortie moins pauvre qu'un simple ovale
-  // qui respire.
-  // Coordonnées du robot (voir ALFRED_BOUCHE_* dans alfred-ui.js) — repli
-  // sur les anciennes valeurs si ce fichier tourne seul.
-  const cx = (typeof ALFRED_BOUCHE_CX !== 'undefined') ? ALFRED_BOUCHE_CX : 189;
-  const cy = (typeof ALFRED_BOUCHE_CY !== 'undefined') ? ALFRED_BOUCHE_CY : 128;
-  const rx = (typeof ALFRED_BOUCHE_RX !== 'undefined') ? ALFRED_BOUCHE_RX : 20;
-  mt.setAttribute('cx', cx);
-  mt.setAttribute('ry', (amp * 11).toFixed(1));
-  mt.setAttribute('rx', (rx - amp * 3).toFixed(1));
-  mt.setAttribute('cy', (cy + amp * 3).toFixed(1));
+  if (!ms) return;
+  // Bouche = un tracé morphé entre 4 formes (FORMES_BOUCHE, alfred-ui.js) :
+  // l'ouverture suit le volume réel, la largeur suit la part d'aigus dans le
+  // spectre (voir talkTick dans speak()) — voyelle grave = "o"/"ah" rond,
+  // sifflante ou "i" = bouche étirée. Repli sur l'ancienne ellipse si les
+  // formes ne sont pas chargées (ce fichier tourne seul).
+  if (typeof FORMES_BOUCHE !== 'undefined' && typeof cheminBouche === 'function') {
+    const cibleOuv = amp < 0.07 ? 0 : Math.min(1, amp * 1.15);
+    const cibleLarg = (typeof aigus === 'number') ? Math.max(0, Math.min(1, aigus)) : 0.3;
+    boucheOuverture += (cibleOuv - boucheOuverture) * (cibleOuv > boucheOuverture ? 0.55 : 0.28);
+    boucheLargeur   += (cibleLarg - boucheLargeur) * 0.25;
+    const o = boucheOuverture, w = boucheLargeur;
+    const F = FORMES_BOUCHE;
+    const pts = F.repos.map((_, i) =>
+      (1 - o) * (1 - w) * F.repos[i] + (1 - o) * w * F.i[i] + o * (1 - w) * F.o[i] + o * w * F.ah[i]);
+    ms.setAttribute('d', cheminBouche(pts));
+  } else {
+    const mt = document.getElementById('alfred-mouth-talk');
+    if (mt) {
+      ms.style.display = 'none';
+      mt.style.display = 'block';
+      mt.setAttribute('ry', (amp * 11).toFixed(1));
+      mt.setAttribute('rx', (20 - amp * 3).toFixed(1));
+    }
+  }
+  if (typeof emettreOndeVoix === 'function') emettreOndeVoix(amp);
 
   // Hochements de tête pilotés par le volume (demandé : "beaucoup plus
   // bouger quand il parle") — lissés pour ne pas trembler à chaque frame :
@@ -687,13 +709,9 @@ let teteAmpLissee = 0;
 function resetMouth() {
   const mt = document.getElementById('alfred-mouth-talk');
   const ms = document.getElementById('alfred-mouth');
-  if (mt) {
-    mt.style.display = 'none';
-    mt.setAttribute('ry', '0');
-    mt.setAttribute('rx', (typeof ALFRED_BOUCHE_RX !== 'undefined') ? ALFRED_BOUCHE_RX : 20);
-    mt.setAttribute('cy', (typeof ALFRED_BOUCHE_CY !== 'undefined') ? ALFRED_BOUCHE_CY : 128);
-  }
-  if (ms) ms.style.display = 'block';
+  if (mt) { mt.style.display = 'none'; mt.setAttribute('ry', '0'); }
+  boucheOuverture = 0; boucheLargeur = 0.3;
+  if (ms) { ms.style.display = 'block'; if (typeof ALFRED_BOUCHE_SOURIRE_D !== 'undefined') ms.setAttribute('d', ALFRED_BOUCHE_SOURIRE_D); }
   const head = document.getElementById('alfred-head');
   if (head) { head.style.transition = 'transform .35s ease'; head.style.transform = ''; setTimeout(() => { head.style.transition = ''; }, 400); }
   teteAmpLissee = 0;
@@ -980,8 +998,17 @@ async function speak(text, langue, sousTitre, moteurForce, surbrillanceMots, tex
       if (curState !== 'talk') { clearInterval(talkTick); return; }
       analyser.getByteFrequencyData(buf);
       const amp = Math.min(buf.slice(0, 80).reduce((a, b) => a + b, 0) / 80 / 60, 1);
+      // Brillance : part des aigus (≈2,4–7 kHz, sifflantes et "i") face aux
+      // graves/médiums (≈170 Hz–1,4 kHz, voyelles rondes) — pilote la
+      // LARGEUR de la bouche (voir animateMouth), le volume son ouverture.
+      // fftSize 256 à 44,1 kHz : ~172 Hz par case.
+      let graves = 0, aigusSomme = 0;
+      for (let i = 1; i <= 8; i++) graves += buf[i];
+      for (let i = 14; i <= 40; i++) aigusSomme += buf[i];
+      graves /= 8; aigusSomme /= 27;
+      const aigus = (graves + aigusSomme) > 8 ? aigusSomme / (graves + aigusSomme) : 0.3;
       updateVolBar(amp);
-      animateMouth(amp);
+      animateMouth(amp, aigus * 1.6);
     }, 35);
 
     // audio.play() se résout dès que la lecture DÉMARRE, pas quand elle se
