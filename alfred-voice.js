@@ -911,7 +911,7 @@ let audioGeneration = 0;
 // sert de base au calcul des positions de mots, jamais sousTitre lui-même.
 // emotion (optionnel) : clé de EMOTIONS_VOIX — jeu de la voix pour cette
 // ligne (ElevenLabs v3 / Gemini), sans effet sur les sous-titres.
-async function speak(text, langue, sousTitre, moteurForce, surbrillanceMots, texteSurbrillance, emotion) {
+async function speak(text, langue, sousTitre, moteurForce, surbrillanceMots, texteSurbrillance, emotion, geste) {
   if (!text || text === '...') return;
   langue = langue || currentLangue || 'fr';
   const maGeneration = ++audioGeneration;
@@ -950,6 +950,16 @@ async function speak(text, langue, sousTitre, moteurForce, surbrillanceMots, tex
     if (surbrillanceMots && surbrillanceMots.length) {
       programmerSurbrillanceMots(texteSurbrillance || text, audio, surbrillanceMots, surbrillanceTimersRef);
     }
+
+    // Jeu d'acteur (alfred-ui.js) : expressions des yeux, gestes et temps
+    // forts calés sur les phrases — démarré au moment où l'audio joue
+    // vraiment, avec sa durée réelle (÷ vitesse de lecture, comme pour les
+    // sous-titres). Arrêté dans onpause/onended plus bas.
+    audio.addEventListener('playing', () => {
+      if (typeof demarrerJeuDActeur !== 'function' || maGeneration !== audioGeneration) return;
+      const dureeMs = (isFinite(audio.duration) && audio.duration > 0) ? audio.duration / (audio.playbackRate || 1) * 1000 : null;
+      demarrerJeuDActeur({ texte: sousTitre || text, dureeMs, emotion, geste });
+    }, { once: true });
 
     // Analyseur volume → bouche. Un seul AudioContext partagé, créé une
     // fois puis réutilisé (voir obtenirAudioContextPartage) : en recréer
@@ -997,7 +1007,7 @@ async function speak(text, langue, sousTitre, moteurForce, surbrillanceMots, tex
       // l'audio mesurée (l'estimation mot/durée n'est jamais parfaite) ; le
       // vider systématiquement à "ended" annulait ce tout dernier surlignage
       // avant même qu'il ait eu la chance de se déclencher.
-      audio.onpause = () => { surbrillanceTimersRef.ids.forEach(clearTimeout); resolve(); };
+      audio.onpause = () => { surbrillanceTimersRef.ids.forEach(clearTimeout); if (typeof arreterJeuDActeur === 'function') arreterJeuDActeur(); resolve(); };
       audio.onended = () => {
         clearInterval(phraseTimerRef.id);
         clearInterval(talkTick);

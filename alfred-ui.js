@@ -20,10 +20,10 @@ let rafEyes    = null;
 // animateMouth/resetMouth (alfred-voice.js) et setAlfredState/resetSleepTimer
 // ci-dessous, pour ne jamais recoder ces chiffres à plusieurs endroits.
 const ALFRED_BOUCHE_CX = 200;
-const ALFRED_BOUCHE_CY = 153;
+const ALFRED_BOUCHE_CY = 138;
 const ALFRED_BOUCHE_RX = 14;
-const ALFRED_BOUCHE_SOURIRE_D = 'M188,150 Q200,159 212,150';
-const ALFRED_BOUCHE_DORMIR_D  = 'M190,154 Q200,155 210,154';
+const ALFRED_BOUCHE_SOURIRE_D = 'M186,135 Q200,145 214,135';
+const ALFRED_BOUCHE_DORMIR_D  = 'M190,139 Q200,140 210,139';
 
 const ALFRED_SVG = `
 <div id="alfred-avatar-outer" style="position:relative;width:220px;height:250px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -38,99 +38,114 @@ const ALFRED_SVG = `
 
   <div id="alfred-avatar-wrap" style="position:relative;width:190px;height:223px;overflow:visible;">
     <svg id="alfred-svg" viewBox="0 0 400 470" xmlns="http://www.w3.org/2000/svg"
-             style="position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 10px 10px rgba(5,45,58,.22));">
+                 style="position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 10px 10px rgba(5,45,58,.22));">
       <defs>
-        <linearGradient id="alfred-visiere" x1="0" y1="0" x2="0.4" y2="1">
-          <stop offset="0" stop-color="#0d5563"/>
-          <stop offset="0.55" stop-color="#136e7c"/>
-          <stop offset="1" stop-color="#1b8590"/>
+        <linearGradient id="alfred-visiere" x1="0" y1="0" x2="0.55" y2="1">
+          <stop offset="0" stop-color="#0b4f5e"/>
+          <stop offset="0.5" stop-color="#12697a"/>
+          <stop offset="1" stop-color="#1c8b96"/>
         </linearGradient>
         <linearGradient id="alfred-teal" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#1e8c96"/>
-          <stop offset="1" stop-color="#0f5e6b"/>
+          <stop offset="0" stop-color="#1f8f99"/>
+          <stop offset="1" stop-color="#0f5f6c"/>
         </linearGradient>
         <linearGradient id="alfred-cou" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" stop-color="#1a8590"/>
+          <stop offset="0.5" stop-color="#22a0a8"/>
           <stop offset="1" stop-color="#116370"/>
         </linearGradient>
-        <radialGradient id="alfred-oeil" cx="0.5" cy="0.35" r="0.7">
-          <stop offset="0" stop-color="#6ffff0"/>
-          <stop offset="1" stop-color="#17e3d2"/>
+        <radialGradient id="alfred-oeil" cx="0.5" cy="0.3" r="0.75">
+          <stop offset="0" stop-color="#8dfff4"/>
+          <stop offset="1" stop-color="#1ee6d6"/>
         </radialGradient>
-        <clipPath id="alfred-clip-corps">
-          <path d="M124,250 C124,218 154,210 200,210 C246,210 276,218 276,250 C284,308 270,374 236,398 C218,408 182,408 164,398 C130,374 116,308 124,250 Z"/>
-        </clipPath>
         <linearGradient id="alfred-ombre-corps" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
-          <stop offset="1" stop-color="#d9e0e3" stop-opacity="0.9"/>
+          <stop offset="1" stop-color="#d6dee1" stop-opacity="0.95"/>
         </linearGradient>
-        <clipPath id="alfred-clip-tete">
-          <rect x="88" y="48" width="224" height="146" rx="46"/>
+        <clipPath id="alfred-clip-corps">
+          <path d="M90,270 C90,228 136,218 200,218 C264,218 310,228 310,270 C318,330 300,394 258,418 C226,434 174,434 142,418 C100,394 82,330 90,270 Z"/>
+        </clipPath>
+        <clipPath id="alfred-clip-visiere">
+          <rect x="78" y="52" width="244" height="120" rx="40"/>
         </clipPath>
       </defs>
 
       <g id="alfred-body-main" style="transform-origin:200px 235px;">
 
         <!-- ── Bras (derrière le corps) ─────────────────────────── -->
-        <g id="alfred-arm-l" style="transform-origin:90px 236px;">
-          <g transform="rotate(-16 90 236)">
-            <rect x="64" y="228" width="50" height="156" rx="25" fill="#ffffff" stroke="#1b1b1b" stroke-width="3.5"/>
-            <rect x="72" y="254" width="24" height="110" rx="12" fill="url(#alfred-teal)"/>
+        <g id="alfred-arm-l" style="transform-origin:76px 244px;">
+          <g transform="rotate(-16 76 244)">
+            <rect x="46" y="230" width="60" height="196" rx="30" fill="#ffffff" stroke="#1b1b1b" stroke-width="3.5"/>
+            <rect x="60" y="266" width="26" height="132" rx="13" fill="url(#alfred-teal)"/>
           </g>
         </g>
-        <g id="alfred-arm-r" style="transform-origin:310px 236px;">
-          <g transform="rotate(16 310 236)">
-            <rect x="286" y="228" width="50" height="156" rx="25" fill="#ffffff" stroke="#1b1b1b" stroke-width="3.5"/>
-            <rect x="304" y="254" width="24" height="110" rx="12" fill="url(#alfred-teal)"/>
+        <g id="alfred-arm-r" style="transform-origin:324px 244px;">
+          <g transform="rotate(16 324 244)">
+            <rect x="294" y="230" width="60" height="196" rx="30" fill="#ffffff" stroke="#1b1b1b" stroke-width="3.5"/>
+            <rect x="314" y="266" width="26" height="132" rx="13" fill="url(#alfred-teal)"/>
           </g>
         </g>
 
         <!-- ── Cou ─────────────────────────────────────────────── -->
-        <rect x="176" y="188" width="48" height="34" rx="7" fill="url(#alfred-cou)" stroke="#1b1b1b" stroke-width="3.5"/>
+        <path d="M154,184 L246,184 L246,228 L154,228 Z" fill="url(#alfred-cou)" stroke="#1b1b1b" stroke-width="3.5" stroke-linejoin="round"/>
 
         <!-- ── Corps ───────────────────────────────────────────── -->
         <g id="alfred-corps">
-          <path d="M124,250 C124,218 154,210 200,210 C246,210 276,218 276,250 C284,308 270,374 236,398 C218,408 182,408 164,398 C130,374 116,308 124,250 Z" fill="#ffffff" stroke="#1b1b1b" stroke-width="3.5"/>
-          <!-- ombrage léger côté droit -->
-          <path d="M200,212 C246,212 276,218 276,250 C284,308 270,374 236,398 C226,404 212,406 200,406 Z" fill="url(#alfred-ombre-corps)" clip-path="url(#alfred-clip-corps)"/>
-          <text x="200" y="306" text-anchor="middle" font-family="Poppins, Montserrat, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="32" font-weight="500" fill="#1b8590" letter-spacing="0.5">Alfred</text>
+          <path d="M90,270 C90,228 136,218 200,218 C264,218 310,228 310,270 C318,330 300,394 258,418 C226,434 174,434 142,418 C100,394 82,330 90,270 Z" fill="#ffffff" stroke="#1b1b1b" stroke-width="3.5"/>
+          <path d="M200,218 C264,218 310,228 310,270 C318,330 300,394 258,418 C240,426 220,434 200,434 Z" fill="url(#alfred-ombre-corps)" clip-path="url(#alfred-clip-corps)"/>
+          <text x="200" y="324" text-anchor="middle" font-family="Poppins, Montserrat, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="35" font-weight="500" fill="#1b8590" letter-spacing="0.5">Alfred</text>
           <!-- ceinture avec boucle centrale -->
-          <path d="M128,334 L170,334 L170,348 L230,348 L230,334 L272,334" fill="none" stroke="#1b8590" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
-          <path d="M128,334 L170,334 L170,348 L230,348 L230,334 L272,334" fill="none" stroke="#1b1b1b" stroke-width="1.2" stroke-linejoin="round" opacity="0.5"/>
+          <g clip-path="url(#alfred-clip-corps)">
+            <path d="M76,356 L142,356 L142,374 L258,374 L258,356 L324,356" fill="none" stroke="#1b1b1b" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/>
+            <path d="M76,356 L142,356 L142,374 L258,374 L258,356 L324,356" fill="none" stroke="#1b8590" stroke-width="5.5" stroke-linejoin="round" stroke-linecap="round"/>
+          </g>
         </g>
 
         <!-- ── Socle ───────────────────────────────────────────── -->
-        <ellipse cx="200" cy="406" rx="46" ry="22" fill="url(#alfred-teal)" stroke="#1b1b1b" stroke-width="3.5"/>
-        <rect x="160" y="384" width="80" height="24" rx="12" fill="#ffffff" stroke="#1b1b1b" stroke-width="3.5"/>
+        <ellipse cx="200" cy="434" rx="50" ry="18" fill="url(#alfred-teal)" stroke="#1b1b1b" stroke-width="3.5"/>
+        <rect x="160" y="416" width="80" height="22" rx="11" fill="#ffffff" stroke="#1b1b1b" stroke-width="3.5"/>
 
         <!-- ── Tête ────────────────────────────────────────────── -->
-        <g id="alfred-head" style="transform-origin:200px 190px;">
+        <g id="alfred-head" style="transform-origin:200px 188px;">
           <!-- bosse du dessus + oreilles (derrière la tête) -->
-          <rect x="158" y="26" width="84" height="34" rx="17" fill="#ffffff" stroke="#1b1b1b" stroke-width="3.5"/>
-          <rect x="60" y="92" width="34" height="62" rx="14" fill="#ffffff" stroke="#1b1b1b" stroke-width="3.5"/>
-          <rect x="306" y="92" width="34" height="62" rx="14" fill="#ffffff" stroke="#1b1b1b" stroke-width="3.5"/>
+          <rect x="145" y="18" width="110" height="36" rx="18" fill="#ffffff" stroke="#1b1b1b" stroke-width="3.5"/>
+          <rect x="40" y="92" width="32" height="58" rx="14" fill="#ffffff" stroke="#1b1b1b" stroke-width="3.5"/>
+          <rect x="328" y="92" width="32" height="58" rx="14" fill="#ffffff" stroke="#1b1b1b" stroke-width="3.5"/>
           <!-- tête -->
-          <rect x="88" y="48" width="224" height="146" rx="46" fill="#ffffff" stroke="#1b1b1b" stroke-width="3.5"/>
+          <rect x="68" y="40" width="264" height="150" rx="50" fill="#ffffff" stroke="#1b1b1b" stroke-width="3.5"/>
           <!-- visière -->
-          <rect x="106" y="66" width="188" height="110" rx="34" fill="url(#alfred-visiere)" stroke="#1b1b1b" stroke-width="3"/>
-          <ellipse id="alfred-gloss-front" cx="150" cy="86" rx="46" ry="14" fill="rgba(255,255,255,0.10)" style="pointer-events:none;"/>
+          <rect x="78" y="52" width="244" height="120" rx="40" fill="url(#alfred-visiere)" stroke="#1b1b1b" stroke-width="3"/>
+          <g clip-path="url(#alfred-clip-visiere)" style="pointer-events:none;">
+            <ellipse id="alfred-gloss-front" cx="150" cy="66" rx="66" ry="16" fill="rgba(255,255,255,0.09)"/>
+            <path d="M88,96 Q90,62 122,58" stroke="rgba(255,255,255,0.35)" stroke-width="4" stroke-linecap="round" fill="none"/>
+          </g>
 
-          <!-- yeux -->
-          <g id="alfred-eye-l" style="transform-origin:160px 118px;">
-            <path id="alfred-eye-l-cercle" d="M141,124 a19,17 0 0 1 38,0 Z" fill="url(#alfred-oeil)"/>
-            <path id="alfred-eye-l-ferme" d="M143,120 Q160,130 177,120" stroke="#17e3d2" stroke-width="4" stroke-linecap="round" fill="none" style="display:none;"/>
+          <!-- yeux : chaque œil = un groupe déplaçable (regard) contenant un
+               tracé unique (4 cubiques, voir FORMES_OEIL) morphé entre formes,
+               + une pupille (visible seulement dans les formes rondes) -->
+          <g id="alfred-eye-l" style="transform-origin:142px 104px;">
+            <g transform="translate(142,104)">
+              <path id="alfred-eye-l-cercle" d="M-25,0 C-25,-13.8 -13.8,-25 0,-25 C13.8,-25 25,-13.8 25,0 C25,0 16,0 0,0 C-16,0 -25,0 -25,0 Z" fill="url(#alfred-oeil)" stroke="#1ee6d6" stroke-width="3" stroke-linejoin="round"/>
+              <g id="alfred-pupille-l" style="opacity:0;transition:opacity .18s;">
+                <circle cx="0" cy="-9" r="8.5" fill="#0b3f4a"/>
+                <circle cx="3" cy="-12" r="2.8" fill="#ffffff"/>
+              </g>
+                </g>
           </g>
-          <g id="alfred-eye-r" style="transform-origin:240px 118px;">
-            <path d="M221,124 a19,17 0 0 1 38,0 Z" fill="url(#alfred-oeil)"/>
+          <g id="alfred-eye-r" style="transform-origin:258px 104px;">
+            <g transform="translate(258,104)">
+              <path id="alfred-eye-r-cercle" d="M-25,0 C-25,-13.8 -13.8,-25 0,-25 C13.8,-25 25,-13.8 25,0 C25,0 16,0 0,0 C-16,0 -25,0 -25,0 Z" fill="url(#alfred-oeil)" stroke="#1ee6d6" stroke-width="3" stroke-linejoin="round"/>
+              <g id="alfred-pupille-r" style="opacity:0;transition:opacity .18s;">
+                <circle cx="0" cy="-9" r="8.5" fill="#0b3f4a"/>
+                <circle cx="3" cy="-12" r="2.8" fill="#ffffff"/>
+              </g>
+            </g>
           </g>
-          <g id="alfred-lids" style="display:none;">
-            <path d="M143,120 Q160,130 177,120" stroke="#17e3d2" stroke-width="4" stroke-linecap="round" fill="none"/>
-            <path d="M223,120 Q240,130 257,120" stroke="#17e3d2" stroke-width="4" stroke-linecap="round" fill="none"/>
-          </g>
+          <g id="alfred-lids" style="display:none;"></g>
 
           <!-- bouche -->
-          <path id="alfred-mouth" d="M188,150 Q200,159 212,150" stroke="#17e3d2" stroke-width="4.5" stroke-linecap="round" fill="none"/>
-          <ellipse id="alfred-mouth-talk" cx="200" cy="153" rx="14" ry="0" fill="#17e3d2" style="display:none;"/>
+          <path id="alfred-mouth" d="M186,135 Q200,145 214,135" stroke="#1ee6d6" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+          <ellipse id="alfred-mouth-talk" cx="200" cy="138" rx="14" ry="0" fill="#1ee6d6" style="display:none;"/>
         </g>
       </g>
     </svg>
@@ -1481,6 +1496,9 @@ function setAlfredState(state) {
   // même) jusqu'à la prochaine fois où on repassait par 'talk' — accumulait
   // un setInterval oublié à chaque réplique.
   clearInterval(talkTick);
+  // Hors 'talk' : plus de jeu d'acteur en cours (temps forts programmés,
+  // gestes de bras) et retour à l'expression neutre — voir demarrerJeuDActeur.
+  if (state !== 'talk' && typeof arreterJeuDActeur === 'function') arreterJeuDActeur();
 
   if (wrap)   { wrap.style.animation='none'; void wrap.offsetWidth; }
   if (shadow) { shadow.style.animation='none'; shadow.style.width='160px'; shadow.style.opacity='1'; }
@@ -1515,6 +1533,8 @@ function setAlfredState(state) {
 
     case 'think':
       if (body) { body.style.transformOrigin='200px 400px'; body.style.animation='alfred-sway 1.4s ease-in-out infinite'; }
+      // Yeux ronds à pupille qui balayent de gauche à droite : "il cherche".
+      if (typeof definirExpression === 'function') definirExpression('rond', 260);
       if (eyeL) eyeL.style.animation = 'alfred-eye-lr 1.4s ease-in-out infinite';
       if (eyeR) eyeR.style.animation = 'alfred-eye-lr 1.4s ease-in-out infinite';
       if (dots) {
@@ -1551,10 +1571,10 @@ function setAlfredState(state) {
       if (wrap)   wrap.style.animation   = 'alfred-sleep 5s ease-in-out infinite';
       if (shadow) shadow.style.animation = 'alfred-shadow-sleep 5s ease-in-out infinite';
       if (ext)    ext.style.opacity      = '0.3';
-      if (eyeL)   { eyeL.style.transition='opacity .4s ease'; eyeL.style.opacity='0'; }
-      if (eyeR)   { eyeR.style.transition='opacity .4s ease'; eyeR.style.opacity='0'; }
+      // Paupières qui se ferment lentement (morphing vers le trait), plus
+      // d'yeux qui disparaissent en fondu.
+      if (typeof definirExpression === 'function') definirExpression('ferme', 700);
       if (mouth)  mouth.setAttribute('d', ALFRED_BOUCHE_DORMIR_D);
-      setTimeout(() => { if (lids && curState==='sleep') lids.style.display='block'; }, 400);
       if (zzz) {
         zzz.style.opacity='1';
         zzz.querySelectorAll('.alfred-z').forEach((z,i) => {
@@ -1623,11 +1643,10 @@ async function clinDoeil() {
   const body       = document.getElementById('alfred-body-main');
   const eyeR       = document.getElementById('alfred-eye-r');
   const eyeLCercle = document.getElementById('alfred-eye-l-cercle');
-  const eyeLFerme  = document.getElementById('alfred-eye-l-ferme');
   const mouth      = document.getElementById('alfred-mouth');
   const mouthTalk  = document.getElementById('alfred-mouth-talk');
-  if (!body || !eyeR || !eyeLCercle || !eyeLFerme || typeof attendre !== 'function') {
-    console.warn('[Alfred UI] clinDoeil() interrompue — élément(s) introuvable(s):', { body: !!body, eyeR: !!eyeR, eyeLCercle: !!eyeLCercle, eyeLFerme: !!eyeLFerme, attendre: typeof attendre });
+  if (!body || !eyeR || !eyeLCercle || typeof attendre !== 'function') {
+    console.warn('[Alfred UI] clinDoeil() interrompue — élément(s) introuvable(s):', { body: !!body, eyeR: !!eyeR, eyeLCercle: !!eyeLCercle, attendre: typeof attendre });
     return;
   }
   console.log('[Alfred UI] clinDoeil() — tous les éléments trouvés, geste en cours.');
@@ -1636,8 +1655,9 @@ async function clinDoeil() {
 
   body.style.transition = 'transform .4s cubic-bezier(.34,1.56,.64,1)';
   body.style.transform  = 'rotate(8deg)';
-  eyeLCercle.style.display = 'none';
-  eyeLFerme.style.display  = 'block';
+  // Œil gauche fermé par morphing (voir FORMES_OEIL), l'œil droit reste
+  // dans l'expression du moment.
+  morpherOeil('l', 'ferme', 140);
   // L'œil droit reste tel quel (pas de plissement) : en scaleY(.35) il se
   // réduisait à un trait fin quasi identique à l'œil gauche fermé, donc les
   // deux yeux avaient l'air fermés/plissés au lieu d'un vrai clin d'œil (un
@@ -1655,25 +1675,19 @@ async function clinDoeil() {
   await attendre(1400);
 
   body.style.transform     = 'rotate(0deg)';
-  eyeLCercle.style.display = 'block';
-  eyeLFerme.style.display  = 'none';
+  morpherOeil('l', etatYeux.r.forme, 200);
 
   clinDoeilActif = false;
 }
 
 function startBlinking() {
+  // Au repos seulement : pendant 'talk', c'est demarrerJeuDActeur qui
+  // programme les clignements (calés sur les phrases). Avant : un scaleY
+  // CSS sur le groupe de l'œil, qui écrasait le translate du regard le
+  // temps du clignement (l'œil sautait au centre) — remplacé par le
+  // morphing de forme (cligner, plus haut).
   function blink() {
-    if (curState === 'idle') {
-      const eL = document.getElementById('alfred-eye-l');
-      const eR = document.getElementById('alfred-eye-r');
-      if (eL && eR) {
-        eL.style.animation = 'alfred-blink .18s ease-in-out';
-        eR.style.animation = 'alfred-blink .18s ease-in-out .05s';
-        setTimeout(() => {
-          if (curState==='idle') { eL.style.animation='none'; eR.style.animation='none'; }
-        }, 250);
-      }
-    }
+    if (curState === 'idle' && typeof cligner === 'function') cligner();
     setTimeout(blink, 2500 + Math.random()*4500);
   }
   setTimeout(blink, 2000);
@@ -1708,6 +1722,13 @@ function startEyeLerp() {
       const eR = document.getElementById('alfred-eye-r');
       if (eL) eL.style.transform = `translate(${eyeCurX.toFixed(2)}px,${eyeCurY.toFixed(2)}px)`;
       if (eR) eR.style.transform = `translate(${eyeCurX.toFixed(2)}px,${eyeCurY.toFixed(2)}px)`;
+      // Pupilles (visibles dans les formes rondes) : elles se déplacent un
+      // peu plus que l'œil lui-même — c'est ce qui donne un vrai regard.
+      const pL = document.getElementById('alfred-pupille-l');
+      const pR = document.getElementById('alfred-pupille-r');
+      const tp = `translate(${(eyeCurX * .9).toFixed(2)}px,${(eyeCurY * .7).toFixed(2)}px)`;
+      if (pL) pL.style.transform = tp;
+      if (pR) pR.style.transform = tp;
     }
     rafEyes = requestAnimationFrame(lerp);
   }
@@ -1740,6 +1761,294 @@ function resetSleepTimer() {
   sleepTimer = setTimeout(() => {
     if (curState==='idle') setAlfredState('sleep');
   }, (ALFRED_CONFIG?.SLEEP_APRES || 30) * 1000);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// JEU D'ACTEUR — expressions des yeux, gestes des bras, rythme du texte
+// ══════════════════════════════════════════════════════════════════════
+// Demandé par Cyril (06/09) après ses vidéos d'exemple : "qu'Alfred s'anime
+// en fonction du script", de façon fluide. Choix : tout est CODÉ (SVG +
+// interpolation JS + Web Animations API), pas de vidéos pré-rendues — une
+// vidéo a une durée fixe alors que chaque réplique a la sienne (audio réel
+// ElevenLabs/Gemini, vitesse par moteur), et ne peut ni suivre la souris ni
+// réagir à ce qui se passe dans l'appli. Ici tout est calé sur la VRAIE
+// durée de l'audio (voir demarrerJeuDActeur, appelé par speak()).
+//
+// Trois couches, du plus fin au plus large :
+//  1. YEUX — chaque œil est UN tracé (4 courbes cubiques fermées, voir
+//     FORMES_OEIL) morphé entre des formes : "D" normal, rond avec pupille
+//     (regard qui se promène, comme dans la vidéo de Cyril), grand rond
+//     (surprise), croissant "joie" (yeux fermés de plaisir), trait (fermé /
+//     clignement / clin d'œil), plissé (assuré, taquin). Les clignements ne
+//     passent plus par un scaleY CSS (qui écrasait le translate du regard et
+//     faisait sauter l'œil) mais par le même morphing.
+//  2. BRAS / TÊTE / CORPS — gestes courts via element.animate() (Web
+//     Animations API) : ils passent PAR-DESSUS les animations CSS d'état
+//     (bras qui bougent en parlant) le temps du geste, puis celles-ci
+//     reprennent seules — aucun conflit d'inline style à gérer.
+//  3. RYTHME DU TEXTE — au démarrage réel de l'audio, on découpe la réplique
+//     en phrases, on estime le début de chacune (au prorata des caractères
+//     sur la durée réelle) et on programme des "temps forts" : clignement +
+//     léger mouvement de tête + regard qui change à chaque nouvelle phrase,
+//     yeux ronds qui montent sur une question, gros yeux brefs sur une
+//     exclamation, yeux plissés + regard de côté sur des points de
+//     suspension. L'émotion de la réplique (voir EMOTIONS_VOIX, la même que
+//     pour la voix) choisit l'expression de base, et un `geste` optionnel
+//     par réplique (alfred-config.js) déclenche un geste de bras.
+
+// 12 points (x,y) en coordonnées locales de l'œil : (0,0) = bas-centre.
+// Tracé : M p0 C p1 p2 p3 C p4 p5 p6 C p7 p8 p9 C p10 p11 p0 Z
+const FORMES_OEIL = {
+  normal: [-25,0, -25,-13.8, -13.8,-25, 0,-25, 13.8,-25, 25,-13.8, 25,0, 25,0, 16,0, 0,0, -16,0, -25,0],
+  douce:  [-25,0, -25,-10.5, -13.8,-19, 0,-19, 13.8,-19, 25,-10.5, 25,0, 25,0, 16,0, 0,0, -16,0, -25,0],
+  plisse: [-25,0, -25,-6, -13.8,-11, 0,-11, 13.8,-11, 25,-6, 25,0, 25,0, 16,0, 0,0, -16,0, -25,0],
+  rond:   [-16,-11, -16,-19.8, -8.8,-27, 0,-27, 8.8,-27, 16,-19.8, 16,-11, 16,-2.2, 8.8,5, 0,5, -8.8,5, -16,-2.2],
+  grand:  [-20,-12, -20,-23, -11,-32, 0,-32, 11,-32, 20,-23, 20,-12, 20,-1, 11,8, 0,8, -11,8, -20,-1],
+  joie:   [-25,-4, -18,-18, -8,-25, 0,-25, 8,-25, 18,-18, 25,-4, 22,-6, 10,-16, 0,-17, -10,-16, -22,-6],
+  ferme:  [-22,-8, -14,-8, -6,-8, 0,-8, 6,-8, 14,-8, 22,-8, 14,-6.5, 6,-6.5, 0,-6.5, -6,-6.5, -14,-6.5],
+};
+// Formes où la pupille est visible (yeux "ronds" de la vidéo de Cyril).
+const FORMES_OEIL_AVEC_PUPILLE = { rond: true, grand: true };
+
+function cheminOeil(p) {
+  return `M${p[0]},${p[1]} C${p[2]},${p[3]} ${p[4]},${p[5]} ${p[6]},${p[7]} C${p[8]},${p[9]} ${p[10]},${p[11]} ${p[12]},${p[13]} C${p[14]},${p[15]} ${p[16]},${p[17]} ${p[18]},${p[19]} C${p[20]},${p[21]} ${p[22]},${p[23]} ${p[0]},${p[1]} Z`;
+}
+
+// État par œil : forme courante (points), nom de la forme visée, rAF en cours.
+const etatYeux = {
+  l: { points: FORMES_OEIL.normal.slice(), forme: 'normal', raf: null },
+  r: { points: FORMES_OEIL.normal.slice(), forme: 'normal', raf: null },
+};
+// Expression "de repos" du moment (celle à laquelle reviennent les
+// clignements) — 'normal' hors réplique, choisie par l'émotion pendant.
+let expressionBase = 'normal';
+
+function morpherOeil(cote, forme, dureeMs) {
+  const etat  = etatYeux[cote];
+  const cible = FORMES_OEIL[forme];
+  const path  = document.getElementById(`alfred-eye-${cote}-cercle`);
+  if (!etat || !cible || !path) return;
+  etat.forme = forme;
+  const pupille = document.getElementById(`alfred-pupille-${cote}`);
+  if (pupille) pupille.style.opacity = FORMES_OEIL_AVEC_PUPILLE[forme] ? '1' : '0';
+  if (etat.raf) cancelAnimationFrame(etat.raf);
+  const depart = etat.points.slice();
+  const duree  = Math.max(1, dureeMs == null ? 180 : dureeMs);
+  const t0     = performance.now();
+  function pas(now) {
+    const k = Math.min(1, (now - t0) / duree);
+    const e = k < .5 ? 2 * k * k : -1 + (4 - 2 * k) * k; // ease-in-out
+    for (let i = 0; i < depart.length; i++) etat.points[i] = depart[i] + (cible[i] - depart[i]) * e;
+    path.setAttribute('d', cheminOeil(etat.points));
+    etat.raf = k < 1 ? requestAnimationFrame(pas) : null;
+  }
+  etat.raf = requestAnimationFrame(pas);
+}
+
+// Les deux yeux ensemble. `base: true` = c'est la nouvelle expression de
+// repos (les clignements y reviendront) ; sinon expression passagère.
+function definirExpression(forme, dureeMs, opts) {
+  if (!FORMES_OEIL[forme]) forme = 'normal';
+  if (opts && opts.base) expressionBase = forme;
+  morpherOeil('l', forme, dureeMs);
+  morpherOeil('r', forme, dureeMs);
+}
+
+// Clignement : fermeture rapide puis retour à l'expression de repos. Ignoré
+// si les yeux sont déjà fermés (sommeil, clin d'œil) ou en pleine forme
+// passagère marquée (question, surprise) pour ne pas la casser.
+let clignementEnCours = false;
+function cligner() {
+  if (clignementEnCours || clinDoeilActif) return;
+  const f = etatYeux.l.forme;
+  if (f === 'ferme' || f === 'grand') return;
+  clignementEnCours = true;
+  const retour = f;
+  definirExpression('ferme', 70);
+  setTimeout(() => {
+    // Si entre-temps quelqu'un a changé l'expression, on ne réécrase pas.
+    if (etatYeux.l.forme === 'ferme') definirExpression(retour === 'ferme' ? expressionBase : retour, 130);
+    clignementEnCours = false;
+  }, 110);
+}
+
+// Expression de base selon l'émotion de la réplique (mêmes clés que
+// EMOTIONS_VOIX dans alfred-voice.js). `entree` = forme tenue au tout début
+// de la réplique avant de revenir à `base` (ex. amusé : yeux fermés de
+// plaisir sur la première phrase, puis normaux).
+const EXPRESSIONS_PAR_EMOTION = {
+  amuse:      { entree: 'joie',   base: 'normal', entreeMs: 1600 },
+  assure:     { entree: 'plisse', base: 'normal', entreeMs: 1400 },
+  enjoue:     { entree: 'joie',   base: 'douce',  entreeMs: 1200 },
+  taquin:     { entree: 'plisse', base: 'plisse', entreeMs: 0 },
+  satisfait:  { entree: 'joie',   base: 'joie',   entreeMs: 0 },
+  chaleureux: { entree: 'douce',  base: 'douce',  entreeMs: 0 },
+  malicieux:  { entree: 'plisse', base: 'plisse', entreeMs: 0 },
+  fier:       { entree: 'normal', base: 'normal', entreeMs: 0 },
+};
+
+// ── Gestes (bras / tête / corps) ─────────────────────────────────────
+// Angles : origine de rotation à l'épaule (voir transform-origin des groupes
+// alfred-arm-l/-r). Bras droit : angle NÉGATIF = s'ouvre vers l'extérieur
+// (monte à droite) ; bras gauche : angle POSITIF = s'ouvre à gauche.
+const animationsGestes = [];
+function animerGeste(el, images, options) {
+  if (!el || typeof el.animate !== 'function') return null;
+  const a = el.animate(images, Object.assign({ fill: 'none', easing: 'ease-in-out' }, options));
+  animationsGestes.push(a);
+  a.finished.then(() => { const i = animationsGestes.indexOf(a); if (i >= 0) animationsGestes.splice(i, 1); }).catch(() => {});
+  return a;
+}
+function annulerGestes() {
+  animationsGestes.splice(0).forEach(a => { try { a.cancel(); } catch (e) {} });
+}
+function elementsGeste() {
+  return {
+    armL: document.getElementById('alfred-arm-l'),
+    armR: document.getElementById('alfred-arm-r'),
+    head: document.getElementById('alfred-head'),
+    body: document.getElementById('alfred-body-main'),
+  };
+}
+const GESTES = {
+  // Petit salut de la main droite (Ouverture) — comme dans la vidéo de Cyril.
+  saluer() {
+    const { armR, head } = elementsGeste();
+    animerGeste(armR, [
+      { transform: 'rotate(0deg)', offset: 0 }, { transform: 'rotate(-158deg)', offset: .22 },
+      { transform: 'rotate(-136deg)', offset: .38 }, { transform: 'rotate(-162deg)', offset: .54 },
+      { transform: 'rotate(-138deg)', offset: .70 }, { transform: 'rotate(-156deg)', offset: .82 },
+      { transform: 'rotate(0deg)', offset: 1 },
+    ], { duration: 2600 });
+    animerGeste(head, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(-5deg)', offset: .3 }, { transform: 'rotate(-4deg)', offset: .75 }, { transform: 'rotate(0deg)' }], { duration: 2600 });
+  },
+  // Bras droit tendu vers l'extérieur, tenu : "regardez", "au stand".
+  presenter() {
+    const { armR, body } = elementsGeste();
+    animerGeste(armR, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(-82deg)', offset: .18 }, { transform: 'rotate(-76deg)', offset: .8 }, { transform: 'rotate(0deg)' }], { duration: 2400 });
+    animerGeste(body, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(2.5deg)', offset: .2 }, { transform: 'rotate(2.5deg)', offset: .8 }, { transform: 'rotate(0deg)' }], { duration: 2400 });
+  },
+  // Les deux bras qui s'ouvrent ("Allez-y", "Stel ze maar") — invitation.
+  ouvrir() {
+    const { armL, armR, head } = elementsGeste();
+    animerGeste(armL, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(74deg)', offset: .22 }, { transform: 'rotate(66deg)', offset: .78 }, { transform: 'rotate(0deg)' }], { duration: 2400 });
+    animerGeste(armR, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(-74deg)', offset: .22 }, { transform: 'rotate(-66deg)', offset: .78 }, { transform: 'rotate(0deg)' }], { duration: 2400, delay: 60 });
+    animerGeste(head, [{ transform: 'translateY(0)' }, { transform: 'translateY(-4px)', offset: .25 }, { transform: 'translateY(0)' }], { duration: 2400 });
+  },
+  // "Pas si vite !" — main droite levée, sèche, tenue un instant.
+  stop() {
+    const { armR, head } = elementsGeste();
+    animerGeste(armR, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(-118deg)', offset: .12 }, { transform: 'rotate(-112deg)', offset: .75 }, { transform: 'rotate(0deg)' }], { duration: 1900, easing: 'cubic-bezier(.2,1.4,.5,1)' });
+    animerGeste(head, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(6deg)', offset: .15 }, { transform: 'rotate(5deg)', offset: .75 }, { transform: 'rotate(0deg)' }], { duration: 1900 });
+  },
+  // Fier : torse bombé, menton levé, bras légèrement en arrière.
+  fier() {
+    const { armL, armR, head, body } = elementsGeste();
+    animerGeste(body, [{ transform: 'scale(1)' }, { transform: 'scale(1.035) translateY(-3px)', offset: .25 }, { transform: 'scale(1.035) translateY(-3px)', offset: .8 }, { transform: 'scale(1)' }], { duration: 2600 });
+    animerGeste(head, [{ transform: 'translateY(0)' }, { transform: 'translateY(-5px) rotate(-2deg)', offset: .25 }, { transform: 'translateY(-5px) rotate(-2deg)', offset: .8 }, { transform: 'translateY(0)' }], { duration: 2600 });
+    animerGeste(armL, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(22deg)', offset: .25 }, { transform: 'rotate(22deg)', offset: .8 }, { transform: 'rotate(0deg)' }], { duration: 2600 });
+    animerGeste(armR, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(-22deg)', offset: .25 }, { transform: 'rotate(-22deg)', offset: .8 }, { transform: 'rotate(0deg)' }], { duration: 2600 });
+  },
+  // Hochement franc ("Exactement.", "Je suis né prêt.").
+  hocher() {
+    const { head } = elementsGeste();
+    animerGeste(head, [{ transform: 'translateY(0)' }, { transform: 'translateY(7px) rotate(1deg)', offset: .25 }, { transform: 'translateY(-1px)', offset: .5 }, { transform: 'translateY(6px)', offset: .75 }, { transform: 'translateY(0)' }], { duration: 1100 });
+  },
+  // Réfléchir : tête penchée, regard en l'air, bras droit à demi levé.
+  reflechir() {
+    const { armR, head } = elementsGeste();
+    animerGeste(armR, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(-48deg)', offset: .2 }, { transform: 'rotate(-44deg)', offset: .8 }, { transform: 'rotate(0deg)' }], { duration: 2400 });
+    animerGeste(head, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(8deg) translateY(-2px)', offset: .2 }, { transform: 'rotate(7deg) translateY(-2px)', offset: .8 }, { transform: 'rotate(0deg)' }], { duration: 2400 });
+    definirExpression('rond', 220); eyeTargetX = 7; eyeTargetY = -6;
+    setTimeout(() => { if (curState === 'talk') { definirExpression(expressionBase, 220); eyeTargetX = 0; eyeTargetY = 0; } }, 2000);
+  },
+  // Petit rebond joyeux (corps + bras) pour une exclamation.
+  rebondir() {
+    const { body, armL, armR } = elementsGeste();
+    animerGeste(body, [{ transform: 'translateY(0)' }, { transform: 'translateY(-9px)', offset: .35 }, { transform: 'translateY(0)' }], { duration: 520, easing: 'cubic-bezier(.3,1.5,.5,1)' });
+    animerGeste(armL, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(28deg)', offset: .35 }, { transform: 'rotate(0deg)' }], { duration: 560 });
+    animerGeste(armR, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(-28deg)', offset: .35 }, { transform: 'rotate(0deg)' }], { duration: 560 });
+  },
+  // Légère inclinaison de tête (changement de phrase), sens alterné.
+  pencher(sens) {
+    const { head } = elementsGeste();
+    const d = (sens || 1) * 4;
+    animerGeste(head, [{ transform: 'rotate(0deg)' }, { transform: `rotate(${d}deg)`, offset: .3 }, { transform: `rotate(${d * .6}deg)`, offset: .7 }, { transform: 'rotate(0deg)' }], { duration: 900 });
+  },
+};
+function jouerGeste(nom, arg) {
+  const g = GESTES[nom];
+  if (!g) { if (nom) console.warn('[Alfred UI] geste inconnu :', nom); return; }
+  try { g(arg); } catch (e) { console.warn('[Alfred UI] geste', nom, 'a échoué :', e); }
+}
+
+// ── Rythme du texte ──────────────────────────────────────────────────
+let acteurTimers = [];
+let acteurGeneration = 0;
+function programmerActeur(fn, ms) { acteurTimers.push(setTimeout(fn, Math.max(0, ms))); }
+
+// Appelé par speak() (alfred-voice.js) dès que l'audio joue réellement,
+// avec la durée RÉELLE (déjà divisée par la vitesse de lecture).
+function demarrerJeuDActeur(opts) {
+  arreterJeuDActeur();
+  const gen     = ++acteurGeneration;
+  const texte   = String((opts && opts.texte) || '');
+  const dureeMs = Math.max(600, Number(opts && opts.dureeMs) || texte.split(/\s+/).length * 400);
+  const emo     = EXPRESSIONS_PAR_EMOTION[opts && opts.emotion] || { entree: 'normal', base: 'normal', entreeMs: 0 };
+  const vivant  = () => gen === acteurGeneration && curState === 'talk';
+
+  // Expression d'entrée puis de base.
+  expressionBase = emo.base;
+  definirExpression(emo.entree, 240);
+  if (emo.entree !== emo.base) programmerActeur(() => { if (vivant()) definirExpression(emo.base, 260); }, emo.entreeMs || 1200);
+
+  // Geste de la réplique (facultatif), un peu après le début de la voix.
+  if (opts && opts.geste) programmerActeur(() => { if (vivant()) jouerGeste(opts.geste); }, 250);
+
+  // Phrases → temps forts. Début estimé au prorata des caractères.
+  const phrases = texte.match(/[^.!?…]+[.!?…]+["»]?|[^.!?…]+$/g) || [texte];
+  const totalCar = phrases.reduce((a, p) => a + p.length, 0) || 1;
+  let cursor = 0, sens = 1;
+  phrases.forEach((p, i) => {
+    const debut = dureeMs * (cursor / totalCar);
+    const longueur = dureeMs * (p.length / totalCar);
+    cursor += p.length;
+    const finPhrase = p.trim().slice(-1);
+    const suspension = /\.\.\.|…/.test(p);
+    if (i > 0) {
+      // Nouvelle phrase : clignement + tête qui se réoriente + regard neuf.
+      sens = -sens;
+      programmerActeur(() => { if (!vivant()) return; cligner(); jouerGeste('pencher', sens); eyeTargetX = (Math.random() - .5) * 10; eyeTargetY = (Math.random() - .5) * 4; }, debut - 120);
+    }
+    if (finPhrase === '?' && longueur > 900) {
+      // Question : yeux ronds qui montent, tête un peu penchée.
+      programmerActeur(() => { if (!vivant()) return; definirExpression('rond', 220); eyeTargetX = 6; eyeTargetY = -6; }, debut + Math.min(300, longueur * .15));
+      programmerActeur(() => { if (!vivant()) return; definirExpression(expressionBase, 260); eyeTargetX = 0; eyeTargetY = 0; }, debut + longueur - 150);
+    } else if (finPhrase === '!' && longueur > 700) {
+      // Exclamation : gros yeux très brefs + petit rebond sur la fin.
+      programmerActeur(() => { if (!vivant()) return; definirExpression('grand', 160); }, debut + longueur * .55);
+      programmerActeur(() => { if (!vivant()) return; definirExpression(expressionBase, 220); jouerGeste('rebondir'); }, debut + longueur * .55 + 480);
+    } else if (suspension && longueur > 1500) {
+      // Points de suspension : yeux plissés + regard de côté, le temps du silence.
+      programmerActeur(() => { if (!vivant()) return; definirExpression('plisse', 260); eyeTargetX = -8; eyeTargetY = 2; }, debut + longueur * .6);
+      programmerActeur(() => { if (!vivant()) return; definirExpression(expressionBase, 260); eyeTargetX = 0; eyeTargetY = 0; }, debut + longueur - 100);
+    }
+  });
+
+  // Clignements "physiologiques" en plus, toutes les 3 à 5 s.
+  (function planifierClignement(t) {
+    if (t >= dureeMs) return;
+    programmerActeur(() => { if (vivant()) cligner(); }, t);
+    planifierClignement(t + 3000 + Math.random() * 2000);
+  })(2200 + Math.random() * 1500);
+}
+
+function arreterJeuDActeur() {
+  acteurGeneration++;
+  acteurTimers.splice(0).forEach(clearTimeout);
+  annulerGestes();
+  expressionBase = 'normal';
+  if (etatYeux.l.forme !== 'normal' || etatYeux.r.forme !== 'normal') definirExpression('normal', 260);
 }
 
 // ══════════════════════════════════════════════════════════════════════

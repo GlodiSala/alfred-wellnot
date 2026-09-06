@@ -1233,7 +1233,7 @@ async function parlerSegmentDepuisAction(label, actionNom) {
   // qui referme la fenêtre) — il faut laisser la parole/le surlignage se
   // terminer avant, sinon la fenêtre se refermerait pendant qu'Alfred énumère
   // encore les champs.
-  await speak(typeof naturaliserTexte === 'function' ? naturaliserTexte(segment.texte) : segment.texte, currentLangue, segment.texte, undefined, surbrillance, segment.texte, segment.emotion || replique?.emotion);
+  await speak(typeof naturaliserTexte === 'function' ? naturaliserTexte(segment.texte) : segment.texte, currentLangue, segment.texte, undefined, surbrillance, segment.texte, segment.emotion || replique?.emotion, segment.geste || replique?.geste);
 }
 
 // ── Surbrillance synchronisée sur la parole ────────────────
@@ -2111,7 +2111,7 @@ async function montrerPropositionEmail_envoyer() {
       // coupée en plein milieu ("il est abort en plein milieu, il continue
       // direct pour la suite"). Même correctif que CreationOuvrir_Dossiers
       // et CreationReponseVendeur plus bas dans ce fichier.
-      await speak(typeof naturaliserTexte === 'function' ? naturaliserTexte(segment.texte) : segment.texte, currentLangue, segment.texte, undefined, undefined, segment.texte, segment.emotion || replique?.emotion);
+      await speak(typeof naturaliserTexte === 'function' ? naturaliserTexte(segment.texte) : segment.texte, currentLangue, segment.texte, undefined, undefined, segment.texte, segment.emotion || replique?.emotion, segment.geste || replique?.geste);
     }
   }
 
@@ -2547,7 +2547,7 @@ async function seq_creationDossier_ouvrir_dossiers() {
       // filet de sécurité stopAudio ajouté depuis dans jouerSecoursInterne)
       // puis, une fois ce filet en place, en coupure nette — mais la
       // vraie cause était ici depuis le début, pas dans stopAudio.
-      await speak(typeof naturaliserTexte === 'function' ? naturaliserTexte(segment.texte) : segment.texte, currentLangue, segment.texte, undefined, surbrillance, segment.texte, segment.emotion || replique?.emotion);
+      await speak(typeof naturaliserTexte === 'function' ? naturaliserTexte(segment.texte) : segment.texte, currentLangue, segment.texte, undefined, surbrillance, segment.texte, segment.emotion || replique?.emotion, segment.geste || replique?.geste);
     }
   }
 }
@@ -3279,7 +3279,7 @@ async function seq_creationDossier_attenteReponseVendeur() {
       if (typeof addToHistory === 'function') addToHistory('alfred', segment.texte);
       // await ajouté le 04/09 — même correctif que CreationOuvrir_Dossiers/
       // CreationEmail_Envoyer plus haut dans ce fichier (voir leurs notes).
-      await speak(typeof naturaliserTexte === 'function' ? naturaliserTexte(segment.texte) : segment.texte, currentLangue, segment.texte, undefined, undefined, segment.texte, segment.emotion || replique?.emotion);
+      await speak(typeof naturaliserTexte === 'function' ? naturaliserTexte(segment.texte) : segment.texte, currentLangue, segment.texte, undefined, undefined, segment.texte, segment.emotion || replique?.emotion, segment.geste || replique?.geste);
     }
   }
 
