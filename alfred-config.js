@@ -237,10 +237,12 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // seule façon de passer parlerDepuisAction, même mécanisme que
     // PartiesNotaireV/CreationEmail_Envoyer plus bas.
     { acte: 2, label: 'Ouvrir', segments: [
+      // Highlight "statuts" retiré le 05/09 (demandé explicitement) : la
+      // colonne visée ("In uitvoering") n'apporte rien à surligner ici,
+      // contrairement à dossiers/collaborateurs.
       { texte: "Voici d'abord le tableau de bord : tous les dossiers en cours... les collaborateurs... les statuts.", action: 'CreationOuvrir_Dossiers', parlerDepuisAction: true, surbrillance: [
         { mots: ['dossiers'], cible: 'colDossiers' },
         { mots: ['collaborateurs'], cible: 'colCollaborateur' },
-        { mots: ['statuts'], cible: 'colStatut' },
       ] },
     ] },
     // Le clic ne part plus dès le début de la réplique (action: retiré) —
@@ -660,10 +662,10 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // DÉCOMPOSÉ le 03/09 (2e passe) — voir la note FR équivalente.
     // parlerDepuisAction — voir la note FR équivalente.
     { acte: 2, label: 'Ouvrir', segments: [
+      // Highlight "statussen" retiré — voir la note FR équivalente.
       { texte: "We beginnen bij het dashboard: hier ziet u al uw lopende dossiers... de medewerkers... en de actuele statussen.", action: 'CreationOuvrir_Dossiers', parlerDepuisAction: true, surbrillance: [
         { mots: ['dossiers'], cible: 'colDossiers' },
         { mots: ['medewerkers'], cible: 'colCollaborateur' },
-        { mots: ['statussen'], cible: 'colStatut' },
       ] },
     ] },
     // Voir la note FR équivalente.
