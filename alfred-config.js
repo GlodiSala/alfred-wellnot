@@ -280,17 +280,18 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Mots inchangés (fidélité au texte officiel), seule la ponctuation
     // bouge — les moteurs TTS marquent une pause nettement plus longue sur
     // "..." que sur une simple virgule.
-    // OuvrirChamps DÉCOUPÉE le 05/09 en 5 segments joués UN PAR FLÈCHE
-    // (segmentsParFleche, voir jouerSecoursInterne dans alfred-brain.js) —
-    // demandé explicitement : "on doit attendre que Fariël donne le numéro...
-    // séparé en flèche pour qu'elle ait le temps de le dire et après ça
-    // écrit". Avant, Alfred demandait les infos ET remplissait tout d'un
-    // coup pendant qu'il parlait encore : il écrivait donc des valeurs que
-    // Fariël n'avait pas encore dictées. Maintenant : 1er segment = Alfred
-    // demande (il parle, rien ne se remplit), puis un champ par flèche, en
-    // silence — c'est Fariël qui parle en direct entre chaque.
-    // Le groupe reste UNE seule entrée dans le panneau des répliques.
-    { acte: 2, label: 'OuvrirChamps', segmentsParFleche: true, segments: [
+    // OuvrirChamps DÉCOUPÉE le 05/09 en 5 segments — demandé explicitement :
+    // "on doit attendre que Fariël donne le numéro". Avant (réplique à plat,
+    // texte + action ensemble), Alfred demandait les infos ET remplissait
+    // tout d'un coup PENDANT qu'il parlait encore : il écrivait donc des
+    // valeurs que Fariël n'avait pas encore dictées. Maintenant, en segments
+    // (traités l'un après l'autre, jamais en même temps — voir
+    // jouerSecoursInterne, alfred-brain.js) : 1er segment = Alfred demande
+    // (parle jusqu'au bout, rien ne se remplit), PUIS les 4 champs s'écrivent
+    // silencieusement, chacun après l'autre. Tout ça sur UNE SEULE flèche —
+    // pas besoin d'un appui par champ (essayé puis simplifié le 05/09, "il
+    // peut encoder en silence, après la flèche c'est bon").
+    { acte: 2, label: 'OuvrirChamps', segments: [
       { texte: "Donnez-moi le numéro de dossier... la langue de rédaction... le collaborateur en charge... et le notaire en charge.", surbrillance: [
         { mots: ['numéro'], cible: 'dossierCode' },
       ] },
@@ -674,7 +675,9 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     ] },
     // surbrillance / concurrent / pauses — voir la note FR équivalente.
     // Découpage en segments par flèche — voir la note FR équivalente.
-    { acte: 2, label: 'OuvrirChamps', segmentsParFleche: true, segments: [
+    // Voir la note FR équivalente (une seule flèche, remplissage silencieux
+    // enchaîné après la question).
+    { acte: 2, label: 'OuvrirChamps', segments: [
       { texte: "Geef mij gewoon het dossiernummer... de taal van de akte... de bevoegde medewerker... en de notaris.", surbrillance: [
         { mots: ['dossiernummer'], cible: 'dossierCode' },
       ] },
