@@ -835,7 +835,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     'documenten', 'rijksregister', 'veilig', 'vervangen', 'beveiliging'
   ],
 
-  SLEEP_APRES: 10,
+  SLEEP_APRES: 30, // 10 → 30 le 06/09 : sur scène, 10 s entre deux répliques suffisaient à l'endormir
 };
 
 var currentLangue = 'nl';
