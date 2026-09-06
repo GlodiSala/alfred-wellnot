@@ -2590,7 +2590,20 @@ let dernierCodeDossierGenere = null;
 // cfg.code : jamais de retombée sur un dossier déjà créé. Format "C-" +
 // date du jour + heure (HHMMSS, pour rester unique même sur plusieurs
 // lancements le même jour).
+// Laisse le temps à Fariël de vraiment DIRE les 4 informations à voix haute
+// ("Numéro : 2026/18-09. Langue : néerlandais. Collaborateur : ... Notaire :
+// ...") avant qu'Alfred ne les encode en silence — sans ça, l'écriture
+// partait dès la fin de la question d'Alfred, avant que Fariël ait eu le
+// temps de dicter quoi que ce soit. Une seule pause fixe plutôt qu'une
+// flèche supplémentaire (retour explicite le 05/09 : "il faut le temps que
+// Fariël le dise... on attend quelques secondes et on encode ?") — plus
+// simple à gérer en direct qu'un appui de plus à caler pile au bon moment,
+// et cette réplique n'a de toute façon pas d'autre repère sonore/visuel
+// pour savoir "quand" appuyer.
+const DELAI_AVANT_ENCODAGE_CHAMPS_MS = 5000;
+
 async function seq_creationDossier_ouvrir_champNumero() {
+  await attendre(DELAI_AVANT_ENCODAGE_CHAMPS_MS);
   const maintenant = new Date();
   const dateJour = maintenant.toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
   const horodatage = maintenant.toTimeString().slice(0, 8).replace(/:/g, ''); // HHMMSS

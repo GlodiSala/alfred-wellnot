@@ -290,7 +290,12 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // (parle jusqu'au bout, rien ne se remplit), PUIS les 4 champs s'écrivent
     // silencieusement, chacun après l'autre. Tout ça sur UNE SEULE flèche —
     // pas besoin d'un appui par champ (essayé puis simplifié le 05/09, "il
-    // peut encoder en silence, après la flèche c'est bon").
+    // peut encoder en silence, après la flèche c'est bon"). Un DÉLAI FIXE de
+    // 5s (DELAI_AVANT_ENCODAGE_CHAMPS_MS, alfred-dom.js) laisse ensuite le
+    // temps à Fariël de vraiment dicter les 4 infos à voix haute avant que
+    // les champs ne s'écrivent — pas de flèche supplémentaire non plus
+    // ("il faut le temps que Fariël le dise... on attend quelques secondes
+    // et on encode ?").
     { acte: 2, label: 'OuvrirChamps', segments: [
       { texte: "Donnez-moi le numéro de dossier... la langue de rédaction... le collaborateur en charge... et le notaire en charge.", surbrillance: [
         { mots: ['numéro'], cible: 'dossierCode' },
