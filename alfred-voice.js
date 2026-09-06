@@ -671,15 +671,36 @@ function animateMouth(amp, aigus) {
   // sifflante ou "i" = bouche étirée. Repli sur l'ancienne ellipse si les
   // formes ne sont pas chargées (ce fichier tourne seul).
   if (typeof FORMES_BOUCHE !== 'undefined' && typeof cheminBouche === 'function') {
-    const cibleOuv = amp < 0.07 ? 0 : Math.min(1, amp * 1.15);
-    const cibleLarg = (typeof aigus === 'number') ? Math.max(0, Math.min(1, aigus)) : 0.3;
-    boucheOuverture += (cibleOuv - boucheOuverture) * (cibleOuv > boucheOuverture ? 0.55 : 0.28);
-    boucheLargeur   += (cibleLarg - boucheLargeur) * 0.25;
+    let cibleOuv = amp < 0.07 ? 0 : Math.min(1, amp * 1.15);
+    let cibleLarg = (typeof aigus === 'number') ? Math.max(0, Math.min(1, aigus)) : 0.3;
+    // Forme déduite du TEXTE en cours (visemeCourant, alfred-ui.js) quand
+    // une réplique joue : le spectre ne sert plus qu'en repli (chatbot
+    // libre, test de voix).
+    const vis = (typeof visemeCourant === 'function') ? visemeCourant() : null;
+    if (vis) {
+      const LARG = { ah: 0.5, e: 0.72, i: 0.95, o: 0.04, ferme: 0.3 };
+      cibleLarg = LARG[vis.forme] != null ? LARG[vis.forme] : 0.4;
+      cibleOuv *= vis.gain;
+      if ((vis.forme === 'ah' || vis.forme === 'o') && amp > 0.12) cibleOuv = Math.max(cibleOuv, 0.4);
+      if (vis.forme === 'i' || vis.forme === 'e') cibleOuv = Math.min(cibleOuv, vis.forme === 'i' ? 0.4 : 0.6);
+    }
+    boucheOuverture += (cibleOuv - boucheOuverture) * (cibleOuv > boucheOuverture ? 0.55 : 0.3);
+    boucheLargeur   += (cibleLarg - boucheLargeur) * 0.3;
     const o = boucheOuverture, w = boucheLargeur;
     const F = FORMES_BOUCHE;
     const pts = F.repos.map((_, i) =>
       (1 - o) * (1 - w) * F.repos[i] + (1 - o) * w * F.i[i] + o * (1 - w) * F.o[i] + o * w * F.ah[i]);
     ms.setAttribute('d', cheminBouche(pts));
+    // Intérieur sombre : la même forme réduite autour de son centre, qui
+    // n'apparaît que quand la bouche est franchement ouverte — donne de la
+    // profondeur au lieu d'une tache cyan qui grossit.
+    const mi = document.getElementById('alfred-mouth-int');
+    if (mi) {
+      const k = 0.58, cy = 3;
+      const ptsInt = pts.map((p, i) => i % 2 === 0 ? p * k : cy + (p - cy) * k);
+      mi.setAttribute('d', cheminBouche(ptsInt));
+      mi.setAttribute('opacity', Math.max(0, Math.min(1, (o - 0.32) * 2.4)).toFixed(2));
+    }
   } else {
     const mt = document.getElementById('alfred-mouth-talk');
     if (mt) {
@@ -712,6 +733,8 @@ function resetMouth() {
   if (mt) { mt.style.display = 'none'; mt.setAttribute('ry', '0'); }
   boucheOuverture = 0; boucheLargeur = 0.3;
   if (ms) { ms.style.display = 'block'; if (typeof ALFRED_BOUCHE_SOURIRE_D !== 'undefined') ms.setAttribute('d', ALFRED_BOUCHE_SOURIRE_D); }
+  const mi = document.getElementById('alfred-mouth-int');
+  if (mi) mi.setAttribute('opacity', '0');
   const head = document.getElementById('alfred-head');
   if (head) { head.style.transition = 'transform .35s ease'; head.style.transform = ''; setTimeout(() => { head.style.transition = ''; }, 400); }
   teteAmpLissee = 0;
@@ -736,7 +759,7 @@ const DELAI_AUDIO_PERCEPTIBLE_MS = 600;
 // Cloud TTS (VITESSE_PAROLE) remonté 0,85 → 0,93 : trop lent en FR.
 // ElevenLabs (VITESSE_PAROLE_ELEVENLABS) reste à 0,85, déjà jugé bon.
 const VITESSE_PAROLE = 0.93;
-const VITESSE_PAROLE_ELEVENLABS = 0.85;
+const VITESSE_PAROLE_ELEVENLABS = 0.92; // 0.85 → 0.92 le 06/09 : "accélère la voix légèrement" (un ralenti trop fort aplatit l'énergie de la voix)
 
 // ── Afficher sous-titres avec sync audio ──────────────────
 // timerRef : objet mutable { id } dans lequel on écrit l'id du setTimeout en

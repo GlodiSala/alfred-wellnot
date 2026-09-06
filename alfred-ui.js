@@ -162,6 +162,8 @@ const ALFRED_SVG = `
 
           <!-- bouche -->
           <path id="alfred-mouth" d="${ALFRED_BOUCHE_SOURIRE_D}" fill="#1ee6d6" stroke="#1ee6d6" stroke-width="3" stroke-linejoin="round" style="filter:drop-shadow(0 0 4px rgba(30,230,214,.7));"/>
+          <!-- intérieur sombre visible quand la bouche s'ouvre franchement (voir animateMouth) -->
+          <path id="alfred-mouth-int" d="${ALFRED_BOUCHE_SOURIRE_D}" fill="#083a44" opacity="0" style="pointer-events:none;"/>
           <ellipse id="alfred-mouth-talk" cx="200" cy="138" rx="14" ry="0" fill="#1ee6d6" style="display:none;"/>
         </g>
       </g>
@@ -686,9 +688,32 @@ function ouvrirPanneauVoix() {
   enTete.appendChild(btnReset);
   panel.appendChild(enTete);
 
-  panel.appendChild(champLabel('Voix'));
+  // Refait le 06/09 ("il faudrait que ce soit clair que Gemini c'est pour
+  // le FR et ElevenLabs pour le NL") : deux sections, chacune avec son
+  // moteur, son test et ses réglages.
+  function sectionTitre(texte, sousTexte) {
+    const bloc = document.createElement('div');
+    bloc.style.cssText = 'margin:14px 0 6px;padding-top:10px;border-top:1px solid rgba(255,255,255,.12);';
+    const t = document.createElement('div');
+    t.textContent = texte;
+    t.style.cssText = 'color:#5fe3ea;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;';
+    bloc.appendChild(t);
+    if (sousTexte) {
+      const s = document.createElement('div');
+      s.textContent = sousTexte;
+      s.style.cssText = 'color:rgba(255,255,255,.45);font-size:10px;margin-top:3px;line-height:1.4;';
+      bloc.appendChild(s);
+    }
+    return bloc;
+  }
+  const styleBouton = 'padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:12px;cursor:pointer;';
+
+  // ══ FRANÇAIS — Gemini TTS ══════════════════════════════════════
+  panel.appendChild(sectionTitre('🇫🇷 Français — Gemini TTS (Google)', 'Toutes les répliques FR. Voix + consigne de ton ci-dessous.'));
+
+  panel.appendChild(champLabel('Voix Gemini'));
   const selectVoix = document.createElement('select');
-  selectVoix.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:#0a3b52;color:#fff;font-size:12px;margin-bottom:14px;';
+  selectVoix.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:#0a3b52;color:#fff;font-size:12px;margin-bottom:10px;';
   GEMINI_VOIX_CATALOGUE.forEach(v => {
     const opt = document.createElement('option');
     opt.value = v.id; opt.textContent = v.label;
@@ -696,173 +721,174 @@ function ouvrirPanneauVoix() {
     selectVoix.appendChild(opt);
   });
   selectVoix.value = voixGeminiActuelle();
-  // Persisté dès le changement, pas seulement au clic sur "Enregistrer" plus
-  // bas : sans ça, choisir une voix puis aller directement éditer le script
-  // (autre panneau, autre bouton "Enregistrer") perdait le choix — jamais
-  // écrit en local avant ce moment-là. "On doit enregistrer la voix à
-  // part" remonté explicitement — ce bouton reste utile pour le partage en
-  // ligne + le préchargement TTS, mais le choix local ne dépend plus de lui.
   selectVoix.onchange = () => {
     localStorage.setItem(ALFRED_GEMINI_VOIX_KEY, selectVoix.value);
-    // Sans ça, le repli Cloud TTS (voir appliquerChoixVoix dans
-    // alfred-voice.js) ne se resynchronisait qu'au prochain rechargement
-    // complet du bookmarklet — un changement de voix en cours de session ne
-    // prenait effet nulle part avant ça.
     if (typeof appliquerChoixVoix === 'function') appliquerChoixVoix();
   };
   panel.appendChild(selectVoix);
 
-  panel.appendChild(champLabel('Ton'));
+  panel.appendChild(champLabel('Ton (consigne donnée à Gemini)'));
   const taTon = document.createElement('textarea');
   taTon.value = tonGemini();
   taTon.rows = 4;
-  taTon.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:11px;font-family:sans-serif;resize:vertical;margin-bottom:14px;';
+  taTon.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:11px;font-family:sans-serif;resize:vertical;margin-bottom:8px;';
   taTon.oninput = () => localStorage.setItem(ALFRED_GEMINI_TON_KEY, taTon.value);
   panel.appendChild(taTon);
 
-  const zoneTest = document.createElement('div');
-  zoneTest.style.cssText = 'display:flex;gap:6px;margin-bottom:8px;';
-  const btnTesterFR = document.createElement('button');
-  btnTesterFR.textContent = '▶ Tester en FR';
-  const btnTesterNL = document.createElement('button');
-  btnTesterNL.textContent = '▶ Tester en NL';
-  [btnTesterFR, btnTesterNL].forEach(btn => {
-    btn.style.cssText = 'flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:12px;cursor:pointer;';
-  });
-  function testerVoix(btn, texte, langue) {
-    return async () => {
-      const original = btn.textContent;
-      btn.disabled = true;
-      btn.textContent = '… génération';
-      try {
-        // stopAudio() AVANT de jouer : ce bouton de test jouait l'audio en
-        // direct (audio.play()) sans jamais passer par currentAudio/speak()
-        // — rien ne l'arrêtait donc si on lançait "Jouer tout" juste après
-        // un test, pendant que ce clip jouait encore : les deux voix se
-        // mélangeaient. Remonté en test live le 04/09 ("la première
-        // réplique se mélange avec une autre réplique, seulement en Jouer
-        // tout") — le vrai coupable n'était pas un audio caché défectueux
-        // (déjà écarté : le bug persiste même après régénération), mais ce
-        // test resté audible en arrière-plan. currentAudio = audio ici
-        // permet à un stopAudio() ultérieur (voir le même filet ajouté au
-        // début de jouerSecoursInterne, alfred-brain.js) de couper CE clip
-        // aussi, pas seulement les vraies répliques.
-        if (typeof stopAudio === 'function') stopAudio();
-        const audio = await genererAudioGemini(texte, selectVoix.value, taTon.value, langue);
-        currentAudio = audio;
-        await audio.play();
-      } catch (e) {
-        console.warn('[Alfred Voice] Test de voix échoué:', e);
-        alert(e && e.quotaExceeded
-          ? e.message
-          : 'Cette voix n\'a pas pu être générée (réseau, ou clé API pas encore active côté serveur). Regarde la console pour le détail.');
-      } finally {
-        btn.disabled = false;
-        btn.textContent = original;
-      }
-    };
+  // Test avec une vraie réplique du script (plus parlant qu'une phrase de
+  // démo) et son émotion, pour juger la voix telle qu'elle sera en scène.
+  function repliqueTest(langue) {
+    const R = (typeof ALFRED_CONFIG !== 'undefined') && ALFRED_CONFIG[langue === 'nl' ? 'REPLIQUES_NL' : 'REPLIQUES_FR'];
+    const r = Array.isArray(R) && R.find(x => x.label === 'ServeursAJour');
+    return r ? { texte: r.texte, emotion: r.emotion } : { texte: langue === 'nl' ? "Goeiedag, ik ben Alfred." : "Bonjour, je suis Alfred.", emotion: undefined };
   }
-  btnTesterFR.onclick = testerVoix(btnTesterFR, "Bonjour, je suis Alfred. Voici un exemple de ma voix.", 'fr');
-  btnTesterNL.onclick = testerVoix(btnTesterNL, "Goeiedag, ik ben Alfred. Dit is een voorbeeld van mijn stem.", 'nl');
-  zoneTest.appendChild(btnTesterFR);
-  zoneTest.appendChild(btnTesterNL);
-  panel.appendChild(zoneTest);
+  async function jouerTest(btn, generer) {
+    const original = btn.textContent;
+    btn.disabled = true; btn.textContent = '… génération';
+    try {
+      if (typeof stopAudio === 'function') stopAudio();
+      const audio = await generer();
+      currentAudio = audio;
+      await audio.play();
+    } catch (e) {
+      console.warn('[Alfred Voice] Test de voix échoué:', e);
+      alert(e && e.quotaExceeded ? e.message : 'Cette voix n\'a pas pu être générée (réseau, Voice ID, ou clé API côté serveur). Regarde la console pour le détail.');
+    } finally { btn.disabled = false; btn.textContent = original; }
+  }
+  const btnTesterFR = document.createElement('button');
+  btnTesterFR.textContent = '▶ Tester la voix FR (réplique du script)';
+  btnTesterFR.style.cssText = styleBouton + 'width:100%;margin-bottom:4px;';
+  btnTesterFR.onclick = () => { const t = repliqueTest('fr'); jouerTest(btnTesterFR, () => genererAudioGemini(t.texte, selectVoix.value, taTon.value, 'fr')); };
+  panel.appendChild(btnTesterFR);
 
-  // ── Voix ElevenLabs pour le néerlandais BELGE (nl-BE) ──────
-  // Ni Gemini-TTS ni Cloud TTS (Google) n'ont de voix nl-BE, seulement
-  // nl-NL (accent différent, confirmé par une vraie erreur API) —
-  // ElevenLabs a de vraies voix flamandes dans sa bibliothèque
-  // (elevenlabs.io/voice-library, chercher "Flemish"). 5 emplacements pour
-  // comparer plusieurs candidats "comme avant" (menu Gemini) : on ne peut
-  // pas pré-remplir avec de vraies voix (bibliothèque ElevenLabs pas
-  // consultable depuis ici), donc on colle soi-même les Voice ID trouvés en
-  // écoutant sur elevenlabs.io (gratuit, pas besoin de compte payant pour
-  // ça), on teste chacun, et on coche celui qu'on garde. Dès qu'un
-  // emplacement est coché, obtenirAudio() (alfred-voice.js) l'utilise en
-  // PREMIER pour le NL, avant même Gemini.
-  panel.appendChild(champLabel(`Voix ElevenLabs — néerlandais BELGE (optionnel, jusqu'à ${ALFRED_ELEVENLABS_NB_CANDIDATS} candidats)`));
+  // ══ NÉERLANDAIS — ElevenLabs ═══════════════════════════════════
+  panel.appendChild(sectionTitre('🇳🇱 Nederlands — ElevenLabs (voix flamandes)',
+    'Toutes les répliques NL utilisent la voix cochée ci-dessous (modèle eleven_v3 + émotions). Sans voix cochée : repli Gemini nl-NL (accent Pays-Bas).'));
 
   const candidatsElevenLabs = chargerCandidatsElevenLabsNL();
   const voixActiveActuelle = (typeof voixElevenLabsNL === 'function') ? voixElevenLabsNL() : '';
+  const infosElevenLabs = chargerInfosElevenLabs();
   const zoneCandidats = document.createElement('div');
-  zoneCandidats.style.cssText = 'display:flex;flex-direction:column;gap:6px;margin-bottom:14px;';
+  zoneCandidats.style.cssText = 'display:flex;flex-direction:column;gap:6px;margin:8px 0 8px;';
 
   candidatsElevenLabs.forEach((candidat, i) => {
     const ligne = document.createElement('div');
-    ligne.style.cssText = 'display:flex;gap:6px;align-items:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:6px;';
+    ligne.style.cssText = 'display:flex;gap:8px;align-items:flex-start;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:7px 8px;';
+    if (candidat.voiceId && candidat.voiceId === voixActiveActuelle) ligne.style.borderColor = 'rgba(95,227,234,.6)';
 
     const radio = document.createElement('input');
     radio.type = 'radio';
     radio.name = 'alfred-elevenlabs-actif';
     radio.title = 'Utiliser cette voix pour le NL';
     radio.checked = !!candidat.voiceId && candidat.voiceId === voixActiveActuelle;
-    radio.style.cssText = 'flex:none;cursor:pointer;';
+    radio.style.cssText = 'flex:none;cursor:pointer;margin-top:4px;';
 
-    const inputLabel = document.createElement('input');
-    inputLabel.type = 'text';
-    inputLabel.placeholder = 'Nom (ex. Sven)';
-    inputLabel.value = candidat.label || '';
-    inputLabel.style.cssText = 'width:70px;flex:none;box-sizing:border-box;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:11px;';
+    const colonne = document.createElement('div');
+    colonne.style.cssText = 'flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;';
+
+    const info = candidat.voiceId ? infosElevenLabs[candidat.voiceId] : null;
+    const nom = document.createElement('div');
+    nom.style.cssText = 'color:#fff;font-size:12px;font-weight:600;';
+    nom.textContent = (info && info.ok !== false && info.name) ? info.name : (candidat.label || (candidat.voiceId ? `Voix #${i + 1}` : 'Emplacement libre'));
+    colonne.appendChild(nom);
+    const desc = document.createElement('div');
+    desc.style.cssText = 'color:rgba(255,255,255,.55);font-size:10px;line-height:1.35;';
+    const txtDesc = decrireVoixElevenLabs(info);
+    desc.textContent = txtDesc || (candidat.voiceId ? 'Description inconnue — clique « Récupérer noms et descriptions ».' : '');
+    if (info && info.ok === false) desc.style.color = '#ffb4a2';
+    if (txtDesc || candidat.voiceId) colonne.appendChild(desc);
 
     const inputId = document.createElement('input');
     inputId.type = 'text';
-    inputId.placeholder = `Voice ID #${i + 1} (elevenlabs.io/voice-library)`;
+    inputId.placeholder = 'Voice ID (elevenlabs.io/voice-library)';
     inputId.value = candidat.voiceId || '';
-    inputId.style.cssText = 'flex:1;min-width:0;box-sizing:border-box;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:11px;font-family:monospace;';
+    inputId.style.cssText = 'width:100%;box-sizing:border-box;padding:4px 6px;border-radius:5px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.2);color:rgba(255,255,255,.7);font-size:10px;font-family:monospace;';
+    colonne.appendChild(inputId);
 
     function sauverLigne() {
-      candidatsElevenLabs[i] = { label: inputLabel.value.trim(), voiceId: inputId.value.trim() };
+      candidatsElevenLabs[i] = { label: candidat.label || '', voiceId: inputId.value.trim() };
       enregistrerCandidatsElevenLabsNL(candidatsElevenLabs);
-      // Si la ligne cochée n'a plus d'ID (effacé), on désactive l'ElevenLabs actif.
       if (radio.checked) localStorage.setItem(ALFRED_ELEVENLABS_VOIX_NL_KEY, inputId.value.trim());
     }
-    inputLabel.oninput = sauverLigne;
     inputId.oninput = sauverLigne;
-
-    radio.onchange = () => {
-      if (radio.checked) localStorage.setItem(ALFRED_ELEVENLABS_VOIX_NL_KEY, inputId.value.trim());
-    };
+    radio.onchange = () => { if (radio.checked) { localStorage.setItem(ALFRED_ELEVENLABS_VOIX_NL_KEY, inputId.value.trim()); ouvrirPanneauVoix(); } };
 
     const btnTester = document.createElement('button');
     btnTester.textContent = '▶';
-    btnTester.title = 'Tester cette voix';
-    btnTester.style.cssText = 'flex:none;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:12px;cursor:pointer;';
-    btnTester.onclick = async () => {
+    btnTester.title = 'Tester cette voix avec une réplique du script (NL)';
+    btnTester.style.cssText = styleBouton + 'flex:none;padding:6px 10px;';
+    btnTester.onclick = () => {
       const voiceId = inputId.value.trim();
       if (!voiceId) { alert('Colle d\'abord un Voice ID ElevenLabs (depuis elevenlabs.io/voice-library).'); return; }
-      const original = btnTester.textContent;
-      btnTester.disabled = true;
-      btnTester.textContent = '…';
-      try {
-        // Voir la note équivalente sur testerVoix (Gemini) un peu plus
-        // haut dans ce fichier — même correctif, même bug.
-        if (typeof stopAudio === 'function') stopAudio();
-        const audio = await genererAudioElevenLabs("Goeiedag, ik ben Alfred. Dit is een voorbeeld van mijn stem.", voiceId);
-        currentAudio = audio;
-        await audio.play();
-      } catch (e) {
-        console.warn('[Alfred Voice] Test de voix ElevenLabs échoué:', e);
-        alert('Cette voix n\'a pas pu être générée — vérifie le Voice ID, ou que ELEVENLABS_API_KEY est bien configurée côté serveur (Vercel). Regarde la console pour le détail.');
-      } finally {
-        btnTester.disabled = false;
-        btnTester.textContent = original;
-      }
+      const t = repliqueTest('nl');
+      jouerTest(btnTester, () => genererAudioElevenLabs(t.texte, voiceId, t.emotion));
     };
 
     ligne.appendChild(radio);
-    ligne.appendChild(inputLabel);
-    ligne.appendChild(inputId);
+    ligne.appendChild(colonne);
     ligne.appendChild(btnTester);
     zoneCandidats.appendChild(ligne);
   });
   panel.appendChild(zoneCandidats);
 
-  // Expressivité ElevenLabs v3 (voir expressiviteElevenLabs, alfred-voice.js).
+  const zoneInfos = document.createElement('div');
+  zoneInfos.style.cssText = 'display:flex;gap:6px;margin-bottom:10px;';
+  const btnInfos = document.createElement('button');
+  btnInfos.textContent = '↻ Récupérer noms et descriptions';
+  btnInfos.title = 'Lit nom, description et étiquettes de chaque voix via l\'API ElevenLabs (la voix doit être ajoutée à ton compte : « Add to my voices »)';
+  btnInfos.style.cssText = styleBouton + 'flex:1;';
+  btnInfos.onclick = async () => {
+    btnInfos.disabled = true; btnInfos.textContent = '… lecture';
+    try {
+      await recupererInfosElevenLabs(candidatsElevenLabs.map(c => c.voiceId));
+      ouvrirPanneauVoix();
+    } catch (e) {
+      console.warn('[Alfred Voice] Infos ElevenLabs :', e);
+      alert('Impossible de lire les infos des voix : ' + (e && e.message || e) + '\n(api/elevenlabs-voix.js doit être déployé sur Vercel.)');
+      btnInfos.disabled = false; btnInfos.textContent = '↻ Récupérer noms et descriptions';
+    }
+  };
+  zoneInfos.appendChild(btnInfos);
+  const btnCompte = document.createElement('button');
+  btnCompte.textContent = '☰ Voix du compte';
+  btnCompte.title = 'Liste toutes les voix de ton compte ElevenLabs, pour en ajouter une dans un emplacement libre';
+  btnCompte.style.cssText = styleBouton + 'flex:none;';
+  btnCompte.onclick = async () => {
+    btnCompte.disabled = true;
+    try {
+      const voix = await recupererInfosElevenLabs([], { toutes: true });
+      const dejaLa = new Set(candidatsElevenLabs.map(c => c.voiceId));
+      const choix = voix.filter(v => !dejaLa.has(v.voiceId));
+      if (!choix.length) { alert('Toutes les voix du compte sont déjà dans la liste.'); return; }
+      const liste = choix.map((v, k) => `${k + 1}. ${v.name} — ${decrireVoixElevenLabs(v) || v.category}`).join('\n');
+      const rep = prompt('Voix du compte ElevenLabs — numéro à ajouter dans un emplacement libre :\n\n' + liste);
+      const k = parseInt(rep, 10) - 1;
+      if (!(k >= 0 && k < choix.length)) return;
+      const vide = candidatsElevenLabs.find(c => !c.voiceId);
+      if (!vide) { alert('Aucun emplacement libre : efface d\'abord un Voice ID.'); return; }
+      vide.voiceId = choix[k].voiceId; vide.label = choix[k].name;
+      enregistrerCandidatsElevenLabsNL(candidatsElevenLabs);
+      ouvrirPanneauVoix();
+    } catch (e) {
+      alert('Impossible de lister les voix du compte : ' + (e && e.message || e));
+    } finally { btnCompte.disabled = false; }
+  };
+  zoneInfos.appendChild(btnCompte);
+  panel.appendChild(zoneInfos);
+
+  // Première ouverture : si des voix n'ont pas encore d'infos, on les lit
+  // automatiquement (une fois), sans bloquer le panneau.
+  const sansInfos = candidatsElevenLabs.filter(c => c.voiceId && !infosElevenLabs[c.voiceId]).map(c => c.voiceId);
+  if (sansInfos.length && (typeof ALFRED_CONFIG !== 'undefined') && ALFRED_CONFIG.API_ELEVENLABS_VOIX && !ouvrirPanneauVoix._infosTentees) {
+    ouvrirPanneauVoix._infosTentees = true;
+    recupererInfosElevenLabs(sansInfos).then(() => ouvrirPanneauVoix()).catch(e => console.warn('[Alfred Voice] Infos ElevenLabs (auto) :', e && e.message));
+  }
+
   panel.appendChild(champLabel('Expressivité ElevenLabs v3 (NL)'));
   const selExpr = document.createElement('select');
-  selExpr.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:12px;margin-bottom:14px;';
+  selExpr.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:#0a3b52;color:#fff;font-size:12px;margin-bottom:14px;';
   [['naturel', 'Naturel (stabilité 0.5) — régulier'], ['creatif', 'Créatif (stabilité 0) — le plus expressif']].forEach(([val, txt]) => {
-    const o = document.createElement('option'); o.value = val; o.textContent = txt; selExpr.appendChild(o);
+    const o = document.createElement('option'); o.value = val; o.textContent = txt; o.style.cssText = 'background:#0a3b52;color:#fff;'; selExpr.appendChild(o);
   });
   selExpr.value = (typeof expressiviteElevenLabs === 'function') ? expressiviteElevenLabs() : 'naturel';
   selExpr.onchange = () => {
@@ -1075,7 +1101,7 @@ function champLabel(texte) {
 // distincte de ALFRED_ELEVENLABS_VOIX_NL_KEY qui ne retient que celle
 // cochée comme active (c'est cette dernière que lit alfred-voice.js).
 const ALFRED_ELEVENLABS_CANDIDATS_KEY = 'alfred_elevenlabs_candidats_nl';
-const ALFRED_ELEVENLABS_NB_CANDIDATS = 6;
+const ALFRED_ELEVENLABS_NB_CANDIDATS = 8;
 // Pré-rempli une seule fois (tant que rien n'est encore enregistré en
 // local) avec les 6 ID trouvés sur elevenlabs.io/voice-library — évite
 // d'avoir à les recopier à la main dans le panneau.
@@ -1086,6 +1112,7 @@ const ALFRED_ELEVENLABS_CANDIDATS_DEFAUT = [
   '9VFAPoHUQMWIBDOxYj22',
   'FpLGR2n1CcG1v7SHJFsa',
   'wqDY19Brqhu7UCoLadPh',
+  '9kBSa5emtWArU7U0792v', // ajoutée le 06/09 (lien elevenlabs.io/voices/… envoyé par le client)
 ];
 function chargerCandidatsElevenLabsNL() {
   const brut = localStorage.getItem(ALFRED_ELEVENLABS_CANDIDATS_KEY);
@@ -1098,7 +1125,40 @@ function chargerCandidatsElevenLabsNL() {
     if (!Array.isArray(liste)) liste = [];
   }
   while (liste.length < ALFRED_ELEVENLABS_NB_CANDIDATS) liste.push({ label: '', voiceId: '' });
+  // Un ID ajouté aux défauts APRÈS un premier enregistrement local (ex. la
+  // voix envoyée le 06/09) n'apparaissait jamais : la liste locale prime.
+  // On glisse les défauts manquants dans les emplacements vides.
+  for (const id of ALFRED_ELEVENLABS_CANDIDATS_DEFAUT) {
+    if (liste.some(l => l.voiceId === id)) continue;
+    const vide = liste.find(l => !l.voiceId);
+    if (vide) vide.voiceId = id;
+  }
   return liste.slice(0, ALFRED_ELEVENLABS_NB_CANDIDATS);
+}
+// Infos (nom, description, étiquettes) des voix ElevenLabs, lues via
+// api/elevenlabs-voix.js et gardées en local — voir ouvrirPanneauVoix.
+const ALFRED_ELEVENLABS_INFOS_KEY = 'alfred_elevenlabs_infos';
+function chargerInfosElevenLabs() {
+  try { return JSON.parse(localStorage.getItem(ALFRED_ELEVENLABS_INFOS_KEY) || '{}') || {}; } catch (e) { return {}; }
+}
+async function recupererInfosElevenLabs(ids, opts) {
+  const url = (typeof ALFRED_CONFIG !== 'undefined') && ALFRED_CONFIG.API_ELEVENLABS_VOIX;
+  if (!url) throw new Error('API_ELEVENLABS_VOIX non configurée');
+  const q = (opts && opts.toutes) ? 'all=1' : 'ids=' + encodeURIComponent(ids.filter(Boolean).join(','));
+  const res = await fetch(url + '?' + q);
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  const infos = chargerInfosElevenLabs();
+  for (const v of (data.voices || [])) infos[v.voiceId] = v;
+  localStorage.setItem(ALFRED_ELEVENLABS_INFOS_KEY, JSON.stringify(infos));
+  return data.voices || [];
+}
+function decrireVoixElevenLabs(info) {
+  if (!info) return '';
+  if (info.ok === false) return info.erreur || '';
+  const l = info.labels || {};
+  const morceaux = [l.gender, l.age, l.accent || l.language, l.use_case || l.usecase, l.descriptive || l.description].filter(Boolean);
+  return [morceaux.join(' · '), info.description].filter(Boolean).join(' — ');
 }
 function enregistrerCandidatsElevenLabsNL(liste) {
   localStorage.setItem(ALFRED_ELEVENLABS_CANDIDATS_KEY, JSON.stringify(liste.slice(0, ALFRED_ELEVENLABS_NB_CANDIDATS)));
@@ -2095,6 +2155,38 @@ function programmerHologrammes(texteMots, dureeMs, hologrammes) {
   }
 }
 
+// ── Visèmes (forme de bouche déduite du texte) ────────────────────────
+// La bouche ne fait plus "que du rond" : à chaque instant on estime quel
+// mot (même règle mot/durée que les surlignages) et quelle lettre du mot
+// Alfred est en train de dire, et on en déduit une forme de bouche —
+// a/e ouverts, o/u/ou arrondis, i/é/s étirés, m/b/p fermés, f/v petits.
+// Le VOLUME réel continue de piloter l'ouverture ; le texte ne donne que la
+// forme. Précision au mot près, largement suffisante pour l'œil.
+let acteurMots = null, acteurDebut = 0, acteurDureeMs = 0;
+const VISEMES_DIGRAMMES = { ou: 'o', oe: 'o', eu: 'o', ui: 'o', oo: 'o', au: 'o', eau: 'o', ee: 'i', ij: 'i', ei: 'i', aa: 'ah', ie: 'i' };
+const VISEMES_LETTRES = { a: 'ah', à: 'ah', â: 'ah', ä: 'ah', e: 'e', è: 'ah', ê: 'ah', é: 'i', ë: 'ah', o: 'o', ô: 'o', ö: 'o', u: 'o', ù: 'o', û: 'o', ü: 'o', i: 'i', î: 'i', ï: 'i', y: 'i',
+  m: 'ferme', b: 'ferme', p: 'ferme', f: 'fv', v: 'fv', w: 'fv', s: 'i', z: 'i', j: 'i', c: 'i', ç: 'i' };
+function visemeCourant() {
+  if (!acteurMots || !acteurMots.length || !acteurDureeMs) return null;
+  const ecoule = performance.now() - acteurDebut;
+  const msParMot = (acteurDureeMs / acteurMots.length) * 0.93;
+  const idx = Math.floor(ecoule / msParMot);
+  if (idx < 0 || idx >= acteurMots.length) return null;
+  const mot = acteurMots[idx];
+  if (!mot.length) return { forme: 'ferme', gain: 0.2 };
+  const progres = Math.min(0.999, (ecoule - idx * msParMot) / msParMot);
+  // Les derniers 15 % de chaque mot : bouche qui se referme entre deux mots.
+  if (progres > 0.85) return { forme: 'ferme', gain: 0.35 };
+  const li = Math.floor((progres / 0.85) * mot.length);
+  const tri = mot.slice(li, li + 3), duo = mot.slice(li, li + 2);
+  const forme = VISEMES_DIGRAMMES[tri] || VISEMES_DIGRAMMES[duo] || VISEMES_LETTRES[mot[li]] || 'cons';
+  if (forme === 'ferme') return { forme: 'ferme', gain: 0.15 };
+  if (forme === 'fv')    return { forme: 'i', gain: 0.35 };
+  if (forme === 'cons')  return { forme: 'ah', gain: 0.55 };
+  if (forme === 'e')     return { forme: 'e', gain: 0.9 };
+  return { forme, gain: 1 };
+}
+
 // ── Rythme du texte ──────────────────────────────────────────────────
 let acteurTimers = [];
 let acteurGeneration = 0;
@@ -2109,6 +2201,10 @@ function demarrerJeuDActeur(opts) {
   const dureeMs = Math.max(600, Number(opts && opts.dureeMs) || texte.split(/\s+/).length * 400);
   const emo     = EXPRESSIONS_PAR_EMOTION[opts && opts.emotion] || { entree: 'normal', base: 'normal', entreeMs: 0 };
   const vivant  = () => gen === acteurGeneration && curState === 'talk';
+  // Visèmes : mots du texte réellement prononcé (lettres seules, minuscules).
+  acteurMots = String((opts && opts.texteMots) || texte).trim().split(/\s+/).map(m => m.toLowerCase().replace(/[^a-zà-ÿ]/g, ''));
+  acteurDebut = performance.now();
+  acteurDureeMs = dureeMs;
 
   // Expression d'entrée puis de base.
   expressionBase = emo.base;
@@ -2160,6 +2256,7 @@ function demarrerJeuDActeur(opts) {
 
 function arreterJeuDActeur() {
   acteurGeneration++;
+  acteurMots = null; acteurDureeMs = 0;
   acteurTimers.splice(0).forEach(clearTimeout);
   annulerGestes();
   effacerHologrammes();

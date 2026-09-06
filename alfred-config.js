@@ -4,6 +4,7 @@ const ALFRED_CONFIG = {
   API_TTS:    'https://alfred-wellnot.vercel.app/api/tts',
   API_TTS_CACHE: 'https://alfred-wellnot.vercel.app/api/tts-cache',
   API_TTS_ELEVENLABS: 'https://alfred-wellnot.vercel.app/api/tts-elevenlabs',
+  API_ELEVENLABS_VOIX: 'https://alfred-wellnot.vercel.app/api/elevenlabs-voix',
   API_SCRIPT: 'https://alfred-wellnot.vercel.app/api/script',
   API_DEMO_DATA: 'https://alfred-wellnot.vercel.app/api/demo-data',
   API_VENDEUR_REPLY: 'https://alfred-wellnot.vercel.app/api/vendeur-reply',
@@ -26,11 +27,9 @@ const ALFRED_CONFIG = {
   // script officiel ne garde que la zone inondable — les deux autres
   // (régime matrimonial de l'acquéreur, surface au cadastre) ont disparu.
   QUESTIONS_LIVE_FR: [
-    "Le bien est-il en zone inondable ?",
-  ],
+    "Le bien est-il en zone inondable ?"],
   QUESTIONS_LIVE_NL: [
-    "Ligt het goed in overstromingsgevoelig gebied?",
-  ],
+    "Ligt het goed in overstromingsgevoelig gebied?"],
 
   EVENEMENT: {
     nom:          'Congrès des Notaires belges',
@@ -198,7 +197,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // explicitement ("il faudrait qu'elle blague quand il y a des choses
     // drôles... c'est comme une pièce de théâtre"). Posée seulement là où le
     // script s'y prête ; sans effet sur les sous-titres.
-    { acte: 1, label: 'Ouverture', geste: 'saluer', emotion: 'amuse',      hologrammes: [{ mots: ['salle'], titre: 'Une salle entière de notaires', sous: 'Congrès des Notaires', icone: 'salle' }], texte: "Exact. Même si je pensais que l'entretien serait entre nous deux... je ne m'attendais pas à me retrouver devant une salle entière de notaires." },
+    { acte: 1, label: 'Ouverture', geste: 'saluer', emotion: 'amuse',      texte: "Exact. Même si je pensais que l'entretien serait entre nous deux... je ne m'attendais pas à me retrouver devant une salle entière de notaires." },
     { acte: 1, label: 'ServeursAJour', geste: 'fier', emotion: 'assure',  hologrammes: [{ mots: ['serveurs'], titre: 'Serveurs à jour', sous: 'Prêt pour la démo', icone: 'serveur' }], texte: "Pas du tout. Mes serveurs sont à jour et je suis bien préparé. Qu'ils viennent." },
     // MISE À JOUR v3_1 (05/09) — nouvelle version du script officiel NL
     // (Script_scene_Wellnot_InsideAI26_v3_1.pdf), appliquée intégralement.
@@ -206,9 +205,9 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // plus qu'un seul tour de parole, le bilinguisme est passé au milieu du
     // parcours ("Dus natuurlijk ben ik tweetalig"). FR adapté du NL, faute de
     // document FR à jour pour cette version.
-    { acte: 1, label: 'Parcours',       hologrammes: [{ mots: ['ghigny'], titre: 'J.-F. Ghigny & A. Caprasse', sous: 'Les bases juridiques', icone: 'notaires' }, { mots: ['bilingue'], titre: 'Bilingue', sous: 'Français · Nederlands', icone: 'FR·NL' }, { mots: ['actes'], titre: 'Vos actes, vos bases de données', sous: 'Vos obligations', icone: 'acte' }], texte: "Je n'ai pas de parcours classique, je l'avoue. Mais Jean-François Ghigny et Alain Caprasse m'ont donné les bases juridiques. Je suis construit pour une seule chose : le notariat belge. Alors bien sûr, je suis bilingue : français et néerlandais. Je connais vos actes, vos bases de données, vos obligations. Je ne suis pas un outil généraliste qu'on a adapté après coup. Je suis conçu pour vous dès le premier jour." },
-    { acte: 1, label: 'Disponibilité',  hologrammes: [{ mots: ['24h/24'], titre: '24h/24, toute l\'année', sous: 'Jamais fermé', icone: 'horloge' }, { mots: ['vendredi'], titre: 'Vendredi soir, 23h', sous: 'Je m\'y attèle tout de suite', icone: 'eclair' }], texte: "24h/24, toute l'année. Un dossier qui arrive un vendredi soir à 23h ? Vous cliquez et je m'y attèle tout de suite." },
-    { acte: 1, label: 'Competences',    geste: 'fier', hologrammes: [{ mots: ['e-notariat'], titre: 'e-notariat', sous: 'Numéros de registre national', icone: 'id' }, { mots: ['géoportail'], titre: 'Géoportail', sous: 'Cartes et parcelles', icone: 'carte' }, { mots: ["d'inondation"], titre: 'Rapports d\'inondation', sous: 'Zones inondables', icone: 'inondation' }, { mots: ["d'apprendre"], titre: 'J\'apprends chaque jour', sous: 'Et je ne m\'arrête pas', icone: 'etincelles' }], texte: "C'est exactement mon rôle. Je prends le suivi, l'administratif et la collecte des données. Je suis connecté aussi bien à des bases de données publiques que privées : les numéros de registre national dans e-notariat, mais aussi des cartes au géoportail, ou encore les rapports d'inondation. Je vais chercher l'information qu'il faut. Beaucoup est déjà en place — mais je ne cesse d'apprendre." },
+    { acte: 1, label: 'Parcours',       hologrammes: [{ mots: ['ghigny'], titre: 'J.-F. Ghigny & A. Caprasse', sous: 'Les bases juridiques', icone: 'notaires' }, { mots: ['bilingue'], titre: 'Bilingue', sous: 'Français · Nederlands', icone: 'FR·NL' }], texte: "Je n'ai pas de parcours classique, je l'avoue. Mais Jean-François Ghigny et Alain Caprasse m'ont donné les bases juridiques. Je suis construit pour une seule chose : le notariat belge. Alors bien sûr, je suis bilingue : français et néerlandais. Je connais vos actes, vos bases de données, vos obligations. Je ne suis pas un outil généraliste qu'on a adapté après coup. Je suis conçu pour vous dès le premier jour." },
+    { acte: 1, label: 'Disponibilité',  hologrammes: [{ mots: ['24h/24'], titre: '24h/24, toute l\'année', sous: 'Jamais fermé', icone: 'horloge' }], texte: "24h/24, toute l'année. Un dossier qui arrive un vendredi soir à 23h ? Vous cliquez et je m'y attèle tout de suite." },
+    { acte: 1, label: 'Competences',    geste: 'fier', hologrammes: [{ mots: ['e-notariat'], titre: 'e-notariat', sous: 'Numéros de registre national', icone: 'id' }, { mots: ['géoportail'], titre: 'Géoportail', sous: 'Cartes et parcelles', icone: 'carte' }, { mots: ["d'inondation"], titre: 'Rapports d\'inondation', sous: 'Zones inondables', icone: 'inondation' }], texte: "C'est exactement mon rôle. Je prends le suivi, l'administratif et la collecte des données. Je suis connecté aussi bien à des bases de données publiques que privées : les numéros de registre national dans e-notariat, mais aussi des cartes au géoportail, ou encore les rapports d'inondation. Je vais chercher l'information qu'il faut. Beaucoup est déjà en place — mais je ne cesse d'apprendre." },
     { acte: 1, label: 'JeLeMontre', geste: 'hocher', emotion: 'assure',     texte: "Donnez-moi un dossier. Honnêtement ? Je ne l'explique pas. Je le montre." },
     // 'Montrer' inchangée exprès : ce n'est PAS la ligne officielle de
     // Fariël ("Avec plaisir. Montre-moi.") — c'est une adaptation
@@ -248,9 +247,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       // contrairement à dossiers/collaborateurs.
       { texte: "Voici d'abord le tableau de bord : tous les dossiers en cours... les collaborateurs... les statuts.", action: 'CreationOuvrir_Dossiers', parlerDepuisAction: true, surbrillance: [
         { mots: ['dossiers'], cible: 'colDossiers' },
-        { mots: ['collaborateurs'], cible: 'colCollaborateur' },
-      ] },
-    ] },
+        { mots: ['collaborateurs'], cible: 'colCollaborateur' }] }] },
     // Le clic ne part plus dès le début de la réplique (action: retiré) —
     // demandé explicitement : "il faut cliquer créer quand on le dit, là
     // il le fait direct". Déclenché maintenant au mot "clique", via
@@ -258,8 +255,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // alfred-dom.js — ce registre ne fait pas QUE du surlignage, il peut
     // aussi déclencher une vraie action).
     { acte: 2, label: 'OuvrirCreer', texte: "Pour créer un dossier, rien de plus simple : je clique sur « Créer un dossier » et j'arrive sur la fiche de création.", surbrillance: [
-      { mots: ['clique'], cible: 'creerDossierClic' },
-    ] },
+      { mots: ['clique'], cible: 'creerDossierClic' }] },
     // surbrillance : met le champ en évidence au moment estimé où Alfred
     // prononce le mot correspondant (voir resoudreSurbrillance/
     // SURBRILLANCE_CIBLES dans alfred-dom.js) — demandé explicitement.
@@ -304,13 +300,11 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // le dise... on attend quelques secondes et on encode ?").
     { acte: 2, label: 'OuvrirChamps', segments: [
       { texte: "Donnez-moi le numéro de dossier... la langue de rédaction... le collaborateur en charge... et le notaire en charge.", surbrillance: [
-        { mots: ['numéro'], cible: 'dossierCode' },
-      ] },
+        { mots: ['numéro'], cible: 'dossierCode' }] },
       { action: 'CreationOuvrir_ChampNumero',        parlerDepuisAction: true },
       { action: 'CreationOuvrir_ChampLangue',        parlerDepuisAction: true },
       { action: 'CreationOuvrir_ChampCollaborateur', parlerDepuisAction: true },
-      { action: 'CreationOuvrir_ChampNotaire',       parlerDepuisAction: true },
-    ] },
+      { action: 'CreationOuvrir_ChampNotaire',       parlerDepuisAction: true }] },
     // OuvrirOK ("Parfait, passons à la création des parties.") RESTAURÉE le
     // 03/09 : supprimée le 31/08 sur base de v3_9 qui semblait ne pas
     // l'avoir — mais le document "Script_scene_Wellnot_InsideAI26_v3.pdf"
@@ -375,9 +369,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { texte: "Je récupère : dénomination... forme juridique... siège... représentants...", action: 'CreationParties_Vendeur', parlerDepuisAction: true, surbrillance: [
         { mots: ['dénomination'], cible: 'champPartieDenomination' },
         { mots: ['siège'], cible: 'champPartieAdresseSiege' },
-        { mots: ['représentants'], cible: 'champPartieRepresentants' },
-      ] },
-    ] },
+        { mots: ['représentants'], cible: 'champPartieRepresentants' }] }] },
     // parlerDepuisAction — voir la note équivalente sur PartiesVendeur
     // juste au-dessus.
     { acte: 2, label: 'PartiesAcquereur', segments: [
@@ -390,9 +382,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
         { mots: ['nationalité'], cible: 'champPartieNationalite' },
         { mots: ['adresse'], cible: 'champPartieAdresseSiege' },
         { mots: ['civil'], cible: 'champPartieEtatCivil' },
-        { mots: ['matrimonial'], cible: 'champPartieRegimeMatrimonial' },
-      ] },
-    ] },
+        { mots: ['matrimonial'], cible: 'champPartieRegimeMatrimonial' }] }] },
     // RegimeMatrimonial ("Aussi.") SUPPRIMÉE le 05/09 : l'échange FARIËL
     // "Le régime matrimonial aussi ?" / ALFRED "Aussi." n'existe plus dans
     // v3_1 — le régime matrimonial est maintenant simplement énuméré dans
@@ -435,8 +425,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Réplique silencieuse (juste le clic "Suivant") — même raison que
     // OuvrirSuivant plus haut.
     { acte: 2, label: 'PartiesSuivant', segments: [
-      { texte: "", action: 'CreationParties_Suivant', parlerDepuisAction: true },
-    ] },
+      { texte: "", action: 'CreationParties_Suivant', parlerDepuisAction: true }] },
     // RecupAuto ("Tout ce qui est disponible en base, oui.") SUPPRIMÉE le
     // 05/09 : cet échange n'existe plus dans v3_1, on enchaîne directement
     // sur le bien.
@@ -533,8 +522,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // mail...") par un rappel de la promesse d'Alfred sur l'administratif.
     { acte: 2, label: 'Email', texte: "Je vous avais bien dit que j'allais alléger votre travail administratif. J'ai préparé un projet de mail à BIMBIMMO, le vendeur, en lui demandant de m'envoyer le PEB... le contrôle électrique... l'attestation du sol. Une seule demande, jamais deux fois la même question. Vous validez l'envoi ?", action: 'CreationEmail_Ouverture' },
     { acte: 2, label: 'EmailEnvoyer', segments: [
-      { texte: "Voilà, je consulte le projet de mail et je l'envoie.", action: 'CreationEmail_Envoyer', parlerDepuisAction: true },
-    ] },
+      { texte: "Voilà, je consulte le projet de mail et je l'envoie.", action: 'CreationEmail_Envoyer', parlerDepuisAction: true }] },
     // Étape A20-A21 du séquencier. Texte basé sur le script d'origine
     // (séquence 11) : "Le vendeur a répondu — les documents sont chargés.
     // [...] Réceptionnés, analysés, classés [...] Le projet est complet."
@@ -549,8 +537,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // réplique séparée, pas un enchaînement automatique). ProjetComplet
     // (juste après) reprend la suite.
     { acte: 2, label: 'ReponseVendeur', emotion: 'enjoue', segments: [
-      { texte: "Envoyé. Le vendeur a répondu — les documents sont chargés.", action: 'CreationReponseVendeur', parlerDepuisAction: true },
-    ] },
+      { texte: "Envoyé. Le vendeur a répondu — les documents sont chargés.", action: 'CreationReponseVendeur', parlerDepuisAction: true }] },
     // action ajoutée le 04/09 — demandé explicitement : "il ne faut pas
     // appuyer sur rédaction mais sur le logo d'Alfred, comme ça on ferme et
     // on voit la rédaction en pleine écran". Avant, le panneau Alfred
@@ -605,8 +592,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // direct) — demandé explicitement : "écrire dans le chat ces questions
     // vraiment et les envoyer... poser les questions 1 à 1".
     { acte: 2, label: 'PoserQuestions', segments: [
-      { action: 'CreationPoserQuestions', parlerDepuisAction: true },
-    ] },
+      { action: 'CreationPoserQuestions', parlerDepuisAction: true }] },
     // ConnaissanceDossier ALIGNÉE le 04/09 sur le NL (voir la note NL
     // équivalente plus bas) — retour explicite en test live : "la réplique
     // FR et NL ne correspondent pas" (l'ancien texte FR, "Je connais ce
@@ -620,8 +606,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // réplique ClausePEB plus haut). Ne reste ici que l'export Word,
     // toujours hors script officiel, disclosed.
     { acte: 2, label: 'ExportWord', segments: [
-      { texte: "Le compromis est entièrement prêt, et il peut aussi s'exporter directement en Word.", action: 'CreationRedaction_ExporterWord' },
-    ] },
+      { texte: "Le compromis est entièrement prêt, et il peut aussi s'exporter directement en Word.", action: 'CreationRedaction_ExporterWord' }] },
 
     // ACTE 3
     // "certifié [par Privanot]" corrigé en "évalué dans le cadre de
@@ -631,36 +616,35 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Sécurité/Stand/Closing réalignées mot pour mot sur v3_9 le 31/08.
     // Stand changeait de registre (tutoiement) par rapport au reste de
     // l'acte 3 — corrigé, l'officiel vouvoie tout du long côté Alfred.
-    { acte: 3, label: 'Sécurité',      hologrammes: [{ mots: ['serveurs'], titre: 'Serveurs sécurisés', sous: 'Hébergés en Europe', icone: 'serveur' }, { mots: ['rgpd'], titre: 'Conforme RGPD', sous: 'Protection des données', icone: 'cadenas' }, { mots: ['privanot'], titre: 'Évalué par Privanot', sous: 'Sécurité vérifiée', icone: 'badge' }, { mots: ['quittent'], titre: 'Vos données restent en Europe', sous: 'Jamais ailleurs', icone: 'globe' }], texte: "Toutes les données sont hébergées sur des serveurs sécurisés en Europe. Je suis conforme RGPD, et ma sécurité a été évaluée dans le cadre de Privanot. Vos données ne quittent jamais l'Europe." },
-    { acte: 3, label: 'Stand', geste: 'presenter', emotion: 'chaleureux',         hologrammes: [{ mots: ['stand'], titre: 'Stand Wellnot', sous: 'Dans la salle d\'à côté', icone: 'carte' }, { mots: ['démo'], titre: 'Une démo dans votre étude', sous: 'Sur simple demande', icone: 'ecran' }], texte: "Au stand Wellnot, dans la salle d'à côté. Passez, ou demandez une démo directement dans votre étude." },
+    { acte: 3, label: 'Sécurité',      hologrammes: [{ mots: ['rgpd'], titre: 'Conforme RGPD', sous: 'Protection des données', icone: 'cadenas' }, { mots: ['privanot'], titre: 'Évalué par Privanot', sous: 'Sécurité vérifiée', icone: 'badge' }, { mots: ['quittent'], titre: 'Vos données restent en Europe', sous: 'Jamais ailleurs', icone: 'globe' }], texte: "Toutes les données sont hébergées sur des serveurs sécurisés en Europe. Je suis conforme RGPD, et ma sécurité a été évaluée dans le cadre de Privanot. Vos données ne quittent jamais l'Europe." },
+    { acte: 3, label: 'Stand', geste: 'presenter', emotion: 'chaleureux',         hologrammes: [{ mots: ['stand'], titre: 'Stand Wellnot', sous: 'Dans la salle d\'à côté', icone: 'carte' }], texte: "Au stand Wellnot, dans la salle d'à côté. Passez, ou demandez une démo directement dans votre étude." },
     // Closing : DOUTE — la ligne officielle complète ("Ne partez pas trop
     // vite vous-même. Car en réalité, c'est moi qui vous engage.") est plus
     // longue que l'ancienne version. Cette réplique pilote aussi le clin
     // d'œil (ClosingWink), calé en test live sur le texte précédent — à
     // revérifier que le timing du geste tombe toujours bien avec ce texte
     // rallongé.
-    { acte: 3, label: 'Closing', geste: 'ouvrir', emotion: 'malicieux',       texte: "Ne partez pas trop vite vous-même. Car en réalité, c'est moi qui vous engage.", action: 'ClosingWink' },
-  ],
+    { acte: 3, label: 'Closing', geste: 'ouvrir', emotion: 'malicieux',       texte: "Ne partez pas trop vite vous-même. Car en réalité, c'est moi qui vous engage.", action: 'ClosingWink' }],
 
   REPLIQUES_NL: [
     // ACTE 1 — voir la note FR équivalente : réécrit intégralement le
     // 31/08 sur base du script officiel néerlandais
     // "Script_scene_Wellnot_InsideAI26_v3_8.docx" (scènes 1 à 5). Une
     // coquille du document source corrigée : "ademn" → "adem" (Parcours).
-    { acte: 1, label: 'Ouverture', geste: 'saluer', emotion: 'amuse',      hologrammes: [{ mots: ['zaal'], titre: 'Een volle zaal notarissen', sous: 'Notariscongres', icone: 'salle' }], texte: "Juist, dat klopt. Al dacht ik dat het gesprek tussen ons twee zou zijn... ik had niet verwacht dat ik voor een volle zaal notarissen zou staan." },
+    { acte: 1, label: 'Ouverture', geste: 'saluer', emotion: 'amuse',      texte: "Juist, dat klopt. Al dacht ik dat het gesprek tussen ons twee zou zijn... ik had niet verwacht dat ik voor een volle zaal notarissen zou staan." },
     { acte: 1, label: 'ServeursAJour', geste: 'fier', emotion: 'assure',  hologrammes: [{ mots: ['servers'], titre: 'Servers op volle toeren', sous: 'Data up-to-date', icone: 'serveur' }], texte: "Zenuwachtig? Mijn servers draaien op volle toeren en mijn data is up-to-date. Laat ze maar komen!" },
     // Parcours FUSIONNE l'ancienne 'DeuxLangues' (supprimée) — voir la note FR
     // équivalente. Texte repris mot pour mot de v3_1.
-    { acte: 1, label: 'Parcours',       hologrammes: [{ mots: ['ghigny'], titre: 'J.-F. Ghigny & A. Caprasse', sous: 'De juridische basis', icone: 'notaires' }, { mots: ['tweetalig'], titre: 'Tweetalig', sous: 'Nederlands · Français', icone: 'NL·FR' }, { mots: ['akten'], titre: 'Uw akten, uw databanken', sous: 'Al uw verplichtingen', icone: 'acte' }], texte: "Ik heb een heel uniek parcours afgelegd. De notarissen Jean-François Ghigny en Alain Caprasse hebben mij de juridische basis meegegeven. Ik leef en adem het Belgische notariaat. Dus natuurlijk ben ik tweetalig: Nederlands en Frans. Ik ken uw akten, uw databanken, al uw verplichtingen. Ik ben geen algemene tool die achteraf is aangepast voor het notariaat. Ik ben vanaf dag één puur voor u ontworpen." },
+    { acte: 1, label: 'Parcours',       hologrammes: [{ mots: ['ghigny'], titre: 'J.-F. Ghigny & A. Caprasse', sous: 'De juridische basis', icone: 'notaires' }, { mots: ['tweetalig'], titre: 'Tweetalig', sous: 'Nederlands · Français', icone: 'NL·FR' }], texte: "Ik heb een heel uniek parcours afgelegd. De notarissen Jean-François Ghigny en Alain Caprasse hebben mij de juridische basis meegegeven. Ik leef en adem het Belgische notariaat. Dus natuurlijk ben ik tweetalig: Nederlands en Frans. Ik ken uw akten, uw databanken, al uw verplichtingen. Ik ben geen algemene tool die achteraf is aangepast voor het notariaat. Ik ben vanaf dag één puur voor u ontworpen." },
     // Ordre "Nederlands en Frans" (pas "Frans en Nederlands" comme dans
     // v3_8.docx) — confirmé le 03/09 par le vrai document dédié à la scène
     // Alfred NL ("Onglet Demo Alfred"), logique pour une version orientée
     // Flandre (Fariël business developer voor Vlaanderen).
-    { acte: 1, label: 'Disponibilité',  hologrammes: [{ mots: ['24/7'], titre: '24/7, het hele jaar door', sous: 'Nooit gesloten', icone: 'horloge' }, { mots: ['vrijdagavond'], titre: 'Vrijdagavond, 23u', sous: 'Ik begin meteen', icone: 'eclair' }], texte: "Ik ben 24/7 beschikbaar, het hele jaar door. Een dossier dat vrijdagavond om 23u binnenkomt? U klikt en ik begin meteen." },
+    { acte: 1, label: 'Disponibilité',  hologrammes: [{ mots: ['24/7'], titre: '24/7, het hele jaar door', sous: 'Nooit gesloten', icone: 'horloge' }], texte: "Ik ben 24/7 beschikbaar, het hele jaar door. Een dossier dat vrijdagavond om 23u binnenkomt? U klikt en ik begin meteen." },
     // Réécrite (raccourcie) le 05/09 sur v3_1 — l'ancienne énumération
     // détaillée ("Ik neem het werk over dat uw medewerkers tijd kost...")
     // n'existe plus dans cette version.
-    { acte: 1, label: 'Competences',    geste: 'fier', hologrammes: [{ mots: ['e-notariaat'], titre: 'e-notariaat', sous: 'Rijksregisternummers', icone: 'id' }, { mots: ['geoportaal'], titre: 'Geoportaal', sous: 'Kaarten en percelen', icone: 'carte' }, { mots: ['overstromingsrapporten'], titre: 'Overstromingsrapporten', sous: 'Overstromingsgevoelig gebied', icone: 'inondation' }, { mots: ['leer'], titre: 'Ik leer elke dag bij', sous: 'En ik stop niet', icone: 'etincelles' }], texte: "Dat is precies mijn rol. Ik neem de opvolging, de administratie en de gegevensverzameling over. Ik ben gekoppeld aan publieke en private databanken — van rijksregisternummers in e-notariaat tot kaarten op het geoportaal en overstromingsrapporten. Ik haal de informatie op die nodig is. Veel staat al op punt, en ik leer elke dag bij." },
+    { acte: 1, label: 'Competences',    geste: 'fier', hologrammes: [{ mots: ['e-notariaat'], titre: 'e-notariaat', sous: 'Rijksregisternummers', icone: 'id' }, { mots: ['geoportaal'], titre: 'Geoportaal', sous: 'Kaarten en percelen', icone: 'carte' }, { mots: ['overstromingsrapporten'], titre: 'Overstromingsrapporten', sous: 'Overstromingsgevoelig gebied', icone: 'inondation' }], texte: "Dat is precies mijn rol. Ik neem de opvolging, de administratie en de gegevensverzameling over. Ik ben gekoppeld aan publieke en private databanken — van rijksregisternummers in e-notariaat tot kaarten op het geoportaal en overstromingsrapporten. Ik haal de informatie op die nodig is. Veel staat al op punt, en ik leer elke dag bij." },
     { acte: 1, label: 'JeLeMontre', geste: 'hocher', emotion: 'assure',     texte: "Geef me gewoon een dossier. Ik laat het liever zien dan dat ik het uitleg." },
     // 'Montrer' inchangée — même note que côté FR (voir plus haut).
     { acte: 1, label: 'Montrer', geste: 'presenter', emotion: 'chaleureux',       texte: "Met plezier. Kijk maar.", action: 'Montrer' },
@@ -677,26 +661,21 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       // Highlight "statussen" retiré — voir la note FR équivalente.
       { texte: "We beginnen bij het dashboard: hier ziet u al uw lopende dossiers... de medewerkers... en de actuele statussen.", action: 'CreationOuvrir_Dossiers', parlerDepuisAction: true, surbrillance: [
         { mots: ['dossiers'], cible: 'colDossiers' },
-        { mots: ['medewerkers'], cible: 'colCollaborateur' },
-      ] },
-    ] },
+        { mots: ['medewerkers'], cible: 'colCollaborateur' }] }] },
     // Voir la note FR équivalente.
     { acte: 2, label: 'OuvrirCreer', texte: "Een nieuw dossier starten is kinderspel. Ik klik op 'Dossier aanmaken' en de fiche staat klaar.", surbrillance: [
-      { mots: ['klik'], cible: 'creerDossierClic' },
-    ] },
+      { mots: ['klik'], cible: 'creerDossierClic' }] },
     // surbrillance / concurrent / pauses — voir la note FR équivalente.
     // Découpage en segments par flèche — voir la note FR équivalente.
     // Voir la note FR équivalente (une seule flèche, remplissage silencieux
     // enchaîné après la question).
     { acte: 2, label: 'OuvrirChamps', segments: [
       { texte: "Geef mij gewoon het dossiernummer... de taal van de akte... de bevoegde medewerker... en de notaris.", surbrillance: [
-        { mots: ['dossiernummer'], cible: 'dossierCode' },
-      ] },
+        { mots: ['dossiernummer'], cible: 'dossierCode' }] },
       { action: 'CreationOuvrir_ChampNumero',        parlerDepuisAction: true },
       { action: 'CreationOuvrir_ChampLangue',        parlerDepuisAction: true },
       { action: 'CreationOuvrir_ChampCollaborateur', parlerDepuisAction: true },
-      { action: 'CreationOuvrir_ChampNotaire',       parlerDepuisAction: true },
-    ] },
+      { action: 'CreationOuvrir_ChampNotaire',       parlerDepuisAction: true }] },
     // OuvrirOK ajoutée le 03/09 — voir la note FR équivalente. v3_8 a
     // toujours eu cette ligne ("Genoteerd! Tijd om de partijen erin te
     // zetten.", juste après que Fariël donne le numéro/langue/médewerker/
@@ -715,9 +694,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { texte: "Ik haal de gegevens meteen op: benaming... rechtsvorm... zetel... vertegenwoordigers...", action: 'CreationParties_Vendeur', parlerDepuisAction: true, surbrillance: [
         { mots: ['benaming'], cible: 'champPartieDenomination' },
         { mots: ['zetel'], cible: 'champPartieAdresseSiege' },
-        { mots: ['vertegenwoordigers'], cible: 'champPartieRepresentants' },
-      ] },
-    ] },
+        { mots: ['vertegenwoordigers'], cible: 'champPartieRepresentants' }] }] },
     // parlerDepuisAction / cibles par libellé — voir la note FR équivalente.
     { acte: 2, label: 'PartiesAcquereur', segments: [
       // v3_1 : nouvel ordre + phrase finale — voir la note FR équivalente.
@@ -727,9 +704,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
         { mots: ['nationaliteit'], cible: 'champPartieNationalite' },
         { mots: ['adres'], cible: 'champPartieAdresseSiege' },
         { mots: ['burgerlijke'], cible: 'champPartieEtatCivil' },
-        { mots: ['huwelijksvermogensstelsel'], cible: 'champPartieRegimeMatrimonial' },
-      ] },
-    ] },
+        { mots: ['huwelijksvermogensstelsel'], cible: 'champPartieRegimeMatrimonial' }] }] },
     // RegimeMatrimonial SUPPRIMÉE le 05/09 — voir la note FR équivalente.
     // Ordre / rôles / re-découpage de la phrase — voir la note FR
     // équivalente. Corrigée le 31/08 — l'ancien texte était en fait une
@@ -742,8 +717,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'PartiesNotaireV', texte: "Ik koppel hem meteen aan de koper. Voila, nu zijn beide partijen vertegenwoordigd.", action: 'CreationParties_NotaireVendeur' },
     // Réplique silencieuse — voir la note FR équivalente.
     { acte: 2, label: 'PartiesSuivant', segments: [
-      { texte: "", action: 'CreationParties_Suivant', parlerDepuisAction: true },
-    ] },
+      { texte: "", action: 'CreationParties_Suivant', parlerDepuisAction: true }] },
     // RecupAuto SUPPRIMÉE le 05/09 — voir la note FR équivalente.
     // Corrigée le 31/08 — même souci que les autres : traduction du FR au
     // lieu du vrai v3_8 ("kadastrale legger", pas "kadastrale matrix" —
@@ -805,16 +779,14 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'PasSiVite', geste: 'stop', emotion: 'taquin', texte: "Niet te snel, Fariël!" },
     { acte: 2, label: 'Email', texte: "Ik had toch aangegeven dat ik jouw administratief werk ging verlichten. Ik heb alvast een conceptmail klaargezet voor de verkoper BIMBIMMO, met de vraag om het EPC... de elektrische keuring... en het bodemattest te bezorgen. Één gerichte vraag, nooit twee keer hetzelfde. Valideert u de verzending?", action: 'CreationEmail_Ouverture' },
     { acte: 2, label: 'EmailEnvoyer', segments: [
-      { texte: "Daar is het, ik bekijk het e-mailontwerp en verstuur het.", action: 'CreationEmail_Envoyer', parlerDepuisAction: true },
-    ] },
+      { texte: "Daar is het, ik bekijk het e-mailontwerp en verstuur het.", action: 'CreationEmail_Envoyer', parlerDepuisAction: true }] },
     // Corrigée le 31/08 — traduction du FR au lieu du vrai v3_8 (à
     // commencer par "Verzonden" au lieu de "Verstuurd", le vrai mot
     // officiel).
     // SÉPARÉE EN DEUX le 03/09 — voir la note FR équivalente : vrai tour de
     // parole de Fariël ("Nu Al?") entre les deux phrases dans v3_8.
     { acte: 2, label: 'ReponseVendeur', emotion: 'enjoue', segments: [
-      { texte: "Verstuurd. En kijk eens aan: de verkoper heeft al geantwoord, de documenten zijn binnen.", action: 'CreationReponseVendeur', parlerDepuisAction: true },
-    ] },
+      { texte: "Verstuurd. En kijk eens aan: de verkoper heeft al geantwoord, de documenten zijn binnen.", action: 'CreationReponseVendeur', parlerDepuisAction: true }] },
     // action : voir la note FR équivalente (fermerPanneauAlfred, même
     // correctif).
     { acte: 2, label: 'ProjetComplet', geste: 'fier', emotion: 'fier', texte: "Ontvangen, geanalyseerd en verwerkt. En kijk naar de verkoopovereenkomst: de gegevens uit de stukken zijn in de juiste clausules verwerkt. Het ontwerp is klaar. Ik bereid alles voor en u beslist.", action: 'CreationRedaction_ProjetComplet' },
@@ -830,8 +802,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Réplique SILENCIEUSE — voir la note FR équivalente (même mécanisme,
     // QUESTIONS_LIVE_NL).
     { acte: 2, label: 'PoserQuestions', segments: [
-      { action: 'CreationPoserQuestions', parlerDepuisAction: true },
-    ] },
+      { action: 'CreationPoserQuestions', parlerDepuisAction: true }] },
     // ConnaissanceDossier CORRIGÉE le 03/09 : "Ik ken dit dossier tot in de
     // verste uithoeken." (v3_8.docx) remplacée par "Ik heb je vragen
     // beantwoord in de Chatbot." — texte différent trouvé dans le vrai
@@ -842,22 +813,20 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'ConnaissanceDossier',  texte: "Ik heb je vragen beantwoord in de Chatbot." },
 
     { acte: 2, label: 'ExportWord', segments: [
-      { texte: "De verkoopbelofte is helemaal klaar en je kan deze ook rechtstreeks exporteren naar Word.", action: 'CreationRedaction_ExporterWord' },
-    ] },
+      { texte: "De verkoopbelofte is helemaal klaar en je kan deze ook rechtstreeks exporteren naar Word.", action: 'CreationRedaction_ExporterWord' }] },
 
     // ACTE 3
     // "gecertificeerd door Privanot" corrigé (même note de prod que la
     // version FR : "certifié" à éviter tant que ce n'est pas acté).
     // Sécurité/Stand/Closing réalignées mot pour mot sur v3_8 le 31/08.
-    { acte: 3, label: 'Sécurité',      hologrammes: [{ mots: ['servers'], titre: 'Beveiligde servers', sous: 'Gehost in Europa', icone: 'serveur' }, { mots: ['gdpr-conform'], titre: 'GDPR-conform', sous: 'Gegevensbescherming', icone: 'cadenas' }, { mots: ['privanot'], titre: 'Geëvalueerd door Privanot', sous: 'Veiligheid gecontroleerd', icone: 'badge' }, { mots: ['verlaten'], titre: 'Uw gegevens blijven in Europa', sous: 'Nooit elders', icone: 'globe' }], texte: "Alle gegevens worden gehost op beveiligde servers in Europa. Ik ben GDPR-conform, en mijn veiligheid werd geëvalueerd in het kader van Privanot. Uw gegevens verlaten Europa nooit." },
-    { acte: 3, label: 'Stand', geste: 'presenter', emotion: 'chaleureux',         hologrammes: [{ mots: ['wellnot-stand'], titre: 'Wellnot-stand', sous: 'In de zaal hiernaast', icone: 'carte' }, { mots: ['demo'], titre: 'Een demo in uw kantoor', sous: 'Op eenvoudige vraag', icone: 'ecran' }], texte: "Heel eenvoudig: op de Wellnot-stand, in de zaal hiernaast. Kom langs, of vraag een demo rechtstreeks in uw kantoor." },
+    { acte: 3, label: 'Sécurité',      hologrammes: [{ mots: ['gdpr-conform'], titre: 'GDPR-conform', sous: 'Gegevensbescherming', icone: 'cadenas' }, { mots: ['privanot'], titre: 'Geëvalueerd door Privanot', sous: 'Veiligheid gecontroleerd', icone: 'badge' }, { mots: ['verlaten'], titre: 'Uw gegevens blijven in Europa', sous: 'Nooit elders', icone: 'globe' }], texte: "Alle gegevens worden gehost op beveiligde servers in Europa. Ik ben GDPR-conform, en mijn veiligheid werd geëvalueerd in het kader van Privanot. Uw gegevens verlaten Europa nooit." },
+    { acte: 3, label: 'Stand', geste: 'presenter', emotion: 'chaleureux',         hologrammes: [{ mots: ['wellnot-stand'], titre: 'Wellnot-stand', sous: 'In de zaal hiernaast', icone: 'carte' }], texte: "Heel eenvoudig: op de Wellnot-stand, in de zaal hiernaast. Kom langs, of vraag een demo rechtstreeks in uw kantoor." },
     // Closing — même DOUTE que côté FR (voir la note FR équivalente,
     // timing du clin d'œil à revérifier). Registre "je/jou" (informel,
     // adressé à Fariël) : c'est bien ce que dit l'officiel v3_8 à cet
     // endroit précis, contrairement au FR qui reste vouvoyé — vérifié, pas
     // une incohérence de traduction.
-    { acte: 3, label: 'Closing', geste: 'ouvrir', emotion: 'malicieux',       texte: "Pas maar op dat je zelf niet te snel juicht, Fariël... In werkelijkheid ben ík degene die jou zojuist heeft goedgekeurd.", action: 'ClosingWink' },
-  ],
+    { acte: 3, label: 'Closing', geste: 'ouvrir', emotion: 'malicieux',       texte: "Pas maar op dat je zelf niet te snel juicht, Fariël... In werkelijkheid ben ík degene die jou zojuist heeft goedgekeurd.", action: 'ClosingWink' }],
 
   TRIGGERS_NL: [
     'hoe', 'wat', 'wie', 'waar', 'wanneer', 'waarom', 'welke', 'welk',
