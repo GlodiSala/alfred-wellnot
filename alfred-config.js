@@ -113,6 +113,15 @@ const ALFRED_CONFIG = {
       rue:              'Rue de la Station',
       numero:           '42',
       commune:          '8670 — Coxyde',
+      // Nom NÉERLANDAIS de la même commune (Coxyde = Koksijde) — demandé
+      // le 06/09 : "ce serait plus logique s'il tapait Kok en néerlandais,
+      // juste pour être logique" (ça marchait déjà en tapant le nom FR,
+      // la sélection matche par code postal — voir essayerAjouterBienParCadastre
+      // — mais taper un nom français dans une interface en néerlandais ne
+      // fait pas très naturel). On ne tape que les 3 premières lettres en
+      // NL ("Kok"), comme demandé, le code postal suffisant ensuite à
+      // repérer la bonne suggestion dans le menu.
+      commune_nl:       'Koksijde',
     },
   },
 

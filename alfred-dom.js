@@ -2254,10 +2254,19 @@ async function essayerAjouterBienParCadastre(bien) {
   // ne comprend PAS le format complet "8670 — Coxyde" (renvoie "Aucun
   // résultat"), seulement le nom ("Coxyde") — confirmé en test live.
   const [codePostal, nomCommune] = bien.commune.split(/[—-]/).map(s => s && s.trim());
+  // En néerlandais : la commune belge peut avoir un nom différent
+  // (Coxyde/Koksijde...) — voir bien.commune_nl. On ne tape que les 3
+  // premières lettres du nom NL (demandé explicitement, "juste pour être
+  // logique") ; le FR continue de taper le nom complet, inchangé ("en fr
+  // c'est ok"). Le code postal (identique dans les deux langues) reste ce
+  // qui repère vraiment la bonne suggestion dans le menu — voir plus bas.
+  const enNL = (typeof currentLangue !== 'undefined' && currentLangue === 'nl');
+  const nomCommuneNL = bien.commune_nl && bien.commune_nl.trim();
+  const texteATaper = enNL && nomCommuneNL ? nomCommuneNL.slice(0, 3) : (nomCommune || bien.commune);
 
   await curseurVersAsync(input, () => input.focus());
   await attendre(200);
-  await taper(input, nomCommune || bien.commune);
+  await taper(input, texteATaper);
 
   // Un menu d'auto-complétion s'ouvre PENDANT la frappe (avant même de
   // cliquer "Rechercher") — il faut cliquer la bonne commune dedans pour
@@ -2279,7 +2288,12 @@ async function essayerAjouterBienParCadastre(bien) {
       .find(el => {
         if (el.getBoundingClientRect().width === 0) return false;
         const t = el.textContent.trim().toLowerCase();
-        return (codePostal && t.includes(codePostal.toLowerCase())) || t.includes((nomCommune || bien.commune).toLowerCase());
+        // Comparaison sur le nom COMPLET (NL si dispo en néerlandais, sinon
+        // FR) même si on n'a tapé que 3 lettres — le menu affiche le nom
+        // en entier, "Kok" ne le matcherait pas tout seul sans le code
+        // postal en repli.
+        const nomComplet = (enNL && nomCommuneNL) ? nomCommuneNL : (nomCommune || bien.commune);
+        return (codePostal && t.includes(codePostal.toLowerCase())) || t.includes(nomComplet.toLowerCase());
       });
     if (optionCommune) break;
     await attendre(400);
