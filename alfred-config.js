@@ -192,8 +192,14 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // rédaction", en Acte 2 — voir plus bas). Découpé en une réplique par
     // tour d'Alfred (pas de regroupement en segments) : plusieurs vrais
     // tours de parole de Fariël s'intercalent entre eux dans le script.
-    { acte: 1, label: 'Ouverture',      texte: "Exact. Même si je pensais que l'entretien serait entre nous deux... je ne m'attendais pas à me retrouver devant une salle entière de notaires." },
-    { acte: 1, label: 'ServeursAJour',  texte: "Pas du tout. Mes serveurs sont à jour et je suis bien préparé. Qu'ils viennent." },
+    // `emotion` (05/09) : jeu de la voix pour cette réplique — clé de
+    // EMOTIONS_VOIX (alfred-voice.js) : balise [amused]/[playfully]... pour
+    // ElevenLabs v3, complément de consigne de ton pour Gemini. Demandé
+    // explicitement ("il faudrait qu'elle blague quand il y a des choses
+    // drôles... c'est comme une pièce de théâtre"). Posée seulement là où le
+    // script s'y prête ; sans effet sur les sous-titres.
+    { acte: 1, label: 'Ouverture', emotion: 'amuse',      texte: "Exact. Même si je pensais que l'entretien serait entre nous deux... je ne m'attendais pas à me retrouver devant une salle entière de notaires." },
+    { acte: 1, label: 'ServeursAJour', emotion: 'assure',  texte: "Pas du tout. Mes serveurs sont à jour et je suis bien préparé. Qu'ils viennent." },
     // MISE À JOUR v3_1 (05/09) — nouvelle version du script officiel NL
     // (Script_scene_Wellnot_InsideAI26_v3_1.pdf), appliquée intégralement.
     // Parcours FUSIONNE l'ancienne 'DeuxLangues' (supprimée) : v3_1 n'en fait
@@ -203,14 +209,14 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 1, label: 'Parcours',       texte: "Je n'ai pas de parcours classique, je l'avoue. Mais Jean-François Ghigny et Alain Caprasse m'ont donné les bases juridiques. Je suis construit pour une seule chose : le notariat belge. Alors bien sûr, je suis bilingue : français et néerlandais. Je connais vos actes, vos bases de données, vos obligations. Je ne suis pas un outil généraliste qu'on a adapté après coup. Je suis conçu pour vous dès le premier jour." },
     { acte: 1, label: 'Disponibilité',  texte: "24h/24, toute l'année. Un dossier qui arrive un vendredi soir à 23h ? Vous cliquez et je m'y attèle tout de suite." },
     { acte: 1, label: 'Competences',    texte: "C'est exactement mon rôle. Je prends le suivi, l'administratif et la collecte des données. Je suis connecté aussi bien à des bases de données publiques que privées : les numéros de registre national dans e-notariat, mais aussi des cartes au géoportail, ou encore les rapports d'inondation. Je vais chercher l'information qu'il faut. Beaucoup est déjà en place — mais je ne cesse d'apprendre." },
-    { acte: 1, label: 'JeLeMontre',     texte: "Donnez-moi un dossier. Honnêtement ? Je ne l'explique pas. Je le montre." },
+    { acte: 1, label: 'JeLeMontre', emotion: 'assure',     texte: "Donnez-moi un dossier. Honnêtement ? Je ne l'explique pas. Je le montre." },
     // 'Montrer' inchangée exprès : ce n'est PAS la ligne officielle de
     // Fariël ("Avec plaisir. Montre-moi.") — c'est une adaptation
     // délibérée (Alfred invite le public à regarder, plutôt que Fariël
     // qui invite Alfred) construite avec le geste clinDoeil/gesteMontrer
     // et testée en direct plus tôt cette session. Ne pas la "corriger"
     // vers le texte officiel de Fariël sans retester le geste.
-    { acte: 1, label: 'Montrer',       texte: "Avec plaisir. Regardez.", action: 'Montrer' },
+    { acte: 1, label: 'Montrer', emotion: 'chaleureux',       texte: "Avec plaisir. Regardez.", action: 'Montrer' },
 
     // ACTE 2 — CRÉATION LIVE (démonstration séparée, avant l'ouverture de R426)
     // Décomposée en 6 répliques qui suivent le processus décrit par Cyril :
@@ -321,7 +327,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // "Parfait, passons..." ET cliquer "Suivant" sont maintenant sur la
     // même flèche, en concurrence par défaut — le clic n'a besoin d'aucune
     // narration particulière, contrairement à OuvrirChamps/PartiesVendeur).
-    { acte: 2, label: 'OuvrirOK', texte: "Parfait, passons à la création des parties.", action: 'CreationOuvrir_Suivant' },
+    { acte: 2, label: 'OuvrirOK', emotion: 'enjoue', texte: "Parfait, passons à la création des parties.", action: 'CreationOuvrir_Suivant' },
     // Retour Cyril (capture d'écran à l'appui) : rattacher le notaire de
     // chaque partie se fait en fait directement sur l'onglet Parties, juste
     // après avoir ajouté vendeur et acquéreur.
@@ -441,7 +447,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // comparaison (DOUTE explicitement signalé, maintenant tranché).
     // DÉCOMPOSÉ le 03/09 (2e passe) — même raison que Ouvrir ci-dessus.
     { acte: 2, label: 'Bien', texte: "Pour le bien, vous sélectionnez le bon, et je récupère automatiquement la matrice cadastrale.", action: 'CreationBien_Rechercher' },
-    { acte: 2, label: 'BienOK', texte: "Matrice cadastrale récupérée. Parties... notaires... cadastre — tout est déjà là.", action: 'CreationBien_Finaliser' },
+    { acte: 2, label: 'BienOK', emotion: 'fier', texte: "Matrice cadastrale récupérée. Parties... notaires... cadastre — tout est déjà là.", action: 'CreationBien_Finaliser' },
     // Ajouté suite au retour de Cyril (script officiel, séquence 9 —
     // "Documents") : sans cet échange, la démo enchaînait directement sur
     // la rédaction sans jamais dire que rien n'est encore chargé côté
@@ -464,7 +470,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // rédaction, Alfred répond ça — puis Fariël relance ("Show us the
     // real magic. Lance la rédaction.") avant le clic réel. Réplique
     // séparée exprès (vrai tour de parole de Fariël avant et après).
-    { acte: 2, label: 'RedactionOK', texte: "Je suis né prêt. Allez-y." },
+    { acte: 2, label: 'RedactionOK', emotion: 'assure', texte: "Je suis né prêt. Allez-y." },
     // Même texte que la version à plat (aucun mot changé) — Segments 2 et
     // 3 complétés le 31/08 : nettement tronqués par rapport au monologue
     // officiel de la scène 10 (recomparaison à v3_9) — il manquait toute
@@ -522,7 +528,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Alfred la coupe ("Niet te snel Fariel!") avant d'annoncer qu'il l'a
     // déjà fait. Pas d'action : juste ce tour de parole, l'ouverture du
     // panneau reste sur la réplique Email juste après.
-    { acte: 2, label: 'PasSiVite', texte: "Pas si vite, Fariël !" },
+    { acte: 2, label: 'PasSiVite', emotion: 'taquin', texte: "Pas si vite, Fariël !" },
     // Email : v3_1 remplace l'entrée en matière ("J'ai préparé un projet de
     // mail...") par un rappel de la promesse d'Alfred sur l'administratif.
     { acte: 2, label: 'Email', texte: "Je vous avais bien dit que j'allais alléger votre travail administratif. J'ai préparé un projet de mail à BIMBIMMO, le vendeur, en lui demandant de m'envoyer le PEB... le contrôle électrique... l'attestation du sol. Une seule demande, jamais deux fois la même question. Vous validez l'envoi ?", action: 'CreationEmail_Ouverture' },
@@ -542,7 +548,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // que PartiesVendeur/PartiesAcquereur (vrai tour de Fariël = vraie
     // réplique séparée, pas un enchaînement automatique). ProjetComplet
     // (juste après) reprend la suite.
-    { acte: 2, label: 'ReponseVendeur', segments: [
+    { acte: 2, label: 'ReponseVendeur', emotion: 'enjoue', segments: [
       { texte: "Envoyé. Le vendeur a répondu — les documents sont chargés.", action: 'CreationReponseVendeur', parlerDepuisAction: true },
     ] },
     // action ajoutée le 04/09 — demandé explicitement : "il ne faut pas
@@ -555,7 +561,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // fermerPanneauAlfred() (déjà utilisée par ClausePEB juste après) est
     // idempotente — l'appel qui reste dans ClausePEB ne fait donc rien si
     // le panneau est déjà fermé ici.
-    { acte: 2, label: 'ProjetComplet', texte: "Réceptionnés, analysés, classés. Et regardez le compromis : les données des pièces se sont placées dans les bonnes clauses. Le projet est complet. Je prépare, vous décidez.", action: 'CreationRedaction_ProjetComplet' },
+    { acte: 2, label: 'ProjetComplet', emotion: 'fier', texte: "Réceptionnés, analysés, classés. Et regardez le compromis : les données des pièces se sont placées dans les bonnes clauses. Le projet est complet. Je prépare, vous décidez.", action: 'CreationRedaction_ProjetComplet' },
     // ClausePEB REPOSITIONNÉE le 03/09 : le document officiel a une vraie
     // didascalie à CET endroit précis, juste après "Ontvangen, geanalyseerd
     // en verwerkt... Ik bereid alles voor en u beslist." (= ProjetComplet) :
@@ -576,7 +582,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // d'Alfred au constat de Fariël sur la clause PEB remplie toute seule —
     // elle vivait avant tout à la fin, après le Q&A, où elle ne répondait
     // plus à rien.
-    { acte: 2, label: 'Autonomie',            texte: "Exactement." },
+    { acte: 2, label: 'Autonomie', emotion: 'satisfait',            texte: "Exactement." },
     // Scène 11 (suite) : 3 répliques FIXES d'Alfred trouvées dans
     // l'officiel autour du Q&A live, absentes jusqu'ici — ajoutées le
     // 03/09 suite à une revérification. Entre 'InvitationQuestions' et
@@ -589,7 +595,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Alfred sur l'onglet Conversation pile à ce moment, pour que Fariël
     // n'ait plus à cliquer elle-même dessus en plein direct avant de poser
     // sa question.
-    { acte: 2, label: 'InvitationQuestions', texte: "N'importe qui dans l'étude peut me la poser, à toute heure. Allez-y.", action: 'OuvrirChatConversation' },
+    { acte: 2, label: 'InvitationQuestions', emotion: 'chaleureux', texte: "N'importe qui dans l'étude peut me la poser, à toute heure. Allez-y.", action: 'OuvrirChatConversation' },
     // Réplique SILENCIEUSE (pas de texte, segments + parlerDepuisAction —
     // seule façon de déclencher une action DOM sans qu'Alfred parle, voir
     // jouerSecoursInterne dans alfred-brain.js) : tape et envoie, une à une,
@@ -626,14 +632,14 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Stand changeait de registre (tutoiement) par rapport au reste de
     // l'acte 3 — corrigé, l'officiel vouvoie tout du long côté Alfred.
     { acte: 3, label: 'Sécurité',      texte: "Toutes les données sont hébergées sur des serveurs sécurisés en Europe. Je suis conforme RGPD, et ma sécurité a été évaluée dans le cadre de Privanot. Vos données ne quittent jamais l'Europe." },
-    { acte: 3, label: 'Stand',         texte: "Au stand Wellnot, dans la salle d'à côté. Passez, ou demandez une démo directement dans votre étude." },
+    { acte: 3, label: 'Stand', emotion: 'chaleureux',         texte: "Au stand Wellnot, dans la salle d'à côté. Passez, ou demandez une démo directement dans votre étude." },
     // Closing : DOUTE — la ligne officielle complète ("Ne partez pas trop
     // vite vous-même. Car en réalité, c'est moi qui vous engage.") est plus
     // longue que l'ancienne version. Cette réplique pilote aussi le clin
     // d'œil (ClosingWink), calé en test live sur le texte précédent — à
     // revérifier que le timing du geste tombe toujours bien avec ce texte
     // rallongé.
-    { acte: 3, label: 'Closing',       texte: "Ne partez pas trop vite vous-même. Car en réalité, c'est moi qui vous engage.", action: 'ClosingWink' },
+    { acte: 3, label: 'Closing', emotion: 'malicieux',       texte: "Ne partez pas trop vite vous-même. Car en réalité, c'est moi qui vous engage.", action: 'ClosingWink' },
   ],
 
   REPLIQUES_NL: [
@@ -641,8 +647,8 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // 31/08 sur base du script officiel néerlandais
     // "Script_scene_Wellnot_InsideAI26_v3_8.docx" (scènes 1 à 5). Une
     // coquille du document source corrigée : "ademn" → "adem" (Parcours).
-    { acte: 1, label: 'Ouverture',      texte: "Juist, dat klopt. Al dacht ik dat het gesprek tussen ons twee zou zijn... ik had niet verwacht dat ik voor een volle zaal notarissen zou staan." },
-    { acte: 1, label: 'ServeursAJour',  texte: "Zenuwachtig? Mijn servers draaien op volle toeren en mijn data is up-to-date. Laat ze maar komen!" },
+    { acte: 1, label: 'Ouverture', emotion: 'amuse',      texte: "Juist, dat klopt. Al dacht ik dat het gesprek tussen ons twee zou zijn... ik had niet verwacht dat ik voor een volle zaal notarissen zou staan." },
+    { acte: 1, label: 'ServeursAJour', emotion: 'assure',  texte: "Zenuwachtig? Mijn servers draaien op volle toeren en mijn data is up-to-date. Laat ze maar komen!" },
     // Parcours FUSIONNE l'ancienne 'DeuxLangues' (supprimée) — voir la note FR
     // équivalente. Texte repris mot pour mot de v3_1.
     { acte: 1, label: 'Parcours',       texte: "Ik heb een heel uniek parcours afgelegd. De notarissen Jean-François Ghigny en Alain Caprasse hebben mij de juridische basis meegegeven. Ik leef en adem het Belgische notariaat. Dus natuurlijk ben ik tweetalig: Nederlands en Frans. Ik ken uw akten, uw databanken, al uw verplichtingen. Ik ben geen algemene tool die achteraf is aangepast voor het notariaat. Ik ben vanaf dag één puur voor u ontworpen." },
@@ -655,9 +661,9 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // détaillée ("Ik neem het werk over dat uw medewerkers tijd kost...")
     // n'existe plus dans cette version.
     { acte: 1, label: 'Competences',    texte: "Dat is precies mijn rol. Ik neem de opvolging, de administratie en de gegevensverzameling over. Ik ben gekoppeld aan publieke en private databanken — van rijksregisternummers in e-notariaat tot kaarten op het geoportaal en overstromingsrapporten. Ik haal de informatie op die nodig is. Veel staat al op punt, en ik leer elke dag bij." },
-    { acte: 1, label: 'JeLeMontre',     texte: "Geef me gewoon een dossier. Ik laat het liever zien dan dat ik het uitleg." },
+    { acte: 1, label: 'JeLeMontre', emotion: 'assure',     texte: "Geef me gewoon een dossier. Ik laat het liever zien dan dat ik het uitleg." },
     // 'Montrer' inchangée — même note que côté FR (voir plus haut).
-    { acte: 1, label: 'Montrer',       texte: "Met plezier. Kijk maar.", action: 'Montrer' },
+    { acte: 1, label: 'Montrer', emotion: 'chaleureux',       texte: "Met plezier. Kijk maar.", action: 'Montrer' },
 
     // ACTE 2 — CRÉATION LIVE (démonstration séparée, avant l'ouverture van R426)
     // Tekst afgestemd op Alfreds exacte repliek in het officiële script
@@ -696,7 +702,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // zetten.", juste après que Fariël donne le numéro/langue/médewerker/
     // notaris), jamais reprise côté NL jusqu'ici.
     // Ordre inversé / fusionnée avec OuvrirSuivant — voir la note FR équivalente.
-    { acte: 2, label: 'OuvrirOK', texte: "Genoteerd! Tijd om de partijen erin te zetten.", action: 'CreationOuvrir_Suivant' },
+    { acte: 2, label: 'OuvrirOK', emotion: 'enjoue', texte: "Genoteerd! Tijd om de partijen erin te zetten.", action: 'CreationOuvrir_Suivant' },
     // Corrigées le 31/08 — même raison que côté FR : le lead-in venait de
     // FARIËL, pas d'Alfred, et le texte d'Alfred lui-même n'était pas mot
     // pour mot le v3_8 ("Ik haal op" au lieu de "Ik haal de gegevens
@@ -750,14 +756,14 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Alfred.
     // DÉCOMPOSÉ le 03/09 (2e passe) — voir la note FR équivalente.
     { acte: 2, label: 'Bien', texte: "U duidt simpelweg het pand aan, en ik haal meteen de kadastrale legger op.", action: 'CreationBien_Rechercher' },
-    { acte: 2, label: 'BienOK', texte: "Partijen gekoppeld... notarissen toegewezen... en kadastrale legger opgevraagd. We zijn helemaal klaar.", action: 'CreationBien_Finaliser' },
+    { acte: 2, label: 'BienOK', emotion: 'fier', texte: "Partijen gekoppeld... notarissen toegewezen... en kadastrale legger opgevraagd. We zijn helemaal klaar.", action: 'CreationBien_Finaliser' },
     // Corrigée le 31/08 — traduction du FR au lieu du vrai v3_8.
     // v3_1 : voir la note FR équivalente.
     { acte: 2, label: 'DocumentsReponse', texte: "Er missen nog stukken. U kunt ze zelf uploaden, óf ik stuur meteen een verzoek naar de verkoper om ze aan te leveren." },
     // "Dossier geregistreerd." → "Dossier bewaard en opgeslagen" : c'est
     // ce que dit vraiment v3_8, pas une traduction du FR "enregistré".
     { acte: 2, label: 'DocumentsSave', texte: "Dossier bewaard en opgeslagen.", action: 'CreationDocuments_Enregistrer' },
-    { acte: 2, label: 'RedactionOK', texte: "Ik ben klaar geboren. Laat maar komen!" },
+    { acte: 2, label: 'RedactionOK', emotion: 'assure', texte: "Ik ben klaar geboren. Laat maar komen!" },
     // Segments 2 et 3 complétés le 31/08 — même raison que côté FR
     // (monologue tronqué). Retour explicite : mot pour mot le document
     // v3_8, pas une traduction du FR. Le document source contient à cet
@@ -796,7 +802,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // commence par "Heel eenvoudig.", pas par ce lead-in.
     // DÉCOMPOSÉ le 03/09 (2e passe) — voir la note FR équivalente.
     // PasSiVite AJOUTÉE le 05/09 (v3_1) — voir la note FR équivalente.
-    { acte: 2, label: 'PasSiVite', texte: "Niet te snel, Fariël!" },
+    { acte: 2, label: 'PasSiVite', emotion: 'taquin', texte: "Niet te snel, Fariël!" },
     { acte: 2, label: 'Email', texte: "Ik had toch aangegeven dat ik jouw administratief werk ging verlichten. Ik heb alvast een conceptmail klaargezet voor de verkoper BIMBIMMO, met de vraag om het EPC... de elektrische keuring... en het bodemattest te bezorgen. Één gerichte vraag, nooit twee keer hetzelfde. Valideert u de verzending?", action: 'CreationEmail_Ouverture' },
     { acte: 2, label: 'EmailEnvoyer', segments: [
       { texte: "Daar is het, ik bekijk het e-mailontwerp en verstuur het.", action: 'CreationEmail_Envoyer', parlerDepuisAction: true },
@@ -806,21 +812,21 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // officiel).
     // SÉPARÉE EN DEUX le 03/09 — voir la note FR équivalente : vrai tour de
     // parole de Fariël ("Nu Al?") entre les deux phrases dans v3_8.
-    { acte: 2, label: 'ReponseVendeur', segments: [
+    { acte: 2, label: 'ReponseVendeur', emotion: 'enjoue', segments: [
       { texte: "Verstuurd. En kijk eens aan: de verkoper heeft al geantwoord, de documenten zijn binnen.", action: 'CreationReponseVendeur', parlerDepuisAction: true },
     ] },
     // action : voir la note FR équivalente (fermerPanneauAlfred, même
     // correctif).
-    { acte: 2, label: 'ProjetComplet', texte: "Ontvangen, geanalyseerd en verwerkt. En kijk naar de verkoopovereenkomst: de gegevens uit de stukken zijn in de juiste clausules verwerkt. Het ontwerp is klaar. Ik bereid alles voor en u beslist.", action: 'CreationRedaction_ProjetComplet' },
+    { acte: 2, label: 'ProjetComplet', emotion: 'fier', texte: "Ontvangen, geanalyseerd en verwerkt. En kijk naar de verkoopovereenkomst: de gegevens uit de stukken zijn in de juiste clausules verwerkt. Het ontwerp is klaar. Ik bereid alles voor en u beslist.", action: 'CreationRedaction_ProjetComplet' },
     // ClausePEB — voir la note FR équivalente : repositionnée le 03/09,
     // didascalie officielle "⇒ Montrer ici la clause EPC" trouvée en rouge
     // exactement à cet endroit du document.
     // ClausePEB supprimée (défilement passé dans ProjetComplet) + Autonomie
     // déplacée — voir les notes FR.
-    { acte: 2, label: 'Autonomie',            texte: "Precies!" },
+    { acte: 2, label: 'Autonomie', emotion: 'satisfait',            texte: "Precies!" },
     // Scène 11 (suite) : voir la note FR équivalente — même 3 lignes
     // fixes, sourcées directement de v3_8 (pas traduites du FR).
-    { acte: 2, label: 'InvitationQuestions', texte: "Iedereen op kantoor kan mij dag en nacht vragen stellen. Stel ze maar!", action: 'OuvrirChatConversation' },
+    { acte: 2, label: 'InvitationQuestions', emotion: 'chaleureux', texte: "Iedereen op kantoor kan mij dag en nacht vragen stellen. Stel ze maar!", action: 'OuvrirChatConversation' },
     // Réplique SILENCIEUSE — voir la note FR équivalente (même mécanisme,
     // QUESTIONS_LIVE_NL).
     { acte: 2, label: 'PoserQuestions', segments: [
@@ -844,13 +850,13 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // version FR : "certifié" à éviter tant que ce n'est pas acté).
     // Sécurité/Stand/Closing réalignées mot pour mot sur v3_8 le 31/08.
     { acte: 3, label: 'Sécurité',      texte: "Alle gegevens worden gehost op beveiligde servers in Europa. Ik ben GDPR-conform, en mijn veiligheid werd geëvalueerd in het kader van Privanot. Uw gegevens verlaten Europa nooit." },
-    { acte: 3, label: 'Stand',         texte: "Heel eenvoudig: op de Wellnot-stand, in de zaal hiernaast. Kom langs, of vraag een demo rechtstreeks in uw kantoor." },
+    { acte: 3, label: 'Stand', emotion: 'chaleureux',         texte: "Heel eenvoudig: op de Wellnot-stand, in de zaal hiernaast. Kom langs, of vraag een demo rechtstreeks in uw kantoor." },
     // Closing — même DOUTE que côté FR (voir la note FR équivalente,
     // timing du clin d'œil à revérifier). Registre "je/jou" (informel,
     // adressé à Fariël) : c'est bien ce que dit l'officiel v3_8 à cet
     // endroit précis, contrairement au FR qui reste vouvoyé — vérifié, pas
     // une incohérence de traduction.
-    { acte: 3, label: 'Closing',       texte: "Pas maar op dat je zelf niet te snel juicht, Fariël... In werkelijkheid ben ík degene die jou zojuist heeft goedgekeurd.", action: 'ClosingWink' },
+    { acte: 3, label: 'Closing', emotion: 'malicieux',       texte: "Pas maar op dat je zelf niet te snel juicht, Fariël... In werkelijkheid ben ík degene die jou zojuist heeft goedgekeurd.", action: 'ClosingWink' },
   ],
 
   TRIGGERS_NL: [

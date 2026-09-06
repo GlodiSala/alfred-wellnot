@@ -416,19 +416,59 @@ async function genererAudioCloud(text, voix) {
 // exagère un peu l'expressivité de la voix (voir recherche ElevenLabs :
 // stabilité 40-55% + style pour du contenu qui doit sonner vivant, à
 // l'inverse de 65-75%/style 0 recommandé pour du narratif neutre).
-const ELEVENLABS_REGLAGES_VOIX = { stability: 0.42, similarityBoost: 0.75, style: 0.35 };
+// Modèle ElevenLabs. Passé de eleven_multilingual_v2 à eleven_v3 le 05/09 —
+// demandé explicitement ("la démo est en NL, avec ElevenLabs assez monotone,
+// il faut utiliser un autre modèle... eleven_v3 ?") : v3 est le modèle le
+// plus expressif d'ElevenLabs et comprend des indications de jeu entre
+// crochets dans le texte ([amused], [playfully]...), voir EMOTIONS_VOIX.
+// stability en v3 n'a que trois crans : 0 (créatif, le plus expressif mais
+// moins stable), 0.5 (naturel), 1 (robuste). On part sur naturel + une
+// émotion par réplique là où le script s'y prête.
+const ELEVENLABS_MODELE = 'eleven_v3';
+const ELEVENLABS_REGLAGES_VOIX = { stability: 0.5, similarityBoost: 0.75, style: 0.35 };
+
+// Émotions de jeu par réplique (champ optionnel `emotion` sur une réplique
+// ou un segment, voir alfred-config.js) — demandé explicitement : "il
+// faudrait qu'elle blague quand il y a des choses drôles... c'est comme une
+// pièce de théâtre et c'est trop monotone". Chaque clé donne l'indication
+// pour ElevenLabs v3 (balise entre crochets, comprise par le modèle, jamais
+// prononcée) ET pour Gemini-TTS (ajoutée à la consigne de ton de cette
+// ligne). Les sous-titres et la synchro des surlignages restent sur le texte
+// nu : la balise n'est ajoutée qu'au texte envoyé au moteur.
+const EMOTIONS_VOIX = {
+  amuse:      { v3: '[amused]',        gemini: "amusé, un sourire dans la voix" },
+  assure:     { v3: '[confidently]',   gemini: "assuré, un brin bravache" },
+  enjoue:     { v3: '[cheerfully]',    gemini: "enjoué, plein d'entrain" },
+  taquin:     { v3: '[playfully]',     gemini: "taquin, il la coupe gentiment" },
+  satisfait:  { v3: '[satisfied]',     gemini: "satisfait, tranquille" },
+  chaleureux: { v3: '[warmly]',        gemini: "chaleureux, accueillant" },
+  malicieux:  { v3: '[mischievously]', gemini: "malicieux, il retourne la situation avec un clin d'œil" },
+  fier:       { v3: '[proudly]',       gemini: "fier, sûr de son effet" },
+};
+function baliseEmotionV3(emotion) {
+  const e = emotion && EMOTIONS_VOIX[emotion];
+  return e ? e.v3 : '';
+}
+function tonGeminiAvecEmotion(tonBase, emotion) {
+  const e = emotion && EMOTIONS_VOIX[emotion];
+  return e ? `${tonBase} Pour cette phrase précisément : ${e.gemini}.` : tonBase;
+}
 // Incrémenter cette version à chaque changement de ELEVENLABS_REGLAGES_VOIX
 // : elle fait partie de la clé de cache, donc un changement de réglages
 // régénère automatiquement l'audio au lieu de servir de l'ancien depuis le
 // cache (local ou partagé) — pas besoin de vider quoi que ce soit à la main.
-const ELEVENLABS_REGLAGES_VERSION = 2;
+const ELEVENLABS_REGLAGES_VERSION = 3; // v3 : passage au modèle eleven_v3 (05/09)
 
 // Équivalent ElevenLabs — même logique de cache (local puis partagé) que
 // genererAudioGemini/genererAudioCloud ci-dessus, juste un moteur différent
 // derrière (voir api/tts-elevenlabs.js). Clé de cache distincte ('elevenlabs-')
 // pour ne jamais confondre avec de l'audio Google même à texte identique.
-async function genererAudioElevenLabs(text, voiceId) {
-  const cle = cleTTS({ languageCode: 'nl-BE', name: 'elevenlabs-' + voiceId + '-v' + ELEVENLABS_REGLAGES_VERSION }, text);
+async function genererAudioElevenLabs(text, voiceId, emotion) {
+  // Balise de jeu v3 devant le texte (voir EMOTIONS_VOIX) — fait partie de
+  // la clé de cache : la même phrase dite amusée ou neutre = deux audios.
+  const balise = baliseEmotionV3(emotion);
+  const texteMoteur = balise ? `${balise} ${text}` : text;
+  const cle = cleTTS({ languageCode: 'nl-BE', name: 'elevenlabs-' + ELEVENLABS_MODELE + '-' + voiceId + '-v' + ELEVENLABS_REGLAGES_VERSION }, texteMoteur);
 
   let audioContent = await lireCacheTTS(cle);
   if (audioContent) {
@@ -443,7 +483,7 @@ async function genererAudioElevenLabs(text, voiceId) {
       const res = await fetch(ALFRED_CONFIG.API_TTS_ELEVENLABS, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, voiceId, ...ELEVENLABS_REGLAGES_VOIX }),
+        body: JSON.stringify({ text: texteMoteur, voiceId, modelId: ELEVENLABS_MODELE, ...ELEVENLABS_REGLAGES_VOIX }),
       });
       const data = await res.json();
       if (data.error) throw new Error(`ElevenLabs: ${data.error}`);
@@ -479,18 +519,18 @@ async function genererAudioElevenLabs(text, voiceId) {
 // (pas forcément celui demandé : un repli peut changer de moteur en cours
 // de route) pour appliquer la bonne vitesse de lecture (voir
 // VITESSE_PAROLE/VITESSE_PAROLE_ELEVENLABS plus haut).
-async function obtenirAudio(text, langue, moteurForce) {
+async function obtenirAudio(text, langue, moteurForce, emotion) {
   const voixElevenLabs = langue === 'nl' ? voixElevenLabsNL() : '';
   if (voixElevenLabs) {
     try {
-      return { audio: await genererAudioElevenLabs(text, voixElevenLabs), moteur: 'elevenlabs' };
+      return { audio: await genererAudioElevenLabs(text, voixElevenLabs, emotion), moteur: 'elevenlabs' };
     } catch (e) {
       console.warn('[Alfred Voice] ElevenLabs (nl-BE) indisponible, repli sur Gemini/Cloud TTS (nl-NL):', e);
     }
   }
   if (moteurForce !== 'cloud' && moteurVoixActuel() === 'gemini') {
     try {
-      return { audio: await genererAudioGemini(text, voixGeminiActuelle(), tonGemini(), langue), moteur: 'gemini' };
+      return { audio: await genererAudioGemini(text, voixGeminiActuelle(), tonGeminiAvecEmotion(tonGemini(), emotion), langue), moteur: 'gemini' };
     } catch (e) {
       console.warn('[Alfred Voice] Gemini TTS indisponible, repli sur Cloud TTS:', e);
     }
@@ -516,9 +556,12 @@ const PRECHARGEMENT_CONCURRENCE = 2;
 
 // Une réplique "groupée" (r.segments) contient plusieurs textes à
 // précharger séparément, un par segment, plutôt qu'un seul r.texte.
+// Renvoie {texte, emotion} par ligne — l'émotion fait partie de la clé de
+// cache (voir genererAudioElevenLabs/obtenirAudio), le préchargement doit
+// donc générer exactement ce que la démo jouera.
 function textesAPrecharger(replique) {
-  if (replique.segments) return replique.segments.map(s => s.texte);
-  return [replique.texte];
+  if (replique.segments) return replique.segments.map(s => ({ texte: s.texte, emotion: s.emotion || replique.emotion }));
+  return [{ texte: replique.texte, emotion: replique.emotion }];
 }
 
 // Délai avant le passage de rattrapage ci-dessous — le temps que la limite
@@ -527,8 +570,8 @@ const ATTENTE_RATTRAPAGE_PRECHARGEMENT_MS = 65000;
 
 async function prechargerScript(voixFr, voixNl, ton, onProgress) {
   const lignes = [
-    ...(ALFRED_CONFIG.REPLIQUES_FR || []).flatMap(r => textesAPrecharger(r).map(texte => ({ texte, voix: voixFr, langue: 'fr' }))),
-    ...(ALFRED_CONFIG.REPLIQUES_NL || []).flatMap(r => textesAPrecharger(r).map(texte => ({ texte, voix: voixNl, langue: 'nl' }))),
+    ...(ALFRED_CONFIG.REPLIQUES_FR || []).flatMap(r => textesAPrecharger(r).map(l => ({ texte: l.texte, emotion: l.emotion, voix: voixFr, langue: 'fr' }))),
+    ...(ALFRED_CONFIG.REPLIQUES_NL || []).flatMap(r => textesAPrecharger(r).map(l => ({ texte: l.texte, emotion: l.emotion, voix: voixNl, langue: 'nl' }))),
   ].filter(l => l.texte);
 
   let fait = 0;
@@ -556,9 +599,9 @@ async function prechargerScript(voixFr, voixNl, ton, onProgress) {
         // API à chaque réplique plutôt que servie depuis le cache.
         const voixElevenLabsPrechargement = ligne.langue === 'nl' ? voixElevenLabsNL() : '';
         if (voixElevenLabsPrechargement) {
-          await genererAudioElevenLabs(ligne.texte, voixElevenLabsPrechargement);
+          await genererAudioElevenLabs(ligne.texte, voixElevenLabsPrechargement, ligne.emotion);
         } else {
-          await genererAudioGemini(ligne.texte, ligne.voix, ton, ligne.langue);
+          await genererAudioGemini(ligne.texte, ligne.voix, tonGeminiAvecEmotion(ton, ligne.emotion), ligne.langue);
         }
       } catch (e) {
         tracker.echecs++;
@@ -616,10 +659,29 @@ function animateMouth(amp) {
   // piloté par le volume réel de l'audio (voir talkTick dans speak()), pas
   // du hasard — juste une forme de sortie moins pauvre qu'un simple ovale
   // qui respire.
-  mt.setAttribute('ry', (amp * 12).toFixed(1));
-  mt.setAttribute('rx', (20 - amp * 5).toFixed(1));
-  mt.setAttribute('cy', (128 + amp * 4).toFixed(1));
+  // Coordonnées du robot (voir ALFRED_BOUCHE_* dans alfred-ui.js) — repli
+  // sur les anciennes valeurs si ce fichier tourne seul.
+  const cx = (typeof ALFRED_BOUCHE_CX !== 'undefined') ? ALFRED_BOUCHE_CX : 189;
+  const cy = (typeof ALFRED_BOUCHE_CY !== 'undefined') ? ALFRED_BOUCHE_CY : 128;
+  const rx = (typeof ALFRED_BOUCHE_RX !== 'undefined') ? ALFRED_BOUCHE_RX : 20;
+  mt.setAttribute('cx', cx);
+  mt.setAttribute('ry', (amp * 11).toFixed(1));
+  mt.setAttribute('rx', (rx - amp * 3).toFixed(1));
+  mt.setAttribute('cy', (cy + amp * 3).toFixed(1));
+
+  // Hochements de tête pilotés par le volume (demandé : "beaucoup plus
+  // bouger quand il parle") — lissés pour ne pas trembler à chaque frame :
+  // la tête suit l'amplitude avec un peu d'inertie, penche légèrement et
+  // descend d'un ou deux pixels sur les syllabes appuyées.
+  const head = document.getElementById('alfred-head');
+  if (head) {
+    teteAmpLissee += (amp - teteAmpLissee) * 0.25;
+    const a = teteAmpLissee;
+    head.style.transform = `translateY(${(a * 5).toFixed(1)}px) rotate(${(Math.sin(performance.now() / 260) * a * 3).toFixed(2)}deg)`;
+  }
 }
+// Amplitude lissée pour les hochements de tête (voir animateMouth).
+let teteAmpLissee = 0;
 
 // ── Remet le sourire ──────────────────────────────────────
 function resetMouth() {
@@ -628,10 +690,13 @@ function resetMouth() {
   if (mt) {
     mt.style.display = 'none';
     mt.setAttribute('ry', '0');
-    mt.setAttribute('rx', '20');
-    mt.setAttribute('cy', '128');
+    mt.setAttribute('rx', (typeof ALFRED_BOUCHE_RX !== 'undefined') ? ALFRED_BOUCHE_RX : 20);
+    mt.setAttribute('cy', (typeof ALFRED_BOUCHE_CY !== 'undefined') ? ALFRED_BOUCHE_CY : 128);
   }
   if (ms) ms.style.display = 'block';
+  const head = document.getElementById('alfred-head');
+  if (head) { head.style.transition = 'transform .35s ease'; head.style.transform = ''; setTimeout(() => { head.style.transition = ''; }, 400); }
+  teteAmpLissee = 0;
 }
 
 // Délai ajouté après l'événement "playing" avant d'afficher le 1er
@@ -844,7 +909,9 @@ let audioGeneration = 0;
 // RÉELLEMENT prononcé (peut différer de sousTitre, qui affiche parfois la
 // traduction dans l'autre langue — voir l'appel dans alfred-brain.js) ;
 // sert de base au calcul des positions de mots, jamais sousTitre lui-même.
-async function speak(text, langue, sousTitre, moteurForce, surbrillanceMots, texteSurbrillance) {
+// emotion (optionnel) : clé de EMOTIONS_VOIX — jeu de la voix pour cette
+// ligne (ElevenLabs v3 / Gemini), sans effet sur les sous-titres.
+async function speak(text, langue, sousTitre, moteurForce, surbrillanceMots, texteSurbrillance, emotion) {
   if (!text || text === '...') return;
   langue = langue || currentLangue || 'fr';
   const maGeneration = ++audioGeneration;
@@ -853,7 +920,7 @@ async function speak(text, langue, sousTitre, moteurForce, surbrillanceMots, tex
   animateMouth(0.3);
 
   try {
-    const { audio, moteur } = await obtenirAudio(text, langue, moteurForce);
+    const { audio, moteur } = await obtenirAudio(text, langue, moteurForce, emotion);
     currentAudio = audio;
     // Ralenti léger de toute la voix — demandé explicitement ("synchroniser
     // l'audio, le ralentir un peu"), en réglage global plutôt que par

@@ -5,8 +5,28 @@ let eyeTargetX = 0, eyeTargetY = 0;
 let eyeCurX    = 0, eyeCurY    = 0;
 let rafEyes    = null;
 
+// Avatar d'Alfred — REDESSINÉ le 05/09 : le petit robot proposé par Cyril
+// (tête arrondie à visière sombre, yeux cyan lumineux, corps blanc à accents
+// teal, deux bras, "Alfred" sur le torse), redessiné en SVG à partir de son
+// illustration (pixels, donc pas animable telle quelle). Les repères
+// utilisés par tout le reste du code sont conservés à l'identique
+// (alfred-svg, alfred-body-main, alfred-eye-l/-r, alfred-eye-l-cercle/
+// -ferme, alfred-lids, alfred-mouth, alfred-mouth-talk) : clignement,
+// regard qui suit/balaye, bouche pilotée par le volume réel de l'audio,
+// clin d'œil, sommeil — tout continue de marcher. Nouveaux groupes animés
+// en plus : alfred-head (hochements en parlant) et alfred-arm-l/-r (bras
+// qui bougent), voir setAlfredState et animateMouth.
+// Coordonnées de la bouche (viewBox 400x470) — lues aussi par
+// animateMouth/resetMouth (alfred-voice.js) et setAlfredState/resetSleepTimer
+// ci-dessous, pour ne jamais recoder ces chiffres à plusieurs endroits.
+const ALFRED_BOUCHE_CX = 200;
+const ALFRED_BOUCHE_CY = 153;
+const ALFRED_BOUCHE_RX = 14;
+const ALFRED_BOUCHE_SOURIRE_D = 'M188,150 Q200,159 212,150';
+const ALFRED_BOUCHE_DORMIR_D  = 'M190,154 Q200,155 210,154';
+
 const ALFRED_SVG = `
-<div id="alfred-avatar-outer" style="position:relative;width:220px;height:230px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+<div id="alfred-avatar-outer" style="position:relative;width:220px;height:250px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
 
   <div id="alfred-shadow-ground" style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:160px;height:22px;background:radial-gradient(ellipse,rgba(5,69,97,.5) 0%,transparent 70%);border-radius:50%;pointer-events:none;"></div>
 
@@ -16,61 +36,106 @@ const ALFRED_SVG = `
     <span class="alfred-z" style="font-size:20px;position:absolute;right:20px;top:0;color:rgba(5,69,97,.75);">Z</span>
   </div>
 
-  <div id="alfred-avatar-wrap" style="position:relative;width:195px;height:195px;overflow:visible;">
+  <div id="alfred-avatar-wrap" style="position:relative;width:190px;height:223px;overflow:visible;">
+    <svg id="alfred-svg" viewBox="0 0 400 470" xmlns="http://www.w3.org/2000/svg"
+             style="position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 10px 10px rgba(5,45,58,.22));">
+      <defs>
+        <linearGradient id="alfred-visiere" x1="0" y1="0" x2="0.4" y2="1">
+          <stop offset="0" stop-color="#0d5563"/>
+          <stop offset="0.55" stop-color="#136e7c"/>
+          <stop offset="1" stop-color="#1b8590"/>
+        </linearGradient>
+        <linearGradient id="alfred-teal" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#1e8c96"/>
+          <stop offset="1" stop-color="#0f5e6b"/>
+        </linearGradient>
+        <linearGradient id="alfred-cou" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#1a8590"/>
+          <stop offset="1" stop-color="#116370"/>
+        </linearGradient>
+        <radialGradient id="alfred-oeil" cx="0.5" cy="0.35" r="0.7">
+          <stop offset="0" stop-color="#6ffff0"/>
+          <stop offset="1" stop-color="#17e3d2"/>
+        </radialGradient>
+        <clipPath id="alfred-clip-corps">
+          <path d="M124,250 C124,218 154,210 200,210 C246,210 276,218 276,250 C284,308 270,374 236,398 C218,408 182,408 164,398 C130,374 116,308 124,250 Z"/>
+        </clipPath>
+        <linearGradient id="alfred-ombre-corps" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+          <stop offset="1" stop-color="#d9e0e3" stop-opacity="0.9"/>
+        </linearGradient>
+        <clipPath id="alfred-clip-tete">
+          <rect x="88" y="48" width="224" height="146" rx="46"/>
+        </clipPath>
+      </defs>
 
-    <!-- Bords adoucis (flou léger) : avant, un duplicata plein à bords durs
-         décalé de 8px donnait un effet "autocollant qui dépasse" plutôt
-         qu'une vraie ombre portée avec de la profondeur.
-         Deuxième couche ajoutée (drop-shadow chaîné, pas une nouvelle forme) :
-         une ombre plus large et plus diffuse en dessous de celle déjà
-         adoucie, comme une élévation à deux niveaux (proche + lointaine)
-         plutôt qu'une seule ombre plate — décalage aussi monté de 8 à 10px
-         pour accentuer la sensation qu'il flotte au-dessus. -->
-    <svg id="alfred-extrusion" viewBox="0 0 379.79 383.47" xmlns="http://www.w3.org/2000/svg"
-         style="position:absolute;top:10px;left:10px;width:175px;height:175px;overflow:visible;pointer-events:none;opacity:1;filter:blur(2.5px) drop-shadow(3px 5px 7px rgba(5,45,58,.35));transition:opacity .4s ease;">
-      <circle cx="189.9" cy="191.74" r="191" fill="#0a6b7a"/>
-      <path fill="#0a6b7a" d="M246.68,12.44C230.03,4.47,211.1,0,189.28,0h-.53c-22.96.09-42.76,5.17-59.94,14.02C53.98,39.52,0,110.33,0,193.66c0,104.72,85.18,189.81,189.9,189.81s189.9-85.18,189.9-189.81c0-84.91-56-156.95-133.02-181.13l-.09-.09ZM126.63,30.06h.26c16.83-10.95,37.68-16.56,62.13-16.65h.7c32.16,0,58.01,9.64,77.03,28.66,35.32,35.32,35.49,92.1,35.49,92.89v.44s2.8,29.36-9.64,43.03c-4.29,4.73-9.9,7.01-17.18,7.01H107.44c-6.22.18-11.57-1.93-15.95-6.31-13.76-13.58-14.02-44.25-14.02-44.6,0-.53-.7-56.35,33.83-91.75,4.73-4.82,9.81-9.03,15.42-12.71h-.09ZM109.71,264.56l-3.07,2.1v81.58c-54.94-29.71-92.45-87.81-92.45-154.58,0-58.71,29.09-110.68,73.43-142.58-24.19,37.42-23.66,81.32-23.57,83.51,0,1.49.09,36.28,17.96,53.89,6.84,6.75,15.25,10.17,24.97,10.17h.53c10.95-.18,26.9-.18,44.69-.18-4.12,14.2-16.12,47.76-42.5,66.16v-.09ZM257.46,355.7c-20.86,8.76-43.64,13.58-67.56,13.58s-47.76-5.08-68.88-14.11v-81.15c30.85-23.49,42.94-63.09,46.09-75.63h15.07v93.06c-12.01,3.24-21.03,13.67-21.03,26.73,0,15.6,12.62,28.22,28.22,28.22s28.22-12.62,28.22-28.22c0-13.06-9.03-23.49-21.03-26.73v-93.06h15.07c3.15,12.53,15.25,52.05,46.09,75.54v81.67l-.26.09ZM271.74,348.86v-82.2l-3.07-2.1c-26.29-18.31-38.29-51.79-42.5-66.07h49.07c11.04,0,20.16-3.86,26.99-11.39,15.86-17.53,13.32-49.42,12.97-52.84,0-5.52-.96-48.64-25.5-84.91,45.66,31.72,75.63,84.48,75.63,144.15,0,67.3-38.03,125.75-93.77,155.19l.18.18Z"/>
-    </svg>
+      <g id="alfred-body-main" style="transform-origin:200px 235px;">
 
-    <svg id="alfred-svg" viewBox="0 0 379.79 383.47" xmlns="http://www.w3.org/2000/svg"
-         style="position:absolute;top:0;left:0;overflow:visible;width:175px;height:175px;">
-      <circle cx="189.9" cy="191.74" r="191" fill="white"/>
-      <!-- Reflets figés depuis toujours — un léger glissement périodique
-           donne une impression de coque brillante/vivante plutôt qu'une
-           tache plate. Décalés (délai différent) pour ne pas bouger
-           parfaitement en miroir, plus organique. -->
-      <ellipse id="alfred-gloss-back" cx="130" cy="55" rx="55" ry="35" fill="rgba(255,255,255,0.15)" style="pointer-events:none; animation: alfred-gloss-drift 9s ease-in-out infinite;"/>
-      <g id="alfred-body-main" style="transform-origin:189.9px 191.74px;">
-        <path fill="#14b0bd" d="M246.68,12.44C230.03,4.47,211.1,0,189.28,0h-.53c-22.96.09-42.76,5.17-59.94,14.02C53.98,39.52,0,110.33,0,193.66c0,104.72,85.18,189.81,189.9,189.81s189.9-85.18,189.9-189.81c0-84.91-56-156.95-133.02-181.13l-.09-.09ZM126.63,30.06h.26c16.83-10.95,37.68-16.56,62.13-16.65h.7c32.16,0,58.01,9.64,77.03,28.66,35.32,35.32,35.49,92.1,35.49,92.89v.44s2.8,29.36-9.64,43.03c-4.29,4.73-9.9,7.01-17.18,7.01H107.44c-6.22.18-11.57-1.93-15.95-6.31-13.76-13.58-14.02-44.25-14.02-44.6,0-.53-.7-56.35,33.83-91.75,4.73-4.82,9.81-9.03,15.42-12.71h-.09ZM109.71,264.56l-3.07,2.1v81.58c-54.94-29.71-92.45-87.81-92.45-154.58,0-58.71,29.09-110.68,73.43-142.58-24.19,37.42-23.66,81.32-23.57,83.51,0,1.49.09,36.28,17.96,53.89,6.84,6.75,15.25,10.17,24.97,10.17h.53c10.95-.18,26.9-.18,44.69-.18-4.12,14.2-16.12,47.76-42.5,66.16v-.09ZM257.46,355.7c-20.86,8.76-43.64,13.58-67.56,13.58s-47.76-5.08-68.88-14.11v-81.15c30.85-23.49,42.94-63.09,46.09-75.63h15.07v93.06c-12.01,3.24-21.03,13.67-21.03,26.73,0,15.6,12.62,28.22,28.22,28.22s28.22-12.62,28.22-28.22c0-13.06-9.03-23.49-21.03-26.73v-93.06h15.07c3.15,12.53,15.25,52.05,46.09,75.54v81.67l-.26.09ZM271.74,348.86v-82.2l-3.07-2.1c-26.29-18.31-38.29-51.79-42.5-66.07h49.07c11.04,0,20.16-3.86,26.99-11.39,15.86-17.53,13.32-49.42,12.97-52.84,0-5.52-.96-48.64-25.5-84.91,45.66,31.72,75.63,84.48,75.63,144.15,0,67.3-38.03,125.75-93.77,155.19l.18.18Z"/>
-        <path fill="#14b0bd" d="M275.51,107.61H103.4l-.79-4.38c-.18-1.14-5-28.83,8.06-44.34,5.7-6.75,13.67-10.17,23.66-10.17h110.94c9.64,0,17.35,3.42,22.87,9.9,12.97,15.42,8.33,43.38,8.15,44.52l-.79,4.47h0ZM112.61,96.92h153.71c.61-7.54.88-22.87-6.31-31.37-3.42-4.12-8.24-6.05-14.63-6.13-.88,0-110.85,0-110.77,0h-.09c-6.84,0-11.92,2.1-15.51,6.4-6.75,8.06-7.1,22.61-6.31,31.2"/>
-        <g id="alfred-eye-l" style="transform-origin:141.97px 78.17px;">
-          <path id="alfred-eye-l-cercle" fill="#14b0bd" d="M155.55,78.17c0,7.54-6.05,13.58-13.58,13.58s-13.58-6.13-13.58-13.58,6.05-13.58,13.58-13.58,13.58,6.13,13.58,13.58"/>
-          <!-- Œil fermé pour le clin d'œil (voir clinDoeil dans alfred-ui.js)
-               — même courbe que la paupière de sommeil (alfred-lids
-               ci-dessous), réutilisée plutôt qu'un nouveau dessin. Caché par
-               défaut, affiché uniquement pendant le geste. -->
-          <path id="alfred-eye-l-ferme" stroke="#14b0bd" stroke-width="5" stroke-linecap="round" fill="none" d="M128.39,78.17 Q141.97,88.1 155.55,78.17" style="display:none;"/>
+        <!-- ── Bras (derrière le corps) ─────────────────────────── -->
+        <g id="alfred-arm-l" style="transform-origin:90px 236px;">
+          <g transform="rotate(-16 90 236)">
+            <rect x="64" y="228" width="50" height="156" rx="25" fill="#ffffff" stroke="#1b1b1b" stroke-width="3.5"/>
+            <rect x="72" y="254" width="24" height="110" rx="12" fill="url(#alfred-teal)"/>
+          </g>
         </g>
-        <g id="alfred-eye-r" style="transform-origin:238.10px 78.17px;">
-          <path fill="#14b0bd" d="M251.68,78.17c0,7.54-6.05,13.58-13.58,13.58s-13.58-6.13-13.58-13.58,6.05-13.58,13.58-13.58,13.58,6.13,13.58,13.58"/>
+        <g id="alfred-arm-r" style="transform-origin:310px 236px;">
+          <g transform="rotate(16 310 236)">
+            <rect x="286" y="228" width="50" height="156" rx="25" fill="#ffffff" stroke="#1b1b1b" stroke-width="3.5"/>
+            <rect x="304" y="254" width="24" height="110" rx="12" fill="url(#alfred-teal)"/>
+          </g>
         </g>
-        <g id="alfred-lids" style="display:none;">
-          <path stroke="#14b0bd" stroke-width="5" stroke-linecap="round" fill="none" d="M128.39,78.17 Q141.97,88.1 155.55,78.17"/>
-          <line x1="134" y1="80" x2="131" y2="89" stroke="#14b0bd" stroke-width="2.5" stroke-linecap="round"/>
-          <line x1="142" y1="83" x2="142" y2="92" stroke="#14b0bd" stroke-width="2.5" stroke-linecap="round"/>
-          <line x1="150" y1="80" x2="153" y2="89" stroke="#14b0bd" stroke-width="2.5" stroke-linecap="round"/>
-          <path stroke="#14b0bd" stroke-width="5" stroke-linecap="round" fill="none" d="M224.52,78.17 Q238.10,88.1 251.68,78.17"/>
-          <line x1="230" y1="80" x2="227" y2="89" stroke="#14b0bd" stroke-width="2.5" stroke-linecap="round"/>
-          <line x1="238" y1="83" x2="238" y2="92" stroke="#14b0bd" stroke-width="2.5" stroke-linecap="round"/>
-          <line x1="246" y1="80" x2="249" y2="89" stroke="#14b0bd" stroke-width="2.5" stroke-linecap="round"/>
+
+        <!-- ── Cou ─────────────────────────────────────────────── -->
+        <rect x="176" y="188" width="48" height="34" rx="7" fill="url(#alfred-cou)" stroke="#1b1b1b" stroke-width="3.5"/>
+
+        <!-- ── Corps ───────────────────────────────────────────── -->
+        <g id="alfred-corps">
+          <path d="M124,250 C124,218 154,210 200,210 C246,210 276,218 276,250 C284,308 270,374 236,398 C218,408 182,408 164,398 C130,374 116,308 124,250 Z" fill="#ffffff" stroke="#1b1b1b" stroke-width="3.5"/>
+          <!-- ombrage léger côté droit -->
+          <path d="M200,212 C246,212 276,218 276,250 C284,308 270,374 236,398 C226,404 212,406 200,406 Z" fill="url(#alfred-ombre-corps)" clip-path="url(#alfred-clip-corps)"/>
+          <text x="200" y="306" text-anchor="middle" font-family="Poppins, Montserrat, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="32" font-weight="500" fill="#1b8590" letter-spacing="0.5">Alfred</text>
+          <!-- ceinture avec boucle centrale -->
+          <path d="M128,334 L170,334 L170,348 L230,348 L230,334 L272,334" fill="none" stroke="#1b8590" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+          <path d="M128,334 L170,334 L170,348 L230,348 L230,334 L272,334" fill="none" stroke="#1b1b1b" stroke-width="1.2" stroke-linejoin="round" opacity="0.5"/>
         </g>
-        <path id="alfred-mouth" fill="#14b0bd" d="M189.28,136.79c-6.31,0-13.32-1.49-20.51-6.13-2.45-1.58-3.24-4.91-1.58-7.36,1.58-2.45,4.91-3.15,7.36-1.58,15.07,9.64,30.23.35,30.85,0,2.45-1.58,5.78-.79,7.36,1.66s.88,5.78-1.58,7.36c-.61.35-9.73,6.13-21.91,6.13"/>
-        <ellipse id="alfred-mouth-talk" fill="#14b0bd" cx="189" cy="128" rx="20" ry="0" style="display:none;"/>
+
+        <!-- ── Socle ───────────────────────────────────────────── -->
+        <ellipse cx="200" cy="406" rx="46" ry="22" fill="url(#alfred-teal)" stroke="#1b1b1b" stroke-width="3.5"/>
+        <rect x="160" y="384" width="80" height="24" rx="12" fill="#ffffff" stroke="#1b1b1b" stroke-width="3.5"/>
+
+        <!-- ── Tête ────────────────────────────────────────────── -->
+        <g id="alfred-head" style="transform-origin:200px 190px;">
+          <!-- bosse du dessus + oreilles (derrière la tête) -->
+          <rect x="158" y="26" width="84" height="34" rx="17" fill="#ffffff" stroke="#1b1b1b" stroke-width="3.5"/>
+          <rect x="60" y="92" width="34" height="62" rx="14" fill="#ffffff" stroke="#1b1b1b" stroke-width="3.5"/>
+          <rect x="306" y="92" width="34" height="62" rx="14" fill="#ffffff" stroke="#1b1b1b" stroke-width="3.5"/>
+          <!-- tête -->
+          <rect x="88" y="48" width="224" height="146" rx="46" fill="#ffffff" stroke="#1b1b1b" stroke-width="3.5"/>
+          <!-- visière -->
+          <rect x="106" y="66" width="188" height="110" rx="34" fill="url(#alfred-visiere)" stroke="#1b1b1b" stroke-width="3"/>
+          <ellipse id="alfred-gloss-front" cx="150" cy="86" rx="46" ry="14" fill="rgba(255,255,255,0.10)" style="pointer-events:none;"/>
+
+          <!-- yeux -->
+          <g id="alfred-eye-l" style="transform-origin:160px 118px;">
+            <path id="alfred-eye-l-cercle" d="M141,124 a19,17 0 0 1 38,0 Z" fill="url(#alfred-oeil)"/>
+            <path id="alfred-eye-l-ferme" d="M143,120 Q160,130 177,120" stroke="#17e3d2" stroke-width="4" stroke-linecap="round" fill="none" style="display:none;"/>
+          </g>
+          <g id="alfred-eye-r" style="transform-origin:240px 118px;">
+            <path d="M221,124 a19,17 0 0 1 38,0 Z" fill="url(#alfred-oeil)"/>
+          </g>
+          <g id="alfred-lids" style="display:none;">
+            <path d="M143,120 Q160,130 177,120" stroke="#17e3d2" stroke-width="4" stroke-linecap="round" fill="none"/>
+            <path d="M223,120 Q240,130 257,120" stroke="#17e3d2" stroke-width="4" stroke-linecap="round" fill="none"/>
+          </g>
+
+          <!-- bouche -->
+          <path id="alfred-mouth" d="M188,150 Q200,159 212,150" stroke="#17e3d2" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+          <ellipse id="alfred-mouth-talk" cx="200" cy="153" rx="14" ry="0" fill="#17e3d2" style="display:none;"/>
+        </g>
       </g>
-      <ellipse id="alfred-gloss-front" cx="130" cy="55" rx="55" ry="35" fill="rgba(255,255,255,0.12)" style="pointer-events:none; animation: alfred-gloss-drift 9s ease-in-out infinite 3.2s;"/>
     </svg>
 
-    <div id="alfred-dots" style="position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;gap:5px;opacity:0;transition:opacity .3s;z-index:3;">
+    <div id="alfred-dots" style="position:absolute;top:-6px;left:50%;transform:translateX(-50%);display:flex;gap:5px;opacity:0;transition:opacity .3s;z-index:3;">
       <div class="alfred-dot" id="alfred-dot1"></div>
       <div class="alfred-dot" id="alfred-dot2"></div>
       <div class="alfred-dot" id="alfred-dot3"></div>
@@ -1320,6 +1385,22 @@ function initAlfredUI() {
       50%      { width:175px; opacity:.18; }
     }
     @keyframes alfred-eye-lr   { 0%,100%{transform:translateX(-8px);} 50%{transform:translateX(8px);} }
+    @keyframes alfred-sway-talk {
+      0%,100% { transform:rotate(-1.2deg); }
+      50%      { transform:rotate(1.2deg); }
+    }
+    @keyframes alfred-arm-float-l { 0%,100%{transform:rotate(0deg);} 50%{transform:rotate(-3deg);} }
+    @keyframes alfred-arm-float-r { 0%,100%{transform:rotate(0deg);} 50%{transform:rotate(3deg);} }
+    @keyframes alfred-arm-talk-l {
+      0%,100% { transform:rotate(2deg) translateY(0); }
+      35%      { transform:rotate(-9deg) translateY(-4px); }
+      70%      { transform:rotate(-3deg) translateY(-1px); }
+    }
+    @keyframes alfred-arm-talk-r {
+      0%,100% { transform:rotate(-2deg) translateY(0); }
+      40%      { transform:rotate(9deg) translateY(-4px); }
+      75%      { transform:rotate(3deg) translateY(-1px); }
+    }
     @keyframes alfred-blink    { 0%,100%{transform:scaleY(1);} 50%{transform:scaleY(.06);} }
     @keyframes alfred-dot-pop  { 0%,100%{opacity:0;transform:scale(.5);} 50%{opacity:1;transform:translateY(-3px) scale(1.1);} }
     @keyframes alfred-float-z  { 0%{opacity:0;transform:translate(0,0)rotate(-8deg);} 20%{opacity:.8;} 100%{opacity:0;transform:translate(14px,-30px)rotate(14deg);} }
@@ -1355,6 +1436,7 @@ function initAlfredUI() {
   requestAnimationFrame(() => setTimeout(() => left.classList.add('visible'), 50));
 
   creerSousTitres();
+  creerScene();
   creerPanneauRepliques();
   creerPanneauEdition();
   creerPanneauDonneesCreation();
@@ -1389,6 +1471,9 @@ function setAlfredState(state) {
   const lids   = document.getElementById('alfred-lids');
   const mouth  = document.getElementById('alfred-mouth');
   const mouthT = document.getElementById('alfred-mouth-talk');
+  const head   = document.getElementById('alfred-head');
+  const armL   = document.getElementById('alfred-arm-l');
+  const armR   = document.getElementById('alfred-arm-r');
 
   // Coupé ici (pas seulement au début du case 'talk') : en quittant l'état
   // 'talk' pour idle/think/sleep, cet intervalle continuait à tourner en
@@ -1400,14 +1485,19 @@ function setAlfredState(state) {
   if (wrap)   { wrap.style.animation='none'; void wrap.offsetWidth; }
   if (shadow) { shadow.style.animation='none'; shadow.style.width='160px'; shadow.style.opacity='1'; }
   if (ext)    { ext.style.opacity='1'; }
-  if (body)   { body.style.animation='none'; void body.offsetWidth; body.style.transformOrigin='189.9px 191.74px'; }
+  if (body)   { body.style.animation='none'; void body.offsetWidth; body.style.transformOrigin='200px 235px'; }
   if (eyeL)   { eyeL.style.animation='none'; eyeL.style.transform=''; eyeL.style.opacity='1'; eyeL.style.transition=''; }
   if (eyeR)   { eyeR.style.animation='none'; eyeR.style.transform=''; eyeR.style.opacity='1'; eyeR.style.transition=''; }
   if (dots)   dots.style.opacity='0';
   if (zzz)    zzz.style.opacity='0';
   if (lids)   lids.style.display='none';
-  if (mouth)  { mouth.style.display='block'; mouth.setAttribute('d','M189.28,136.79c-6.31,0-13.32-1.49-20.51-6.13-2.45-1.58-3.24-4.91-1.58-7.36,1.58-2.45,4.91-3.15,7.36-1.58,15.07,9.64,30.23.35,30.85,0,2.45-1.58,5.78-.79,7.36,1.66s.88,5.78-1.58,7.36c-.61.35-9.73,6.13-21.91,6.13'); }
+  if (mouth)  { mouth.style.display='block'; mouth.setAttribute('d', ALFRED_BOUCHE_SOURIRE_D); }
   if (mouthT) { mouthT.style.display='none'; mouthT.setAttribute('ry','0'); }
+  // Tête et bras du robot : on coupe leurs animations d'état ; la tête
+  // garde aussi son transform inline (hochements pilotés par animateMouth).
+  if (head)   { head.style.animation='none'; head.style.transform=''; }
+  if (armL)   { armL.style.animation='none'; }
+  if (armR)   { armR.style.animation='none'; }
 
   const labels = { idle:'EN ATTENTE', think:'RÉFLEXION...', talk:'EN TRAIN DE PARLER', sleep:'VEILLE' };
   if (lbl) lbl.textContent = labels[state] || '';
@@ -1416,11 +1506,15 @@ function setAlfredState(state) {
     case 'idle':
       if (wrap)   wrap.style.animation   = 'alfred-breathe 4s ease-in-out infinite';
       if (shadow) shadow.style.animation = 'alfred-shadow-breathe 4s ease-in-out infinite';
+      // Bras qui flottent à peine, en décalé — un robot posé immobile avec
+      // les bras raides fait figé ; ici il "vit" un peu même au repos.
+      if (armL)   armL.style.animation = 'alfred-arm-float-l 4s ease-in-out infinite';
+      if (armR)   armR.style.animation = 'alfred-arm-float-r 4s ease-in-out infinite 2s';
       resetSleepTimer();
       break;
 
     case 'think':
-      if (body) { body.style.transformOrigin='189.9px 320px'; body.style.animation='alfred-sway 1.4s ease-in-out infinite'; }
+      if (body) { body.style.transformOrigin='200px 400px'; body.style.animation='alfred-sway 1.4s ease-in-out infinite'; }
       if (eyeL) eyeL.style.animation = 'alfred-eye-lr 1.4s ease-in-out infinite';
       if (eyeR) eyeR.style.animation = 'alfred-eye-lr 1.4s ease-in-out infinite';
       if (dots) {
@@ -1433,7 +1527,15 @@ function setAlfredState(state) {
       break;
 
     case 'talk':
-      if (wrap)   wrap.style.animation = 'alfred-talk-vib .12s ease-in-out infinite alternate';
+      // Demandé explicitement (Cyril) : "beaucoup plus bouger quand il
+      // parle". En plus de la bouche (volume réel, voir animateMouth) et des
+      // hochements de tête (idem) : les bras s'animent en alternance et le
+      // corps se balance légèrement — comme quelqu'un qui parle avec les
+      // mains, sans gesticuler.
+      if (armL)   armL.style.animation = 'alfred-arm-talk-l 1.6s ease-in-out infinite';
+      if (armR)   armR.style.animation = 'alfred-arm-talk-r 1.9s ease-in-out infinite .4s';
+      if (body)   { body.style.transformOrigin='200px 400px'; body.style.animation='alfred-sway-talk 2.8s ease-in-out infinite'; }
+      if (wrap)   wrap.style.animation = 'alfred-breathe 3s ease-in-out infinite';
       // Remplissage transitoire, le temps que speak() (alfred-voice.js) ait
       // l'audio prêt et prenne le relais avec l'amplitude réelle — passe par
       // animateMouth() plutôt qu'une logique dupliquée ici, pour que la
@@ -1451,7 +1553,7 @@ function setAlfredState(state) {
       if (ext)    ext.style.opacity      = '0.3';
       if (eyeL)   { eyeL.style.transition='opacity .4s ease'; eyeL.style.opacity='0'; }
       if (eyeR)   { eyeR.style.transition='opacity .4s ease'; eyeR.style.opacity='0'; }
-      if (mouth)  mouth.setAttribute('d','M163,130 Q189,132 216,130');
+      if (mouth)  mouth.setAttribute('d', ALFRED_BOUCHE_DORMIR_D);
       setTimeout(() => { if (lids && curState==='sleep') lids.style.display='block'; }, 400);
       if (zzz) {
         zzz.style.opacity='1';
@@ -1632,12 +1734,248 @@ function resetSleepTimer() {
   clearTimeout(sleepTimer);
   if (curState === 'sleep') {
     const mouth = document.getElementById('alfred-mouth');
-    if (mouth) mouth.setAttribute('d','M189.28,136.79c-6.31,0-13.32-1.49-20.51-6.13-2.45-1.58-3.24-4.91-1.58-7.36,1.58-2.45,4.91-3.15,7.36-1.58,15.07,9.64,30.23.35,30.85,0,2.45-1.58,5.78-.79,7.36,1.66s.88,5.78-1.58,7.36c-.61.35-9.73,6.13-21.91,6.13');
+    if (mouth) mouth.setAttribute('d', ALFRED_BOUCHE_SOURIRE_D);
     setAlfredState('idle');
   }
   sleepTimer = setTimeout(() => {
     if (curState==='idle') setAlfredState('sleep');
   }, (ALFRED_CONFIG?.SLEEP_APRES || 30) * 1000);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// MODE SCÈNE — Alfred seul, en grand, plein écran (Actes 1 et 3)
+// ══════════════════════════════════════════════════════════════════════
+// Demandé par Cyril (03/09) après les retours "trop redondant" : pendant tout
+// l'Acte 1 (l'entretien), rien ne se passe dans l'appli — la montrer à côté
+// d'Alfred n'apporte rien. On ne voit donc QUE le robot, au centre, sur un
+// fond léger et vivant. Sur la réplique "Montrer" ("Avec plaisir. Regardez."),
+// Alfred "charge" l'interface : barre de chargement, puis il rétrécit et
+// glisse dans le panneau latéral pendant que le site apparaît — Acte 2 normal.
+// À la première réplique de l'Acte 3, l'appli "s'éteint" (flou, fondu) et
+// Alfred revient seul au centre pour le closing.
+//
+// Mécanique : un calque fixe (#alfred-scene, sous les panneaux de réglage
+// z-index 500, au-dessus du site et du panneau latéral) ; le NŒUD DOM de
+// l'avatar (#alfred-avatar-outer) est DÉPLACÉ entre le panneau latéral et le
+// centre de la scène (pas dupliqué) — tous ses ids/animations restent donc
+// valables, et le déplacement est animé en FLIP (mesure avant/après, puis
+// transition de transform) pour un vrai glissement continu d'une position à
+// l'autre plutôt qu'un saut.
+// Touche S : bascule manuelle (utile pour "monter sur scène" avant la toute
+// première réplique, ou pour préparer l'appli sans le calque devant).
+let modeSceneActif = false;
+let transitionSceneEnCours = Promise.resolve();
+
+function creerScene() {
+  if (document.getElementById('alfred-scene')) return;
+  const style = document.createElement('style');
+  style.id = 'alfred-scene-styles';
+  style.textContent = `
+    #alfred-scene { position:fixed; inset:0; z-index:450; opacity:0; visibility:hidden; pointer-events:none;
+      transition:opacity .7s ease, visibility 0s linear .7s; overflow:hidden; font-family:-apple-system,'Segoe UI',sans-serif; }
+    #alfred-scene.actif { opacity:1; visibility:visible; pointer-events:all; transition:opacity .7s ease; }
+    #alfred-scene-fond { position:absolute; inset:0;
+      background:radial-gradient(ellipse at 50% 42%, #ffffff 0%, #f3fafb 40%, #e2f2f4 100%); }
+    #alfred-scene-fond::after { content:''; position:absolute; inset:0; opacity:.35;
+      background-image:linear-gradient(rgba(20,176,189,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(20,176,189,.08) 1px, transparent 1px);
+      background-size:64px 64px; mask-image:radial-gradient(ellipse at 50% 45%, transparent 25%, #000 90%); -webkit-mask-image:radial-gradient(ellipse at 50% 45%, transparent 25%, #000 90%); }
+    #alfred-scene-halo { position:absolute; left:50%; top:50%; width:78vmin; height:78vmin; transform:translate(-50%,-54%); border-radius:50%;
+      background:radial-gradient(circle, rgba(20,176,189,.20) 0%, rgba(20,176,189,.09) 40%, rgba(20,176,189,0) 68%);
+      animation:alfred-halo-pulse 6s ease-in-out infinite; }
+    #alfred-scene-anneau { position:absolute; left:50%; top:50%; width:60vmin; height:60vmin; transform:translate(-50%,-54%); border-radius:50%;
+      border:1.5px solid rgba(20,176,189,.18); animation:alfred-anneau-tourne 40s linear infinite; }
+    #alfred-scene-anneau::before { content:''; position:absolute; top:-5px; left:50%; width:9px; height:9px; margin-left:-4px; border-radius:50%; background:#14b0bd; box-shadow:0 0 12px rgba(20,176,189,.8); }
+    .alfred-scene-part { position:absolute; border-radius:50%; background:#14b0bd; filter:blur(1px); animation:alfred-part-derive ease-in-out infinite; }
+    #alfred-scene-marque { position:absolute; top:30px; left:50%; transform:translateX(-50%); font-size:11px; font-weight:700; letter-spacing:4px; color:rgba(5,69,97,.45); }
+    #alfred-scene-centre { position:absolute; left:50%; top:50%; transform:translate(-50%,-52%); }
+    #alfred-scene-chargement { position:absolute; left:50%; bottom:14vh; transform:translateX(-50%); width:min(360px, 60vw); text-align:center; opacity:0; transition:opacity .35s ease; }
+    #alfred-scene-chargement.actif { opacity:1; }
+    .alfred-scene-barre { height:5px; border-radius:3px; background:rgba(5,69,97,.10); overflow:hidden; }
+    .alfred-scene-barre-int { height:100%; width:0; border-radius:3px; background:linear-gradient(90deg,#0a6b7a,#14b0bd,#5fe3ea); box-shadow:0 0 12px rgba(20,176,189,.6); transition:width 1.5s cubic-bezier(.22,.61,.36,1); }
+    #alfred-scene-chargement-txt { margin-top:12px; font-size:13px; letter-spacing:1.5px; color:rgba(5,69,97,.6); text-transform:uppercase; }
+    #alfred-site-content { transition:filter .8s ease, transform .8s ease, opacity .8s ease; }
+    #alfred-site-content.alfred-app-eteinte { filter:blur(8px) brightness(.7) saturate(.6); transform:scale(.965); opacity:0; }
+    #alfred-site-content.alfred-app-demarrage { animation:alfred-app-boot .9s cubic-bezier(.22,.61,.36,1) both; }
+    @keyframes alfred-app-boot { 0%{opacity:0; filter:blur(10px) brightness(1.4); transform:scale(1.03);} 60%{opacity:1; filter:blur(0) brightness(1.06);} 100%{opacity:1; filter:none; transform:scale(1);} }
+    @keyframes alfred-halo-pulse { 0%,100%{transform:translate(-50%,-54%) scale(1); opacity:.9;} 50%{transform:translate(-50%,-54%) scale(1.08); opacity:1;} }
+    @keyframes alfred-anneau-tourne { to { transform:translate(-50%,-54%) rotate(360deg); } }
+    @keyframes alfred-part-derive { 0%,100%{transform:translate(0,0);} 33%{transform:translate(14px,-26px);} 66%{transform:translate(-10px,-48px);} }
+  `;
+  document.head.appendChild(style);
+
+  const scene = document.createElement('div');
+  scene.id = 'alfred-scene';
+  scene.innerHTML = `
+    <div id="alfred-scene-fond"></div>
+    <div id="alfred-scene-particules"></div>
+    <div id="alfred-scene-halo"></div>
+    <div id="alfred-scene-anneau"></div>
+    <div id="alfred-scene-marque">ALFRED · WELLNOT</div>
+    <div id="alfred-scene-centre"></div>
+    <div id="alfred-scene-chargement">
+      <div class="alfred-scene-barre"><div class="alfred-scene-barre-int"></div></div>
+      <div id="alfred-scene-chargement-txt"></div>
+    </div>`;
+  document.body.appendChild(scene);
+
+  // Particules : quelques points teal translucides qui dérivent lentement —
+  // juste assez pour que le fond ne soit pas un aplat mort, pas un feu
+  // d'artifice qui volerait l'attention au robot.
+  const parts = scene.querySelector('#alfred-scene-particules');
+  for (let i = 0; i < 16; i++) {
+    const p = document.createElement('span');
+    p.className = 'alfred-scene-part';
+    const taille = 4 + Math.random() * 12;
+    p.style.cssText = `left:${Math.random() * 100}%; top:${15 + Math.random() * 80}%; width:${taille}px; height:${taille}px;` +
+      `opacity:${(.10 + Math.random() * .22).toFixed(2)}; animation-duration:${(16 + Math.random() * 18).toFixed(0)}s; animation-delay:-${(Math.random() * 20).toFixed(0)}s;`;
+    parts.appendChild(p);
+  }
+}
+
+// Échelle du robot sur scène : ~72% de la hauteur d'écran, plafonnée.
+function echelleScene() {
+  return Math.min(2.8, (window.innerHeight * 0.72) / 250);
+}
+
+// Déplace le nœud avatar d'un parent à l'autre avec une animation FLIP
+// (First-Last-Invert-Play) : on mesure où il était, on le déplace, on
+// mesure où il est, et on anime la différence — un vrai glissement continu.
+async function deplacerAvatarAnime(nouveauParent, transformFinal, dureeMs, avantElement) {
+  const outer = document.getElementById('alfred-avatar-outer');
+  if (!outer) return;
+  const first = outer.getBoundingClientRect();
+  if (avantElement) nouveauParent.insertBefore(outer, avantElement); else nouveauParent.appendChild(outer);
+  outer.style.transition = 'none';
+  outer.style.transformOrigin = 'center center';
+  outer.style.transform = transformFinal;
+  const last = outer.getBoundingClientRect();
+  // Point de départ hors écran/replié (panneau fermé) : pas de FLIP fiable,
+  // simple apparition en douceur.
+  if (first.width < 20 || last.width < 20) {
+    outer.style.opacity = '0';
+    outer.style.transform = transformFinal + ' scale(.85)';
+    void outer.offsetWidth;
+    outer.style.transition = `transform ${dureeMs}ms cubic-bezier(.32,.72,0,1), opacity ${dureeMs}ms ease`;
+    outer.style.opacity = '1';
+    outer.style.transform = transformFinal;
+  } else {
+    const dx = (first.left + first.width / 2) - (last.left + last.width / 2);
+    const dy = (first.top + first.height / 2) - (last.top + last.height / 2);
+    const k  = first.width / last.width;
+    outer.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) ${transformFinal} scale(${k.toFixed(3)})`;
+    void outer.offsetWidth;
+    outer.style.transition = `transform ${dureeMs}ms cubic-bezier(.32,.72,0,1)`;
+    outer.style.transform = transformFinal;
+  }
+  await new Promise(r => setTimeout(r, dureeMs + 30));
+  outer.style.transition = '';
+}
+
+function texteChargementScene() {
+  return (typeof currentLangue !== 'undefined' && currentLangue === 'nl') ? 'Interface wordt geladen' : "Chargement de l'interface";
+}
+
+// Entrée en scène. depuisApp = true (Acte 3) : l'appli "s'éteint" d'abord
+// (flou + fondu + léger rétrécissement), puis Alfred revient au centre.
+async function entrerScene(options = {}) {
+  creerScene();
+  if (modeSceneActif) return;
+  modeSceneActif = true;
+  const scene  = document.getElementById('alfred-scene');
+  const centre = document.getElementById('alfred-scene-centre');
+  const site   = document.getElementById('alfred-site-content');
+  const left   = document.getElementById('alfred-left-panel');
+
+  if (options.depuisApp && site) {
+    site.classList.remove('alfred-app-demarrage');
+    site.classList.add('alfred-app-eteinte');
+    await new Promise(r => setTimeout(r, 450));
+  }
+  scene.classList.add('actif');
+  const promesseAvatar = deplacerAvatarAnime(centre, `scale(${echelleScene().toFixed(3)})`, 900);
+  if (left) left.classList.remove('visible');
+  await promesseAvatar;
+  if (site) { site.classList.remove('alfred-app-eteinte'); site.style.visibility = 'hidden'; }
+  const tr = document.getElementById('alfred-transcript');
+  if (tr) tr.textContent = '';
+}
+
+// Sortie de scène. chargement = true (réplique "Montrer") : barre de
+// chargement "Alfred charge le site" puis apparition du site pendant que le
+// robot rejoint le panneau. Sans chargement (saut direct à une réplique
+// d'Acte 2) : transition rapide, sans mise en scène.
+async function quitterScene(options = {}) {
+  if (!modeSceneActif) return;
+  const scene  = document.getElementById('alfred-scene');
+  const site   = document.getElementById('alfred-site-content');
+  const left   = document.getElementById('alfred-left-panel');
+  const charg  = document.getElementById('alfred-scene-chargement');
+  if (!scene) { modeSceneActif = false; return; }
+
+  if (options.chargement && charg) {
+    const barre = charg.querySelector('.alfred-scene-barre-int');
+    const txt   = document.getElementById('alfred-scene-chargement-txt');
+    if (txt) txt.textContent = texteChargementScene();
+    if (barre) { barre.style.transition = 'none'; barre.style.width = '0'; void barre.offsetWidth; barre.style.transition = ''; }
+    charg.classList.add('actif');
+    if (typeof setAlfredState === 'function' && curState !== 'talk') setAlfredState('think');
+    await new Promise(r => setTimeout(r, 80));
+    if (barre) barre.style.width = '100%';
+    await new Promise(r => setTimeout(r, 1600));
+    charg.classList.remove('actif');
+  }
+
+  // Le site réapparaît (visible + animation de démarrage) et le panneau
+  // latéral se rouvre ; on attend qu'il ait pris sa largeur avant de
+  // mesurer la place du robot dedans (sinon le FLIP viserait un panneau
+  // encore replié).
+  if (site) {
+    site.style.visibility = '';
+    site.classList.remove('alfred-app-eteinte');
+    site.classList.add('alfred-app-demarrage');
+    setTimeout(() => site.classList.remove('alfred-app-demarrage'), 1000);
+  }
+  if (left) left.classList.add('visible');
+  await new Promise(r => setTimeout(r, 620));
+
+  const lbl = document.getElementById('alfred-state-lbl');
+  await deplacerAvatarAnime(left, '', 800, lbl);
+  scene.classList.remove('actif');
+  modeSceneActif = false;
+  if (typeof setAlfredState === 'function' && curState === 'think') setAlfredState('idle');
+}
+
+// Appelée par jouerSecoursInterne (alfred-brain.js) AVANT chaque réplique,
+// avec son acte : garantit l'état de scène attendu, quel que soit le
+// chemin (flèches dans l'ordre, clic direct sur une réplique, "Jouer tout").
+// Le passage Acte 1 → 2 avec la mise en scène complète se fait lui sur
+// l'action de la réplique "Montrer" (voir gesteMontrerEtOuvrirSite) — ici,
+// pour l'Acte 2, on ne fait qu'un repli rapide si la scène est encore là.
+function assurerModeScene(acte) {
+  transitionSceneEnCours = transitionSceneEnCours.then(async () => {
+    if (acte === 1 && !modeSceneActif) await entrerScene({ depuisApp: false });
+    else if (acte === 2 && modeSceneActif) await quitterScene({ chargement: false });
+    else if (acte === 3 && !modeSceneActif) await entrerScene({ depuisApp: true });
+  }).catch(e => console.warn('[Alfred UI] Transition de scène échouée :', e));
+  return transitionSceneEnCours;
+}
+
+function basculerModeScene() {
+  transitionSceneEnCours = transitionSceneEnCours.then(() =>
+    modeSceneActif ? quitterScene({ chargement: false }) : entrerScene({ depuisApp: true })
+  ).catch(e => console.warn('[Alfred UI] Bascule de scène échouée :', e));
+  return transitionSceneEnCours;
+}
+
+// Action de la réplique "Montrer" ("Avec plaisir. Regardez.") : le geste
+// existant (il se penche, regarde vers le bas-gauche) puis "Alfred charge le
+// site" — barre de chargement, apparition de l'interface, retour du robot
+// dans le panneau. Remplace gesteMontrer seul dans DOM_ACTIONS.
+async function gesteMontrerEtOuvrirSite() {
+  await gesteMontrer();
+  transitionSceneEnCours = transitionSceneEnCours.then(() => quitterScene({ chargement: true }))
+    .catch(e => console.warn('[Alfred UI] Ouverture du site échouée :', e));
+  await transitionSceneEnCours;
 }
 
 // ── Helpers ───────────────────────────────────────────────

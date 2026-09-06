@@ -395,6 +395,11 @@ async function jouerSecoursInterne() {
     console.log('[Alfred] Acte 2 activé via →');
   }
 
+  // Mode scène (Alfred seul en plein écran, Actes 1 et 3 — voir
+  // assurerModeScene dans alfred-ui.js) : mis en place AVANT de parler,
+  // pour que la transition soit finie quand la réplique démarre.
+  if (typeof assurerModeScene === 'function') await assurerModeScene(r.acte);
+
   // Réplique "groupée" (r.segments) : plusieurs petits bouts de texte
   // joués à la suite, chacun avec sa propre action DOM déclenchée en même
   // temps que lui — pour que l'action colle à ce qui est en train d'être
@@ -402,7 +407,7 @@ async function jouerSecoursInterne() {
   // d'un coup dès le premier mot. Une réplique classique (texte + action
   // uniques) est traitée comme un groupe à un seul segment, donc rien ne
   // change pour elle. Un seul appui sur → avance sur tout le groupe.
-  const segmentsR    = r.segments || [{ texte: r.texte, action: r.action, surbrillance: r.surbrillance }];
+  const segmentsR    = r.segments || [{ texte: r.texte, action: r.action, surbrillance: r.surbrillance, emotion: r.emotion }];
   const segmentsTrad = rTrad?.segments || [{ texte: rTrad?.texte }];
 
   for (let i = 0; i < segmentsR.length; i++) {
@@ -436,7 +441,7 @@ async function jouerSecoursInterne() {
       // différent dont la position des mots ne correspond à rien dans
       // l'audio réellement joué.
       const surbrillance = (typeof resoudreSurbrillance === 'function') ? resoudreSurbrillance(seg.surbrillance) : null;
-      promises.push(speak(naturaliserTexte(seg.texte), currentLangue, sousTitre, undefined, surbrillance, seg.texte).then(() => { dureeParoleMs = Math.round(performance.now() - debutParole); }));
+      promises.push(speak(naturaliserTexte(seg.texte), currentLangue, sousTitre, undefined, surbrillance, seg.texte, seg.emotion || r.emotion).then(() => { dureeParoleMs = Math.round(performance.now() - debutParole); }));
     }
     // currentActe >= 2 : garde-fou pour ne jamais lancer d'automatisation
     // réelle de l'appli avant que la démo n'ait commencé. Les gestes
@@ -495,6 +500,12 @@ document.addEventListener('keydown', e => {
     // propre délai. Remonté en test live.
     if (typeof demanderAnnulation === 'function') demanderAnnulation();
     setAlfredState('idle');
+  }
+  // S : bascule manuelle du mode scène (voir alfred-ui.js) — pour monter
+  // sur scène avant la toute première réplique, ou revenir à l'appli.
+  if (e.key === 's' || e.key === 'S') {
+    e.preventDefault();
+    if (typeof basculerModeScene === 'function') basculerModeScene();
   }
   if (e.key === 'l' || e.key === 'L') {
     e.preventDefault();

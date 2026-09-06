@@ -36,31 +36,40 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'ELEVENLABS_API_KEY non configurée' });
     }
 
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+    // Modèle : eleven_v3 par défaut depuis le 05/09 (le plus expressif,
+    // comprend les indications de jeu entre crochets dans le texte — voir
+    // EMOTIONS_VOIX dans alfred-voice.js). eleven_multilingual_v2 reste
+    // utilisable via modelId.
+    const model = modelId || 'eleven_v3';
+    const estV3 = /^eleven_v3/.test(model);
+    // v3 n'a pas de réglage "style" et n'accepte pour stability que trois
+    // crans (0 créatif / 0.5 naturel / 1 robuste) — on arrondit au plus
+    // proche et on n'envoie que ce qu'il connaît. Un paramètre inconnu a
+    // déjà fait tomber TOUS les appels d'un moteur une fois (voir "pitch"
+    // dans alfred-voice.js) : on ne prend pas le risque.
+    const stab = typeof stability === 'number' ? stability : (estV3 ? 0.5 : 0.42);
+    const stabV3 = [0, 0.5, 1].reduce((a, b) => Math.abs(b - stab) < Math.abs(a - stab) ? b : a);
+    const reglages = estV3
+      ? { stability: stabV3, similarity_boost: typeof similarityBoost === 'number' ? similarityBoost : 0.75, use_speaker_boost: typeof useSpeakerBoost === 'boolean' ? useSpeakerBoost : true }
+      : { stability: stab, similarity_boost: typeof similarityBoost === 'number' ? similarityBoost : 0.75, style: typeof style === 'number' ? style : 0.35, use_speaker_boost: typeof useSpeakerBoost === 'boolean' ? useSpeakerBoost : true };
+
+    const appeler = (voice_settings) => fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'audio/mpeg',
-        'xi-api-key': key,
-      },
-      body: JSON.stringify({
-        text,
-        // eleven_multilingual_v2 : seul modèle multilingue "haute qualité"
-        // d'ElevenLabs couvrant le néerlandais (voir leur documentation) —
-        // remplaçable via modelId si un autre est préférable à l'usage.
-        model_id: modelId || 'eleven_multilingual_v2',
-        // Valeurs par défaut alignées sur ELEVENLABS_REGLAGES_VOIX
-        // (alfred-voice.js), qui les envoie explicitement à chaque appel —
-        // ces défauts ne servent qu'en secours (appel direct à l'API sans
-        // passer par le client, ex. test manuel).
-        voice_settings: {
-          stability:          typeof stability === 'number' ? stability : 0.42,
-          similarity_boost:   typeof similarityBoost === 'number' ? similarityBoost : 0.75,
-          style:              typeof style === 'number' ? style : 0.35,
-          use_speaker_boost:  typeof useSpeakerBoost === 'boolean' ? useSpeakerBoost : true,
-        },
-      }),
+      headers: { 'Content-Type': 'application/json', 'Accept': 'audio/mpeg', 'xi-api-key': key },
+      body: JSON.stringify({ text, model_id: model, voice_settings }),
     });
+
+    let response = await appeler(reglages);
+    // Repli : si l'API refuse les réglages (400/422 — ex. contrainte v3 non
+    // anticipée), on retente une fois avec le strict minimum plutôt que de
+    // laisser la démo sans voix.
+    if (!response.ok && (response.status === 400 || response.status === 422)) {
+      let detail = '';
+      try { detail = JSON.stringify(await response.clone().json()); } catch { detail = await response.clone().text(); }
+      if (/voice_settings|stability|style|similarity/i.test(detail)) {
+        response = await appeler({ stability: estV3 ? 0.5 : 0.5 });
+      }
+    }
 
     if (!response.ok) {
       let detail;
