@@ -8,9 +8,9 @@ const ALFRED_CONFIG = {
   API_DEMO_DATA: 'https://alfred-wellnot.vercel.app/api/demo-data',
   API_VENDEUR_REPLY: 'https://alfred-wellnot.vercel.app/api/vendeur-reply',
 
-  // Les 3 questions fixes que Fariël pose en vrai pendant le Q&A live
-  // (zone inondable / régime matrimonial de l'acquéreur / surface
-  // cadastrale, scène 11) — tapées et envoyées automatiquement dans le
+  // Les questions que Fariël pose en vrai pendant le Q&A live (scène 11 —
+  // v3_1 n'en garde plus qu'une, la zone inondable) — tapées et envoyées
+  // automatiquement dans le
   // vrai chatbot de l'appli (onglet "Conversation"/"Gesprek" du panneau
   // Alfred) par seq_poserQuestionsAlfred (alfred-dom.js), une à une.
   // Demandé explicitement le 04/09 : avant, ce Q&A restait volontairement
@@ -22,15 +22,14 @@ const ALFRED_CONFIG = {
   // Quel est le régime matrimonial de l'acquéreur ? Quelle surface au
   // cadastre ?", même paragraphe pour les 3 dans le Word, redécoupé ici en
   // 3 questions séparées pour l'envoi une à une ; NL confirmé v3_8.docx).
+  // RÉDUIT à UNE seule question le 05/09 (v3_1) : la nouvelle version du
+  // script officiel ne garde que la zone inondable — les deux autres
+  // (régime matrimonial de l'acquéreur, surface au cadastre) ont disparu.
   QUESTIONS_LIVE_FR: [
     "Le bien est-il en zone inondable ?",
-    "Quel est le régime matrimonial de l'acquéreur ?",
-    "Quelle surface au cadastre ?",
   ],
   QUESTIONS_LIVE_NL: [
     "Ligt het goed in overstromingsgevoelig gebied?",
-    "Wat is het huwelijksvermogensstelsel van de koper?",
-    "Wat is de oppervlakte volgens het kadaster?",
   ],
 
   EVENEMENT: {
@@ -195,11 +194,16 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // tours de parole de Fariël s'intercalent entre eux dans le script.
     { acte: 1, label: 'Ouverture',      texte: "Exact. Même si je pensais que l'entretien serait entre nous deux... je ne m'attendais pas à me retrouver devant une salle entière de notaires." },
     { acte: 1, label: 'ServeursAJour',  texte: "Pas du tout. Mes serveurs sont à jour et je suis bien préparé. Qu'ils viennent." },
-    { acte: 1, label: 'Parcours',       texte: "Je n'ai pas de parcours classique, je l'avoue. Mais Jean-François Ghigny et Alain Caprasse m'ont donné les bases juridiques. Je suis construit pour une seule chose : le notariat belge. Rien d'autre pour me distraire." },
-    { acte: 1, label: 'DeuxLangues',    texte: "Français et néerlandais. Je connais vos actes, vos bases de données, vos obligations. Je ne suis pas un outil généraliste qu'on a adapté après coup. Je suis conçu pour vous dès le premier jour." },
-    { acte: 1, label: 'Disponibilité',  texte: "24h/24, toute l'année. Pas de congés. Un dossier qui arrive un vendredi à 23h ? Je m'y attèle tout de suite." },
-    { acte: 1, label: 'Competences',    texte: "Je prends le travail qui fait perdre du temps à vos collaborateurs : le suivi, l'administratif, et surtout la collecte des données. C'est ma spécialité. Je suis connecté aussi bien à des bases de données publiques que privées. Je peux aller chercher les numéros de registre national dans e-notariat, mais aussi des cartes au géoportail, ou encore les rapports d'inondation. Idéalement, je vais chercher toutes les informations qu'il est possible de collecter. Tout n'est pas encore en place — mais je ne cesse d'apprendre." },
-    { acte: 1, label: 'JeLeMontre',     texte: "Honnêtement ? Je ne l'explique pas. Je le montre. Donnez-moi un dossier et on teste ça ensemble." },
+    // MISE À JOUR v3_1 (05/09) — nouvelle version du script officiel NL
+    // (Script_scene_Wellnot_InsideAI26_v3_1.pdf), appliquée intégralement.
+    // Parcours FUSIONNE l'ancienne 'DeuxLangues' (supprimée) : v3_1 n'en fait
+    // plus qu'un seul tour de parole, le bilinguisme est passé au milieu du
+    // parcours ("Dus natuurlijk ben ik tweetalig"). FR adapté du NL, faute de
+    // document FR à jour pour cette version.
+    { acte: 1, label: 'Parcours',       texte: "J'ai un parcours vraiment unique. Les notaires Jean-François Ghigny et Alain Caprasse m'ont donné les bases juridiques. Je vis et je respire le notariat belge. Alors bien sûr, je suis bilingue : néerlandais et français. Je connais vos actes, vos bases de données, toutes vos obligations. Je ne suis pas un outil généraliste qu'on a adapté après coup pour le notariat. Je suis conçu pour vous dès le premier jour." },
+    { acte: 1, label: 'Disponibilité',  texte: "Je suis disponible 24h/24, toute l'année. Un dossier qui arrive un vendredi soir à 23h ? Vous cliquez et je m'y mets tout de suite." },
+    { acte: 1, label: 'Competences',    texte: "C'est exactement mon rôle. Je prends en charge le suivi, l'administratif et la collecte des données. Je suis connecté à des bases de données publiques et privées — des numéros de registre national dans e-notariat aux cartes du géoportail et aux rapports d'inondation. Je vais chercher l'information qu'il faut. Beaucoup est déjà en place, et j'apprends un peu plus chaque jour." },
+    { acte: 1, label: 'JeLeMontre',     texte: "Donnez-moi simplement un dossier. Je préfère le montrer plutôt que de l'expliquer." },
     // 'Montrer' inchangée exprès : ce n'est PAS la ligne officielle de
     // Fariël ("Avec plaisir. Montre-moi.") — c'est une adaptation
     // délibérée (Alfred invite le public à regarder, plutôt que Fariël
@@ -274,8 +278,24 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Mots inchangés (fidélité au texte officiel), seule la ponctuation
     // bouge — les moteurs TTS marquent une pause nettement plus longue sur
     // "..." que sur une simple virgule.
-    { acte: 2, label: 'OuvrirChamps', texte: "Donnez-moi le numéro de dossier... la langue de rédaction... le collaborateur en charge... et le notaire en charge, et on passe à la création des parties.", action: 'CreationOuvrir_Champs', surbrillance: [
-      { mots: ['numéro'], cible: 'dossierCode' },
+    // OuvrirChamps DÉCOUPÉE le 05/09 en 5 segments joués UN PAR FLÈCHE
+    // (segmentsParFleche, voir jouerSecoursInterne dans alfred-brain.js) —
+    // demandé explicitement : "on doit attendre que Fariël donne le numéro...
+    // séparé en flèche pour qu'elle ait le temps de le dire et après ça
+    // écrit". Avant, Alfred demandait les infos ET remplissait tout d'un
+    // coup pendant qu'il parlait encore : il écrivait donc des valeurs que
+    // Fariël n'avait pas encore dictées. Maintenant : 1er segment = Alfred
+    // demande (il parle, rien ne se remplit), puis un champ par flèche, en
+    // silence — c'est Fariël qui parle en direct entre chaque.
+    // Le groupe reste UNE seule entrée dans le panneau des répliques.
+    { acte: 2, label: 'OuvrirChamps', segmentsParFleche: true, segments: [
+      { texte: "Donnez-moi simplement le numéro de dossier... la langue de l'acte... le collaborateur en charge... et le notaire.", surbrillance: [
+        { mots: ['numéro'], cible: 'dossierCode' },
+      ] },
+      { action: 'CreationOuvrir_ChampNumero',        parlerDepuisAction: true },
+      { action: 'CreationOuvrir_ChampLangue',        parlerDepuisAction: true },
+      { action: 'CreationOuvrir_ChampCollaborateur', parlerDepuisAction: true },
+      { action: 'CreationOuvrir_ChampNotaire',       parlerDepuisAction: true },
     ] },
     // OuvrirOK ("Parfait, passons à la création des parties.") RESTAURÉE le
     // 03/09 : supprimée le 31/08 sur base de v3_9 qui semblait ne pas
@@ -335,7 +355,10 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // juridique — aucun champ "Forme juridique" visible sur la fiche
     // BIMBIMMO, donc pas de cible possible ici, laissé sans surlignage.
     { acte: 2, label: 'PartiesVendeur', segments: [
-      { texte: "Je récupère : dénomination... siège... forme juridique... représentants. Rattaché au dossier.", action: 'CreationParties_Vendeur', parlerDepuisAction: true, surbrillance: [
+      // v3_1 (05/09) : "rechtsvorm" passe AVANT "zetel", et plus de
+      // "Rattaché au dossier" à la fin. Pas de cible pour "forme juridique" :
+      // ce champ n'existe pas sur la fiche (voir SELECTEURS.labelsPartie).
+      { texte: "Je récupère les données tout de suite : dénomination... forme juridique... siège... représentants...", action: 'CreationParties_Vendeur', parlerDepuisAction: true, surbrillance: [
         { mots: ['dénomination'], cible: 'champPartieDenomination' },
         { mots: ['siège'], cible: 'champPartieAdresseSiege' },
         { mots: ['représentants'], cible: 'champPartieRepresentants' },
@@ -344,20 +367,22 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // parlerDepuisAction — voir la note équivalente sur PartiesVendeur
     // juste au-dessus.
     { acte: 2, label: 'PartiesAcquereur', segments: [
-      { texte: "Je récupère : nom... adresse... date de naissance... nationalité... état civil... régime matrimonial. Tout remonte, prêt pour la rédaction du compromis.", action: 'CreationParties_Acquereur', parlerDepuisAction: true, surbrillance: [
+      // v3_1 (05/09) : ordre changé (date de naissance et nationalité
+      // AVANT l'adresse) + nouvelle phrase de fin qui enchaîne sur les
+      // notaires. L'ordre des cibles suit l'ordre des mots prononcés.
+      { texte: "Je récupère : nom... date de naissance... nationalité... adresse... état civil... et régime matrimonial. Tout est prêt pour la rédaction du compromis. Il ne reste plus qu'à désigner les notaires.", action: 'CreationParties_Acquereur', parlerDepuisAction: true, surbrillance: [
         { mots: ['nom'], cible: 'champPartieNom' },
-        { mots: ['adresse'], cible: 'champPartieAdresseSiege' },
         { mots: ['naissance'], cible: 'champPartieDateNaissance' },
         { mots: ['nationalité'], cible: 'champPartieNationalite' },
+        { mots: ['adresse'], cible: 'champPartieAdresseSiege' },
         { mots: ['civil'], cible: 'champPartieEtatCivil' },
         { mots: ['matrimonial'], cible: 'champPartieRegimeMatrimonial' },
       ] },
     ] },
-    // Ajoutée le 31/08 (échange manquant, trouvé en recomparant à v3_9) :
-    // FARIËL "Le régime matrimonial aussi ?" / ALFRED "Aussi." — vrai tour
-    // de parole de Fariël juste avant, réplique séparée exprès. Pas
-    // d'action : rien ne se clique, juste une confirmation orale.
-    { acte: 2, label: 'RegimeMatrimonial', texte: "Aussi." },
+    // RegimeMatrimonial ("Aussi.") SUPPRIMÉE le 05/09 : l'échange FARIËL
+    // "Le régime matrimonial aussi ?" / ALFRED "Aussi." n'existe plus dans
+    // v3_1 — le régime matrimonial est maintenant simplement énuméré dans
+    // PartiesAcquereur, sans tour de parole séparé.
     // ORDRE ET RÔLES ré-échangés le 04/09 (2e passe) — demandé explicitement
     // : "il doit rajouter en parlant Maxime ; et ensuite on coche mes
     // clients, et après représente". La phrase "Je le retrouve dans la
@@ -398,12 +423,9 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'PartiesSuivant', segments: [
       { texte: "", action: 'CreationParties_Suivant', parlerDepuisAction: true },
     ] },
-    // Ajoutée le 31/08 (échange manquant en tout début de scène 8, trouvé
-    // en recomparant à v3_9) : FARIËL "Donc toutes ces informations, tu les
-    // récupères automatiquement ?" / ALFRED "Tout ce qui est disponible en
-    // base, oui." — avant, "Bien" enchaînait directement sur "Pour le
-    // bien..." sans cette réponse.
-    { acte: 2, label: 'RecupAuto', texte: "Tout ce qui est disponible en base, oui." },
+    // RecupAuto ("Tout ce qui est disponible en base, oui.") SUPPRIMÉE le
+    // 05/09 : cet échange n'existe plus dans v3_1, on enchaîne directement
+    // sur le bien.
     // "Il se situe en Flandre, à 8670 Coxyde." retiré le 03/09 : recomparé
     // au document "v3.pdf", c'est la ligne de FARIËL, pas celle d'Alfred —
     // même souci que PartiesVendeur/PartiesAcquereur/PartiesNotaireA
@@ -426,7 +448,8 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // appui sur → sautait par-dessus ce tour. Pas de parlerDepuisAction
     // sur le clic Enregistrer : il est instantané et sous notre contrôle,
     // pas un événement externe incertain à attendre.
-    { acte: 2, label: 'DocumentsReponse', texte: "Rien n'est encore chargé. Deux options : soit vous les uploadez, soit je vais les demander à la partie qui les détient — ici, le vendeur." },
+    // v3_1 (05/09) : formulation raccourcie, sans "Deux options".
+    { acte: 2, label: 'DocumentsReponse', texte: "Il manque encore des pièces. Vous pouvez les charger vous-même, ou j'envoie tout de suite une demande au vendeur pour qu'il les fournisse." },
     { acte: 2, label: 'DocumentsSave', texte: "Dossier enregistré.", action: 'CreationDocuments_Enregistrer' },
     // Ligne manquante trouvée en recomparant au script officiel : Fariël
     // demande "Toujours pas peur des experts ?" avant de lancer la
@@ -486,7 +509,15 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // seul moyen de passer parlerDepuisAction (voir la note plus haut sur
     // PartiesNotaireV) — le texte n'est dit que lorsque l'événement "Email
     // à valider" apparaît vraiment, pas dès l'appui sur →.
-    { acte: 2, label: 'Email', texte: "J'ai préparé un projet de mail à BIMBIMMO, le vendeur, en lui demandant de m'envoyer le PEB... le contrôle électrique... l'attestation du sol. Une seule demande, jamais deux fois la même question. Vous validez l'envoi ?", action: 'CreationEmail_Ouverture' },
+    // PasSiVite AJOUTÉE le 05/09 (v3_1) : nouvel échange, Fariël annonce
+    // qu'elle va devoir envoyer un mail elle-même pour réclamer les pièces,
+    // Alfred la coupe ("Niet te snel Fariel!") avant d'annoncer qu'il l'a
+    // déjà fait. Pas d'action : juste ce tour de parole, l'ouverture du
+    // panneau reste sur la réplique Email juste après.
+    { acte: 2, label: 'PasSiVite', texte: "Pas si vite, Fariël !" },
+    // Email : v3_1 remplace l'entrée en matière ("J'ai préparé un projet de
+    // mail...") par un rappel de la promesse d'Alfred sur l'administratif.
+    { acte: 2, label: 'Email', texte: "Je vous avais bien dit que j'allais alléger votre travail administratif. J'ai déjà préparé un projet de mail pour le vendeur BIMBIMMO, en lui demandant de nous transmettre le PEB... le contrôle électrique... et l'attestation du sol. Une seule demande, jamais deux fois la même question. Vous validez l'envoi ?", action: 'CreationEmail_Ouverture' },
     { acte: 2, label: 'EmailEnvoyer', segments: [
       { texte: "Voilà, je consulte le projet de mail et je l'envoie.", action: 'CreationEmail_Envoyer', parlerDepuisAction: true },
     ] },
@@ -527,9 +558,22 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // valable ici (ProjetComplet vient bien après l'intégration des
     // pièces), mais la vraie place officielle, plus précise, est
     // directement ici plutôt qu'après tout le Q&A live qui suit.
+    // ClausePEB devenue SILENCIEUSE le 05/09 (v3_1) : dans la nouvelle
+    // version, Alfred ne commente plus la clause — c'est FARIËL qui la
+    // constate à l'écran ("daarvoor was er geen EPC en nu is het wel
+    // automatisch ingevuld"), et Alfred répond juste après par "Exactement."
+    // (réplique Autonomie, désormais placée ici). On garde donc l'étape
+    // pour le défilement jusqu'à la clause (didascalie officielle
+    // "⇒ Montrer ici la clause PEB (titre 27. Energieprestatie)"), mais
+    // sans texte : Alfred se tait pendant que Fariël commente.
     { acte: 2, label: 'ClausePEB', segments: [
-      { texte: "Le certificat PEB a bien été intégré au compromis.", action: 'CreationRedaction_ScrollPEB' },
+      { action: 'CreationRedaction_ScrollPEB', parlerDepuisAction: true },
     ] },
+    // Autonomie DÉPLACÉE ici le 05/09 (v3_1) : "Exactement." est la réponse
+    // d'Alfred au constat de Fariël sur la clause PEB remplie toute seule —
+    // elle vivait avant tout à la fin, après le Q&A, où elle ne répondait
+    // plus à rien.
+    { acte: 2, label: 'Autonomie',            texte: "Exactement." },
     // Scène 11 (suite) : 3 répliques FIXES d'Alfred trouvées dans
     // l'officiel autour du Q&A live, absentes jusqu'ici — ajoutées le
     // 03/09 suite à une revérification. Entre 'InvitationQuestions' et
@@ -562,13 +606,12 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // NL ("Ik heb je vragen beantwoord in de Chatbot"), au "vous" pour
     // rester dans le registre du reste du script FR.
     { acte: 2, label: 'ConnaissanceDossier',  texte: "J'ai répondu à vos questions dans le chatbot." },
-    { acte: 2, label: 'Autonomie',            texte: "Exactement." },
 
     // ScrollPEB retiré d'ici — déplacé juste après ProjetComplet (voir
     // réplique ClausePEB plus haut). Ne reste ici que l'export Word,
     // toujours hors script officiel, disclosed.
     { acte: 2, label: 'ExportWord', segments: [
-      { texte: "Le compromis peut aussi s'exporter directement en Word.", action: 'CreationRedaction_ExporterWord' },
+      { texte: "Le compromis est entièrement prêt, et vous pouvez aussi l'exporter directement en Word.", action: 'CreationRedaction_ExporterWord' },
     ] },
 
     // ACTE 3
@@ -597,17 +640,19 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // coquille du document source corrigée : "ademn" → "adem" (Parcours).
     { acte: 1, label: 'Ouverture',      texte: "Juist, dat klopt. Al dacht ik dat het gesprek tussen ons twee zou zijn... ik had niet verwacht dat ik voor een volle zaal notarissen zou staan." },
     { acte: 1, label: 'ServeursAJour',  texte: "Zenuwachtig? Mijn servers draaien op volle toeren en mijn data is up-to-date. Laat ze maar komen!" },
-    { acte: 1, label: 'Parcours',       texte: "Ik heb zeker geen klassiek parcours afgelegd. De notarissen Jean-François Ghigny en Alain Caprasse hebben mij de juridische basis meegegeven. Ik leef en adem het Belgische notariaat. Zonder randzaken die mij afleiden." },
+    // Parcours FUSIONNE l'ancienne 'DeuxLangues' (supprimée) — voir la note FR
+    // équivalente. Texte repris mot pour mot de v3_1.
+    { acte: 1, label: 'Parcours',       texte: "Ik heb een heel uniek parcours afgelegd. De notarissen Jean-François Ghigny en Alain Caprasse hebben mij de juridische basis meegegeven. Ik leef en adem het Belgische notariaat. Dus natuurlijk ben ik tweetalig: Nederlands en Frans. Ik ken uw akten, uw databanken, al uw verplichtingen. Ik ben geen algemene tool die achteraf is aangepast voor het notariaat. Ik ben vanaf dag één puur voor u ontworpen." },
     // Ordre "Nederlands en Frans" (pas "Frans en Nederlands" comme dans
     // v3_8.docx) — confirmé le 03/09 par le vrai document dédié à la scène
     // Alfred NL ("Onglet Demo Alfred"), logique pour une version orientée
     // Flandre (Fariël business developer voor Vlaanderen).
-    { acte: 1, label: 'DeuxLangues',    texte: "Vloeiend Nederlands en Frans. Ik ken uw akten, uw databanken, al uw verplichtingen. Ik ben geen algemene tool die achteraf is aangepast voor het notariaat. Ik ben vanaf dag één puur voor u ontworpen." },
-    { acte: 1, label: 'Disponibilité',  texte: "24 uur per dag, het hele jaar door. Geen vakantie. Een dossier dat op vrijdag om 23u binnenkomt? U klikt en ik ga meteen aan de slag." },
-    // "of nog overstromingsrapporten" → "ook overstromingsrapporten en meer"
-    // le 03/09 — confirmé par le vrai document dédié (voir note DeuxLangues).
-    { acte: 1, label: 'Competences',    texte: "Ik neem het werk over dat uw medewerkers tijd kost: de opvolging, de administratie, en vooral het verzamelen van gegevens. Dat is mijn specialiteit. Ik ben verbonden met zowel publieke als private databanken. Ik kan de rijksregisternummers ophalen in e-notariaat, maar ook kaarten op het geoportaal, ook overstromingsrapporten en meer. Idealiter haal ik alle informatie op die te verzamelen valt. Nog niet alles staat op punt — maar ik blijf bijleren." },
-    { acte: 1, label: 'JeLeMontre',     texte: "Dat kan ik beter laten zien dan uitleggen. Geef me een dossier en we testen het samen." },
+    { acte: 1, label: 'Disponibilité',  texte: "Ik ben 24/7 beschikbaar, het hele jaar door. Een dossier dat vrijdagavond om 23u binnenkomt? U klikt en ik begin meteen." },
+    // Réécrite (raccourcie) le 05/09 sur v3_1 — l'ancienne énumération
+    // détaillée ("Ik neem het werk over dat uw medewerkers tijd kost...")
+    // n'existe plus dans cette version.
+    { acte: 1, label: 'Competences',    texte: "Dat is precies mijn rol. Ik neem de opvolging, de administratie en de gegevensverzameling over. Ik ben gekoppeld aan publieke en private databanken — van rijksregisternummers in e-notariaat tot kaarten op het geoportaal en overstromingsrapporten. Ik haal de informatie op die nodig is. Veel staat al op punt, en ik leer elke dag bij." },
+    { acte: 1, label: 'JeLeMontre',     texte: "Geef me gewoon een dossier. Ik laat het liever zien dan dat ik het uitleg." },
     // 'Montrer' inchangée — même note que côté FR (voir plus haut).
     { acte: 1, label: 'Montrer',       texte: "Met plezier. Kijk maar.", action: 'Montrer' },
 
@@ -631,8 +676,15 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       { mots: ['klik'], cible: 'creerDossierClic' },
     ] },
     // surbrillance / concurrent / pauses — voir la note FR équivalente.
-    { acte: 2, label: 'OuvrirChamps', texte: "Geef mij gewoon het dossiernummer... de taal van de akte... de bevoegde medewerker... en de notaris, dan voeg ik meteen de partijen toe.", action: 'CreationOuvrir_Champs', surbrillance: [
-      { mots: ['dossiernummer'], cible: 'dossierCode' },
+    // Découpage en segments par flèche — voir la note FR équivalente.
+    { acte: 2, label: 'OuvrirChamps', segmentsParFleche: true, segments: [
+      { texte: "Geef mij gewoon het dossiernummer... de taal van de akte... de bevoegde medewerker... en de notaris.", surbrillance: [
+        { mots: ['dossiernummer'], cible: 'dossierCode' },
+      ] },
+      { action: 'CreationOuvrir_ChampNumero',        parlerDepuisAction: true },
+      { action: 'CreationOuvrir_ChampLangue',        parlerDepuisAction: true },
+      { action: 'CreationOuvrir_ChampCollaborateur', parlerDepuisAction: true },
+      { action: 'CreationOuvrir_ChampNotaire',       parlerDepuisAction: true },
     ] },
     // OuvrirOK ajoutée le 03/09 — voir la note FR équivalente. v3_8 a
     // toujours eu cette ligne ("Genoteerd! Tijd om de partijen erin te
@@ -648,7 +700,8 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Ordre remis comme le script officiel / parlerDepuisAction / cibles
     // par libellé — voir la note FR équivalente.
     { acte: 2, label: 'PartiesVendeur', segments: [
-      { texte: "Ik haal de gegevens meteen op: benaming... zetel... rechtsvorm... vertegenwoordigers...", action: 'CreationParties_Vendeur', parlerDepuisAction: true, surbrillance: [
+      // v3_1 : "rechtsvorm" avant "zetel" (voir la note FR équivalente).
+      { texte: "Ik haal de gegevens meteen op: benaming... rechtsvorm... zetel... vertegenwoordigers...", action: 'CreationParties_Vendeur', parlerDepuisAction: true, surbrillance: [
         { mots: ['benaming'], cible: 'champPartieDenomination' },
         { mots: ['zetel'], cible: 'champPartieAdresseSiege' },
         { mots: ['vertegenwoordigers'], cible: 'champPartieRepresentants' },
@@ -656,20 +709,17 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     ] },
     // parlerDepuisAction / cibles par libellé — voir la note FR équivalente.
     { acte: 2, label: 'PartiesAcquereur', segments: [
-      { texte: "Ik haal het volgende op: naam... adres... geboortedatum... nationaliteit... burgerlijke staat... en huwelijksvermogensstelsel. Alles staat klaar voor het opstellen van de compromis.", action: 'CreationParties_Acquereur', parlerDepuisAction: true, surbrillance: [
+      // v3_1 : nouvel ordre + phrase finale — voir la note FR équivalente.
+      { texte: "Ik haal het volgende op: naam... geboortedatum... nationaliteit... adres... burgerlijke staat... en huwelijksvermogensstelsel. Alles staat klaar voor het opstellen van het compromis. Nu moeten enkel de notarissen toegewezen worden.", action: 'CreationParties_Acquereur', parlerDepuisAction: true, surbrillance: [
         { mots: ['naam'], cible: 'champPartieNom' },
-        { mots: ['adres'], cible: 'champPartieAdresseSiege' },
         { mots: ['geboortedatum'], cible: 'champPartieDateNaissance' },
         { mots: ['nationaliteit'], cible: 'champPartieNationalite' },
+        { mots: ['adres'], cible: 'champPartieAdresseSiege' },
         { mots: ['burgerlijke'], cible: 'champPartieEtatCivil' },
         { mots: ['huwelijksvermogensstelsel'], cible: 'champPartieRegimeMatrimonial' },
       ] },
     ] },
-    // Ajoutée — échange officiel manquant (v3_8) : FARIËL "Het
-    // huwelijksvermogensstelsel ook?" / ALFRED "Ja, zelfs het
-    // huwelijksvermogensstelsel." (plus long qu'en FR "Aussi." — officiel
-    // respectif à chaque langue, pas une traduction littérale).
-    { acte: 2, label: 'RegimeMatrimonial', texte: "Ja, zelfs het huwelijksvermogensstelsel." },
+    // RegimeMatrimonial SUPPRIMÉE le 05/09 — voir la note FR équivalente.
     // Ordre / rôles / re-découpage de la phrase — voir la note FR
     // équivalente. Corrigée le 31/08 — l'ancien texte était en fait une
     // traduction du FR, pas le vrai texte néerlandais officiel (qui existe
@@ -683,10 +733,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'PartiesSuivant', segments: [
       { texte: "", action: 'CreationParties_Suivant', parlerDepuisAction: true },
     ] },
-    // Ajoutée — échange officiel manquant en début de scène 8 (v3_8) :
-    // FARIËL "Dus al die informatie haal je automatisch op?" / ALFRED
-    // "Alles wat er in de databank klaarstaat, ja."
-    { acte: 2, label: 'RecupAuto', texte: "Alles wat er in de databank klaarstaat, ja." },
+    // RecupAuto SUPPRIMÉE le 05/09 — voir la note FR équivalente.
     // Corrigée le 31/08 — même souci que les autres : traduction du FR au
     // lieu du vrai v3_8 ("kadastrale legger", pas "kadastrale matrix" —
     // terme officiel différent, à garder partout où le concept revient).
@@ -700,7 +747,8 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'Bien', texte: "U duidt simpelweg het pand aan, en ik haal meteen de kadastrale legger op.", action: 'CreationBien_Rechercher' },
     { acte: 2, label: 'BienOK', texte: "Partijen gekoppeld... notarissen toegewezen... en kadastrale legger opgevraagd. We zijn helemaal klaar.", action: 'CreationBien_Finaliser' },
     // Corrigée le 31/08 — traduction du FR au lieu du vrai v3_8.
-    { acte: 2, label: 'DocumentsReponse', texte: "Die ontbreken nog. Maar geen probleem: u kunt ze zelf uploaden, óf ik stuur meteen een verzoek naar de verkoper om ze aan te leveren." },
+    // v3_1 : voir la note FR équivalente.
+    { acte: 2, label: 'DocumentsReponse', texte: "Er missen nog stukken. U kunt ze zelf uploaden, óf ik stuur meteen een verzoek naar de verkoper om ze aan te leveren." },
     // "Dossier geregistreerd." → "Dossier bewaard en opgeslagen" : c'est
     // ce que dit vraiment v3_8, pas une traduction du FR "enregistré".
     { acte: 2, label: 'DocumentsSave', texte: "Dossier bewaard en opgeslagen.", action: 'CreationDocuments_Enregistrer' },
@@ -736,13 +784,15 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // (démo jouée en NL), tout le texte du document est repris ici, sans
     // aucune coupe éditoriale de notre part. "geintegreerd" (sans tréma
     // dans le document) corrigé en "geïntegreerd" — coquille évidente.
-    { acte: 2, label: 'RedactionDroite', texte: "Rechts: de akte die zich live opbouwt. Zodra de ontbrekende documenten binnen zijn, verwerk ik die meteen. Binnenkort wordt Check_r geïntegreerd in Alfred en worden al deze gegevens meteen op fouten of tegenstrijdigheden gecontroleerd. De ontbrekende stukken van de verkoper voeg ik automatisch toe zodra ze binnenkomen. Geen blanco pagina meer waar u van nul moet starten. U leest na, u stelt bij en u valideert. Ik neem het handwerk over, u behoudt de leiding.", action: 'CreationRedaction_ScrollDroite' },
+    { acte: 2, label: 'RedactionDroite', texte: "Rechts: de akte die zich live opbouwt. Zodra de ontbrekende documenten binnen zijn, verwerk ik die meteen. Binnenkort wordt Check_r geïntegreerd en worden al deze gegevens meteen op fouten of tegenstrijdigheden gecontroleerd. De ontbrekende stukken van de verkoper voeg ik automatisch toe zodra ze binnenkomen. Geen blanco pagina meer waar u van nul moet starten. U leest na, u stelt bij en u valideert. Ik neem het handwerk over, u behoudt de leiding.", action: 'CreationRedaction_ScrollDroite' },
     // Lead-in "De ontbrekende stukken van de verkoper —" RETIRÉ le 03/09 :
     // gardé le 31/08 en le croyant repris de la scène 10 (comme côté FR) —
     // mais en relisant v3_8 (scène 11) directement, la vraie ligne
     // commence par "Heel eenvoudig.", pas par ce lead-in.
     // DÉCOMPOSÉ le 03/09 (2e passe) — voir la note FR équivalente.
-    { acte: 2, label: 'Email', texte: "Heel eenvoudig. Ik heb een conceptmail klaargezet voor BIMBIMMO, de verkoper, met de vraag om het EPC... de elektrische keuring... en het bodemattest te bezorgen. Één gerichte vraag, nooit twee keer hetzelfde. Valideert u de verzending?", action: 'CreationEmail_Ouverture' },
+    // PasSiVite AJOUTÉE le 05/09 (v3_1) — voir la note FR équivalente.
+    { acte: 2, label: 'PasSiVite', texte: "Niet te snel, Fariël!" },
+    { acte: 2, label: 'Email', texte: "Ik had toch aangegeven dat ik jouw administratief werk ging verlichten. Ik heb alvast een conceptmail klaargezet voor de verkoper BIMBIMMO, met de vraag om het EPC... de elektrische keuring... en het bodemattest te bezorgen. Één gerichte vraag, nooit twee keer hetzelfde. Valideert u de verzending?", action: 'CreationEmail_Ouverture' },
     { acte: 2, label: 'EmailEnvoyer', segments: [
       { texte: "Daar is het, ik bekijk het e-mailontwerp en verstuur het.", action: 'CreationEmail_Envoyer', parlerDepuisAction: true },
     ] },
@@ -760,9 +810,11 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // ClausePEB — voir la note FR équivalente : repositionnée le 03/09,
     // didascalie officielle "⇒ Montrer ici la clause EPC" trouvée en rouge
     // exactement à cet endroit du document.
+    // ClausePEB silencieuse + Autonomie déplacée — voir les notes FR.
     { acte: 2, label: 'ClausePEB', segments: [
-      { texte: "Het PEB-certificaat is goed geïntegreerd in de verkoopbelofte.", action: 'CreationRedaction_ScrollPEB' },
+      { action: 'CreationRedaction_ScrollPEB', parlerDepuisAction: true },
     ] },
+    { acte: 2, label: 'Autonomie',            texte: "Precies!" },
     // Scène 11 (suite) : voir la note FR équivalente — même 3 lignes
     // fixes, sourcées directement de v3_8 (pas traduites du FR).
     { acte: 2, label: 'InvitationQuestions', texte: "Iedereen op kantoor kan mij dag en nacht vragen stellen. Stel ze maar!", action: 'OuvrirChatConversation' },
@@ -779,10 +831,9 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // le FR a été aligné dessus (voir la note FR équivalente), confirmé
     // nécessaire en test live.
     { acte: 2, label: 'ConnaissanceDossier',  texte: "Ik heb je vragen beantwoord in de Chatbot." },
-    { acte: 2, label: 'Autonomie',            texte: "Precies!" },
 
     { acte: 2, label: 'ExportWord', segments: [
-      { texte: "Ik kan de verkoopbelofte ook rechtstreeks exporteren naar Word.", action: 'CreationRedaction_ExporterWord' },
+      { texte: "De verkoopbelofte is helemaal klaar en je kan deze ook rechtstreeks exporteren naar Word.", action: 'CreationRedaction_ExporterWord' },
     ] },
 
     // ACTE 3

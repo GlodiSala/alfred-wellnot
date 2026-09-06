@@ -2575,79 +2575,91 @@ async function seq_creationDossier_ouvrir_ecran() {
 // boîte partagée (plausible en plein salon, plusieurs stands/testeurs).
 let dernierCodeDossierGenere = null;
 
-// 1b. Remplir le numéro de dossier, les collaborateurs et le notaire, puis
-// passer à l'étape suivante.
-async function seq_creationDossier_ouvrir_champs() {
-  const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
-  if (!cfg) { console.warn('[Alfred DOM] Données de création démo non configurées'); return; }
+// 1b. Remplir la fiche de création — DÉCOUPÉ le 05/09 en quatre étapes, une
+// par champ, chacune sur sa propre flèche (voir 'OuvrirChamps' et
+// segmentsParFleche dans alfred-config.js). Demandé explicitement : dans la
+// vraie scène, Alfred demande les infos, puis c'est FARIËL qui les dicte une
+// par une à voix haute ("Nummer: 2026/18-09. Taal: Nederlands. Medewerker…") —
+// avant, tout se remplissait d'un coup pendant qu'Alfred parlait encore, donc
+// Alfred écrivait des valeurs que personne n'avait encore données.
+// Chaque étape reste silencieuse (aucun texte à dire) : c'est Fariël qui
+// parle en direct, Alfred se contente d'écrire ce qu'elle vient de dire.
 
-  // Les trois champs sont remplis (le champ vide n'a pas de texte de
-  // déclencheur fiable, on cible chaque menu par sa position sous son
-  // libellé). "Collaborateur administratif" et "Notaire en charge du
-  // dossier" n'étaient jusqu'ici pas remplis — le champ notaire existait
-  // pourtant déjà dans la config (cfg.notaire) mais n'était jamais utilisé.
-  // Le numéro de dossier doit être unique — l'appli refuse un doublon et
-  // bloque "Suivant". Pour ne pas devoir y penser à chaque test, on génère
-  // automatiquement un code à chaque lancement, plutôt que de réutiliser
-  // cfg.code tel quel — jamais de retombée sur un ancien dossier déjà créé.
-  // Format demandé : "C-" + date du jour + heure (HHMMSS, pour rester
-  // unique même en cas de plusieurs lancements le même jour).
+// Numéro de dossier. Il doit être unique — l'appli refuse un doublon et
+// bloque "Suivant" — donc généré à chaque lancement plutôt que repris de
+// cfg.code : jamais de retombée sur un dossier déjà créé. Format "C-" +
+// date du jour + heure (HHMMSS, pour rester unique même sur plusieurs
+// lancements le même jour).
+async function seq_creationDossier_ouvrir_champNumero() {
   const maintenant = new Date();
   const dateJour = maintenant.toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
   const horodatage = maintenant.toTimeString().slice(0, 8).replace(/:/g, ''); // HHMMSS
   const codeUnique = `C-${dateJour}-${horodatage}`;
   dernierCodeDossierGenere = codeUnique;
   // Frappe accélérée (35ms/lettre au lieu de 90) : le suffixe d'horodatage
-  // rallonge le code, et voir chaque lettre s'afficher une à une n'apporte
-  // rien ici — contrairement à un champ où le "tapé en direct" fait partie
-  // de la démo, personne ne lit le numéro de dossier lettre par lettre.
+  // rallonge le code, et personne ne lit un numéro de dossier lettre par
+  // lettre — contrairement à un champ où le "tapé en direct" fait partie
+  // de la démo.
   await taperDansChamp(SELECTEURS.champs.dossierCode, codeUnique, 15, 35);
   // Entrée + blur : certains champs Angular ne valident/rafraîchissent leur
   // état (dont l'activation de "Suivant") que sur ces événements, pas sur
   // la frappe seule.
   const champCode = document.getElementById(SELECTEURS.champs.dossierCode);
   if (champCode) validerChamp(champCode);
-  await attendre(400);
-  // "Taal" (langue de l'acte) — actif seulement pour la démo NL, jamais
-  // touché en FR où "Frans" est déjà la valeur par défaut du champ
-  // (confirmé par capture d'écran : même sur le site en néerlandais, ce
-  // champ reste sur "Frans" tant qu'on ne le change pas). Demandé
-  // explicitement : le dossier doit être en néerlandais quand la démo
-  // l'est, comme le dit Fariël dans le script officiel NL ("Taal:
-  // Nederlands").
+  await attendre(300);
+}
+
+// "Taal" (langue de l'acte) — actif seulement pour la démo NL, jamais touché
+// en FR où "Frans" est déjà la valeur par défaut du champ (confirmé par
+// capture d'écran : même sur le site en néerlandais, ce champ reste sur
+// "Frans" tant qu'on ne le change pas). Demandé explicitement : le dossier
+// doit être en néerlandais quand la démo l'est, comme le dit Fariël dans le
+// script officiel NL ("Taal: Nederlands").
+async function seq_creationDossier_ouvrir_champLangue() {
   if (typeof currentLangue !== 'undefined' && currentLangue === 'nl') {
     await choisirDansDropdownParLabelProche(SELECTEURS.menus.langueActe, 'Nederlands');
     await attendre(300);
+  } else {
+    // Rien à faire en FR (déjà "Frans") — mais on le dit, sinon cette
+    // flèche donnerait l'impression de ne pas avoir marché.
+    console.log('[Alfred DOM] Langue de l\'acte : déjà "Frans" en démo FR, rien à changer.');
   }
-  // Pauses encore raccourcies (500ms → 300ms, et 800ms → 400ms côté
-  // choisirDansDropdownParLabelProche) : une fois speak() corrigé pour
-  // attendre la vraie fin de l'audio (voir alfred-voice.js), la comparaison
-  // réelle entre durée de la réplique et durée de cette étape est apparue
-  // beaucoup plus tardive que prévu — remonté en test live (la parole était
-  // términée depuis un moment, la sélection tournait encore).
-  // REVENU au concurrent (03/09, 4e passe) — voir la note dans
-  // alfred-config.js (label 'OuvrirChamps') : un bref passage par
-  // parlerDepuisAction (3e passe) a été annulé pour cette réplique
-  // précise — jugé plus naturel de laisser Alfred parler PENDANT que ces
-  // champs se remplissent en direct (contrairement aux fiches Vendeur/
-  // Acquéreur, pré-remplies d'un coup par une recherche externe). Chaque
-  // choisirDansDropdownParLabelProche ci-dessous garde donc son halo
-  // causal normal (silencieux non passé = false par défaut).
+}
+
+// Collaborateur en charge + collaborateur administratif (dictés ensemble par
+// Fariël, "Medewerker: …") — les deux sur la même flèche.
+async function seq_creationDossier_ouvrir_champCollaborateur() {
+  const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
+  if (!cfg) { console.warn('[Alfred DOM] Données de création démo non configurées'); return; }
   await choisirDansDropdownParLabelProche(SELECTEURS.menus.collaborateurEnCharge, cfg.collaborateur);
   await attendre(300);
   if (cfg.collaborateur_administratif) {
     await choisirDansDropdownParLabelProche(SELECTEURS.menus.collaborateurAdministratif, cfg.collaborateur_administratif);
     await attendre(300);
   }
+}
+
+// Notaire en charge du dossier ("Notaris: Jean-François Ghigny").
+async function seq_creationDossier_ouvrir_champNotaire() {
+  const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
+  if (!cfg) { console.warn('[Alfred DOM] Données de création démo non configurées'); return; }
   if (cfg.notaire) {
     await choisirDansDropdownParLabelProche(SELECTEURS.menus.notaireEnCharge, cfg.notaire);
     await attendre(300);
   }
-  // Le clic "Suivant" vivait ici avant — sorti dans sa propre fonction/
-  // réplique (seq_creationDossier_ouvrir_suivant, juste en dessous) : retour
-  // Cyril, "chaque action doit avoir sa propre flèche" — sans ça, l'écran
-  // passait à la suite tout de suite après le dernier champ rempli, sans
-  // laisser le temps de le voir avant que "Suivant" ne soit cliqué.
+}
+
+// Rétrocompatibilité — enchaîne les quatre champs d'un coup (utile pour un
+// test manuel en console ; le script normal les déclenche un par flèche,
+// voir DOM_ACTIONS et 'OuvrirChamps' dans alfred-config.js).
+async function seq_creationDossier_ouvrir_champs() {
+  await seq_creationDossier_ouvrir_champNumero();
+  await seq_creationDossier_ouvrir_champLangue();
+  await seq_creationDossier_ouvrir_champCollaborateur();
+  await seq_creationDossier_ouvrir_champNotaire();
+  // Le clic "Suivant" vit dans sa propre fonction/réplique
+  // (seq_creationDossier_ouvrir_suivant, juste en dessous) : retour Cyril,
+  // "chaque action doit avoir sa propre flèche".
 }
 
 // Clic "Suivant" de la fiche de création — séparé de
@@ -3267,7 +3279,11 @@ const DOM_ACTIONS = {
   // sur "Créer un dossier").
   'CreationOuvrir_Dossiers':    seq_creationDossier_ouvrir_dossiers,
   'CreationOuvrir_CreerBouton': seq_creationDossier_ouvrir_creerBouton,
-  'CreationOuvrir_Champs':      seq_creationDossier_ouvrir_champs,
+  'CreationOuvrir_Champs':      seq_creationDossier_ouvrir_champs, // rétrocompat/test console — le script utilise les 4 sous-étapes ci-dessous
+  'CreationOuvrir_ChampNumero':        seq_creationDossier_ouvrir_champNumero,
+  'CreationOuvrir_ChampLangue':        seq_creationDossier_ouvrir_champLangue,
+  'CreationOuvrir_ChampCollaborateur': seq_creationDossier_ouvrir_champCollaborateur,
+  'CreationOuvrir_ChampNotaire':       seq_creationDossier_ouvrir_champNotaire,
   'CreationOuvrir_Suivant':     seq_creationDossier_ouvrir_suivant,
   'CreationParties':   seq_creationDossier_parties,
   'CreationParties_Vendeur':   seq_creationDossier_parties_vendeur,

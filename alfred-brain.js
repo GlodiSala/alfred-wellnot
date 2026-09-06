@@ -4,6 +4,19 @@
 let isListening = false;
 let recognition = null;
 let secoursIdx  = 0;
+// Progression À L'INTÉRIEUR d'une réplique découpée en segments joués UN PAR
+// FLÈCHE (r.segmentsParFleche, voir alfred-config.js — utilisé par
+// OuvrirChamps : Alfred demande les infos, puis chaque champ n'est rempli
+// qu'à la flèche suivante, le temps que Fariël dise vraiment la valeur à
+// voix haute). Demandé explicitement le 05/09 : "on peut garder groupé dans
+// l'interface, mais séparé en flèche pour qu'elle ait le temps de le dire et
+// après ça écrit". Une réplique normale (sans ce drapeau) reste jouée
+// entièrement sur un seul appui, comme avant.
+let segmentIdx = 0;
+// À quelle réplique appartient segmentIdx — si on saute ailleurs (clic sur
+// une réplique du panneau, ←, "Jouer tout"...), la progression interne d'un
+// groupe précédent n'a plus de sens et repart de son premier segment.
+let segmentIdxReplique = -1;
 
 // ── Détection langue ──────────────────────────────────────
 function detectLangue(text) {
@@ -383,6 +396,10 @@ async function jouerSecoursInterne() {
   secoursIdx = secoursIdx % list.length;
   const r = list[secoursIdx];
 
+  // Voir segmentIdxReplique plus haut : toute arrivée sur une AUTRE réplique
+  // que celle en cours de découpage remet la progression interne à zéro.
+  if (segmentIdxReplique !== secoursIdx) { segmentIdx = 0; segmentIdxReplique = secoursIdx; }
+
   const listeTrad = currentLangue === 'nl'
     ? ALFRED_CONFIG.REPLIQUES_FR
     : ALFRED_CONFIG.REPLIQUES_NL;
@@ -405,7 +422,14 @@ async function jouerSecoursInterne() {
   const segmentsR    = r.segments || [{ texte: r.texte, action: r.action, surbrillance: r.surbrillance }];
   const segmentsTrad = rTrad?.segments || [{ texte: rTrad?.texte }];
 
-  for (let i = 0; i < segmentsR.length; i++) {
+  // segmentsParFleche : on ne joue QUE le segment courant, l'appui suivant
+  // jouera le suivant (voir segmentIdx plus haut). Sans ce drapeau, tout le
+  // groupe part d'un coup, comme avant.
+  const parFleche  = !!r.segmentsParFleche && segmentsR.length > 1;
+  const premierSeg = parFleche ? Math.min(segmentIdx, segmentsR.length - 1) : 0;
+  const dernierSeg = parFleche ? premierSeg + 1 : segmentsR.length;
+
+  for (let i = premierSeg; i < dernierSeg; i++) {
     const seg = segmentsR[i];
     // parlerDepuisAction : segment dont le texte n'est PAS parlé
     // automatiquement en même temps que l'action démarre — c'est l'action
@@ -453,6 +477,18 @@ async function jouerSecoursInterne() {
     }
   }
 
+  // Groupe joué segment par segment : tant qu'il en reste, on NE passe PAS à
+  // la réplique suivante — la flèche d'après reprend ce même groupe au
+  // segment d'après.
+  if (parFleche && premierSeg < segmentsR.length - 1) {
+    segmentIdx = premierSeg + 1;
+    segmentIdxReplique = secoursIdx;
+    updateSecoursLabel(`${r.label} (${segmentIdx}/${segmentsR.length})`, r.acte, secoursIdx + 1, list.length);
+    return;
+  }
+
+  segmentIdx = 0;
+  segmentIdxReplique = -1;
   updateSecoursLabel(r.label, r.acte, secoursIdx + 1, list.length);
   secoursIdx++;
 }
@@ -470,7 +506,11 @@ document.addEventListener('keydown', e => {
   }
   if (e.key === 'ArrowLeft') {
     e.preventDefault();
-    secoursIdx = Math.max(0, secoursIdx - 2);
+    // segmentIdx > 0 : on est au milieu d'un groupe joué segment par segment —
+    // ← revient au début de CE groupe plutôt que de sauter deux répliques en
+    // arrière (sinon impossible de rejouer juste le segment raté).
+    if (segmentIdx > 0) { segmentIdx = 0; segmentIdxReplique = secoursIdx; }
+    else secoursIdx = Math.max(0, secoursIdx - 2);
     jouerSecours();
   }
   if (e.key === ' ' && !isListening) {
