@@ -2233,9 +2233,9 @@ function visemeCourant() {
   const mot = acteurMots[idx];
   if (!mot.length) return { forme: 'ferme', gain: 0.2 };
   const progres = Math.min(0.999, (ecoule - idx * msParMot) / msParMot);
-  // Les derniers 15 % de chaque mot : bouche qui se referme entre deux mots.
-  if (progres > 0.85) return { forme: 'ferme', gain: 0.35 };
-  const li = Math.floor((progres / 0.85) * mot.length);
+  // Les derniers 8 % de chaque mot : bouche qui se referme entre deux mots.
+  if (progres > 0.92) return { forme: 'ferme', gain: 0.45 };
+  const li = Math.floor((progres / 0.92) * mot.length);
   const tri = mot.slice(li, li + 3), duo = mot.slice(li, li + 2);
   const forme = VISEMES_DIGRAMMES[tri] || VISEMES_DIGRAMMES[duo] || VISEMES_LETTRES[mot[li]] || 'cons';
   if (forme === 'ferme') return { forme: 'ferme', gain: 0.15 };

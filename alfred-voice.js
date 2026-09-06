@@ -693,7 +693,9 @@ function animateMouth(amp, aigus) {
     boucheAmpMin = Math.min(boucheAmpMin * 1.004 + 0.0008, amp);
     boucheAmpMax = Math.max(boucheAmpMax * 0.994, amp);
     const norm = (amp - boucheAmpMin) / Math.max(0.10, boucheAmpMax - boucheAmpMin);
-    let cibleOuv = norm < 0.28 ? 0 : Math.min(1, (norm - 0.28) / 0.6);
+    // Seuil 0.28 → 0.18 et relâchement 0.55 → 0.34 le 06/09 : "elle ferme un
+    // peu trop tôt" en test live avec la vraie voix.
+    let cibleOuv = norm < 0.18 ? 0 : Math.min(1, (norm - 0.18) / 0.7);
     let cibleLarg = (typeof aigus === 'number') ? Math.max(0, Math.min(1, aigus)) : 0.3;
     // Forme déduite du TEXTE en cours (visemeCourant, alfred-ui.js) quand
     // une réplique joue : le spectre ne sert plus qu'en repli (chatbot
@@ -707,7 +709,7 @@ function animateMouth(amp, aigus) {
     }
     // Attaque rapide, fermeture nette : une bouche qui reste entrouverte
     // entre les mots lit comme "toujours ouverte".
-    boucheOuverture += (cibleOuv - boucheOuverture) * (cibleOuv > boucheOuverture ? 0.6 : 0.55);
+    boucheOuverture += (cibleOuv - boucheOuverture) * (cibleOuv > boucheOuverture ? 0.6 : 0.34);
     if (boucheOuverture < 0.04) boucheOuverture = 0;
     boucheLargeur   += (cibleLarg - boucheLargeur) * 0.3;
     const o = boucheOuverture, w = boucheLargeur;

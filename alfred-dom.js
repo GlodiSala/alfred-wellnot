@@ -119,6 +119,9 @@ const SELECTEURS = {
     // "Nom" existe aussi tout en haut de la fiche, déjà rempli avec la
     // dénomination cherchée par BCE.
     sectionRepresentants: ['Relations', 'Relaties'],
+    // Champ "Type *" d'une relation (section Relations/Relaties) — voir
+    // champPartieRepresentants. Libellé supposé identique FR/NL ("Type").
+    typeRelation: ['Type'],
   },
   placeholders: {
     rechercheCommune: ['Rechercher une commune par son nom ou son code postal'],
@@ -1198,7 +1201,7 @@ async function surlignerChampParLabelDialogueMaintenant(labelTexte, tentatives, 
     dernierChamp = champ;
     if (champ && valeurChamp(champ)) {
       await defilerPuisSurligner(champ);
-      return;
+      return true;
     }
     await attendre(delai);
   }
@@ -1213,6 +1216,7 @@ async function surlignerChampParLabelDialogueMaintenant(labelTexte, tentatives, 
     '— fenêtre encore ouverte ?', !!trouverDialogueOuvert(),
     '— un élément a été trouvé près du libellé ?', !!dernierChamp,
     dernierChamp ? { tag: dernierChamp.tagName, valeur: valeurChamp(dernierChamp).slice(0, 40) } : null);
+  return false;
 }
 
 // Déclenche la parole d'un segment 'parlerDepuisAction' une fois les champs
@@ -1288,7 +1292,14 @@ const SURBRILLANCE_CIBLES = {
   champPartieEtatCivil:         () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.etatCivil),
   champPartieRegimeMatrimonial: () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.regimeMatrimonial),
   champPartieDenomination:      () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.denomination),
-  champPartieRepresentants:     () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.nom, 30, 250, SELECTEURS.labelsPartie.sectionRepresentants),
+  // "représentants"/"vertegenwoordigers" : d'abord le champ "Type" de la
+  // section Relations/Relaties (retour du 06/09 : "vertegenwoordigers, c'est
+  // Type*, non ?"), puis repli sur "Nom"/"Achternaam" après cette section si
+  // aucun "Type" rempli n'y est trouvé.
+  champPartieRepresentants:     async () => {
+    const ok = await surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.typeRelation, 10, 250, SELECTEURS.labelsPartie.sectionRepresentants);
+    if (!ok) await surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.nom, 20, 250, SELECTEURS.labelsPartie.sectionRepresentants);
+  },
 };
 
 // Met en évidence une colonne entière (en-tête + toutes les cellules
