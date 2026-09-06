@@ -3098,7 +3098,33 @@ async function seq_creationDossier_redaction_scrollGauche() {
 // à ce stade le certificat PEB n'est pas encore rempli (les pièces du
 // vendeur n'arrivent que plus tard, voir Email/ReponseVendeur), donc viser
 // spécifiquement son titre ici n'aurait montré qu'une clause vide.
+// Cible directement la clause PEB (même cible que seq_creationDossier_
+// redaction_scrollPEB plus bas, réutilisée depuis trouverTitrePEB) — demandé
+// explicitement le 05/09 : montrer ICI, dès la 1re rédaction, ce même
+// endroit du document (la clause existe déjà comme titre vide/pas encore
+// rempli à ce stade) pour que le contraste soit visible plus tard une fois
+// les pièces du vendeur intégrées (ProjetComplet/scrollPEB revient au même
+// endroit, rempli cette fois). Remplace un défilement générique calé sur
+// TOUTE la durée de la parole (defilerColonneLentement) — demandé
+// explicitement : "pas pendant tout ce qu'il parle". Le trajet est plus
+// long qu'au 2e passage (on part du tout début d'un document jamais vu) —
+// 4000ms au lieu des 3000ms de scrollPEB : "un peu plus vite" que le
+// défilement générique très lent d'avant, mais pas instantané non plus.
 async function seq_creationDossier_redaction_scrollDroite() {
+  let titre = null;
+  for (let i = 0; i < 15; i++) {
+    if (annulationDemandee) return;
+    titre = trouverTitrePEB();
+    if (titre) break;
+    await attendre(400);
+  }
+  if (titre) {
+    await defilerVersElement(titre, 4000);
+    return;
+  }
+  // Repli générique si le titre reste introuvable à ce stade (ex. compromis
+  // pas encore assez chargé) — même comportement qu'avant ce changement.
+  console.warn('[Alfred DOM] Titre PEB introuvable au 1er passage — défilement générique conservé en repli.');
   const texte = texteRepliqueParAction('RedactionDroite', 'CreationRedaction_ScrollDroite');
   await defilerColonneLentement('droite', VITESSE_SCROLL_COLONNE_DROITE_PX_PAR_SEC, estimerDureeParoleMs(texte));
 }
@@ -3117,10 +3143,11 @@ function trouverTitrePEB() {
   return Array.from(titres).find(t => /performance énergétique|certificat énergétique|energieprestatie|\bEPC\b/i.test(t.textContent));
 }
 
-// Utilisé en toute fin d'acte 2 (réplique ExportWord), une fois les pièces
-// du vendeur reçues et intégrées (Email/ReponseVendeur) : c'est SEULEMENT
-// à ce moment que la clause PEB est vraiment remplie, donc c'est là qu'on
-// montre qu'elle "a bien été rajoutée" — pas pendant la 1re rédaction.
+// Utilisé à ProjetComplet, une fois les pièces du vendeur reçues et
+// intégrées (Email/ReponseVendeur) : c'est SEULEMENT à ce moment que la
+// clause PEB est vraiment remplie. RedactionDroite (1er passage, voir plus
+// haut) montre déjà ce même titre, mais encore vide — la paire des deux
+// scrolls donne le contraste "avant/après" demandé explicitement.
 async function seq_creationDossier_redaction_scrollPEB() {
   await fermerPanneauAlfred();
   let titre = null;
