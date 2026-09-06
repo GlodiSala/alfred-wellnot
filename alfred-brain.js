@@ -441,7 +441,7 @@ async function jouerSecoursInterne() {
       // différent dont la position des mots ne correspond à rien dans
       // l'audio réellement joué.
       const surbrillance = (typeof resoudreSurbrillance === 'function') ? resoudreSurbrillance(seg.surbrillance) : null;
-      promises.push(speak(naturaliserTexte(seg.texte), currentLangue, sousTitre, undefined, surbrillance, seg.texte, seg.emotion || r.emotion, seg.geste || r.geste).then(() => { dureeParoleMs = Math.round(performance.now() - debutParole); }));
+      promises.push(speak(naturaliserTexte(seg.texte), currentLangue, sousTitre, undefined, surbrillance, seg.texte, seg.emotion || r.emotion, seg.geste || r.geste, seg.hologrammes || r.hologrammes).then(() => { dureeParoleMs = Math.round(performance.now() - debutParole); }));
     }
     // currentActe >= 2 : garde-fou pour ne jamais lancer d'automatisation
     // réelle de l'appli avant que la démo n'ait commencé. Les gestes

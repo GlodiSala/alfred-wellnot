@@ -929,7 +929,7 @@ let audioGeneration = 0;
 // sert de base au calcul des positions de mots, jamais sousTitre lui-même.
 // emotion (optionnel) : clé de EMOTIONS_VOIX — jeu de la voix pour cette
 // ligne (ElevenLabs v3 / Gemini), sans effet sur les sous-titres.
-async function speak(text, langue, sousTitre, moteurForce, surbrillanceMots, texteSurbrillance, emotion, geste) {
+async function speak(text, langue, sousTitre, moteurForce, surbrillanceMots, texteSurbrillance, emotion, geste, hologrammes) {
   if (!text || text === '...') return;
   langue = langue || currentLangue || 'fr';
   const maGeneration = ++audioGeneration;
@@ -976,7 +976,7 @@ async function speak(text, langue, sousTitre, moteurForce, surbrillanceMots, tex
     audio.addEventListener('playing', () => {
       if (typeof demarrerJeuDActeur !== 'function' || maGeneration !== audioGeneration) return;
       const dureeMs = (isFinite(audio.duration) && audio.duration > 0) ? audio.duration / (audio.playbackRate || 1) * 1000 : null;
-      demarrerJeuDActeur({ texte: sousTitre || text, dureeMs, emotion, geste });
+      demarrerJeuDActeur({ texte: sousTitre || text, texteMots: texteSurbrillance || text, dureeMs, emotion, geste, hologrammes });
     }, { once: true });
 
     // Analyseur volume → bouche. Un seul AudioContext partagé, créé une

@@ -2013,6 +2013,88 @@ function jouerGeste(nom, arg) {
   try { g(arg); } catch (e) { console.warn('[Alfred UI] geste', nom, 'a échoué :', e); }
 }
 
+// ── Hologrammes ──────────────────────────────────────────────────────
+// Petites cartes flottantes qui apparaissent à côté du robot, en mode scène
+// (actes 1 et 3), au moment précis où il prononce un mot-clé — champ
+// optionnel `hologrammes` par réplique (alfred-config.js) : [{ mots: [...],
+// titre, sous, icone }]. Même estimation mot/durée que les surlignages de
+// champs (programmerSurbrillanceMots, alfred-voice.js). Elles alternent
+// gauche/droite sur trois hauteurs, flottent, et s'effacent à la fin de la
+// réplique. Alfred jette un coup d'œil vers chaque carte qui apparaît.
+const ICONES_HOLO = {
+  id:        '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="11" r="2.2"/><path d="M5.5 16.5c.6-1.8 1.7-2.7 3-2.7s2.4.9 3 2.7M14 10h4M14 13.5h4"/></svg>',
+  carte:     '<svg viewBox="0 0 24 24"><path d="M12 21s-6-5.2-6-10.5a6 6 0 0 1 12 0C18 15.8 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.2"/></svg>',
+  inondation:'<svg viewBox="0 0 24 24"><path d="M3 12c2-2.5 4-2.5 6 0s4 2.5 6 0 4-2.5 6 0"/><path d="M3 17c2-2.5 4-2.5 6 0s4 2.5 6 0 4-2.5 6 0"/><path d="M3 7c2-2.5 4-2.5 6 0s4 2.5 6 0 4-2.5 6 0"/></svg>',
+  serveur:   '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="6" rx="1.5"/><rect x="4" y="14" width="16" height="6" rx="1.5"/><path d="M8 7h.01M8 17h.01"/></svg>',
+  bouclier:  '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>',
+  cadenas:   '<svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 14v2.5"/></svg>',
+  badge:     '<svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="5"/><path d="M12 6.5v5M9.5 9h5"/><path d="M9 13.5L7 21l5-2 5 2-2-7.5"/></svg>',
+  globe:     '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c3 3 3 14 0 17M12 3.5c-3 3-3 14 0 17"/></svg>',
+  horloge:   '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+  eclair:    '<svg viewBox="0 0 24 24"><path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"/></svg>',
+  acte:      '<svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M9.5 12h5M9.5 15h5M9.5 18h3"/></svg>',
+  notaires:  '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="16.5" cy="9.5" r="2.4"/><path d="M3.5 19c.6-3.5 2.6-5.5 5.5-5.5S13.9 15.5 14.5 19"/><path d="M15 18.5c.4-2.2 1.5-3.5 3.2-3.5s2.4 1.3 2.8 3.5"/></svg>',
+  etincelles:'<svg viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></svg>',
+  ecran:     '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/><path d="M10 8.5l4 2-4 2z"/></svg>',
+  salle:     '<svg viewBox="0 0 24 24"><circle cx="6" cy="8" r="2.2"/><circle cx="12" cy="7" r="2.2"/><circle cx="18" cy="8" r="2.2"/><path d="M2.5 18c.4-3 1.7-4.5 3.5-4.5s3.1 1.5 3.5 4.5M8.5 17c.4-3 1.7-4.5 3.5-4.5s3.1 1.5 3.5 4.5M14.5 18c.4-3 1.7-4.5 3.5-4.5s3.1 1.5 3.5 4.5"/></svg>',
+};
+let holoCompteur = 0;
+function afficherHologramme(h) {
+  const zone = document.getElementById('alfred-scene-holos');
+  if (!zone || !modeSceneActif || !h) return;
+  const n = holoCompteur++;
+  const cote = n % 2 === 0 ? 'droite' : 'gauche';
+  const rang = Math.floor(n / 2) % 3;
+  const demiRobot = 110 * echelleScene() + 34;
+  const el = document.createElement('div');
+  el.className = 'alfred-holo ' + cote;
+  const icone = ICONES_HOLO[h.icone];
+  el.innerHTML = (icone ? `<div class="alfred-holo-icone">${icone}</div>` : `<div class="alfred-holo-icone texte">${(h.icone || '').slice(0, 5)}</div>`) +
+    `<div><div class="alfred-holo-titre">${h.titre || ''}</div>${h.sous ? `<div class="alfred-holo-sous">${h.sous}</div>` : ''}</div>`;
+  el.style.top = `calc(50% - 25vh + ${rang * 17}vh)`;
+  if (cote === 'droite') el.style.left = `calc(50% + ${demiRobot}px)`; else el.style.right = `calc(50% + ${demiRobot}px)`;
+  zone.appendChild(el);
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('visible')));
+  // Coup d'œil vers la carte, puis retour.
+  eyeTargetX = cote === 'droite' ? 9 : -9; eyeTargetY = rang === 0 ? -5 : (rang === 2 ? 4 : 0);
+  jouerGeste('pencher', cote === 'droite' ? 1 : -1);
+  setTimeout(() => { if (curState === 'talk') { eyeTargetX = 0; eyeTargetY = 0; } }, 1100);
+  // Sécurité : jamais plus de ~9 s à l'écran, même si la réplique continue.
+  setTimeout(() => retirerHologramme(el), 9000);
+}
+function retirerHologramme(el) {
+  if (!el || !el.parentNode) return;
+  el.classList.add('sortie');
+  setTimeout(() => el.remove(), 500);
+}
+function effacerHologrammes() {
+  holoCompteur = 0;
+  document.querySelectorAll('.alfred-holo').forEach((el, i) => setTimeout(() => retirerHologramme(el), i * 90));
+}
+// Programme les hologrammes d'une réplique sur ses mots (même règle de
+// nettoyage/estimation que programmerSurbrillanceMots, alfred-voice.js).
+function programmerHologrammes(texteMots, dureeMs, hologrammes) {
+  if (!hologrammes || !hologrammes.length || !texteMots || !modeSceneActif) return;
+  const mots = String(texteMots).trim().split(/\s+/);
+  const nettoie = (m) => m.toLowerCase().replace(/^[«"'‘“(]+|[»"'’”),.;:!?]+$/g, '');
+  const motsNettoyes = mots.map(nettoie);
+  const msParMot = (dureeMs / Math.max(1, mots.length)) * 0.93;
+  const candidats = [];
+  for (const h of hologrammes) {
+    const cles = (h.mots || []).map((m) => m.toLowerCase());
+    const idx = motsNettoyes.findIndex((m) => cles.some((c) => m === c || m.startsWith(c)));
+    if (idx === -1) { console.warn('[Alfred UI] hologramme : mot introuvable dans la réplique —', h.mots); continue; }
+    candidats.push({ delai: idx * msParMot, h });
+  }
+  candidats.sort((a, b) => a.delai - b.delai);
+  let dernier = -Infinity;
+  for (const c of candidats) {
+    const delai = Math.max(c.delai, dernier + 1300);
+    dernier = delai;
+    programmerActeur(() => { if (curState === 'talk') afficherHologramme(c.h); }, delai);
+  }
+}
+
 // ── Rythme du texte ──────────────────────────────────────────────────
 let acteurTimers = [];
 let acteurGeneration = 0;
@@ -2035,6 +2117,8 @@ function demarrerJeuDActeur(opts) {
 
   // Geste de la réplique (facultatif), un peu après le début de la voix.
   if (opts && opts.geste) programmerActeur(() => { if (vivant()) jouerGeste(opts.geste); }, 250);
+  // Hologrammes sur les mots-clés (mode scène seulement).
+  if (opts && opts.hologrammes) programmerHologrammes(opts.texteMots || texte, dureeMs, opts.hologrammes);
 
   // Phrases → temps forts. Début estimé au prorata des caractères.
   const phrases = texte.match(/[^.!?…]+[.!?…]+["»]?|[^.!?…]+$/g) || [texte];
@@ -2078,6 +2162,7 @@ function arreterJeuDActeur() {
   acteurGeneration++;
   acteurTimers.splice(0).forEach(clearTimeout);
   annulerGestes();
+  effacerHologrammes();
   expressionBase = 'normal';
   if (etatYeux.l.forme !== 'normal' || etatYeux.r.forme !== 'normal') definirExpression('normal', 260);
 }
@@ -2145,6 +2230,23 @@ function creerScene() {
     .alfred-scene-ligne.ok .alfred-scene-ligne-etat::after { content:'✓'; }
     .alfred-scene-ligne:not(.ok) .alfred-scene-ligne-etat::after { content:'…'; }
     #alfred-scene-console .alfred-scene-barre { margin-top:12px; }
+    #alfred-scene-holos { position:absolute; inset:0; pointer-events:none; }
+    .alfred-holo { position:absolute; width:clamp(230px, 20vw, 330px); font-size:clamp(13px, 1.15vw, 19px); padding:.85em 1em; box-sizing:border-box; display:flex; align-items:center; gap:.8em;
+      background:rgba(255,255,255,.78); border:1.5px solid rgba(20,176,189,.55); border-radius:14px; box-shadow:0 14px 40px rgba(5,69,97,.16), 0 0 0 5px rgba(20,176,189,.07);
+      backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); font-family:-apple-system,'Segoe UI',sans-serif; color:#054561;
+      opacity:0; transform:translateY(14px) scale(.86); filter:blur(6px); transition:opacity .38s ease, transform .55s cubic-bezier(.2,1.3,.4,1), filter .38s ease; }
+    .alfred-holo.visible { opacity:1; transform:none; filter:none; animation:alfred-holo-flotte 4.5s ease-in-out .6s infinite; }
+    .alfred-holo.sortie { opacity:0; transform:translateY(-10px) scale(.92); filter:blur(4px); animation:none; transition:opacity .45s ease, transform .45s ease, filter .45s ease; }
+    .alfred-holo-icone { flex:none; width:2.8em; height:2.8em; border-radius:.75em; background:linear-gradient(135deg, rgba(20,176,189,.18), rgba(20,176,189,.06)); display:flex; align-items:center; justify-content:center; color:#0a6b7a; }
+    .alfred-holo-icone svg { width:1.7em; height:1.7em; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+    .alfred-holo-icone.texte { font-weight:800; font-size:.9em; letter-spacing:.5px; }
+    .alfred-holo-titre { font-size:1em; font-weight:700; line-height:1.2; }
+    .alfred-holo-sous { font-size:.82em; color:rgba(5,69,97,.62); margin-top:3px; line-height:1.3; }
+    .alfred-holo::before { content:''; position:absolute; top:50%; width:26px; border-top:2px dotted rgba(20,176,189,.55); }
+    .alfred-holo::after { content:''; position:absolute; top:50%; width:8px; height:8px; margin-top:-4px; border-radius:50%; background:#14b0bd; box-shadow:0 0 10px rgba(20,176,189,.9); }
+    .alfred-holo.gauche::before { right:-28px; } .alfred-holo.gauche::after { right:-34px; }
+    .alfred-holo.droite::before { left:-28px; }  .alfred-holo.droite::after { left:-34px; }
+    @keyframes alfred-holo-flotte { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-6px);} }
     #alfred-scene-marque { position:absolute; top:30px; left:50%; transform:translateX(-50%); font-size:11px; font-weight:700; letter-spacing:4px; color:rgba(5,69,97,.45); }
     #alfred-scene-centre { position:absolute; left:50%; top:50%; transform:translate(-50%,-52%); }
     #alfred-scene-chargement { position:absolute; left:50%; bottom:14vh; transform:translateX(-50%); width:min(360px, 60vw); text-align:center; opacity:0; transition:opacity .35s ease; }
@@ -2176,6 +2278,7 @@ function creerScene() {
     <div id="alfred-scene-ondes"></div>
     <div id="alfred-scene-anneau"></div>
     <div id="alfred-scene-marque">ALFRED · WELLNOT</div>
+    <div id="alfred-scene-holos"></div>
     <div id="alfred-scene-centre"></div>
     <div id="alfred-scene-chargement">
       <div class="alfred-scene-barre"><div class="alfred-scene-barre-int"></div></div>
