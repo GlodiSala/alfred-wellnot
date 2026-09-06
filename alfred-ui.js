@@ -1742,6 +1742,22 @@ async function gesteMontrer() {
 // de tête. Sur un personnage à formes simples sans membres, ce sont les
 // yeux qui portent l'émotion, pas de petits déplacements du corps (voir la
 // recherche sur les mascottes à formes géométriques simples, ex. Duolingo).
+// Sourire large tenu pendant le clin d'œil — un cran au-dessus du sourire
+// neutre (ALFRED_BOUCHE_SOURIRE_D), plus étiré et plus creusé, pour lire
+// comme un vrai sourire complice et pas juste "bouche fermée".
+const ALFRED_BOUCHE_CLIN_D = 'M180,131 Q200,152 220,131';
+
+// Revu le 06/09 ("le clin d'œil de la fin, y a moyen d'améliorer
+// l'animation ?") en 3 temps au lieu d'un aller-retour plat : anticipation
+// (il se redresse, grands yeux, comme avant de faire une blague), snap (le
+// clin d'œil proprement dit, plus rapide, tête qui penche vers l'œil fermé,
+// léger lean-in vers le public, sourire large), relâchement avec un petit
+// dépassement avant de se stabiliser — rien ne démarre ni ne s'arrête net.
+// La tête ne peut pas être animée en écrivant directement son style.transform
+// ici (composerTete, plus haut, le réécrit à chaque image) : on passe donc
+// par definirPostureTete/tangage, les mêmes leviers que le reste du jeu
+// d'acteur, pour que ce geste s'intègre au compositeur au lieu de lutter
+// contre lui.
 async function clinDoeil() {
   console.log('[Alfred UI] clinDoeil() appelée.');
   const body       = document.getElementById('alfred-body-main');
@@ -1749,6 +1765,7 @@ async function clinDoeil() {
   const eyeLCercle = document.getElementById('alfred-eye-l-cercle');
   const mouth      = document.getElementById('alfred-mouth');
   const mouthTalk  = document.getElementById('alfred-mouth-talk');
+  const mouthInt   = document.getElementById('alfred-mouth-int');
   if (!body || !eyeR || !eyeLCercle || typeof attendre !== 'function') {
     console.warn('[Alfred UI] clinDoeil() interrompue — élément(s) introuvable(s):', { body: !!body, eyeR: !!eyeR, eyeLCercle: !!eyeLCercle, attendre: typeof attendre });
     return;
@@ -1756,30 +1773,49 @@ async function clinDoeil() {
   console.log('[Alfred UI] clinDoeil() — tous les éléments trouvés, geste en cours.');
 
   clinDoeilActif = true;
-
-  body.style.transition = 'transform .4s cubic-bezier(.34,1.56,.64,1)';
-  body.style.transform  = 'rotate(8deg)';
-  // Œil gauche fermé par morphing (voir FORMES_OEIL), l'œil droit reste
-  // dans l'expression du moment.
-  morpherOeil('l', 'ferme', 140);
-  // L'œil droit reste tel quel (pas de plissement) : en scaleY(.35) il se
-  // réduisait à un trait fin quasi identique à l'œil gauche fermé, donc les
-  // deux yeux avaient l'air fermés/plissés au lieu d'un vrai clin d'œil (un
-  // œil fermé, l'autre normal). Le contraste fermé/normal suffit à lire le
-  // geste, pas besoin de toucher l'œil droit.
-  // Sourire forcé pendant le geste : la réplique est encore en train de
+  // Sourire forcé pendant tout le geste : la réplique est encore en train de
   // parler (talkTick continue d'appeler animateMouth toutes les 120ms), donc
-  // sans ce forçage la bouche resterait l'ellipse "qui parle" pendant tout
-  // le clin d'œil. animateMouth() (alfred-voice.js) vérifie clinDoeilActif et
-  // ne réécrit plus la bouche tant qu'il est vrai — ici on affiche le
-  // sourire statique une bonne fois pour toutes pour la durée du geste.
+  // sans ce forçage la bouche resterait celle "qui parle". animateMouth()
+  // (alfred-voice.js) vérifie clinDoeilActif et ne réécrit plus la bouche
+  // tant qu'il est vrai.
   if (mouth)     mouth.style.display     = 'block';
   if (mouthTalk) mouthTalk.style.display = 'none';
 
-  await attendre(1400);
+  // 1. Anticipation (160ms) : petit recul, tête qui se redresse à peine,
+  // grands yeux — le geste "se prépare" au lieu de partir sec.
+  body.style.transition = 'transform .16s ease-out';
+  body.style.transform  = 'rotate(-2deg) scale(.99)';
+  definirPostureTete(-2, -2, 0.4);
+  morpherOeil('l', 'grand', 110);
+  morpherOeil('r', 'grand', 110);
+  await attendre(160);
 
-  body.style.transform     = 'rotate(0deg)';
-  morpherOeil('l', etatYeux.r.forme, 200);
+  // 2. Le clin d'œil lui-même : œil gauche fermé (par morphing, voir
+  // FORMES_OEIL — l'œil droit reste tel quel, pas de plissement : en
+  // scaleY il devenait un trait quasi identique à l'œil fermé, donc les
+  // deux yeux avaient l'air fermés au lieu d'un vrai clin d'œil), tête qui
+  // penche vers l'œil fermé, léger lean-in vers le public, sourire élargi.
+  body.style.transition = 'transform .3s cubic-bezier(.28,1.75,.45,1)';
+  body.style.transform  = 'rotate(9deg) scale(1.015)';
+  definirPostureTete(-7, 3, 0.42);
+  morpherOeil('l', 'ferme', 90);
+  morpherOeil('r', etatYeux.r.forme === 'grand' ? 'douce' : etatYeux.r.forme, 140);
+  if (mouth)    mouth.setAttribute('d', ALFRED_BOUCHE_CLIN_D);
+  if (mouthInt) { mouthInt.setAttribute('d', ALFRED_BOUCHE_CLIN_D); mouthInt.setAttribute('opacity', '0.22'); }
+
+  await attendre(950);
+
+  // 3. Relâchement : léger dépassement dans l'autre sens avant de se
+  // stabiliser, comme le reste des gestes (voir imagesBras) — rien ne
+  // s'arrête net.
+  body.style.transition = 'transform .5s cubic-bezier(.3,1.4,.4,1)';
+  body.style.transform  = 'rotate(-2deg)';
+  definirPostureTete(2, 0, 0.14);
+  morpherOeil('l', etatYeux.r.forme, 220);
+  if (mouthInt) mouthInt.setAttribute('opacity', '0');
+  await attendre(260);
+  body.style.transform = 'rotate(0deg)';
+  definirPostureTete(0, 0, 0.05);
 
   clinDoeilActif = false;
 }
