@@ -29,7 +29,7 @@ const ALFRED_CONFIG = {
   QUESTIONS_LIVE_FR: [
     "Le bien est-il en zone inondable ?"],
   QUESTIONS_LIVE_NL: [
-    "Ligt het goed in overstromingsgevoelig gebied?"],
+    "Ligt het goed in een overstromingsgevoelig gebied?"],
 
   EVENEMENT: {
     nom:          'Congrès des Notaires belges',
@@ -679,8 +679,8 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Voir la note FR équivalente (une seule flèche, remplissage silencieux
     // enchaîné après la question).
     { acte: 2, label: 'OuvrirChamps', segments: [
-      { texte: "Geef mij gewoon het dossiernummer... de taal van de akte... de bevoegde medewerker... en de notaris.", surbrillance: [
-        { mots: ['dossiernummer'], cible: 'dossierCode' }] },
+      { texte: "Geef mij gewoon het dossier nummer... de taal van de akte... de bevoegde medewerker... en de notaris.", surbrillance: [
+        { mots: ['dossier'], cible: 'dossierCode' }] },
       { action: 'CreationOuvrir_ChampNumero',        parlerDepuisAction: true },
       { action: 'CreationOuvrir_ChampLangue',        parlerDepuisAction: true },
       { action: 'CreationOuvrir_ChampCollaborateur', parlerDepuisAction: true },

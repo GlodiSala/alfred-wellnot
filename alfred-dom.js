@@ -1296,9 +1296,16 @@ const SURBRILLANCE_CIBLES = {
   // section Relations/Relaties (retour du 06/09 : "vertegenwoordigers, c'est
   // Type*, non ?"), puis repli sur "Nom"/"Achternaam" après cette section si
   // aucun "Type" rempli n'y est trouvé.
+  // Budget raccourci (10×250/20×250 → 6×250/10×250) — demandé le 07/09
+  // ("il ne montre que benaming, zetel/vertegenwoordigers ne s'affichent
+  // plus") : le pire cas (Type introuvable PUIS Nom introuvable) prenait
+  // jusqu'à 7,5s, largement plus long que la réplique elle-même — assez
+  // pour bloquer la file partagée (fileSurlignageChamp) et faire passer
+  // les highlights suivants pour "jamais affichés" alors qu'ils
+  // n'auraient fini par arriver que bien après coup.
   champPartieRepresentants:     async () => {
-    const ok = await surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.typeRelation, 10, 250, SELECTEURS.labelsPartie.sectionRepresentants);
-    if (!ok) await surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.nom, 20, 250, SELECTEURS.labelsPartie.sectionRepresentants);
+    const ok = await surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.typeRelation, 6, 250, SELECTEURS.labelsPartie.sectionRepresentants);
+    if (!ok) await surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.nom, 10, 250, SELECTEURS.labelsPartie.sectionRepresentants);
   },
 };
 

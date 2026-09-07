@@ -933,7 +933,12 @@ function programmerSurbrillanceMots(texteComplet, audio, entrees, timersRef) {
         const cles = (entree.motsCles || []).map((m) => m.toLowerCase());
         const idx = motsNettoyes.findIndex((m) => cles.some((c) => m === c || m.startsWith(c)));
         if (idx === -1 || typeof entree.action !== 'function') continue;
-        candidats.push({ delai: idx * msParMot, action: entree.action, cible: entree.cible });
+        // Anticipation : les champs (Vendeur/Acquéreur) démarrent leur
+        // recherche+défilement un peu avant le mot plutôt que pile dessus —
+        // demandé explicitement le 07/09 ("il commence un peu trop lent,
+        // commence l'action un peu en avance").
+        const anticipationMs = (entree.cible && entree.cible.startsWith('champPartie')) ? 400 : 0;
+        candidats.push({ delai: Math.max(0, idx * msParMot - anticipationMs), action: entree.action, cible: entree.cible });
       }
       candidats.sort((a, b) => a.delai - b.delai);
       const ecartsParCible = (typeof ECART_MIN_PAR_CIBLE !== 'undefined') ? ECART_MIN_PAR_CIBLE : {};
