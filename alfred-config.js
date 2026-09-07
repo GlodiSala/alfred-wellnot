@@ -668,7 +668,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // parlerDepuisAction — voir la note FR équivalente.
     { acte: 2, label: 'Ouvrir', segments: [
       // Highlight "statussen" retiré — voir la note FR équivalente.
-      { texte: "We beginnen bij het dashboard: hier ziet u al uw lopende dossiers... de medewerkers... en de actuele statussen.", action: 'CreationOuvrir_Dossiers', parlerDepuisAction: true, surbrillance: [
+      { texte: "We beginnen bij het dashboard: hier ziet u al uw lopende dossiers...en de medewerkers.", action: 'CreationOuvrir_Dossiers', parlerDepuisAction: true, surbrillance: [
         { mots: ['dossiers'], cible: 'colDossiers' },
         { mots: ['medewerkers'], cible: 'colCollaborateur' }] }] },
     // Voir la note FR équivalente.
@@ -738,7 +738,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // souci que le FR équivalent : c'est FARIËL qui le dit dans v3_8, pas
     // Alfred.
     // DÉCOMPOSÉ le 03/09 (2e passe) — voir la note FR équivalente.
-    { acte: 2, label: 'Bien', texte: "U duidt simpelweg het pand aan, en ik haal meteen de kadastrale legger op.", action: 'CreationBien_Rechercher' },
+    { acte: 2, label: 'Bien', texte: "U duidt simpelweg het goed aan, en ik haal meteen de kadastrale legger op.", action: 'CreationBien_Rechercher' },
     { acte: 2, label: 'BienOK', geste: 'fier', emotion: 'fier', texte: "Partijen gekoppeld... notarissen toegewezen... en kadastrale legger opgevraagd. We zijn helemaal klaar.", action: 'CreationBien_Finaliser' },
     // Corrigée le 31/08 — traduction du FR au lieu du vrai v3_8.
     // v3_1 : voir la note FR équivalente.
@@ -822,7 +822,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'ConnaissanceDossier',  texte: "Ik heb je vragen beantwoord in de Chatbot." },
 
     { acte: 2, label: 'ExportWord', segments: [
-      { texte: "De verkoopbelofte is helemaal klaar en je kan deze ook rechtstreeks exporteren naar Word.", action: 'CreationRedaction_ExporterWord' }] },
+      { texte: "En voilà! De verkoopbelofte is helemaal klaar en je kan deze ook rechtstreeks exporteren in Word.", action: 'CreationRedaction_ExporterWord' }] },
 
     // ACTE 3
     // "gecertificeerd door Privanot" corrigé (même note de prod que la
