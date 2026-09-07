@@ -1517,8 +1517,18 @@ function resoudreSurbrillance(entrees) {
   if (!entrees || !entrees.length) return null;
   return entrees
     .filter(e => typeof SURBRILLANCE_CIBLES[e.cible] === 'function')
-    .map(e => ({ motsCles: e.mots, action: SURBRILLANCE_CIBLES[e.cible] }));
+    .map(e => ({ motsCles: e.mots, action: SURBRILLANCE_CIBLES[e.cible], cible: e.cible }));
 }
+
+// Écart minimum entre deux déclenchements, PAR CIBLE — remplace le chiffre
+// unique 2800ms (voir programmerSurbrillanceMots, alfred-voice.js) là où il
+// est trop généreux. 2800ms colle à la durée d'un champ Vendeur/Acquéreur
+// (scroll vertical 2500ms + marge, voir DUREE_DEFILEMENT_CHAMP_MS), mais une
+// colonne du tableau de bord (scroll horizontal ~1100ms, voir
+// surlignerColonneDossiers) n'en a pas besoin — avec 2800ms partout, deux
+// mots-clés rapprochés dans la phrase (ex. "dossiers"/"medewerkers", 2 mots
+// d'écart) allumaient la 2e colonne ~2,5s en retard sur le mot prononcé.
+const ECART_MIN_PAR_CIBLE = { colDossiers: 1300, colCollaborateur: 1300, colStatut: 1300 };
 
 async function attendreFermetureDialogue(dialogue, tentatives = 30, delai = 500) {
   if (!dialogue) return true;

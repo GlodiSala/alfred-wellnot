@@ -224,7 +224,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // qui invite Alfred) construite avec le geste clinDoeil/gesteMontrer
     // et testée en direct plus tôt cette session. Ne pas la "corriger"
     // vers le texte officiel de Fariël sans retester le geste.
-    { acte: 1, label: 'Montrer', geste: { nom: 'presenter', mot: "regardez" }, emotion: 'chaleureux',       texte: "Avec plaisir. Regardez.", action: 'Montrer' },
+    { acte: 1, label: 'Montrer', segments: [{ texte: '', action: 'Montrer', parlerDepuisAction: true }] }, // plus de parole ("il ne doit plus rien dire") — l'action (transition de scène) reste, voir GESTES_VISUELS_SEULS
 
     // ACTE 2 — CRÉATION LIVE (démonstration séparée, avant l'ouverture de R426)
     // Décomposée en 6 répliques qui suivent le processus décrit par Cyril :
@@ -656,7 +656,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 1, label: 'Competences',    geste: 'fier', hologrammes: [{ mots: ['e-notariaat'], titre: 'e-notariaat', sous: 'Rijksregisternummers', icone: 'id' }, { mots: ['geoportaal'], titre: 'Geoportaal', sous: 'Kaarten en percelen', icone: 'carte' }, { mots: ['overstromingsrapporten'], titre: 'Overstromingsrapporten', sous: 'Overstromingsgevoelig gebied', icone: 'inondation' }], texte: "Dat is precies mijn rol. Ik neem de opvolging, de administratie en de gegevensverzameling over. Ik ben gekoppeld aan publieke en private databanken — van rijksregisternummers in e-notariaat tot kaarten op het geoportaal en overstromingsrapporten. Ik haal de informatie op die nodig is. Veel staat al op punt, en ik leer elke dag bij." },
     { acte: 1, label: 'JeLeMontre', geste: { nom: 'hocher', mot: "zien" }, emotion: 'assure',     texte: "Geef me gewoon een dossier. Ik laat het liever zien dan dat ik het uitleg." },
     // 'Montrer' inchangée — même note que côté FR (voir plus haut).
-    { acte: 1, label: 'Montrer', geste: { nom: 'presenter', mot: "kijk" }, emotion: 'chaleureux',       texte: "Met plezier. Kijk maar.", action: 'Montrer' },
+    { acte: 1, label: 'Montrer', segments: [{ texte: '', action: 'Montrer', parlerDepuisAction: true }] },
 
     // ACTE 2 — CRÉATION LIVE (démonstration séparée, avant l'ouverture van R426)
     // Tekst afgestemd op Alfreds exacte repliek in het officiële script
@@ -679,8 +679,8 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Voir la note FR équivalente (une seule flèche, remplissage silencieux
     // enchaîné après la question).
     { acte: 2, label: 'OuvrirChamps', segments: [
-      { texte: "Geef mij gewoon het dossier nummer... de taal van de akte... de bevoegde medewerker... en de notaris.", surbrillance: [
-        { mots: ['dossier'], cible: 'dossierCode' }] },
+      { texte: "Geef mij gewoon het dossiernummer... de taal van de akte... de bevoegde medewerker... en de notaris.", surbrillance: [
+        { mots: ['dossiernummer'], cible: 'dossierCode' }] },
       { action: 'CreationOuvrir_ChampNumero',        parlerDepuisAction: true },
       { action: 'CreationOuvrir_ChampLangue',        parlerDepuisAction: true },
       { action: 'CreationOuvrir_ChampCollaborateur', parlerDepuisAction: true },

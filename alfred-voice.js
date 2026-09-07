@@ -933,12 +933,14 @@ function programmerSurbrillanceMots(texteComplet, audio, entrees, timersRef) {
         const cles = (entree.motsCles || []).map((m) => m.toLowerCase());
         const idx = motsNettoyes.findIndex((m) => cles.some((c) => m === c || m.startsWith(c)));
         if (idx === -1 || typeof entree.action !== 'function') continue;
-        candidats.push({ delai: idx * msParMot, action: entree.action });
+        candidats.push({ delai: idx * msParMot, action: entree.action, cible: entree.cible });
       }
       candidats.sort((a, b) => a.delai - b.delai);
+      const ecartsParCible = (typeof ECART_MIN_PAR_CIBLE !== 'undefined') ? ECART_MIN_PAR_CIBLE : {};
       let dernierDelai = -Infinity;
       for (const c of candidats) {
-        const delai = Math.max(c.delai, dernierDelai + ECART_MIN_MS);
+        const ecart = ecartsParCible[c.cible] ?? ECART_MIN_MS;
+        const delai = Math.max(c.delai, dernierDelai + ecart);
         dernierDelai = delai;
         const id = setTimeout(c.action, delai);
         if (timersRef) timersRef.ids.push(id);
