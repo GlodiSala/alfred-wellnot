@@ -1321,12 +1321,19 @@ function ouvrirEditionRéplique(index, nouvelActe) {
       // Ne remplace que le texte de chaque segment — action/parlerDepuisAction
       // (et tout autre champ futur) restent ceux d'origine, jamais touchés
       // par ce panneau.
-      nouvelleFR = { acte: rFR.acte, label, segments: rFR.segments.map((seg, i) => ({ ...seg, texte: taFRSegments[i].value.trim() })) };
-      nouvelleNL = { acte: rNL.acte, label, segments: (rNL.segments || []).map((seg, i) => ({ ...seg, texte: (taNLSegments[i] || taNLSegments[taNLSegments.length - 1]).value.trim() })) };
+      // Étend l'original (...rFR/...rNL) au lieu de reconstruire l'objet de
+      // zéro : sinon tout champ non affiché dans ce panneau (hologrammes,
+      // emotion au niveau de la réplique...) disparaissait au premier
+      // "Enregistrer" — bug réel trouvé le 07/09 sur un export du script.
+      nouvelleFR = { ...rFR, acte: rFR.acte, label, segments: rFR.segments.map((seg, i) => ({ ...seg, texte: taFRSegments[i].value.trim() })) };
+      nouvelleNL = { ...rNL, acte: rNL.acte, label, segments: (rNL.segments || []).map((seg, i) => ({ ...seg, texte: (taNLSegments[i] || taNLSegments[taNLSegments.length - 1]).value.trim() })) };
     } else {
       const action = select.value || undefined;
-      nouvelleFR = { acte: rFR.acte, label, texte: taFR.value.trim(), action };
-      nouvelleNL = { acte: rNL.acte, label, texte: taNL.value.trim(), action };
+      // Idem : on étend l'original plutôt que de repartir de zéro (voir
+      // note ci-dessus, branche "groupée") — hologrammes/emotion/geste
+      // restent intacts après un simple changement de texte.
+      nouvelleFR = { ...rFR, acte: rFR.acte, label, texte: taFR.value.trim(), action };
+      nouvelleNL = { ...rNL, acte: rNL.acte, label, texte: taNL.value.trim(), action };
       if (!nouvelleFR.action) delete nouvelleFR.action;
       if (!nouvelleNL.action) delete nouvelleNL.action;
     }

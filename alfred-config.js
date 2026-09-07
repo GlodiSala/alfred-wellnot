@@ -649,7 +649,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // v3_8.docx) — confirmé le 03/09 par le vrai document dédié à la scène
     // Alfred NL ("Onglet Demo Alfred"), logique pour une version orientée
     // Flandre (Fariël business developer voor Vlaanderen).
-    { acte: 1, label: 'Disponibilité',  hologrammes: [{ mots: ['24/7'], titre: '24/7, het hele jaar door', sous: 'Nooit gesloten', icone: 'horloge' }], texte: "Ik ben 24/7 beschikbaar, het hele jaar door. Een dossier dat vrijdagavond om 23u binnenkomt? U klikt en ik begin meteen." },
+    { acte: 1, label: 'Disponibilité',  hologrammes: [{ mots: ['24/7'], titre: '24/7, het hele jaar door', sous: 'Nooit gesloten', icone: 'horloge' }], texte: "Ik ben 24/7 beschikbaar, het hele jaar door. Een dossier dat vrijdagavond om 11 uur binnenkomt? U klikt en ik begin meteen." },
     // Réécrite (raccourcie) le 05/09 sur v3_1 — l'ancienne énumération
     // détaillée ("Ik neem het werk over dat uw medewerkers tijd kost...")
     // n'existe plus dans cette version.
@@ -679,8 +679,8 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Voir la note FR équivalente (une seule flèche, remplissage silencieux
     // enchaîné après la question).
     { acte: 2, label: 'OuvrirChamps', segments: [
-      { texte: "Geef mij gewoon het dossiernummer... de taal van de akte... de bevoegde medewerker... en de notaris.", surbrillance: [
-        { mots: ['dossiernummer'], cible: 'dossierCode' }] },
+      { texte: "Geef mij gewoon het dossier nummer... de taal van de akte... de bevoegde medewerker... en de notaris.", surbrillance: [
+        { mots: ['dossier'], cible: 'dossierCode' }] },
       { action: 'CreationOuvrir_ChampNumero',        parlerDepuisAction: true },
       { action: 'CreationOuvrir_ChampLangue',        parlerDepuisAction: true },
       { action: 'CreationOuvrir_ChampCollaborateur', parlerDepuisAction: true },
@@ -828,7 +828,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // "gecertificeerd door Privanot" corrigé (même note de prod que la
     // version FR : "certifié" à éviter tant que ce n'est pas acté).
     // Sécurité/Stand/Closing réalignées mot pour mot sur v3_8 le 31/08.
-    { acte: 3, label: 'Sécurité',      hologrammes: [{ mots: ['gdpr-conform'], titre: 'GDPR-conform', sous: 'Gegevensbescherming', icone: 'cadenas' }, { mots: ['privanot'], titre: 'Geëvalueerd door Privanot', sous: 'Veiligheid gecontroleerd', icone: 'badge' }, { mots: ['verlaten'], titre: 'Uw gegevens blijven in Europa', sous: 'Nooit elders', icone: 'globe' }], texte: "Alle gegevens worden gehost op beveiligde servers in Europa. Ik ben GDPR-conform, en mijn veiligheid werd geëvalueerd in het kader van Privanot. Uw gegevens verlaten Europa nooit." },
+    { acte: 3, label: 'Sécurité',      hologrammes: [{ mots: ['gee'], titre: 'GDPR-conform', sous: 'Gegevensbescherming', icone: 'cadenas' }, { mots: ['priiva'], titre: 'Geëvalueerd door Privanot', sous: 'Veiligheid gecontroleerd', icone: 'badge' }, { mots: ['verlaten'], titre: 'Uw gegevens blijven in Europa', sous: 'Nooit elders', icone: 'globe' }], texte: "Alle gegevens worden gehost op beveiligde servers in Europa. Ik ben Gee D P R conform, en mijn veiligheid werd geëvalueerd in het kader van Priiva not. Uw gegevens verlaten Europa nooit." },
     { acte: 3, label: 'Stand', geste: { nom: 'presenter', mot: "wellnot-stand" }, emotion: 'chaleureux',         hologrammes: [{ mots: ['wellnot-stand'], titre: 'Wellnot-stand', sous: 'In de zaal hiernaast', icone: 'carte' }], texte: "Heel eenvoudig: op de Wellnot-stand, in de zaal hiernaast. Kom langs, of vraag een demo rechtstreeks in uw kantoor." },
     // Closing — même DOUTE que côté FR (voir la note FR équivalente,
     // timing du clin d'œil à revérifier). Registre "je/jou" (informel,
