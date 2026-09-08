@@ -2776,15 +2776,18 @@ async function seq_creationDossier_ouvrir_champNumero() {
 // doit être en néerlandais quand la démo l'est, comme le dit Fariël dans le
 // script officiel NL ("Taal: Nederlands").
 // silencieux:true (09/09, "pas pendant qu'il sélectionne les medewerkers et
-// notaris") sur les 3 fonctions ci-dessous — demandé explicitement : le
-// surlignage de ces champs doit se voir PENDANT qu'Alfred pose la question
+// notaris", puis élargi : "uniquement synchronisé quand il parle... pas
+// besoin d'highlight quand il écrit après") sur LES 4 sélections
+// ci-dessous (langue, collaborateur en charge, collaborateur
+// administratif, notaire) — demandé explicitement : le surlignage de la
+// réplique 2 doit se voir UNIQUEMENT pendant qu'Alfred pose la question
 // (mot-synchronisé, voir SURBRILLANCE_CIBLES: langueActe/collaborateur/
-// notaireEnCharge dans OuvrirChamps), pas se rallumer une 2e fois plus tard
-// quand Fariël dicte la vraie valeur et que ce champ s'encode réellement.
-// Le halo par défaut de choisirDansDropdownParLabelProche existe pour les
-// cas SANS highlight mot-synchronisé dédié ailleurs — ici il y en a un,
-// donc double emploi (déjà prévu par le paramètre silencieux, juste jamais
-// branché sur ces 3 appels jusqu'ici).
+// notaireEnCharge dans OuvrirChamps), jamais se rallumer plus tard quand
+// Fariël dicte la vraie valeur et que le champ s'encode réellement — même
+// "collaborateur administratif", qui n'a pourtant pas de highlight
+// mot-synchronisé dédié à lui (rien ne doit surligner à l'encodage, point).
+// Le numéro de dossier (taperDansChamp) n'a lui-même jamais eu de halo à
+// la frappe — rien à changer de ce côté.
 async function seq_creationDossier_ouvrir_champLangue() {
   if (typeof currentLangue !== 'undefined' && currentLangue === 'nl') {
     await choisirDansDropdownParLabelProche(SELECTEURS.menus.langueActe, 'Nederlands', false, true);
@@ -2804,10 +2807,12 @@ async function seq_creationDossier_ouvrir_champCollaborateur() {
   await choisirDansDropdownParLabelProche(SELECTEURS.menus.collaborateurEnCharge, cfg.collaborateur, false, true);
   await attendre(300);
   if (cfg.collaborateur_administratif) {
-    // "Collaborateur administratif" n'a pas de highlight mot-synchronisé
-    // dédié (seul "le collaborateur en charge" est nommé dans la question) —
-    // halo de confirmation normal gardé ici.
-    await choisirDansDropdownParLabelProche(SELECTEURS.menus.collaborateurAdministratif, cfg.collaborateur_administratif);
+    // silencieux:true le 09/09 ("pas besoin d'highlight quand il écrit
+    // après") : demande élargie à TOUT l'encodage de la réplique 2, pas
+    // seulement aux 3 champs qui ont un highlight mot-synchronisé dédié —
+    // même sans highlight dédié pour "collaborateur administratif", plus
+    // aucun halo ne doit apparaître à l'encodage, un point c'est tout.
+    await choisirDansDropdownParLabelProche(SELECTEURS.menus.collaborateurAdministratif, cfg.collaborateur_administratif, false, true);
     await attendre(300);
   }
 }
