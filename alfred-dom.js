@@ -1316,7 +1316,18 @@ async function surlignerAvecRetry(nom, trouverElement, tentatives = 10, delai = 
   for (let i = 0; i < tentatives; i++) {
     if (typeof annulationDemandee !== 'undefined' && annulationDemandee) return;
     const el = trouverElement();
-    if (el) { await defilerPuisSurligner(el); return; }
+    if (el) {
+      // Trace de succès ajoutée le 09/09 ("je ne vois rien, mais peut-être
+      // il se passe quelque chose ?") : avant, seul l'échec laissait une
+      // trace — impossible de savoir à l'œil si un halo bref sur une case
+      // VIDE se déclenche vraiment ou pas. La taille (largeur/hauteur)
+      // permet aussi de voir si la case est anormalement petite à ce
+      // moment (auquel cas le halo serait bien réel mais difficile à voir).
+      const r = el.getBoundingClientRect();
+      console.log('[Alfred DOM] Cible trouvée pour "' + nom + '" (essai ' + (i + 1) + '/' + tentatives + ') — texte actuel: "' + (el.value ?? el.textContent ?? '').trim() + '" largeur=' + r.width.toFixed(0) + ' hauteur=' + r.height.toFixed(0));
+      await defilerPuisSurligner(el);
+      return;
+    }
     await attendre(delai);
   }
   console.warn('[Alfred DOM] Cible introuvable après ' + tentatives + ' essais :', nom);
