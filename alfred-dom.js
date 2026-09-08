@@ -1304,7 +1304,11 @@ const SURBRILLANCE_CIBLES = {
   // le même composant des deux côtés, donc fiable sans deviner de texte.
   colDossiers:      () => surlignerColonneDossiers(3), // "Dossiernummer" (capture d'écran 03/09)
   colCollaborateur: () => surlignerColonneDossiers(6), // "Medewerker"
-  colStatut:        () => surlignerColonneDossiers(2), // "In uitvoering"
+  // colStatut retirée le 09/09 ("pas besoin, juste les deux") — le highlight
+  // "statuts" avait de toute façon déjà été retiré du texte de la réplique
+  // le 05/09 (colonne "In uitvoering" jugée sans intérêt à surligner), donc
+  // cette cible n'était plus câblée sur rien depuis. surlignerColonneDossiers
+  // reste utilisable directement si besoin plus tard (surlignerColonneDossiers(2)).
   // Pas juste un surlignage cette fois : une vraie ACTION (le clic sur
   // "Créer un dossier"), synchronisée sur le mot "clique"/"klik" — demandé
   // explicitement : "il faut cliquer créer quand on le dit, là il le fait
@@ -1616,7 +1620,7 @@ function resoudreSurbrillance(entrees) {
 // le temps d'attente INUTILE quand le champ suivant est déjà visible (cas
 // le plus fréquent, pas de scroll du tout) sans rien changer au pire cas.
 const ECART_MIN_PAR_CIBLE = {
-  colDossiers: 1300, colCollaborateur: 1300, colStatut: 1300,
+  colDossiers: 1300, colCollaborateur: 1300,
   champPartieNom: 1800, champPartieAdresseSiege: 1800, champPartieDateNaissance: 1800,
   champPartieNationalite: 1800, champPartieEtatCivil: 1800, champPartieRegimeMatrimonial: 1800,
   champPartieDenomination: 1800, champPartieRepresentants: 1800,

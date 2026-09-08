@@ -958,9 +958,10 @@ function programmerSurbrillanceMots(texteComplet, audio, entrees, timersRef) {
       // surlignerColonneDossiersMaintenant) — sans anticipation, le dernier
       // mot-clé de la phrase ("collaborateurs"/"medewerkers") arrivait
       // trop tard pour que son highlight ait le temps de se déclencher
-      // avant la fin de la réplique. PAS colStatut ("pas besoin") : ce
-      // highlight n'est de toute façon câblé sur aucune réplique
-      // actuellement (retiré le 05/09, voir la note sur 'Ouvrir').
+      // avant la fin de la réplique. PAS colStatut ("pas besoin, juste les
+      // deux") : la cible a été supprimée de SURBRILLANCE_CIBLES le 09/09
+      // (alfred-dom.js) — de toute façon plus câblée sur aucune réplique
+      // depuis le retrait du highlight "statuts" le 05/09.
       const CIBLES_ANTICIPEES_ACTE2 = ['dossierCode', 'langueActe', 'collaborateur', 'notaireEnCharge', 'creerDossierClic', 'colDossiers', 'colCollaborateur'];
       const candidats = [];
       for (const entree of entrees) {
