@@ -2771,9 +2771,19 @@ async function seq_creationDossier_ouvrir_champNumero() {
 // "Frans" tant qu'on ne le change pas). Demandé explicitement : le dossier
 // doit être en néerlandais quand la démo l'est, comme le dit Fariël dans le
 // script officiel NL ("Taal: Nederlands").
+// silencieux:true (09/09, "pas pendant qu'il sélectionne les medewerkers et
+// notaris") sur les 3 fonctions ci-dessous — demandé explicitement : le
+// surlignage de ces champs doit se voir PENDANT qu'Alfred pose la question
+// (mot-synchronisé, voir SURBRILLANCE_CIBLES: langueActe/collaborateur/
+// notaireEnCharge dans OuvrirChamps), pas se rallumer une 2e fois plus tard
+// quand Fariël dicte la vraie valeur et que ce champ s'encode réellement.
+// Le halo par défaut de choisirDansDropdownParLabelProche existe pour les
+// cas SANS highlight mot-synchronisé dédié ailleurs — ici il y en a un,
+// donc double emploi (déjà prévu par le paramètre silencieux, juste jamais
+// branché sur ces 3 appels jusqu'ici).
 async function seq_creationDossier_ouvrir_champLangue() {
   if (typeof currentLangue !== 'undefined' && currentLangue === 'nl') {
-    await choisirDansDropdownParLabelProche(SELECTEURS.menus.langueActe, 'Nederlands');
+    await choisirDansDropdownParLabelProche(SELECTEURS.menus.langueActe, 'Nederlands', false, true);
     await attendre(300);
   } else {
     // Rien à faire en FR (déjà "Frans") — mais on le dit, sinon cette
@@ -2787,9 +2797,12 @@ async function seq_creationDossier_ouvrir_champLangue() {
 async function seq_creationDossier_ouvrir_champCollaborateur() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) { console.warn('[Alfred DOM] Données de création démo non configurées'); return; }
-  await choisirDansDropdownParLabelProche(SELECTEURS.menus.collaborateurEnCharge, cfg.collaborateur);
+  await choisirDansDropdownParLabelProche(SELECTEURS.menus.collaborateurEnCharge, cfg.collaborateur, false, true);
   await attendre(300);
   if (cfg.collaborateur_administratif) {
+    // "Collaborateur administratif" n'a pas de highlight mot-synchronisé
+    // dédié (seul "le collaborateur en charge" est nommé dans la question) —
+    // halo de confirmation normal gardé ici.
     await choisirDansDropdownParLabelProche(SELECTEURS.menus.collaborateurAdministratif, cfg.collaborateur_administratif);
     await attendre(300);
   }
@@ -2800,7 +2813,7 @@ async function seq_creationDossier_ouvrir_champNotaire() {
   const cfg = ALFRED_CONFIG.DOSSIER_CREATION_DEMO;
   if (!cfg) { console.warn('[Alfred DOM] Données de création démo non configurées'); return; }
   if (cfg.notaire) {
-    await choisirDansDropdownParLabelProche(SELECTEURS.menus.notaireEnCharge, cfg.notaire);
+    await choisirDansDropdownParLabelProche(SELECTEURS.menus.notaireEnCharge, cfg.notaire, false, true);
     await attendre(300);
   }
 }
@@ -3245,6 +3258,8 @@ async function seq_creationDossier_redaction_scrollGauche() {
 // long qu'au 2e passage (on part du tout début d'un document jamais vu) —
 // 4000ms au lieu des 3000ms de scrollPEB : "un peu plus vite" que le
 // défilement générique très lent d'avant, mais pas instantané non plus.
+// Remonté à 4800ms le 09/09 ("va un peu plus lentement jusqu'à PEB mais
+// c'est top") — même trajet, juste un peu plus lent qu'avant.
 async function seq_creationDossier_redaction_scrollDroite() {
   let titre = null;
   for (let i = 0; i < 15; i++) {
@@ -3254,7 +3269,7 @@ async function seq_creationDossier_redaction_scrollDroite() {
     await attendre(400);
   }
   if (titre) {
-    await defilerVersElement(titre, 4000);
+    await defilerVersElement(titre, 4800);
     return;
   }
   // Repli générique si le titre reste introuvable à ce stade (ex. compromis
@@ -3298,6 +3313,23 @@ async function seq_creationDossier_redaction_scrollPEB() {
     return;
   }
   await defilerVersElement(titre, 3000);
+  // Continue jusqu'au titre SUIVANT — demandé explicitement le 09/09 : une
+  // fois les pièces du vendeur intégrées, la clause PEB remplie "prend de
+  // la place" (le vrai contenu s'étend nettement plus bas que le simple
+  // titre) — s'arrêter pile sur le titre ne montrait donc que le début,
+  // pas ce qui vient d'être rempli. Cherche le prochain titre (h1-h4) après
+  // celui-ci dans la même colonne, et y défile lentement pour laisser le
+  // temps de voir tout le contenu rempli entre les deux.
+  const conteneur = trouverColonneDefilante('droite');
+  if (conteneur && !annulationDemandee) {
+    const titres = Array.from(conteneur.querySelectorAll('h1, h2, h3, h4'));
+    const idx = titres.indexOf(titre);
+    const prochainTitre = (idx >= 0 && idx + 1 < titres.length) ? titres[idx + 1] : null;
+    if (prochainTitre) {
+      await attendre(400);
+      await defilerVersElement(prochainTitre, 3500);
+    }
+  }
 }
 
 // Bouton "Exporter en Word" de la barre d'outils de l'éditeur — capturé en
