@@ -51,12 +51,12 @@ const ALFRED_CONFIG = {
   // côté app (le nom exact sur "Mes clients" suit ce champ).
   DOSSIER_CREATION_DEMO: {
     code:                       '2026/18-09',
-    collaborateur:              'Cyril Cabuy', // "Collaborateur en charge du dossier"
-    // Jean-François Ghigny n'existe pas dans la liste "Collaborateur
-    // administratif" (confirmé en test live — c'est un notaire, pas un
-    // collaborateur dans l'appli) ; Cyril Cabuy, lui, y figure bien.
-    collaborateur_administratif: 'Cyril Cabuy', // "Collaborateur administratif"
-    notaire:                    'Alain Caprasse', // "Notaire en charge du dossier" — voir note ci-dessus
+    // Mis à jour d'après le script v3_2 (Fariël Rabah mène l'entretien à la
+    // place de Cyril ; le notaire du dossier est Jean-François Ghigny, pas
+    // Alain Caprasse — qui est l'acquéreur, pas un notaire du dossier).
+    collaborateur:              'Fariël Rabah', // "Collaborateur en charge du dossier"
+    collaborateur_administratif: 'Fariël Rabah', // "Collaborateur administratif"
+    notaire:                    'Jean-François Ghigny', // "Notaire en charge du dossier"
     vendeur_type:      'morale',            // 'physique' (RN) ou 'morale' (BCE)
     vendeur_rn:        '84.06.28-314.70',    // utilisé si vendeur_type === 'physique'
     vendeur_bce:       '0653.910.157',       // utilisé si vendeur_type === 'morale' (BIMBIMMO)
