@@ -87,9 +87,14 @@ const ALFRED_CONFIG = {
     // confirmée par l'utilisatrice depuis la vraie liste de l'appli) passe
     // "Collaborateur en charge du dossier", Cyril Cabuy passe "Collaborateur
     // administratif".
+    // Notaire changé le 08/09 pour Jean-François Ghigny (demandé explicitement,
+    // reste du dossier démo inchangé) — logique avec la note ci-dessus : c'est
+    // bien un notaire dans l'appli, donc a priori un choix valide ici, mais pas
+    // encore reconfirmé en test live sur CE dropdown précis (seule la liste
+    // "Collaborateur administratif" avait été vérifiée) — à valider en live.
     collaborateur:              'Fariël RABAH', // "Collaborateur en charge du dossier"
     collaborateur_administratif: 'Cyril Cabuy', // "Collaborateur administratif"
-    notaire:                    'Alain Caprasse', // "Notaire en charge du dossier" — voir note ci-dessus
+    notaire:                    'Jean-François Ghigny', // "Notaire en charge du dossier" — voir note ci-dessus
     vendeur_type:      'morale',            // 'physique' (RN) ou 'morale' (BCE)
     vendeur_rn:        '84.06.28-314.70',    // utilisé si vendeur_type === 'physique'
     vendeur_bce:       '0653.910.157',       // utilisé si vendeur_type === 'morale' (BIMBIMMO)
@@ -206,18 +211,18 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // explicitement ("il faudrait qu'elle blague quand il y a des choses
     // drôles... c'est comme une pièce de théâtre"). Posée seulement là où le
     // script s'y prête ; sans effet sur les sous-titres.
-    { acte: 1, label: 'Ouverture', geste: 'saluer', emotion: 'amuse',      texte: "Exact. Même si je pensais que l'entretien serait entre nous deux... je ne m'attendais pas à me retrouver devant une salle entière de notaires." },
-    { acte: 1, label: 'ServeursAJour', geste: 'fier', emotion: 'assure',  hologrammes: [{ mots: ['serveurs'], titre: 'Serveurs à jour', sous: 'Prêt pour la démo', icone: 'serveur' }], texte: "Pas du tout. Mes serveurs sont à jour et je suis bien préparé. Qu'ils viennent." },
+    { acte: 1, label: 'Ouverture', geste: 'saluer', emotion: 'amuse',      texte: "Exactement. Même si je pensais que l'entretien se ferait en tête-à-tête... je ne m'attendais pas à être devant une salle pleine de notaires." },
+    { acte: 1, label: 'ServeursAJour', geste: 'fier', emotion: 'assure',  hologrammes: [{ mots: ['serveurs'], titre: 'Serveurs à jour', sous: 'Prêt pour la démo', icone: 'serveur' }], texte: "Nerveux ? Mes serveurs tournent à plein régime et mes données sont à jour. Je suis prêt !" },
     // MISE À JOUR v3_1 (05/09) — nouvelle version du script officiel NL
     // (Script_scene_Wellnot_InsideAI26_v3_1.pdf), appliquée intégralement.
     // Parcours FUSIONNE l'ancienne 'DeuxLangues' (supprimée) : v3_1 n'en fait
     // plus qu'un seul tour de parole, le bilinguisme est passé au milieu du
     // parcours ("Dus natuurlijk ben ik tweetalig"). FR adapté du NL, faute de
     // document FR à jour pour cette version.
-    { acte: 1, label: 'Parcours',       hologrammes: [{ mots: ['ghigny'], titre: 'J.-F. Ghigny & A. Caprasse', sous: 'Les bases juridiques', icone: 'notaires' }, { mots: ['bilingue'], titre: 'Bilingue', sous: 'Français · Nederlands', icone: 'FR·NL' }], texte: "Je n'ai pas de parcours classique, je l'avoue. Mais Jean-François Ghigny et Alain Caprasse m'ont donné les bases juridiques. Je suis construit pour une seule chose : le notariat belge. Alors bien sûr, je suis bilingue : français et néerlandais. Je connais vos actes, vos bases de données, vos obligations. Je ne suis pas un outil généraliste qu'on a adapté après coup. Je suis conçu pour vous dès le premier jour." },
-    { acte: 1, label: 'Disponibilité',  hologrammes: [{ mots: ['24h/24'], titre: '24h/24, toute l\'année', sous: 'Jamais fermé', icone: 'horloge' }], texte: "24h/24, toute l'année. Un dossier qui arrive un vendredi soir à 23h ? Vous cliquez et je m'y attèle tout de suite." },
-    { acte: 1, label: 'Competences',    geste: 'fier', hologrammes: [{ mots: ['e-notariat'], titre: 'e-notariat', sous: 'Numéros de registre national', icone: 'id' }, { mots: ['géoportail'], titre: 'Géoportail', sous: 'Cartes et parcelles', icone: 'carte' }, { mots: ["d'inondation"], titre: 'Rapports d\'inondation', sous: 'Zones inondables', icone: 'inondation' }], texte: "C'est exactement mon rôle. Je prends le suivi, l'administratif et la collecte des données. Je suis connecté aussi bien à des bases de données publiques que privées : les numéros de registre national dans e-notariat, mais aussi des cartes au géoportail, ou encore les rapports d'inondation. Je vais chercher l'information qu'il faut. Beaucoup est déjà en place — mais je ne cesse d'apprendre." },
-    { acte: 1, label: 'JeLeMontre', geste: { nom: 'hocher', mot: "montre" }, emotion: 'assure',     texte: "Donnez-moi un dossier. Honnêtement ? Je ne l'explique pas. Je le montre." },
+    { acte: 1, label: 'Parcours',       hologrammes: [{ mots: ['ghigny'], titre: 'J.-F. Ghigny & A. Caprasse', sous: 'Les bases juridiques', icone: 'notaires' }, { mots: ['bilingue'], titre: 'Bilingue', sous: 'Français · Nederlands', icone: 'FR·NL' }], texte: "J'ai un parcours très unique. Les notaires Jean-François Ghigny et Alain Caprasse m'ont transmis les bases juridiques. Je vis et je respire le notariat belge. Je suis donc évidemment bilingue : néerlandais et français. Je connais vos actes, vos bases de données et toutes vos obligations. Je ne suis pas un outil généraliste adapté après coup pour le notariat. J'ai été conçu dès le premier jour exclusivement pour vous." },
+    { acte: 1, label: 'Disponibilité',  hologrammes: [{ mots: ['24/7'], titre: '24/7, toute l\'année', sous: 'Jamais fermé', icone: 'horloge' }], texte: "Et je suis disponible 24/7, toute l'année. Un dossier qui arrive le vendredi soir à 23 heures ? Vous cliquez et je commence immédiatement." },
+    { acte: 1, label: 'Competences',    geste: 'fier', hologrammes: [{ mots: ["l'e-notariat"], titre: 'e-notariat', sous: 'Numéros de registre national', icone: 'id' }, { mots: ['géoportail'], titre: 'Géoportail', sous: 'Cartes et parcelles', icone: 'carte' }, { mots: ["d'inondation"], titre: 'Rapports d\'inondation', sous: 'Zones inondables', icone: 'inondation' }], texte: "C'est exactement mon rôle. Je prends en charge le suivi, l'administration et la collecte des données. Je suis connecté aux bases de données publiques et privées — des numéros de registre national dans l'e-notariat aux cartes du géoportail et aux rapports d'inondation. Je récupère les informations nécessaires. Beaucoup de choses sont déjà au point, et j'apprends chaque jour davantage." },
+    { acte: 1, label: 'JeLeMontre', geste: { nom: 'hocher', mot: "montre" }, emotion: 'assure',     texte: "Donnez-moi simplement un dossier. Je préfère le montrer plutôt que de l'expliquer." },
     // 'Montrer' inchangée exprès : ce n'est PAS la ligne officielle de
     // Fariël ("Avec plaisir. Montre-moi.") — c'est une adaptation
     // délibérée (Alfred invite le public à regarder, plutôt que Fariël
@@ -254,7 +259,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       // Highlight "statuts" retiré le 05/09 (demandé explicitement) : la
       // colonne visée ("In uitvoering") n'apporte rien à surligner ici,
       // contrairement à dossiers/collaborateurs.
-      { texte: "Voici d'abord le tableau de bord : tous les dossiers en cours... les collaborateurs... les statuts.", action: 'CreationOuvrir_Dossiers', parlerDepuisAction: true, surbrillance: [
+      { texte: "Nous commençons par le tableau de bord : vous y voyez tous vos dossiers en cours... et les collaborateurs.", action: 'CreationOuvrir_Dossiers', parlerDepuisAction: true, surbrillance: [
         { mots: ['dossiers'], cible: 'colDossiers' },
         { mots: ['collaborateurs'], cible: 'colCollaborateur' }] }] },
     // Le clic ne part plus dès le début de la réplique (action: retiré) —
@@ -263,7 +268,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // surbrillance (voir creerDossierClic dans SURBRILLANCE_CIBLES,
     // alfred-dom.js — ce registre ne fait pas QUE du surlignage, il peut
     // aussi déclencher une vraie action).
-    { acte: 2, label: 'OuvrirCreer', texte: "Pour créer un dossier, rien de plus simple : je clique sur « Créer un dossier » et j'arrive sur la fiche de création.", surbrillance: [
+    { acte: 2, label: 'OuvrirCreer', texte: "Créer un nouveau dossier est un jeu d'enfant. Je clique sur « Créer un dossier » et la fiche est prête.", surbrillance: [
       { mots: ['clique'], cible: 'creerDossierClic' }] },
     // surbrillance : met le champ en évidence au moment estimé où Alfred
     // prononce le mot correspondant (voir resoudreSurbrillance/
@@ -308,7 +313,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // pas de flèche supplémentaire non plus ("il faut le temps que Fariël
     // le dise... on attend quelques secondes et on encode ?").
     { acte: 2, label: 'OuvrirChamps', segments: [
-      { texte: "Donnez-moi le numéro de dossier... la langue de rédaction... le collaborateur en charge... et le notaire en charge.", surbrillance: [
+      { texte: "Donnez-moi simplement le numéro de dossier... la langue de l'acte... le collaborateur en charge... et le notaire.", surbrillance: [
         { mots: ['numéro'], cible: 'dossierCode' }] },
       { action: 'CreationOuvrir_ChampNumero',        parlerDepuisAction: true },
       { action: 'CreationOuvrir_ChampLangue',        parlerDepuisAction: true },
@@ -330,7 +335,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // "Parfait, passons..." ET cliquer "Suivant" sont maintenant sur la
     // même flèche, en concurrence par défaut — le clic n'a besoin d'aucune
     // narration particulière, contrairement à OuvrirChamps/PartiesVendeur).
-    { acte: 2, label: 'OuvrirOK', emotion: 'enjoue', texte: "Parfait, passons à la création des parties.", action: 'CreationOuvrir_Suivant' },
+    { acte: 2, label: 'OuvrirOK', emotion: 'enjoue', texte: "C'est noté ! Il est temps d'y ajouter les parties.", action: 'CreationOuvrir_Suivant' },
     // Retour Cyril (capture d'écran à l'appui) : rattacher le notaire de
     // chaque partie se fait en fait directement sur l'onglet Parties, juste
     // après avoir ajouté vendeur et acquéreur.
@@ -375,7 +380,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       // v3_1 (05/09) : "rechtsvorm" passe AVANT "zetel", et plus de
       // "Rattaché au dossier" à la fin. Pas de cible pour "forme juridique" :
       // ce champ n'existe pas sur la fiche (voir SELECTEURS.labelsPartie).
-      { texte: "Je récupère : dénomination... forme juridique... siège... représentants...", action: 'CreationParties_Vendeur', parlerDepuisAction: true, surbrillance: [
+      { texte: "Je récupère les données immédiatement : dénomination... forme juridique... siège social... représentants...", action: 'CreationParties_Vendeur', parlerDepuisAction: true, surbrillance: [
         { mots: ['dénomination'], cible: 'champPartieDenomination' },
         { mots: ['siège'], cible: 'champPartieAdresseSiege' },
         { mots: ['représentants'], cible: 'champPartieRepresentants' }] }] },
@@ -385,7 +390,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       // v3_1 (05/09) : ordre changé (date de naissance et nationalité
       // AVANT l'adresse) + nouvelle phrase de fin qui enchaîne sur les
       // notaires. L'ordre des cibles suit l'ordre des mots prononcés.
-      { texte: "Je récupère : nom... date de naissance... nationalité... adresse... état civil... régime matrimonial. Tout remonte, prêt pour la rédaction du compromis. Il ne reste plus qu'à désigner les notaires.", action: 'CreationParties_Acquereur', parlerDepuisAction: true, surbrillance: [
+      { texte: "Je récupère la suite : nom... date de naissance... nationalité... adresse... état civil... régime matrimonial. Tout est prêt pour la rédaction du compromis. Il ne reste plus qu'à attribuer les notaires.", action: 'CreationParties_Acquereur', parlerDepuisAction: true, surbrillance: [
         { mots: ['nom'], cible: 'champPartieNom' },
         { mots: ['naissance'], cible: 'champPartieDateNaissance' },
         { mots: ['nationalité'], cible: 'champPartieNationalite' },
@@ -422,7 +427,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // clics. Aucun mot retiré/ajouté/reformulé — seulement redistribué
     // entre les deux répliques, avec un point à la place du "et" pour
     // marquer la coupure.
-    { acte: 2, label: 'PartiesNotaireA', texte: "Je le retrouve dans la base de tous les notaires belges.", action: 'CreationParties_NotaireAcquereur' },
+    { acte: 2, label: 'PartiesNotaireA', texte: "Il figure dans la base de données de tous les notaires belges.", action: 'CreationParties_NotaireAcquereur' },
     // PartiesNotaireV — passe EN SECOND (après PartiesNotaireA, une fois
     // Maxime déjà ajouté) et fait les DEUX cases à cocher à la suite : "Mes
     // clients" (Vendeur), PUIS "REPRÉSENTE" (Acquéreur, sur la fiche de
@@ -430,7 +435,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // phrase officielle (voir la note ci-dessus) est dite, en concurrence
     // par défaut (plus besoin de parlerDepuisAction : ce n'est plus un
     // texte vide).
-    { acte: 2, label: 'PartiesNotaireV', texte: "Et je le rattache à l'acquéreur. Chaque partie a son notaire.", action: 'CreationParties_NotaireVendeur' },
+    { acte: 2, label: 'PartiesNotaireV', texte: "Je le relie immédiatement à l'acheteur. Voilà, les deux parties sont maintenant représentées.", action: 'CreationParties_NotaireVendeur' },
     // Réplique silencieuse (juste le clic "Suivant") — même raison que
     // OuvrirSuivant plus haut.
     { acte: 2, label: 'PartiesSuivant', segments: [
@@ -444,8 +449,8 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // corrigés le 31/08, resté non détecté ici jusqu'à cette nouvelle
     // comparaison (DOUTE explicitement signalé, maintenant tranché).
     // DÉCOMPOSÉ le 03/09 (2e passe) — même raison que Ouvrir ci-dessus.
-    { acte: 2, label: 'Bien', texte: "Pour le bien, vous sélectionnez le bon, et je récupère automatiquement la matrice cadastrale.", action: 'CreationBien_Rechercher' },
-    { acte: 2, label: 'BienOK', geste: 'fier', emotion: 'fier', texte: "Matrice cadastrale récupérée. Parties... notaires... cadastre — tout est déjà là.", action: 'CreationBien_Finaliser' },
+    { acte: 2, label: 'Bien', texte: "Indiquez simplement le bien et je récupère immédiatement la matrice cadastrale.", action: 'CreationBien_Rechercher' },
+    { acte: 2, label: 'BienOK', geste: 'fier', emotion: 'fier', texte: "Parties reliées... notaires attribués... et matrice cadastrale demandée. On est prêt.", action: 'CreationBien_Finaliser' },
     // Ajouté suite au retour de Cyril (script officiel, séquence 9 —
     // "Documents") : sans cet échange, la démo enchaînait directement sur
     // la rédaction sans jamais dire que rien n'est encore chargé côté
@@ -461,14 +466,14 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // sur le clic Enregistrer : il est instantané et sous notre contrôle,
     // pas un événement externe incertain à attendre.
     // v3_1 (05/09) : formulation raccourcie, sans "Deux options".
-    { acte: 2, label: 'DocumentsReponse', texte: "Il manque encore des pièces. Soit vous les uploadez, soit je vais les demander tout de suite au vendeur." },
-    { acte: 2, label: 'DocumentsSave', texte: "Dossier enregistré.", action: 'CreationDocuments_Enregistrer' },
+    { acte: 2, label: 'DocumentsReponse', texte: "Il manque encore des pièces. Vous pouvez les télécharger vous-même, ou j'envoie directement une demande au vendeur pour qu'il les fournisse." },
+    { acte: 2, label: 'DocumentsSave', texte: "Dossier conservé et enregistré.", action: 'CreationDocuments_Enregistrer' },
     // Ligne manquante trouvée en recomparant au script officiel : Fariël
     // demande "Toujours pas peur des experts ?" avant de lancer la
     // rédaction, Alfred répond ça — puis Fariël relance ("Show us the
     // real magic. Lance la rédaction.") avant le clic réel. Réplique
     // séparée exprès (vrai tour de parole de Fariël avant et après).
-    { acte: 2, label: 'RedactionOK', geste: 'hocher', emotion: 'assure', texte: "Je suis né prêt. Allez-y." },
+    { acte: 2, label: 'RedactionOK', geste: 'hocher', emotion: 'assure', texte: "Je suis né prêt !" },
     // Même texte que la version à plat (aucun mot changé) — Segments 2 et
     // 3 complétés le 31/08 : nettement tronqués par rapport au monologue
     // officiel de la scène 10 (recomparaison à v3_9) — il manquait toute
@@ -492,8 +497,8 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // un écran pas encore prêt. Avec 3 répliques séparées, c'est la
     // personne qui gère la démo qui décide quand appuyer sur → pour
     // chacune, au rythme réel de ce qui s'affiche à l'écran.
-    { acte: 2, label: 'Redaction', texte: "Un clic. Je réunis les parties... les notaires... et le cadastre, et je génère le compromis de vente.", action: 'CreationRedaction' },
-    { acte: 2, label: 'RedactionGauche', texte: "À gauche, toutes les données collectées via les bases ou extraites des documents — tout est classé dans ma base de données.", action: 'CreationRedaction_ScrollGauche' },
+    { acte: 2, label: 'Redaction', texte: "Un seul clic. Parties... notaires... et données cadastrales. Je rassemble tout et je génère le compromis.", action: 'CreationRedaction' },
+    { acte: 2, label: 'RedactionGauche', texte: "À gauche de l'écran : les données récupérées des bases de données.", action: 'CreationRedaction_ScrollGauche' },
     // ScrollDroite s'arrête sur le titre PEB (voir trouverTitrePEB dans
     // alfred-dom.js) et n'en repart plus tout seul — l'export Word, ajouté
     // juste après à la demande de l'utilisatrice, est resté trop rapproché
@@ -501,7 +506,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // explicite : laisser le temps de bien voir "PEB" à l'écran, et
     // déplacer l'export à la toute fin de l'acte 2 (réplique ExportWord,
     // après ReponseVendeur) plutôt que de l'enchaîner ici.
-    { acte: 2, label: 'RedactionDroite', texte: "À droite, le compromis qui se construit en direct — et bientôt, ces données seront vérifiées par Check_r, qui attire l'attention du collaborateur sur les erreurs ou incohérences. Il manque encore les pièces du vendeur, je les intègre dès réception. Fini la page blanche : vous relisez, vous ajustez, vous validez. Je fais le gros du travail, vous gardez le contrôle.", action: 'CreationRedaction_ScrollDroite' },
+    { acte: 2, label: 'RedactionDroite', texte: "À droite : l'acte qui se construit en direct. Dès que les documents manquants arrivent, je les traite immédiatement. Bientôt, Check_r sera intégré et toutes ces données seront immédiatement vérifiées pour détecter d'éventuelles erreurs ou contradictions. Les pièces manquantes du vendeur seront automatiquement ajoutées dès leur réception. Plus de page blanche d'où repartir de zéro. Vous relisez, vous ajustez et vous validez. Je prends en charge le travail manuel, vous conservez le contrôle.", action: 'CreationRedaction_ScrollDroite' },
     // Découpé en 2 segments — avant, la réplique parlait une fois puis
     // tout le reste (attente de l'événement + Consulter + Valider et
     // envoyer) se passait en silence total. Le 2e segment est en
@@ -529,7 +534,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'PasSiVite', geste: { nom: 'stop', mot: "vite" }, emotion: 'taquin', texte: "Pas si vite, Fariël !" },
     // Email : v3_1 remplace l'entrée en matière ("J'ai préparé un projet de
     // mail...") par un rappel de la promesse d'Alfred sur l'administratif.
-    { acte: 2, label: 'Email', texte: "Je vous avais bien dit que j'allais alléger votre travail administratif. J'ai préparé un projet de mail à BIMBIMMO, le vendeur, en lui demandant de m'envoyer le PEB... le contrôle électrique... l'attestation du sol. Une seule demande, jamais deux fois la même question. Vous validez l'envoi ?", action: 'CreationEmail_Ouverture' },
+    { acte: 2, label: 'Email', texte: "Je vous avais bien dit que j'allais alléger votre travail administratif. J'ai déjà préparé un projet d'e-mail pour le vendeur BIMBIMMO, demandant de fournir le PEB... le contrôle électrique... l'attestation du sol. Une question ciblée, jamais deux fois la même chose. Validez-vous l'envoi ?", action: 'CreationEmail_Ouverture' },
     { acte: 2, label: 'EmailEnvoyer', segments: [
       { texte: "Voilà, je consulte le projet de mail et je l'envoie.", action: 'CreationEmail_Envoyer', parlerDepuisAction: true }] },
     // Étape A20-A21 du séquencier. Texte basé sur le script d'origine
@@ -546,7 +551,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // réplique séparée, pas un enchaînement automatique). ProjetComplet
     // (juste après) reprend la suite.
     { acte: 2, label: 'ReponseVendeur', emotion: 'enjoue', segments: [
-      { texte: "Envoyé. Le vendeur a répondu — les documents sont chargés.", action: 'CreationReponseVendeur', parlerDepuisAction: true }] },
+      { texte: "Envoyé. Et regardez : le vendeur a déjà répondu, les documents sont là.", action: 'CreationReponseVendeur', parlerDepuisAction: true }] },
     // action ajoutée le 04/09 — demandé explicitement : "il ne faut pas
     // appuyer sur rédaction mais sur le logo d'Alfred, comme ça on ferme et
     // on voit la rédaction en pleine écran". Avant, le panneau Alfred
@@ -557,7 +562,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // fermerPanneauAlfred() (déjà utilisée par ClausePEB juste après) est
     // idempotente — l'appel qui reste dans ClausePEB ne fait donc rien si
     // le panneau est déjà fermé ici.
-    { acte: 2, label: 'ProjetComplet', geste: 'fier', emotion: 'fier', texte: "Réceptionnés, analysés, classés. Et regardez le compromis : les données des pièces se sont placées dans les bonnes clauses. Le projet est complet. Je prépare, vous décidez.", action: 'CreationRedaction_ProjetComplet' },
+    { acte: 2, label: 'ProjetComplet', geste: 'fier', emotion: 'fier', texte: "Reçus, analysés et traités. Et regardez le compromis de vente : les informations tirées des documents sources sont intégrées dans les clauses appropriées. Le projet est prêt. Je prépare tout et vous décidez.", action: 'CreationRedaction_ProjetComplet' },
     // ClausePEB REPOSITIONNÉE le 03/09 : le document officiel a une vraie
     // didascalie à CET endroit précis, juste après "Ontvangen, geanalyseerd
     // en verwerkt... Ik bereid alles voor en u beslist." (= ProjetComplet) :
@@ -578,7 +583,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // d'Alfred au constat de Fariël sur la clause PEB remplie toute seule —
     // elle vivait avant tout à la fin, après le Q&A, où elle ne répondait
     // plus à rien.
-    { acte: 2, label: 'Autonomie', geste: 'hocher', emotion: 'satisfait',            texte: "Exactement." },
+    { acte: 2, label: 'Autonomie', geste: 'hocher', emotion: 'satisfait',            texte: "Exactement !" },
     // Scène 11 (suite) : 3 répliques FIXES d'Alfred trouvées dans
     // l'officiel autour du Q&A live, absentes jusqu'ici — ajoutées le
     // 03/09 suite à une revérification. Entre 'InvitationQuestions' et
@@ -591,7 +596,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Alfred sur l'onglet Conversation pile à ce moment, pour que Fariël
     // n'ait plus à cliquer elle-même dessus en plein direct avant de poser
     // sa question.
-    { acte: 2, label: 'InvitationQuestions', geste: { nom: 'ouvrir', mot: "allez-y" }, emotion: 'chaleureux', texte: "N'importe qui dans l'étude peut me la poser, à toute heure. Allez-y.", action: 'OuvrirChatConversation' },
+    { acte: 2, label: 'InvitationQuestions', geste: { nom: 'ouvrir', mot: "posez" }, emotion: 'chaleureux', texte: "Tout le monde dans l'étude peut me poser des questions, jour et nuit. Posez-les !", action: 'OuvrirChatConversation' },
     // Réplique SILENCIEUSE (pas de texte, segments + parlerDepuisAction —
     // seule façon de déclencher une action DOM sans qu'Alfred parle, voir
     // jouerSecoursInterne dans alfred-brain.js) : tape et envoie, une à une,
@@ -609,13 +614,13 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // de se dérouler dans le chatbot, contrairement au NL). Traduction du
     // NL ("Ik heb je vragen beantwoord in de Chatbot"), au "vous" pour
     // rester dans le registre du reste du script FR.
-    { acte: 2, label: 'ConnaissanceDossier',  texte: "J'ai répondu à vos questions dans le chatbot." },
+    { acte: 2, label: 'ConnaissanceDossier',  texte: "J'ai répondu à votre question dans le chatbot." },
 
     // ScrollPEB retiré d'ici — déplacé juste après ProjetComplet (voir
     // réplique ClausePEB plus haut). Ne reste ici que l'export Word,
     // toujours hors script officiel, disclosed.
     { acte: 2, label: 'ExportWord', segments: [
-      { texte: "Le compromis est entièrement prêt, et il peut aussi s'exporter directement en Word.", action: 'CreationRedaction_ExporterWord' }] },
+      { texte: "Et voilà ! La promesse de vente est tout à fait prête, et vous pouvez aussi l'exporter directement vers Word.", action: 'CreationRedaction_ExporterWord' }] },
 
     // ACTE 3
     // "certifié [par Privanot]" corrigé en "évalué dans le cadre de
@@ -625,8 +630,8 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Sécurité/Stand/Closing réalignées mot pour mot sur v3_9 le 31/08.
     // Stand changeait de registre (tutoiement) par rapport au reste de
     // l'acte 3 — corrigé, l'officiel vouvoie tout du long côté Alfred.
-    { acte: 3, label: 'Sécurité',      hologrammes: [{ mots: ['rgpd'], titre: 'Conforme RGPD', sous: 'Protection des données', icone: 'cadenas' }, { mots: ['privanot'], titre: 'Évalué par Privanot', sous: 'Sécurité vérifiée', icone: 'badge' }, { mots: ['quittent'], titre: 'Vos données restent en Europe', sous: 'Jamais ailleurs', icone: 'globe' }], texte: "Toutes les données sont hébergées sur des serveurs sécurisés en Europe. Je suis conforme RGPD, et ma sécurité a été évaluée dans le cadre de Privanot. Vos données ne quittent jamais l'Europe." },
-    { acte: 3, label: 'Stand', geste: { nom: 'presenter', mot: "stand" }, emotion: 'chaleureux',         hologrammes: [{ mots: ['stand'], titre: 'Stand Wellnot', sous: 'Dans la salle d\'à côté', icone: 'carte' }], texte: "Au stand Wellnot, dans la salle d'à côté. Passez, ou demandez une démo directement dans votre étude." },
+    { acte: 3, label: 'Sécurité',      hologrammes: [{ mots: ['rgpd'], titre: 'Conforme RGPD', sous: 'Protection des données', icone: 'cadenas' }, { mots: ['privanot'], titre: 'Évalué par Privanot', sous: 'Sécurité vérifiée', icone: 'badge' }, { mots: ['quittent'], titre: 'Vos données restent en Europe', sous: 'Jamais ailleurs', icone: 'globe' }], texte: "Toutes les données sont hébergées sur des serveurs sécurisés en Europe. Je suis conforme au RGPD, et ma sécurité a été évaluée dans le cadre de Privanot. Vos données ne quittent jamais l'Europe." },
+    { acte: 3, label: 'Stand', geste: { nom: 'presenter', mot: "stand" }, emotion: 'chaleureux',         hologrammes: [{ mots: ['stand'], titre: 'Stand Wellnot', sous: 'Dans la salle d\'à côté', icone: 'carte' }], texte: "Très simple : au stand Wellnot, dans la salle d'à côté. Passez nous voir, ou demandez une démonstration directement dans votre étude." },
     // Closing : DOUTE — la ligne officielle complète ("Ne partez pas trop
     // vite vous-même. Car en réalité, c'est moi qui vous engage.") est plus
     // longue que l'ancienne version. Cette réplique pilote aussi le clin
