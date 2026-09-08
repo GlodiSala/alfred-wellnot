@@ -789,9 +789,15 @@ const DELAI_AUDIO_PERCEPTIBLE_MS = 600;
 // pour Gemini à 0.93, mais pour ElevenLabs c'est ok") — un seul réglage
 // commun aux deux moteurs ne convenait plus aux deux à la fois. Gemini/
 // Cloud TTS (VITESSE_PAROLE) remonté 0,85 → 0,93 : trop lent en FR.
-// ElevenLabs (VITESSE_PAROLE_ELEVENLABS) reste à 0,85, déjà jugé bon.
-const VITESSE_PAROLE = 0.93;
-const VITESSE_PAROLE_ELEVENLABS = 0.92; // 0.85 → 0.92 le 06/09 : "accélère la voix légèrement" (un ralenti trop fort aplatit l'énergie de la voix)
+// ElevenLabs (VITESSE_PAROLE_ELEVENLABS) reste à 0,85, déjà jugé bon, puis
+// remonté à 0,92 le 06/09 ("accélère la voix légèrement").
+// Les deux remontés à nouveau le 09/09 (même demande, "accélère légèrement
+// la voix"), même incrément (+0,04, ~4%) pour les deux moteurs — reste
+// sous 1.0 (vitesse native) exprès : un playbackRate proche ou au-dessus
+// de 1 commence à faire sonner la voix pressée/artificielle (même logique
+// que la note du 06/09 sur l'énergie de la voix, dans l'autre sens).
+const VITESSE_PAROLE = 0.97;
+const VITESSE_PAROLE_ELEVENLABS = 0.96;
 
 // ── Afficher sous-titres avec sync audio ──────────────────
 // timerRef : objet mutable { id } dans lequel on écrit l'id du setTimeout en

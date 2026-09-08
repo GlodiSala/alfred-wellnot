@@ -1296,16 +1296,26 @@ const SURBRILLANCE_CIBLES = {
   // section Relations/Relaties (retour du 06/09 : "vertegenwoordigers, c'est
   // Type*, non ?"), puis repli sur "Nom"/"Achternaam" après cette section si
   // aucun "Type" rempli n'y est trouvé.
-  // Budget raccourci (10×250/20×250 → 6×250/10×250) — demandé le 07/09
+  // Budget raccourci une 1re fois (10×250/20×250 → 6×250/10×250) le 07/09
   // ("il ne montre que benaming, zetel/vertegenwoordigers ne s'affichent
   // plus") : le pire cas (Type introuvable PUIS Nom introuvable) prenait
   // jusqu'à 7,5s, largement plus long que la réplique elle-même — assez
   // pour bloquer la file partagée (fileSurlignageChamp) et faire passer
   // les highlights suivants pour "jamais affichés" alors qu'ils
   // n'auraient fini par arriver que bien après coup.
+  // REBALANCÉ le 09/09 ("Type n'arrive pas à surligner") : même budget total
+  // (4s dans le pire des cas, donc pas de retour au risque de blocage de
+  // file d'avant le 07/09), mais réparti différemment — Type (le cas
+  // normal, censé marcher) passe de 6×250=1,5s à 10×250=2,5s ; Nom (le
+  // repli, rare) passe de 10×250=2,5s à 6×250=1,5s. Sans le vrai
+  // diagnostic console ("Champ introuvable pour le libellé", voir
+  // surlignerChampParLabelDialogueMaintenant) on ne sait pas si Type
+  // échouait par manque de temps ou pour une autre raison — si le
+  // problème persiste après ce rééquilibrage, il faudra ce log précis
+  // pour aller plus loin.
   champPartieRepresentants:     async () => {
-    const ok = await surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.typeRelation, 6, 250, SELECTEURS.labelsPartie.sectionRepresentants);
-    if (!ok) await surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.nom, 10, 250, SELECTEURS.labelsPartie.sectionRepresentants);
+    const ok = await surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.typeRelation, 10, 250, SELECTEURS.labelsPartie.sectionRepresentants);
+    if (!ok) await surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.nom, 6, 250, SELECTEURS.labelsPartie.sectionRepresentants);
   },
 };
 
@@ -1535,7 +1545,23 @@ function resoudreSurbrillance(entrees) {
 // surlignerColonneDossiers) n'en a pas besoin — avec 2800ms partout, deux
 // mots-clés rapprochés dans la phrase (ex. "dossiers"/"medewerkers", 2 mots
 // d'écart) allumaient la 2e colonne ~2,5s en retard sur le mot prononcé.
-const ECART_MIN_PAR_CIBLE = { colDossiers: 1300, colCollaborateur: 1300, colStatut: 1300 };
+// champPartie* (Vendeur/Acquéreur) ajoutés le 09/09 ("dans koper, c'est un
+// peu lent, accélère") à 1800ms — plus haut que les colonnes du tableau
+// (1300ms, jamais de scroll) car ces champs PEUVENT nécessiter un vrai
+// scroll (DUREE_DEFILEMENT_CHAMP_MS, 2500ms) contrairement aux colonnes,
+// mais plus bas que les 2800ms par défaut : SANS RISQUE de chevauchement
+// visuel même à 1800ms, la file partagée (fileSurlignageChamp) sérialise
+// de toute façon chaque highlight — un déclenchement programmé plus tôt ne
+// fait qu'attendre son tour dans la file si le précédent n'est pas fini,
+// il ne coupe jamais un scroll/halo en cours. Ça ne fait donc que réduire
+// le temps d'attente INUTILE quand le champ suivant est déjà visible (cas
+// le plus fréquent, pas de scroll du tout) sans rien changer au pire cas.
+const ECART_MIN_PAR_CIBLE = {
+  colDossiers: 1300, colCollaborateur: 1300, colStatut: 1300,
+  champPartieNom: 1800, champPartieAdresseSiege: 1800, champPartieDateNaissance: 1800,
+  champPartieNationalite: 1800, champPartieEtatCivil: 1800, champPartieRegimeMatrimonial: 1800,
+  champPartieDenomination: 1800, champPartieRepresentants: 1800,
+};
 
 async function attendreFermetureDialogue(dialogue, tentatives = 30, delai = 500) {
   if (!dialogue) return true;
