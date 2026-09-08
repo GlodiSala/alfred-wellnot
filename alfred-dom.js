@@ -117,6 +117,15 @@ const SELECTEURS = {
     // ("Btw-plichtig"/"Assujetti à la TVA", sous Type). Voir
     // champPartieFormeJuridique (SURBRILLANCE_CIBLES).
     formeJuridique: ['Type'],
+    // EXCLUSION ajoutée le 09/09 — diagnostiqué en direct via script de
+    // console : la fiche a un 2e libellé "Type persoon" (type de personne
+    // physique/morale, sans rapport), PLUS HAUT dans le DOM que "Type *" —
+    // rencontré en premier par trouverChampProcheLabelDans, il "gagnait" à
+    // tort (son champ le plus proche, BIMBIMMO, a une valeur par pure
+    // coïncidence géométrique) avant même que "Type *" ne soit essayé.
+    // Équivalent FR probable ("Type de personne"/"Type personne") ajouté
+    // par prudence, jamais confirmé par capture — à corriger si besoin.
+    formeJuridiqueExclusion: ['Type persoon', 'Type de personne', 'Type personne'],
     // Section précédant les représentants (Vendeur) — confirmée par
     // capture FR/NL ("Relations"/"Relaties"). Sert à ne chercher le
     // libellé "Nom" qu'APRÈS cette section (voir champPartieRepresentants) :
@@ -1100,9 +1109,20 @@ function valeurChamp(el) {
 // existe aussi tout en haut de la fiche Vendeur, DÉJÀ rempli avec la
 // dénomination de l'entreprise cherchée par BCE — donc pas vide, la
 // méthode "on garde le 1er rempli" retomberait dessus par erreur).
-function trouverChampProcheLabelDans(conteneur, labelTexte, apresElement) {
+// exclureTexte (optionnel, 09/09) : ignore tout libellé qui matche AUSSI un
+// de ces textes — trouvé en direct via script de diagnostic (console) sur
+// "Type" (forme juridique) : la fiche Vendeur a DEUX libellés commençant
+// par "Type" ("Type persoon"/type de personne physique-morale, sans
+// rapport, ET "Type *"/la vraie forme juridique) — "Type persoon" est plus
+// haut dans le DOM, donc rencontré EN PREMIER, et son champ le plus proche
+// (BIMBIMMO) a une vraie valeur par coïncidence géométrique : la fonction
+// s'arrêtait dessus sans jamais essayer "Type *", pourtant juste à 42px de
+// "Besloten Vennootschap" (la vraie valeur cherchée). Voir
+// champPartieFormeJuridique (SURBRILLANCE_CIBLES) pour l'exclusion utilisée.
+function trouverChampProcheLabelDans(conteneur, labelTexte, apresElement, exclureTexte) {
   if (!conteneur) return null;
   const limiteHaut = apresElement ? apresElement.getBoundingClientRect().bottom : -Infinity;
+  const nExclu = (el) => !exclureTexte || !texteCommencePar(el.textContent, exclureTexte);
   // PLUSIEURS libellés identiques peuvent exister dans la même fenêtre — la
   // fiche "Une personne avec ce numéro de registre national existe déjà"
   // garde affichés les champs de RECHERCHE d'origine (Nom/Rue/Date de
@@ -1113,13 +1133,13 @@ function trouverChampProcheLabelDans(conteneur, labelTexte, apresElement) {
   // garde le premier dont le champ le plus proche a une VALEUR — pas
   // seulement le tout premier libellé venu.
   let labels = Array.from(conteneur.querySelectorAll('*'))
-    .filter(el => el.children.length === 0 && texteCommencePar(el.textContent, labelTexte) && el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().top >= limiteHaut);
+    .filter(el => el.children.length === 0 && texteCommencePar(el.textContent, labelTexte) && nExclu(el) && el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().top >= limiteHaut);
   if (!labels.length) {
     // Repli texteContient : certains libellés peuvent être précédés d'une
     // icône/espace insécable invisible dans le texte brut, ce que
     // startsWith raterait mais includes attrape.
     labels = Array.from(conteneur.querySelectorAll('*'))
-      .filter(el => el.children.length === 0 && texteContient(el.textContent, labelTexte) && el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().top >= limiteHaut);
+      .filter(el => el.children.length === 0 && texteContient(el.textContent, labelTexte) && nExclu(el) && el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().top >= limiteHaut);
   }
   if (!labels.length) return null;
 
@@ -1195,11 +1215,11 @@ function trouverChampProcheLabelDans(conteneur, labelTexte, apresElement) {
 // prend plus longtemps que ça. Même principe que
 // filesSurlignageColonne pour le tableau de bord.
 let fileSurlignageChamp = Promise.resolve();
-async function surlignerChampParLabelDialogue(labelTexte, tentatives = 30, delai = 250, sectionTexte) {
-  fileSurlignageChamp = fileSurlignageChamp.then(() => surlignerChampParLabelDialogueMaintenant(labelTexte, tentatives, delai, sectionTexte));
+async function surlignerChampParLabelDialogue(labelTexte, tentatives = 30, delai = 250, sectionTexte, exclureTexte) {
+  fileSurlignageChamp = fileSurlignageChamp.then(() => surlignerChampParLabelDialogueMaintenant(labelTexte, tentatives, delai, sectionTexte, exclureTexte));
   return fileSurlignageChamp;
 }
-async function surlignerChampParLabelDialogueMaintenant(labelTexte, tentatives, delai, sectionTexte) {
+async function surlignerChampParLabelDialogueMaintenant(labelTexte, tentatives, delai, sectionTexte, exclureTexte) {
   let dernierChamp = null;
   let sectionTrouveeUneFois = false;
   for (let i = 0; i < tentatives; i++) {
@@ -1223,7 +1243,7 @@ async function surlignerChampParLabelDialogueMaintenant(labelTexte, tentatives, 
     // d'attendre qu'elle apparaisse) plutôt que de chercher sans bornes.
     if (section) sectionTrouveeUneFois = true;
     if (sectionTexte && !section) { await attendre(delai); continue; }
-    const champ = dialogue ? trouverChampProcheLabelDans(dialogue, labelTexte, section) : null;
+    const champ = dialogue ? trouverChampProcheLabelDans(dialogue, labelTexte, section, exclureTexte) : null;
     dernierChamp = champ;
     if (champ && valeurChamp(champ)) {
       await defilerPuisSurligner(champ);
@@ -1367,11 +1387,13 @@ const SURBRILLANCE_CIBLES = {
   // par défaut ne pèse jamais vraiment ; si Type, lui, ne trouve JAMAIS
   // rien, il bloquerait la file partagée (fileSurlignageChamp) pendant les
   // 7,5s pleines avant que siège/représentants ne puissent même démarrer —
-  // risque de queue à répétition sur les highlights suivants. En attendant
-  // de confirmer si le champ "Type" est vraiment présent sur LA FICHE
-  // D'AJOUT (pas la fiche d'ÉDITION rouverte a posteriori, potentiellement
-  // différente), un budget plus court limite les dégâts en cas d'échec.
-  champPartieFormeJuridique:    () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.formeJuridique, 12, 250),
+  // risque de queue à répétition sur les highlights suivants.
+  // VRAIE CAUSE trouvée le 09/09 via script de diagnostic en direct
+  // (console) : le champ EST présent (confirmé "toujours visible"), mais
+  // deux libellés commencent par "Type" ("Type persoon", sans rapport,
+  // rencontré EN PREMIER dans le DOM, ET "Type *", le bon) — voir
+  // SELECTEURS.labelsPartie.formeJuridiqueExclusion, maintenant exclu.
+  champPartieFormeJuridique:    () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.formeJuridique, 12, 250, undefined, SELECTEURS.labelsPartie.formeJuridiqueExclusion),
   // "représentants"/"vertegenwoordigers" : cherche directement "Nom"/
   // "Achternaam" dans la section Relations/Relaties.
   // SIMPLIFIÉE le 09/09 (capture d'écran "Persoon wijzigen" à l'appui,
