@@ -87,13 +87,16 @@ const ALFRED_CONFIG = {
     // confirmée par l'utilisatrice depuis la vraie liste de l'appli) passe
     // "Collaborateur en charge du dossier", Cyril Cabuy passe "Collaborateur
     // administratif".
-    // Notaire changé le 08/09 pour Jean-François Ghigny (demandé explicitement,
-    // reste du dossier démo inchangé) — logique avec la note ci-dessus : c'est
-    // bien un notaire dans l'appli, donc a priori un choix valide ici, mais pas
-    // encore reconfirmé en test live sur CE dropdown précis (seule la liste
-    // "Collaborateur administratif" avait été vérifiée) — à valider en live.
+    // Notaire changé le 08/09 pour Jean-François Ghigny (demandé explicitement) —
+    // logique avec la note ci-dessus : c'est bien un notaire dans l'appli,
+    // donc a priori un choix valide ici. CONFIRMÉ en test live le 08/09
+    // (visible dans le dropdown "Verantwoordelijke notaris").
+    // collaborateur_administratif changé le 08/09 (2e demande, sur capture
+    // d'écran) : Cyril Cabuy → Fariël RABAH, donc Fariël sur les DEUX champs
+    // medewerker (en charge + administratif) — plus de Cyril nulle part dans
+    // le dossier démo.
     collaborateur:              'Fariël RABAH', // "Collaborateur en charge du dossier"
-    collaborateur_administratif: 'Cyril Cabuy', // "Collaborateur administratif"
+    collaborateur_administratif: 'Fariël RABAH', // "Collaborateur administratif"
     notaire:                    'Jean-François Ghigny', // "Notaire en charge du dossier" — voir note ci-dessus
     vendeur_type:      'morale',            // 'physique' (RN) ou 'morale' (BCE)
     vendeur_rn:        '84.06.28-314.70',    // utilisé si vendeur_type === 'physique'

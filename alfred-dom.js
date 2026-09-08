@@ -2629,11 +2629,9 @@ let dernierCodeDossierGenere = null;
 // Chaque étape reste silencieuse (aucun texte à dire) : c'est Fariël qui
 // parle en direct, Alfred se contente d'écrire ce qu'elle vient de dire.
 
-// Numéro de dossier. Il doit être unique — l'appli refuse un doublon et
-// bloque "Suivant" — donc généré à chaque lancement plutôt que repris de
-// cfg.code : jamais de retombée sur un dossier déjà créé. Format "C-" +
-// date du jour + heure (HHMMSS, pour rester unique même sur plusieurs
-// lancements le même jour).
+// Numéro de dossier — voir CODE_DOSSIER_DEMO_FIXE plus bas (numéro fixe
+// depuis le 08/09, plus l'ancien numéro auto-généré par date/heure ; la
+// note qui l'accompagne explique le compromis retenu et son risque).
 // Laisse le temps à Fariël de vraiment DIRE les 4 informations à voix haute
 // avant qu'Alfred ne les encode en silence — sans ça, l'écriture partait dès
 // la fin de la question d'Alfred, avant que Fariël ait eu le temps de
@@ -2654,17 +2652,21 @@ let dernierCodeDossierGenere = null;
 // court/long en test réel).
 const DELAI_AVANT_ENCODAGE_CHAMPS_MS = 9000;
 
+// Numéro FIXE demandé explicitement le 08/09 ("regarde comment ca devrait
+// etre C-2026/18-09") pour coller pile au numéro que Fariël dicte à voix
+// haute dans la vraie scène — au lieu du numéro auto-généré (C- + date +
+// heure) utilisé jusqu'ici pour éviter tout doublon. RISQUE ASSUMÉ ET
+// SIGNALÉ : si un dossier "C-2026/18-09" existe déjà (démo relancée le même
+// jour sans avoir modifié le champ à la main), l'appli refusera le doublon
+// et bloquera "Suivant" — modifier ce champ à la main dans l'appli avant de
+// relancer une répétition le même jour, ou changer CODE_DOSSIER_DEMO_FIXE
+// ci-dessous.
+const CODE_DOSSIER_DEMO_FIXE = 'C-2026/18-09';
+
 async function seq_creationDossier_ouvrir_champNumero() {
   await attendre(DELAI_AVANT_ENCODAGE_CHAMPS_MS);
-  const maintenant = new Date();
-  const dateJour = maintenant.toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
-  const horodatage = maintenant.toTimeString().slice(0, 8).replace(/:/g, ''); // HHMMSS
-  const codeUnique = `C-${dateJour}-${horodatage}`;
+  const codeUnique = CODE_DOSSIER_DEMO_FIXE;
   dernierCodeDossierGenere = codeUnique;
-  // Frappe accélérée (35ms/lettre au lieu de 90) : le suffixe d'horodatage
-  // rallonge le code, et personne ne lit un numéro de dossier lettre par
-  // lettre — contrairement à un champ où le "tapé en direct" fait partie
-  // de la démo.
   await taperDansChamp(SELECTEURS.champs.dossierCode, codeUnique, 15, 35);
   // Entrée + blur : certains champs Angular ne valident/rafraîchissent leur
   // état (dont l'activation de "Suivant") que sur ces événements, pas sur
