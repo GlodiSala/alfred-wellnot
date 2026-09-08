@@ -962,13 +962,26 @@ function programmerSurbrillanceMots(texteComplet, audio, entrees, timersRef) {
       // deux") : la cible a été supprimée de SURBRILLANCE_CIBLES le 09/09
       // (alfred-dom.js) — de toute façon plus câblée sur aucune réplique
       // depuis le retrait du highlight "statuts" le 05/09.
-      const CIBLES_ANTICIPEES_ACTE2 = ['dossierCode', 'langueActe', 'collaborateur', 'notaireEnCharge', 'creerDossierClic', 'colDossiers', 'colCollaborateur'];
+      // collaborateur/notaireEnCharge remontés à 1200ms le 09/09 ("ça
+      // marchait, je veux juste qu'il le fasse avant, comme dossier numéro
+      // et langue") : ces deux fields sont plus bas dans la fiche de
+      // création que numéro/langue — plausiblement pas encore montés dans
+      // le DOM pile au moment du mot, contrairement à numéro (lookup direct
+      // par id, quasi instantané) et langue (déjà bien synchronisé selon le
+      // retour) — l'anticipation générale de 400ms ne suffisait pas à
+      // compenser ce retard de rendu + les essais de surlignerAvecRetry
+      // avant de trouver l'élément.
+      const ANTICIPATION_PAR_CIBLE_ACTE2 = {
+        dossierCode: 400, langueActe: 400, creerDossierClic: 400,
+        colDossiers: 400, colCollaborateur: 400,
+        collaborateur: 1200, notaireEnCharge: 1200,
+      };
       const candidats = [];
       for (const entree of entrees) {
         const cles = (entree.motsCles || []).map((m) => m.toLowerCase());
         const idx = motsNettoyes.findIndex((m) => cles.some((c) => m === c || m.startsWith(c)));
         if (idx === -1 || typeof entree.action !== 'function') continue;
-        const anticipationMs = (entree.cible && (entree.cible.startsWith('champPartie') || CIBLES_ANTICIPEES_ACTE2.includes(entree.cible))) ? 400 : 0;
+        const anticipationMs = entree.cible && entree.cible.startsWith('champPartie') ? 400 : (ANTICIPATION_PAR_CIBLE_ACTE2[entree.cible] || 0);
         candidats.push({ delai: Math.max(0, idx * msParMot - anticipationMs), action: entree.action, cible: entree.cible });
       }
       candidats.sort((a, b) => a.delai - b.delai);
