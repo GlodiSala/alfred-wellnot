@@ -1681,8 +1681,22 @@ function resoudreSurbrillance(entrees) {
 // il ne coupe jamais un scroll/halo en cours. Ça ne fait donc que réduire
 // le temps d'attente INUTILE quand le champ suivant est déjà visible (cas
 // le plus fréquent, pas de scroll du tout) sans rien changer au pire cas.
+// dossierCode/langueActe/collaborateur/notaireEnCharge ajoutés le 09/09 —
+// VRAIE CAUSE trouvée du "collaborateur/notaire ne highlight jamais
+// pendant la question" : ce n'était ni un problème de recherche (l'élément
+// est trouvé, confirmé par script de diagnostic) ni de timing de rendu,
+// mais un effet de CASCADE. OuvrirChamps a 4 mots-clés dans UNE phrase de
+// ~7s ; avec 2800ms forcés entre chaque, le décalage s'accumule au fil des
+// candidats triés par position — le 3e et 4e mot-clé (collaborateur,
+// notaire) se retrouvaient programmés pour se déclencher APRÈS la fin
+// réelle de la réplique (calculé : ~6,7s et ~9,5s pour une réplique de
+// 7,03s), jamais vus ni logués. Comme pour colDossiers/colCollaborateur
+// (même symptôme, déjà corrigé) : ces 4 champs n'ont pas besoin de 2800ms,
+// juste d'assez de marge pour le retry (surlignerAvecRetry) — 1300ms
+// suffit largement et laisse les 4 mots-clés tenir dans la phrase.
 const ECART_MIN_PAR_CIBLE = {
   colDossiers: 1300, colCollaborateur: 1300,
+  dossierCode: 1300, langueActe: 1300, collaborateur: 1300, notaireEnCharge: 1300,
   champPartieNom: 1800, champPartieAdresseSiege: 1800, champPartieDateNaissance: 1800,
   champPartieNationalite: 1800, champPartieEtatCivil: 1800, champPartieRegimeMatrimonial: 1800,
   champPartieDenomination: 1800, champPartieRepresentants: 1800, champPartieFormeJuridique: 1800,
