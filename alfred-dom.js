@@ -1374,7 +1374,28 @@ const SURBRILLANCE_CIBLES = {
 //    possibles selon la version de PrimeNG, on les couvre tous par sécurité.
 // Repli sur le dernier état trouvé si ça ne se stabilise jamais dans le
 // budget (~7s), plutôt que de bloquer indéfiniment.
+// Cache court (09/09, "anticipe plus pour les actions") : dossiers →
+// collaborateurs → statut (3 highlights de colonne, un par mot-clé, voir
+// filesSurlignageColonne) rappellent chacun attendreTableauDossiersCharge —
+// avant, CHAQUE appel refaisait sa propre vérification de stabilité (min.
+// 3×250=750ms), même juste après qu'un appel précédent l'ait déjà confirmée
+// sur le MÊME tableau. Avec le budget réel d'un highlight de colonne
+// (scroll 1100ms + pause 300ms + halo 1000ms ≈ 2,4s) déjà serré face au
+// temps de parole disponible, ces 750ms perdus à chaque colonne
+// supplémentaire pouvaient suffire à faire arriver "medewerkers"/
+// "collaborateurs" bien après la fin de la réplique — remonté en test live
+// ("dossiernummer s'allume, medewerker jamais"). TTL court (4s) : assez
+// pour couvrir les 2-3 highlights d'une même réplique, assez court pour ne
+// jamais servir un tbody d'un tout autre écran si l'appli a changé de page
+// entre-temps (vérifié en plus via document.contains).
+let cacheTableauDossiers = { tbody: null, quand: 0 };
 async function attendreTableauDossiersCharge() {
+  if (cacheTableauDossiers.tbody
+      && (performance.now() - cacheTableauDossiers.quand) < 4000
+      && document.contains(cacheTableauDossiers.tbody)
+      && cacheTableauDossiers.tbody.querySelector('tr')) {
+    return cacheTableauDossiers.tbody;
+  }
   let tbody = null, dernierCompte = -1, stable = 0, confirme = false;
   // Budget monté 8s → 25s — cause trouvée : le plafond précédent (32 x
   // 250ms) était atteint EXACTEMENT (remonté en test live : "action:
@@ -1413,7 +1434,9 @@ async function attendreTableauDossiersCharge() {
   // parle "trop tôt", si c'est parce que ce plafond a été atteint sans
   // jamais confirmer la stabilité (plutôt que deviner encore).
   if (!confirme) console.warn('[Alfred DOM] Tableau dossiers : plafond d\'attente (25s) atteint SANS confirmer le chargement — lignes:', dernierCompte, 'squelettes encore présents ?', tbody ? tbody.querySelectorAll('.p-skeleton, [class*="skeleton" i]').length > 0 : '(tbody introuvable)');
-  return (tbody && tbody.querySelector('tr')) ? tbody : null;
+  const resultat = (tbody && tbody.querySelector('tr')) ? tbody : null;
+  if (resultat) cacheTableauDossiers = { tbody: resultat, quand: performance.now() };
+  return resultat;
 }
 
 // File d'attente : quand les 3 colonnes (dossiers/collaborateurs/statuts)

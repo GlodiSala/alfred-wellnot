@@ -948,10 +948,18 @@ function programmerSurbrillanceMots(texteComplet, audio, entrees, timersRef) {
       // dessus — demandé explicitement le 07/09 pour Vendeur/Acquéreur ("il
       // commence un peu trop lent, commence l'action un peu en avance"),
       // ÉLARGI le 09/09 à tout l'acte 2 (même demande, reformulée en
-      // général) : les champs de la fiche de création (numéro/langue/
-      // collaborateur/notaire) et le clic "Créer un dossier" anticipent
-      // maintenant aussi, pas seulement Vendeur/Acquéreur.
-      const CIBLES_ANTICIPEES_ACTE2 = ['dossierCode', 'langueActe', 'collaborateur', 'notaireEnCharge', 'creerDossierClic'];
+      // général puis répétée — "anticipe plus pour les actions") : les
+      // champs de la fiche de création (numéro/langue/collaborateur/
+      // notaire), le clic "Créer un dossier" ET les colonnes du tableau de
+      // bord (dossiers/collaborateurs/statut) anticipent maintenant aussi.
+      // Ces dernières en ont particulièrement besoin : ce sont 2-3
+      // highlights DE COLONNE enchaînés dans la même réplique ('Ouvrir'),
+      // chacun avec un vrai coût (scroll + halo, voir
+      // surlignerColonneDossiersMaintenant) — sans anticipation, le dernier
+      // mot-clé de la phrase ("collaborateurs"/"medewerkers") arrivait
+      // trop tard pour que son highlight ait le temps de se déclencher
+      // avant la fin de la réplique.
+      const CIBLES_ANTICIPEES_ACTE2 = ['dossierCode', 'langueActe', 'collaborateur', 'notaireEnCharge', 'creerDossierClic', 'colDossiers', 'colCollaborateur', 'colStatut'];
       const candidats = [];
       for (const entree of entrees) {
         const cles = (entree.motsCles || []).map((m) => m.toLowerCase());
