@@ -1361,7 +1361,17 @@ const SURBRILLANCE_CIBLES = {
   // ("Besloten Vennootschap") — voir la note corrigée sur
   // SELECTEURS.labelsPartie.formeJuridique, l'ancienne affirmation
   // contraire ("ça n'existe pas") était fausse.
-  champPartieFormeJuridique:    () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.formeJuridique),
+  // Budget explicite (12×250=3s, au lieu des 30×250=7,5s par défaut) le
+  // 09/09 : "highlight Benaming deux fois et pas Type" — dénomination/siège
+  // réussissent du premier coup (donnée déjà là via BCE), donc leur budget
+  // par défaut ne pèse jamais vraiment ; si Type, lui, ne trouve JAMAIS
+  // rien, il bloquerait la file partagée (fileSurlignageChamp) pendant les
+  // 7,5s pleines avant que siège/représentants ne puissent même démarrer —
+  // risque de queue à répétition sur les highlights suivants. En attendant
+  // de confirmer si le champ "Type" est vraiment présent sur LA FICHE
+  // D'AJOUT (pas la fiche d'ÉDITION rouverte a posteriori, potentiellement
+  // différente), un budget plus court limite les dégâts en cas d'échec.
+  champPartieFormeJuridique:    () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.formeJuridique, 12, 250),
   // "représentants"/"vertegenwoordigers" : cherche directement "Nom"/
   // "Achternaam" dans la section Relations/Relaties.
   // SIMPLIFIÉE le 09/09 (capture d'écran "Persoon wijzigen" à l'appui,
