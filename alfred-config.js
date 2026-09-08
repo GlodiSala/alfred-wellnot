@@ -640,13 +640,15 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // l'acte 3 — corrigé, l'officiel vouvoie tout du long côté Alfred.
     { acte: 3, label: 'Sécurité',      hologrammes: [{ mots: ['rgpd'], titre: 'Conforme RGPD', sous: 'Protection des données', icone: 'cadenas' }, { mots: ['privanot'], titre: 'Évalué par Privanot', sous: 'Sécurité vérifiée', icone: 'badge' }, { mots: ['quittent'], titre: 'Vos données restent en Europe', sous: 'Jamais ailleurs', icone: 'globe' }], texte: "Toutes les données sont hébergées sur des serveurs sécurisés en Europe. Je suis conforme au RGPD, et ma sécurité a été évaluée dans le cadre de Privanot. Vos données ne quittent jamais l'Europe." },
     { acte: 3, label: 'Stand', geste: { nom: 'presenter', mot: "stand" }, emotion: 'chaleureux',         hologrammes: [{ mots: ['stand'], titre: 'Stand Wellnot', sous: 'Dans la salle d\'à côté', icone: 'carte' }], texte: "Très simple : au stand Wellnot, dans la salle d'à côté. Passez nous voir, ou demandez une démonstration directement dans votre étude." },
-    // Closing : DOUTE — la ligne officielle complète ("Ne partez pas trop
-    // vite vous-même. Car en réalité, c'est moi qui vous engage.") est plus
-    // longue que l'ancienne version. Cette réplique pilote aussi le clin
-    // d'œil (ClosingWink), calé en test live sur le texte précédent — à
-    // revérifier que le timing du geste tombe toujours bien avec ce texte
-    // rallongé.
-    { acte: 3, label: 'Closing', geste: { nom: 'ouvrir', mot: "partez" }, emotion: 'malicieux',       texte: "Ne partez pas trop vite vous-même. Car en réalité, c'est moi qui vous engage.", action: 'ClosingWink' }],
+    // Closing réaligné le 08/09 sur le nouveau script v3_2 : le texte
+    // officiel ("Fais attention à ne pas réjouir trop vite, Fariël... En
+    // réalité, c'est mói qui viens de te valider.") avait deux coquilles
+    // (réflexif "te" manquant devant "réjouir" ; "mói" → "moi") et un
+    // registre tu, alors que le reste de l'acte 3 vouvoie — corrigées les
+    // deux ici. Le mot-ancre du geste ('ouvrir', bras qui s'ouvrent) passe
+    // de "partez" (disparu du nouveau texte) à "réalité", qui marque le
+    // même type de bascule/pivot dans la phrase.
+    { acte: 3, label: 'Closing', geste: { nom: 'ouvrir', mot: "réalité" }, emotion: 'malicieux',       texte: "Faites attention à ne pas vous réjouir trop vite, Fariël... En réalité, c'est moi qui viens de vous valider.", action: 'ClosingWink' }],
 
   REPLIQUES_NL: [
     // ACTE 1 — voir la note FR équivalente : réécrit intégralement le

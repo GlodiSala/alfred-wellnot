@@ -438,18 +438,23 @@ const ALFRED_ELEVENLABS_EXPRESSIVITE_KEY = 'alfred_elevenlabs_expressivite';
 // stabilité 0.5 mais RÉPÈTE l'indication de jeu au début de chaque phrase
 // (au lieu d'une seule fois en tête) : l'émotion ne s'éteint plus au fil
 // d'une longue réplique, sans l'instabilité du mode créatif.
-function expressiviteElevenLabs() {
+// `override` optionnel (09/09) : force temporairement un niveau pour UN
+// appel précis (voir les 3 boutons de test côté panneau NL, alfred-ui.js)
+// sans toucher au réglage enregistré/utilisé en direct sur le reste du
+// script — laisse vide pour le comportement normal (réglage sauvegardé).
+function expressiviteElevenLabs(override) {
+  if (override === 'creatif' || override === 'expressif' || override === 'naturel') return override;
   const v = localStorage.getItem(ALFRED_ELEVENLABS_EXPRESSIVITE_KEY);
   return (v === 'creatif' || v === 'expressif') ? v : 'naturel';
 }
-function texteAvecBalisesV3(text, balise) {
+function texteAvecBalisesV3(text, balise, expressiviteOverride) {
   if (!balise) return text;
-  if (expressiviteElevenLabs() !== 'expressif') return `${balise} ${text}`;
+  if (expressiviteElevenLabs(expressiviteOverride) !== 'expressif') return `${balise} ${text}`;
   const phrases = String(text).match(/[^.!?…]+[.!?…]+["»]?|[^.!?…]+$/g) || [text];
   return phrases.map(p => `${balise} ${p.trim()}`).join(' ');
 }
-function reglagesElevenLabs() {
-  return { ...ELEVENLABS_REGLAGES_VOIX, stability: expressiviteElevenLabs() === 'creatif' ? 0 : 0.5 };
+function reglagesElevenLabs(expressiviteOverride) {
+  return { ...ELEVENLABS_REGLAGES_VOIX, stability: expressiviteElevenLabs(expressiviteOverride) === 'creatif' ? 0 : 0.5 };
 }
 
 // Émotions de jeu par réplique (champ optionnel `emotion` sur une réplique
@@ -488,12 +493,17 @@ const ELEVENLABS_REGLAGES_VERSION = 3; // v3 : passage au modèle eleven_v3 (05/
 // genererAudioGemini/genererAudioCloud ci-dessus, juste un moteur différent
 // derrière (voir api/tts-elevenlabs.js). Clé de cache distincte ('elevenlabs-')
 // pour ne jamais confondre avec de l'audio Google même à texte identique.
-async function genererAudioElevenLabs(text, voiceId, emotion) {
+// `expressiviteOverride` optionnel (09/09, voir expressiviteElevenLabs
+// ci-dessus) : ne change rien à l'appel normal (préchargement/scène live),
+// utilisé seulement par les 3 boutons de test rapide du panneau NL pour
+// comparer naturel/expressif/instable sans changer le réglage enregistré.
+async function genererAudioElevenLabs(text, voiceId, emotion, expressiviteOverride) {
   // Balise de jeu v3 devant le texte (voir EMOTIONS_VOIX) — fait partie de
   // la clé de cache : la même phrase dite amusée ou neutre = deux audios.
   const balise = baliseEmotionV3(emotion);
-  const texteMoteur = texteAvecBalisesV3(text, balise);
-  const cle = cleTTS({ languageCode: 'nl-BE', name: 'elevenlabs-' + ELEVENLABS_MODELE + '-' + voiceId + '-v' + ELEVENLABS_REGLAGES_VERSION + (expressiviteElevenLabs() === 'naturel' ? '' : '-' + expressiviteElevenLabs()) }, texteMoteur);
+  const texteMoteur = texteAvecBalisesV3(text, balise, expressiviteOverride);
+  const expr = expressiviteElevenLabs(expressiviteOverride);
+  const cle = cleTTS({ languageCode: 'nl-BE', name: 'elevenlabs-' + ELEVENLABS_MODELE + '-' + voiceId + '-v' + ELEVENLABS_REGLAGES_VERSION + (expr === 'naturel' ? '' : '-' + expr) }, texteMoteur);
 
   let audioContent = await lireCacheTTS(cle);
   if (audioContent) {
@@ -508,7 +518,7 @@ async function genererAudioElevenLabs(text, voiceId, emotion) {
       const res = await fetch(ALFRED_CONFIG.API_TTS_ELEVENLABS, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: texteMoteur, voiceId, modelId: ELEVENLABS_MODELE, ...reglagesElevenLabs() }),
+        body: JSON.stringify({ text: texteMoteur, voiceId, modelId: ELEVENLABS_MODELE, ...reglagesElevenLabs(expressiviteOverride) }),
       });
       const data = await res.json();
       if (data.error) throw new Error(`ElevenLabs: ${data.error}`);

@@ -819,20 +819,32 @@ function ouvrirPanneauVoix() {
     inputId.oninput = sauverLigne;
     radio.onchange = () => { if (radio.checked) { localStorage.setItem(ALFRED_ELEVENLABS_VOIX_NL_KEY, inputId.value.trim()); ouvrirPanneauVoix(); } };
 
-    const btnTester = document.createElement('button');
-    btnTester.textContent = '▶';
-    btnTester.title = 'Tester cette voix avec une réplique du script (NL)';
-    btnTester.style.cssText = styleBouton + 'flex:none;padding:6px 10px;';
-    btnTester.onclick = () => {
-      const voiceId = inputId.value.trim();
-      if (!voiceId) { alert('Colle d\'abord un Voice ID ElevenLabs (depuis elevenlabs.io/voice-library).'); return; }
-      const t = repliqueTest('nl');
-      jouerTest(btnTester, () => genererAudioElevenLabs(t.texte, voiceId, t.emotion));
-    };
+    // 3 boutons de test (09/09, demandé explicitement — "qu'il y ait 3
+    // options" pour comparer) au lieu d'un seul lié au menu "Expressivité"
+    // plus haut : chacun force sa propre stabilité pour CET essai précis
+    // (voir expressiviteOverride, genererAudioElevenLabs/alfred-voice.js),
+    // sans toucher au réglage enregistré/utilisé en direct. Permet
+    // d'enchaîner Naturel → Expressif → Instable sur la même voix sans
+    // revenir changer le menu entre chaque écoute.
+    const zoneTest = document.createElement('div');
+    zoneTest.style.cssText = 'display:flex;flex-direction:column;gap:4px;flex:none;';
+    [['N', 'naturel', 'Naturel — stable (stabilité 0,5)'], ['E', 'expressif', 'Expressif — stable, jeu répété à chaque phrase'], ['I', 'creatif', 'Instable — le plus expressif, stabilité 0']].forEach(([lettre, niveau, titre]) => {
+      const btnTester = document.createElement('button');
+      btnTester.textContent = '▶ ' + lettre;
+      btnTester.title = 'Tester cette voix (' + titre + ')';
+      btnTester.style.cssText = styleBouton + 'flex:none;padding:5px 8px;font-size:10px;';
+      btnTester.onclick = () => {
+        const voiceId = inputId.value.trim();
+        if (!voiceId) { alert('Colle d\'abord un Voice ID ElevenLabs (depuis elevenlabs.io/voice-library).'); return; }
+        const t = repliqueTest('nl');
+        jouerTest(btnTester, () => genererAudioElevenLabs(t.texte, voiceId, t.emotion, niveau));
+      };
+      zoneTest.appendChild(btnTester);
+    });
 
     ligne.appendChild(radio);
     ligne.appendChild(colonne);
-    ligne.appendChild(btnTester);
+    ligne.appendChild(zoneTest);
     zoneCandidats.appendChild(ligne);
   });
   panel.appendChild(zoneCandidats);
