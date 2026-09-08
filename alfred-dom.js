@@ -108,19 +108,29 @@ const SELECTEURS = {
     etatCivil:         ['État civil', 'Burgerlijke staat'],
     regimeMatrimonial: ['Régime matrimonial', 'Huwelijksvermogensstelsel'],
     denomination:      ['Dénomination', 'Benaming'],
-    // Pas d'entrée pour "forme juridique" : confirmé par capture FR, le
-    // champ "Type *" du formulaire Vendeur correspond en fait à
-    // l'assujettissement TVA ("Assujetti à la TVA"), pas à la forme
-    // juridique — aucun champ "Forme juridique" n'existe sur la fiche
-    // BIMBIMMO, donc pas de cible possible ici, laissé sans surlignage.
+    // CORRIGÉ le 09/09 par une vraie capture d'écran ("Persoon wijzigen") :
+    // le champ "Type *" tout en haut de la fiche Vendeur correspond bien à
+    // la forme juridique ("Besloten Vennootschap", l'équivalent NL de SRL/
+    // BVBA) — l'ancienne note ci-dessous (jusqu'au 08/09) affirmait le
+    // contraire ("c'est l'assujettissement TVA, pas la forme juridique"),
+    // c'était faux : l'assujettissement TVA est un champ SÉPARÉ
+    // ("Btw-plichtig"/"Assujetti à la TVA", sous Type). Voir
+    // champPartieFormeJuridique (SURBRILLANCE_CIBLES).
+    formeJuridique: ['Type'],
     // Section précédant les représentants (Vendeur) — confirmée par
     // capture FR/NL ("Relations"/"Relaties"). Sert à ne chercher le
     // libellé "Nom" qu'APRÈS cette section (voir champPartieRepresentants) :
     // "Nom" existe aussi tout en haut de la fiche, déjà rempli avec la
     // dénomination cherchée par BCE.
     sectionRepresentants: ['Relations', 'Relaties'],
-    // Champ "Type *" d'une relation (section Relations/Relaties) — voir
-    // champPartieRepresentants. Libellé supposé identique FR/NL ("Type").
+    // Champ "Type" ANNULÉ le 09/09 : la même capture d'écran montre que la
+    // section Relaties utilise "Status" comme en-tête, PAS "Type" — cette
+    // entrée cherchait donc un libellé qui n'existe pas à cet endroit,
+    // épuisant systématiquement tout son budget avant de retomber sur le
+    // repli "Nom"/"Achternaam" (qui, lui, existe vraiment — "Achternaam *"
+    // confirmé sur la capture). Gardée ici (valeur inchangée) au cas où un
+    // autre écran/une autre relation l'utiliserait un jour, mais
+    // champPartieRepresentants ne la référence plus.
     typeRelation: ['Type'],
   },
   placeholders: {
@@ -1323,8 +1333,7 @@ const SURBRILLANCE_CIBLES = {
   // position, remonté en test live comme peu fiable (voir l'historique dans
   // surlignerChampParLabelDialogue). champPartieNom sert aussi pour
   // "représentants" côté Vendeur (même libellé "Nom"/"Achternaam", fenêtre
-  // différente). Pas de cible pour "forme juridique" (voir
-  // SELECTEURS.labelsPartie, libellé NL trop générique/non confirmé).
+  // différente).
   champPartieNom:               () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.nom),
   champPartieAdresseSiege:      () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.adresseSiege),
   champPartieDateNaissance:     () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.dateNaissance),
@@ -1332,31 +1341,26 @@ const SURBRILLANCE_CIBLES = {
   champPartieEtatCivil:         () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.etatCivil),
   champPartieRegimeMatrimonial: () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.regimeMatrimonial),
   champPartieDenomination:      () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.denomination),
-  // "représentants"/"vertegenwoordigers" : d'abord le champ "Type" de la
-  // section Relations/Relaties (retour du 06/09 : "vertegenwoordigers, c'est
-  // Type*, non ?"), puis repli sur "Nom"/"Achternaam" après cette section si
-  // aucun "Type" rempli n'y est trouvé.
-  // Budget raccourci une 1re fois (10×250/20×250 → 6×250/10×250) le 07/09
-  // ("il ne montre que benaming, zetel/vertegenwoordigers ne s'affichent
-  // plus") : le pire cas (Type introuvable PUIS Nom introuvable) prenait
-  // jusqu'à 7,5s, largement plus long que la réplique elle-même — assez
-  // pour bloquer la file partagée (fileSurlignageChamp) et faire passer
-  // les highlights suivants pour "jamais affichés" alors qu'ils
-  // n'auraient fini par arriver que bien après coup.
-  // REBALANCÉ le 09/09 ("Type n'arrive pas à surligner") : même budget total
-  // (4s dans le pire des cas, donc pas de retour au risque de blocage de
-  // file d'avant le 07/09), mais réparti différemment — Type (le cas
-  // normal, censé marcher) passe de 6×250=1,5s à 10×250=2,5s ; Nom (le
-  // repli, rare) passe de 10×250=2,5s à 6×250=1,5s. Sans le vrai
-  // diagnostic console ("Champ introuvable pour le libellé", voir
-  // surlignerChampParLabelDialogueMaintenant) on ne sait pas si Type
-  // échouait par manque de temps ou pour une autre raison — si le
-  // problème persiste après ce rééquilibrage, il faudra ce log précis
-  // pour aller plus loin.
-  champPartieRepresentants:     async () => {
-    const ok = await surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.typeRelation, 10, 250, SELECTEURS.labelsPartie.sectionRepresentants);
-    if (!ok) await surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.nom, 6, 250, SELECTEURS.labelsPartie.sectionRepresentants);
-  },
+  // AJOUTÉE le 09/09 (capture d'écran "Persoon wijzigen" à l'appui) : le
+  // champ "Type *" tout en haut de la fiche Vendeur EST la forme juridique
+  // ("Besloten Vennootschap") — voir la note corrigée sur
+  // SELECTEURS.labelsPartie.formeJuridique, l'ancienne affirmation
+  // contraire ("ça n'existe pas") était fausse.
+  champPartieFormeJuridique:    () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.formeJuridique),
+  // "représentants"/"vertegenwoordigers" : cherche directement "Nom"/
+  // "Achternaam" dans la section Relations/Relaties.
+  // SIMPLIFIÉE le 09/09 (capture d'écran "Persoon wijzigen" à l'appui,
+  // "Type ne marche pas du tout... il ne trouve pas je pense") : cherchait
+  // avant "Type" dans cette section en premier (retour du 06/09,
+  // "vertegenwoordigers, c'est Type*, non ?") — la capture montre que la
+  // section Relaties utilise "Status" comme en-tête, PAS "Type". Cette
+  // recherche épuisait donc SYSTÉMATIQUEMENT tout son budget (2,5s) avant
+  // de retomber sur "Nom" — la vraie cause des délais/échecs remontés à
+  // plusieurs reprises sur ce highlight précis (zetel/vertegenwoordigers).
+  // Va directement sur "Nom"/"Achternaam" (confirmé réel : "Achternaam *"
+  // visible sur la capture) avec tout le budget (10×250=2,5s) au lieu de
+  // le partager avec une recherche vouée à l'échec.
+  champPartieRepresentants:     () => surlignerChampParLabelDialogue(SELECTEURS.labelsPartie.nom, 10, 250, SELECTEURS.labelsPartie.sectionRepresentants),
 };
 
 // Met en évidence une colonne entière (en-tête + toutes les cellules
@@ -1623,7 +1627,7 @@ const ECART_MIN_PAR_CIBLE = {
   colDossiers: 1300, colCollaborateur: 1300,
   champPartieNom: 1800, champPartieAdresseSiege: 1800, champPartieDateNaissance: 1800,
   champPartieNationalite: 1800, champPartieEtatCivil: 1800, champPartieRegimeMatrimonial: 1800,
-  champPartieDenomination: 1800, champPartieRepresentants: 1800,
+  champPartieDenomination: 1800, champPartieRepresentants: 1800, champPartieFormeJuridique: 1800,
 };
 
 async function attendreFermetureDialogue(dialogue, tentatives = 30, delai = 500) {

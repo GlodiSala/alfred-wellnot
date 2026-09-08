@@ -392,17 +392,19 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // CONFIRMÉS le 03/09 par une vraie capture des fiches Caprasse/BIMBIMMO
     // (Nom, Rue, Date de naissance, Nationalité, État civil, Régime
     // matrimonial, Dénomination — tous identiques à ce qui était deviné).
-    // Toujours pas de cible pour "forme juridique" : la même capture montre
-    // que le champ "Type *" du formulaire Vendeur correspond en fait à
-    // l'assujettissement TVA ("Assujetti à la TVA"), pas à la forme
-    // juridique — aucun champ "Forme juridique" visible sur la fiche
-    // BIMBIMMO, donc pas de cible possible ici, laissé sans surlignage.
+    // "forme juridique" AJOUTÉE le 09/09 (capture d'écran "Persoon
+    // wijzigen" à l'appui) : l'ancienne note ci-dessus (jusqu'au 08/09,
+    // "ça n'existe pas, c'est l'assujettissement TVA") était fausse — le
+    // champ "Type *" en haut de la fiche EST bien la forme juridique
+    // ("Besloten Vennootschap"), l'assujettissement TVA est un champ
+    // séparé ("Btw-plichtig"). Voir champPartieFormeJuridique
+    // (SURBRILLANCE_CIBLES, alfred-dom.js).
     { acte: 2, label: 'PartiesVendeur', segments: [
       // v3_1 (05/09) : "rechtsvorm" passe AVANT "zetel", et plus de
-      // "Rattaché au dossier" à la fin. Pas de cible pour "forme juridique" :
-      // ce champ n'existe pas sur la fiche (voir SELECTEURS.labelsPartie).
+      // "Rattaché au dossier" à la fin.
       { texte: "Je récupère les données immédiatement : dénomination... forme juridique... siège social... représentants...", action: 'CreationParties_Vendeur', parlerDepuisAction: true, surbrillance: [
         { mots: ['dénomination'], cible: 'champPartieDenomination' },
+        { mots: ['juridique'], cible: 'champPartieFormeJuridique' },
         { mots: ['siège'], cible: 'champPartieAdresseSiege' },
         { mots: ['représentants'], cible: 'champPartieRepresentants' }] }] },
     // parlerDepuisAction — voir la note équivalente sur PartiesVendeur
@@ -736,6 +738,7 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
       // v3_1 : "rechtsvorm" avant "zetel" (voir la note FR équivalente).
       { texte: "Ik haal de gegevens meteen op: benaming... rechtsvorm... zetel... vertegenwoordigers...", action: 'CreationParties_Vendeur', parlerDepuisAction: true, surbrillance: [
         { mots: ['benaming'], cible: 'champPartieDenomination' },
+        { mots: ['rechtsvorm'], cible: 'champPartieFormeJuridique' },
         { mots: ['zetel'], cible: 'champPartieAdresseSiege' },
         { mots: ['vertegenwoordigers'], cible: 'champPartieRepresentants' }] }] },
     // parlerDepuisAction / cibles par libellé — voir la note FR équivalente.
