@@ -321,8 +321,21 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // pas de flèche supplémentaire non plus ("il faut le temps que Fariël
     // le dise... on attend quelques secondes et on encode ?").
     { acte: 2, label: 'OuvrirChamps', segments: [
+      // Surbrillance complétée le 09/09 ("pourquoi la première réplique
+      // n'omet... enfin, ne surligne pas medewerker ?") : seul "numéro" était
+      // câblé sur son mot, alors que les 3 autres cibles (langueActe,
+      // collaborateur, notaireEnCharge) existent déjà dans
+      // SURBRILLANCE_CIBLES (alfred-dom.js) et étaient même prévues pour
+      // ça d'après le commentaire au-dessus de choisirDansDropdown — juste
+      // jamais reliées ici. Chaque champ est encore VIDE à ce moment (les
+      // 4 flèches d'encodage silencieuses viennent après, une fois que
+      // Fariël a eu le temps de dicter) : le surlignage attire l'œil sur
+      // le bon champ pendant qu'Alfred le nomme, avant qu'il ne se remplisse.
       { texte: "Donnez-moi simplement le numéro de dossier... la langue de l'acte... le collaborateur en charge... et le notaire.", surbrillance: [
-        { mots: ['numéro'], cible: 'dossierCode' }] },
+        { mots: ['numéro'], cible: 'dossierCode' },
+        { mots: ['langue'], cible: 'langueActe' },
+        { mots: ['collaborateur'], cible: 'collaborateur' },
+        { mots: ['notaire'], cible: 'notaireEnCharge' }] },
       { action: 'CreationOuvrir_ChampNumero',        parlerDepuisAction: true },
       { action: 'CreationOuvrir_ChampLangue',        parlerDepuisAction: true },
       { action: 'CreationOuvrir_ChampCollaborateur', parlerDepuisAction: true },
@@ -694,8 +707,14 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // Voir la note FR équivalente (une seule flèche, remplissage silencieux
     // enchaîné après la question).
     { acte: 2, label: 'OuvrirChamps', segments: [
+      // Surbrillance complétée le 09/09 — voir la note FR équivalente : même
+      // trou (seul "dossier" câblé), mêmes cibles déjà prêtes côté
+      // alfred-dom.js, juste jamais reliées ici.
       { texte: "Geef mij gewoon het dossier nummer... de taal van de akte... de bevoegde medewerker... en de notaris.", surbrillance: [
-        { mots: ['dossier'], cible: 'dossierCode' }] },
+        { mots: ['dossier'], cible: 'dossierCode' },
+        { mots: ['taal'], cible: 'langueActe' },
+        { mots: ['medewerker'], cible: 'collaborateur' },
+        { mots: ['notaris'], cible: 'notaireEnCharge' }] },
       { action: 'CreationOuvrir_ChampNumero',        parlerDepuisAction: true },
       { action: 'CreationOuvrir_ChampLangue',        parlerDepuisAction: true },
       { action: 'CreationOuvrir_ChampCollaborateur', parlerDepuisAction: true },
@@ -801,6 +820,12 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // DÉCOMPOSÉ le 03/09 (2e passe) — voir la note FR équivalente.
     // PasSiVite AJOUTÉE le 05/09 (v3_1) — voir la note FR équivalente.
     { acte: 2, label: 'PasSiVite', geste: { nom: 'stop', mot: "snel" }, emotion: 'taquin', texte: "Niet te snel, Fariël!" },
+    // DOUTE (09/09, pas corrigé) : "jouw" ici est informel alors que
+    // "Valideert u" juste après est formel — possible incohérence, mais pas
+    // touché sans confirmation contre le vrai document officiel NL (voir
+    // Closing plus bas : un cas d'apparence similaire s'est avéré être le
+    // texte officiel réel, pas une erreur). À vérifier avec Fariël/le
+    // document source avant de changer.
     { acte: 2, label: 'Email', texte: "Ik had toch aangegeven dat ik jouw administratief werk ging verlichten. Ik heb alvast een conceptmail klaargezet voor de verkoper BIMBIMMO, met de vraag om het EPC... de elektrische keuring... en het bodemattest te bezorgen. Één gerichte vraag, nooit twee keer hetzelfde. Valideert u de verzending?", action: 'CreationEmail_Ouverture' },
     { acte: 2, label: 'EmailEnvoyer', segments: [
       { texte: "Daar is het, ik bekijk het e-mailontwerp en verstuur het.", action: 'CreationEmail_Envoyer', parlerDepuisAction: true }] },
@@ -822,6 +847,9 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     { acte: 2, label: 'Autonomie', geste: 'hocher', emotion: 'satisfait',            texte: "Precies!" },
     // Scène 11 (suite) : voir la note FR équivalente — même 3 lignes
     // fixes, sourcées directement de v3_8 (pas traduites du FR).
+    // DOUTE (09/09, pas corrigé) : "Stel ze maar!" est informel — même
+    // logique que Email ci-dessus, pas touché sans vérification contre le
+    // vrai document officiel NL.
     { acte: 2, label: 'InvitationQuestions', geste: { nom: 'ouvrir', mot: "stel" }, emotion: 'chaleureux', texte: "Iedereen op kantoor kan mij dag en nacht vragen stellen. Stel ze maar!", action: 'OuvrirChatConversation' },
     // Réplique SILENCIEUSE — voir la note FR équivalente (même mécanisme,
     // QUESTIONS_LIVE_NL).
@@ -834,8 +862,15 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // rouge comme changement là-bas. DOUTE (asymétrie FR/NL) levé le 04/09 :
     // le FR a été aligné dessus (voir la note FR équivalente), confirmé
     // nécessaire en test live.
-    { acte: 2, label: 'ConnaissanceDossier',  texte: "Ik heb je vragen beantwoord in de Chatbot." },
+    // "vragen" (pluriel) → "vraag" (singulier) le 09/09 : QUESTIONS_LIVE_NL
+    // ne contient plus qu'UNE seule question (zone inondable, réduit le
+    // 05/09) — même raison que le "question" singulier déjà côté FR. Le "je"
+    // informel, lui, N'EST PAS touché (voir Email/InvitationQuestions plus
+    // haut — doute non tranché sur le registre).
+    { acte: 2, label: 'ConnaissanceDossier',  texte: "Ik heb je vraag beantwoord in de Chatbot." },
 
+    // DOUTE (09/09, pas corrigé) : "je kan" est informel — même famille de
+    // question que Email/InvitationQuestions/ConnaissanceDossier plus haut.
     { acte: 2, label: 'ExportWord', segments: [
       { texte: "En voilà! De verkoopbelofte is helemaal klaar en je kan deze ook rechtstreeks exporteren in Word.", action: 'CreationRedaction_ExporterWord' }] },
 
