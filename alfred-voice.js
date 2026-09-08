@@ -944,16 +944,20 @@ function programmerSurbrillanceMots(texteComplet, audio, entrees, timersRef) {
       // l'audio sur une réplique à beaucoup de mots-clés, mais chaque champ
       // reste visible le temps qu'il faut, un par un.
       const ECART_MIN_MS = 2800;
+      // Anticipation : l'action démarre un peu avant le mot plutôt que pile
+      // dessus — demandé explicitement le 07/09 pour Vendeur/Acquéreur ("il
+      // commence un peu trop lent, commence l'action un peu en avance"),
+      // ÉLARGI le 09/09 à tout l'acte 2 (même demande, reformulée en
+      // général) : les champs de la fiche de création (numéro/langue/
+      // collaborateur/notaire) et le clic "Créer un dossier" anticipent
+      // maintenant aussi, pas seulement Vendeur/Acquéreur.
+      const CIBLES_ANTICIPEES_ACTE2 = ['dossierCode', 'langueActe', 'collaborateur', 'notaireEnCharge', 'creerDossierClic'];
       const candidats = [];
       for (const entree of entrees) {
         const cles = (entree.motsCles || []).map((m) => m.toLowerCase());
         const idx = motsNettoyes.findIndex((m) => cles.some((c) => m === c || m.startsWith(c)));
         if (idx === -1 || typeof entree.action !== 'function') continue;
-        // Anticipation : les champs (Vendeur/Acquéreur) démarrent leur
-        // recherche+défilement un peu avant le mot plutôt que pile dessus —
-        // demandé explicitement le 07/09 ("il commence un peu trop lent,
-        // commence l'action un peu en avance").
-        const anticipationMs = (entree.cible && entree.cible.startsWith('champPartie')) ? 400 : 0;
+        const anticipationMs = (entree.cible && (entree.cible.startsWith('champPartie') || CIBLES_ANTICIPEES_ACTE2.includes(entree.cible))) ? 400 : 0;
         candidats.push({ delai: Math.max(0, idx * msParMot - anticipationMs), action: entree.action, cible: entree.cible });
       }
       candidats.sort((a, b) => a.delai - b.delai);

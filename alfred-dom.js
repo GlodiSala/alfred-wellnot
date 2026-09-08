@@ -1272,11 +1272,30 @@ async function parlerSegmentDepuisAction(label, actionNom) {
 // seul à connaître les vrais sélecteurs (SELECTEURS, trouverDeclencheur...).
 // alfred-config.js ne référence que la clé symbolique (ex: "notaireEnCharge"),
 // jamais un sélecteur — même séparation texte/DOM que partout ailleurs.
+
+// Ajouté le 09/09 ("il ne highlight plus medewerker") : dossierCode/
+// langueActe/collaborateur/notaireEnCharge ne cherchaient qu'UNE SEULE FOIS,
+// sans repli — si le champ n'était pas encore dans le DOM pile au moment du
+// mot (fiche de création tout juste ouverte par le clic précédent), le
+// surlignage échouait EN SILENCE, aucune trace nulle part (contrairement à
+// surlignerChampParLabelDialogueMaintenant, qui log déjà). Même leçon que le
+// bug "Type" trouvé juste avant : un lookup à un seul coup est fragile face
+// au timing réel du DOM. Réessaie maintenant plusieurs fois avant d'abandonner,
+// et prévient si ça échoue quand même.
+async function surlignerAvecRetry(nom, trouverElement, tentatives = 10, delai = 250) {
+  for (let i = 0; i < tentatives; i++) {
+    if (typeof annulationDemandee !== 'undefined' && annulationDemandee) return;
+    const el = trouverElement();
+    if (el) { await defilerPuisSurligner(el); return; }
+    await attendre(delai);
+  }
+  console.warn('[Alfred DOM] Cible introuvable après ' + tentatives + ' essais :', nom);
+}
 const SURBRILLANCE_CIBLES = {
-  dossierCode:   () => defilerPuisSurligner(document.getElementById(SELECTEURS.champs.dossierCode)),
-  langueActe:    () => defilerPuisSurligner(trouverDeclencheurProcheLabel(SELECTEURS.menus.langueActe)),
-  collaborateur: () => defilerPuisSurligner(trouverDeclencheurProcheLabel(SELECTEURS.menus.collaborateurEnCharge)),
-  notaireEnCharge: () => defilerPuisSurligner(trouverDeclencheurProcheLabel(SELECTEURS.menus.notaireEnCharge)),
+  dossierCode:   () => surlignerAvecRetry('dossierCode', () => document.getElementById(SELECTEURS.champs.dossierCode)),
+  langueActe:    () => surlignerAvecRetry('langueActe', () => trouverDeclencheurProcheLabel(SELECTEURS.menus.langueActe)),
+  collaborateur: () => surlignerAvecRetry('collaborateur', () => trouverDeclencheurProcheLabel(SELECTEURS.menus.collaborateurEnCharge)),
+  notaireEnCharge: () => surlignerAvecRetry('notaireEnCharge', () => trouverDeclencheurProcheLabel(SELECTEURS.menus.notaireEnCharge)),
   // Tableau de bord (liste des dossiers) — demandé explicitement : mettre
   // en évidence la COLONNE dont Alfred parle, pas tout le tableau. Ciblage
   // par POSITION de colonne (voir surlignerColonneDossiers), pas par texte
