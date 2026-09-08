@@ -39,18 +39,23 @@ const ALFRED_CONFIG = {
     lieu_stand:   "la salle d'à côté"
   },
 
-  DOSSIER_DEMO: {
-    numero:        'R426',
-    client:        'Lynn DENEYER',
-    notaire:       'Alain Caprasse',
-    collaborateur: 'Cyril Cabuy',
-    type:          'Vente',
-    date_creation: '04/06/2026',
-  },
-
+  // DOSSIER_DEMO (R426 / Lynn Deneyer / Alain Caprasse / Cyril Cabuy) retiré
+  // le 08/09 : plus aucune réplique du script (FR ou NL) ne le référence
+  // depuis le passage à la version officielle sans étape d'ouverture d'un
+  // dossier existant en Acte 1 (voir Script_scene_Wellnot_InsideAI26_v3_2 —
+  // l'entretien enchaîne directement de "Montre-moi" à "Nouveau dossier").
+  // C'était du code mort : aucun fichier ne lisait plus
+  // ALFRED_CONFIG.DOSSIER_DEMO (la note dans alfred-brain.js, ligne ~74,
+  // documente déjà le remplacement côté chat libre par DOSSIER_CREATION_DEMO
+  // ci-dessous). Le VRAI dossier R426 reste ouvrable en live (recherche +
+  // clic réel dans l'appli, voir seq_ouvrirDossier dans alfred-dom.js) si
+  // quelqu'un demande à Alfred de montrer "un dossier"/"le dashboard"
+  // pendant le Q&A libre — mais ça affiche les VRAIES données actuelles de
+  // ce dossier telles qu'elles sont dans l'appli, pas cet objet JS : le
+  // supprimer ici n'a donc aucun effet sur ce que montre l'appli.
+  //
   // Données utilisées par la création automatique d'un nouveau dossier en
-  // live (démonstration séparée de R426, qui reste la référence "dossier
-  // déjà riche" pour le reste du script).
+  // live (le dossier réellement créé pendant la démo, Acte 2).
   //
   // Cyril a fourni de nouvelles données réelles (mail du 27/07). Le vendeur
   // est une personne morale (recherche BCE) et le bien est recherché par
@@ -69,11 +74,11 @@ const ALFRED_CONFIG = {
   // ajout, voir rattacherNotaire). D'où l'absence d'un champ
   // "vendeur_notaire" ici : BIMBIMMO ne rattache personne de nouveau, voir
   // seq_creationDossier_notaires_vendeur (cocherMesClients).
-  // ATTENTION : le champ "Notaire en charge du dossier" (cfg.notaire, sur
-  // la fiche de création) reste Alain Caprasse — en test live, JF Ghigny
-  // n'apparaissait pas comme option dans ce dropdown précis, contrairement
-  // au séquencier qui l'indique — à revérifier si ce dropdown est corrigé
-  // côté app (le nom exact sur "Mes clients" suit ce champ).
+  // Le champ "Notaire en charge du dossier" (cfg.notaire, sur la fiche de
+  // création) était resté sur Alain Caprasse un moment car JF Ghigny
+  // n'apparaissait pas comme option dans ce dropdown précis lors d'un
+  // ancien test live — CONFIRMÉ RÉSOLU le 08/09 (capture d'écran : Ghigny
+  // bien sélectionnable dans "Verantwoordelijke notaris").
   DOSSIER_CREATION_DEMO: {
     // Pas de champ "code" ici : le numéro de dossier utilisé en live est
     // généré automatiquement à chaque lancement (C- + date + heure), voir
