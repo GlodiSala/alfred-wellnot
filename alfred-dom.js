@@ -1304,8 +1304,23 @@ async function surlignerAvecRetry(nom, trouverElement, tentatives = 10, delai = 
 const SURBRILLANCE_CIBLES = {
   dossierCode:   () => surlignerAvecRetry('dossierCode', () => document.getElementById(SELECTEURS.champs.dossierCode)),
   langueActe:    () => surlignerAvecRetry('langueActe', () => trouverDeclencheurProcheLabel(SELECTEURS.menus.langueActe)),
-  collaborateur: () => surlignerAvecRetry('collaborateur', () => trouverDeclencheurProcheLabel(SELECTEURS.menus.collaborateurEnCharge)),
-  notaireEnCharge: () => surlignerAvecRetry('notaireEnCharge', () => trouverDeclencheurProcheLabel(SELECTEURS.menus.notaireEnCharge)),
+  // Budget monté à 28×250=7s le 09/09 ("le halo pendant la question n'a
+  // JAMAIS marché, que pour taal et dossier numéro") : même avec le retry
+  // (commit précédent) et 1200ms d'anticipation, ces deux champs échouaient
+  // TOUJOURS — contrairement à langue/numéro, qui marchent au budget par
+  // défaut (10×250=2,5s). Or l'encodage réel de ces MÊMES champs (9s plus
+  // tard, seq_creationDossier_ouvrir_champCollaborateur/_champNotaire)
+  // trouve le même déclencheur SANS problème via la même fonction
+  // (trouverDeclencheurProcheLabel) — donc pas un problème de libellé, un
+  // problème de TIMING : le champ met vraisemblablement plus de temps à
+  // apparaître dans le DOM que collaborateur/notaire ne sont mentionnés
+  // tôt dans la phrase + le budget précédent (2,5s) ne laissait pas assez
+  // de temps. 7s reste sous les 9s avant que l'encodage réel ne change les
+  // valeurs (DELAI_AVANT_ENCODAGE_CHAMPS_MS). Si ça échoue encore après ce
+  // budget, le warning console ("Cible introuvable après 28 essais")
+  // confirmera que ce n'est PAS un problème de temps.
+  collaborateur: () => surlignerAvecRetry('collaborateur', () => trouverDeclencheurProcheLabel(SELECTEURS.menus.collaborateurEnCharge), 28, 250),
+  notaireEnCharge: () => surlignerAvecRetry('notaireEnCharge', () => trouverDeclencheurProcheLabel(SELECTEURS.menus.notaireEnCharge), 28, 250),
   // Tableau de bord (liste des dossiers) — demandé explicitement : mettre
   // en évidence la COLONNE dont Alfred parle, pas tout le tableau. Ciblage
   // par POSITION de colonne (voir surlignerColonneDossiers), pas par texte
