@@ -1191,12 +1191,28 @@ async function surlignerChampParLabelDialogue(labelTexte, tentatives = 30, delai
 }
 async function surlignerChampParLabelDialogueMaintenant(labelTexte, tentatives, delai, sectionTexte) {
   let dernierChamp = null;
+  let sectionTrouveeUneFois = false;
   for (let i = 0; i < tentatives; i++) {
     if (annulationDemandee) return;
     const dialogue = trouverDialogueOuvert();
     const section = (dialogue && sectionTexte)
       ? Array.from(dialogue.querySelectorAll('*')).find(el => el.children.length === 0 && texteCommencePar(el.textContent, sectionTexte) && el.getBoundingClientRect().width > 0)
       : null;
+    // Bug trouvé le 09/09 ("il ne surligne pas du tout... il le trouve pas
+    // le Type ?") : quand sectionTexte est demandé (cas "représentants") mais
+    // que la section n'est PAS ENCORE affichée (elle n'apparaît qu'après
+    // avoir ajouté un représentant), apresElement valait null — et
+    // trouverChampProcheLabelDans, sans apresElement, cherche alors "Type"
+    // dans TOUT le dialogue, y compris le "Type *" tout en haut de la fiche
+    // (assujettissement TVA, sans rapport — voir la note sur "forme
+    // juridique" plus haut). Si CE mauvais champ a déjà une valeur dès la
+    // 1re tentative, la fonction s'arrêtait dessus en pensant avoir réussi —
+    // highlight sur le mauvais champ, en pratique invisible/sans intérêt
+    // pour qui regarde la section Relations. Tant qu'une section demandée
+    // n'est pas trouvée, on ignore complètement cette tentative (on continue
+    // d'attendre qu'elle apparaisse) plutôt que de chercher sans bornes.
+    if (section) sectionTrouveeUneFois = true;
+    if (sectionTexte && !section) { await attendre(delai); continue; }
     const champ = dialogue ? trouverChampProcheLabelDans(dialogue, labelTexte, section) : null;
     dernierChamp = champ;
     if (champ && valeurChamp(champ)) {
@@ -1214,6 +1230,7 @@ async function surlignerChampParLabelDialogueMaintenant(labelTexte, tentatives, 
   // s'est refermée entre-temps.
   console.warn('[Alfred DOM] Champ introuvable pour le libellé:', labelTexte,
     '— fenêtre encore ouverte ?', !!trouverDialogueOuvert(),
+    '— section demandée trouvée au moins une fois ?', sectionTexte ? sectionTrouveeUneFois : 'n/a (pas de section demandée)',
     '— un élément a été trouvé près du libellé ?', !!dernierChamp,
     dernierChamp ? { tag: dernierChamp.tagName, valeur: valeurChamp(dernierChamp).slice(0, 40) } : null);
   return false;
