@@ -10,7 +10,7 @@ const ALFRED_CONFIG = {
   API_VENDEUR_REPLY: 'https://alfred-wellnot.vercel.app/api/vendeur-reply',
 
   // Les questions que Fariël pose en vrai pendant le Q&A live (scène 11 —
-  // v3_1 n'en garde plus qu'une, la zone inondable) — tapées et envoyées
+  // v3_1 n'en garde plus qu'une) — tapées et envoyées
   // automatiquement dans le
   // vrai chatbot de l'appli (onglet "Conversation"/"Gesprek" du panneau
   // Alfred) par seq_poserQuestionsAlfred (alfred-dom.js), une à une.
@@ -24,12 +24,20 @@ const ALFRED_CONFIG = {
   // cadastre ?", même paragraphe pour les 3 dans le Word, redécoupé ici en
   // 3 questions séparées pour l'envoi une à une ; NL confirmé v3_8.docx).
   // RÉDUIT à UNE seule question le 05/09 (v3_1) : la nouvelle version du
-  // script officiel ne garde que la zone inondable — les deux autres
-  // (régime matrimonial de l'acquéreur, surface au cadastre) ont disparu.
+  // script officiel ne garde qu'une question sur les trois.
+  // CHANGÉE le 10/09, à la demande de l'utilisatrice pour le tournage :
+  // c'est le RÉGIME MATRIMONIAL DE L'ACQUÉREUR qui est posé, plus la zone
+  // inondable. Ce n'est pas une invention — cette question fait partie des
+  // trois de l'officiel v3_9 citées plus haut, on reprend donc son libellé
+  // FR mot pour mot plutôt que de retraduire depuis le néerlandais. Elle
+  // se démontre aussi mieux : le régime matrimonial est un champ qu'Alfred
+  // vient de remplir lui-même sur la fiche Acquéreur en Acte 2 (voir
+  // champPartieRegimeMatrimonial), la réponse du chatbot renvoie donc à
+  // quelque chose que la salle a vu se remplir dix minutes plus tôt.
   QUESTIONS_LIVE_FR: [
-    "Le bien est-il en zone inondable ?"],
+    "Quel est le régime matrimonial de l'acquéreur ?"],
   QUESTIONS_LIVE_NL: [
-    "Ligt het goed in een overstromingsgevoelig gebied?"],
+    "Wat is het huwelijksvermogensstelsel van de koper?"],
 
   EVENEMENT: {
     nom:          'Congrès des Notaires belges',
@@ -866,7 +874,8 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // le FR a été aligné dessus (voir la note FR équivalente), confirmé
     // nécessaire en test live.
     // "vragen" (pluriel) → "vraag" (singulier) le 09/09 : QUESTIONS_LIVE_NL
-    // ne contient plus qu'UNE seule question (zone inondable, réduit le
+    // ne contient plus qu'UNE seule question (le régime matrimonial de
+    // l'acquéreur depuis le 10/09, réduit le
     // 05/09) — même raison que le "question" singulier déjà côté FR. Le "je"
     // informel, lui, N'EST PAS touché (voir Email/InvitationQuestions plus
     // haut — doute non tranché sur le registre).

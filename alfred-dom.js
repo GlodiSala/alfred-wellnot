@@ -2170,7 +2170,8 @@ function trouverConsulterPourEvenement(titreEvenement) {
 // Ouvre le panneau Alfred sur l'onglet "Conversation" (le vrai chatbot de
 // l'appli, différent du micro du bookmarklet) — utilisé par la réplique
 // InvitationQuestions, pour que le panneau soit déjà ouvert et prêt au
-// moment où Alfred invite à poser une question en direct (zone inondable,
+// moment où Alfred invite à poser une question en direct (le régime
+// matrimonial de l'acquéreur,
 // régime matrimonial, surface cadastrale — voir la note sur InvitationQuestions
 // dans alfred-config.js). Sans ça, Fariël devait cliquer elle-même sur
 // l'icône Alfred en plein direct avant de pouvoir taper sa question.
