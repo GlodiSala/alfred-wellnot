@@ -2547,7 +2547,7 @@ async function reveil(rapide) {
 // en fait déjà un (bras qui s'ouvrent, torse redressé, étape 3).
 //
 // Une seule valeur à changer si la durée ne convient pas au tournage.
-const DUREE_EVEIL_ACTE1_MS = 15000;
+const DUREE_EVEIL_ACTE1_MS = 20000;
 
 async function eveilActe1(debutMs) {
   const pause  = (ms) => new Promise(r => setTimeout(r, ms));
@@ -2589,15 +2589,39 @@ async function eveilActe1(debutMs) {
   definirPostureTete(0, 0, 0.05);
   await pause(900); if (annule()) return;
 
-  // 3. Il se pose et attend (le reste) — expression neutre, regard devant :
-  //    c'est LA fenêtre où Fariël pose sa question. La durée restante est
-  //    calculée à partir de DUREE_EVEIL_ACTE1_MS pour que le total tombe
-  //    juste, quelles que soient les micro-variations au-dessus.
+  // 3. Il attend (tout le temps restant) — c'est LA fenêtre où Fariël pose
+  //    sa question. Surtout PAS un seul long setTimeout : à 20 s de cible il
+  //    reste ~7 s, et 7 s d'immobilité se lisent comme un plantage, pas
+  //    comme de l'attente. On boucle donc de petits temps d'écoute jusqu'à
+  //    la cible : léger coup d'œil, retour au centre, inclinaison de tête.
+  //    L'état 'idle' garde par-dessus la respiration, le flottement des bras
+  //    et les clignements (voir cligner / setAlfredState).
   definirExpression('normal', 320, { base: true });
   relacherToutesPostures(800);
+  if (typeof setAlfredState === 'function') setAlfredState('idle');
   const restant = DUREE_EVEIL_ACTE1_MS - (performance.now() - debutMs);
-  console.log('[Alfred UI] Éveil acte 1 : attente finale de ' + Math.round(restant) + 'ms (cible ' + DUREE_EVEIL_ACTE1_MS + 'ms).');
-  if (restant > 0) await pause(restant);
+  console.log('[Alfred UI] Éveil acte 1 : attente jouée de ' + Math.round(restant) + 'ms (cible ' + DUREE_EVEIL_ACTE1_MS + 'ms).');
+  // Temps d'écoute, joués en boucle. Volontairement discrets : il attend une
+  // question, il ne fait pas un numéro.
+  const attentes = [
+    () => { eyeTargetX = -5; eyeTargetY = 1;  definirPostureTete(-3, 0, 0.04); },
+    () => { eyeTargetX = 0;  eyeTargetY = 0;  definirPostureTete(0, 0, 0.04); },
+    () => { eyeTargetX = 5;  eyeTargetY = -1; definirPostureTete(3, 0, 0.04); },
+    () => { eyeTargetX = 0;  eyeTargetY = 0;  definirPostureTete(0, -1, 0.04); },
+  ];
+  const PAS_MS = 1800;
+  let i = 0;
+  while (performance.now() - debutMs < DUREE_EVEIL_ACTE1_MS) {
+    if (annule()) return;
+    attentes[i % attentes.length]();
+    regardDirigeJusqua = performance.now() + PAS_MS + 200;
+    i++;
+    const reste = DUREE_EVEIL_ACTE1_MS - (performance.now() - debutMs);
+    await pause(Math.min(PAS_MS, Math.max(0, reste)));
+  }
+  // Remis droit et regard devant juste avant la première réplique.
+  eyeTargetX = 0; eyeTargetY = 0; definirPostureTete(0, 0, 0.05);
+  regardDirigeJusqua = 0;
 }
 
 // ── Rythme du texte ──────────────────────────────────────────────────
@@ -3093,18 +3117,27 @@ function assurerModeScene(acte, label) {
     if (acte === 1 && !modeSceneActif) await entrerScene({ depuisApp: false });
     else if (acte === 2 && modeSceneActif) await quitterScene({ chargement: false });
     else if (acte === 3 && !modeSceneActif) await entrerScene({ depuisApp: true });
-    // Réveil : complet sur la toute première réplique, rapide si on saute
-    // directement ailleurs dans l'acte 1.
-    // Ouverture = le tout premier lever de rideau : réveil complet PUIS
-    // l'éveil long (voir eveilActe1), pour laisser à Fariël le temps de
-    // poser sa question sans que rien ne soit à meubler au montage. Les
-    // autres labels de l'acte 1 (on saute directement à une réplique)
-    // gardent le réveil rapide.
-    if (robotEteint && acte === 1) {
-      const complet = (label === 'Ouverture');
-      await reveil(!complet);
-      if (complet && typeof eveilActe1 === 'function') await eveilActe1(debutEveil);
+    // Ouverture = le lever de rideau : réveil complet PUIS éveil long (voir
+    // eveilActe1), pour laisser à Fariël le temps de poser sa question.
+    //
+    // Ne dépend PLUS de robotEteint. Ce drapeau n'est mis que par
+    // entrerScene, qui ne fait rien si on est déjà en mode scène : à la
+    // 2e prise (ou après un retour en arrière), Alfred n'était donc jamais
+    // "éteint", tout le bloc était sauté et il enchaînait directement sur
+    // la parole. Remonté en test live le 10/09 : "il se met à parler et
+    // attend pas". On l'éteint nous-mêmes si besoin, pour que le lever de
+    // rideau soit identique à chaque prise.
+    if (acte === 1 && label === 'Ouverture') {
+      if (!robotEteint && typeof eteindreRobot === 'function') {
+        if (typeof setAlfredState === 'function') setAlfredState('idle');
+        eteindreRobot();
+        await new Promise(r => setTimeout(r, 550)); // la posture endormie s'installe
+      }
+      await reveil(false);
+      if (typeof eveilActe1 === 'function') await eveilActe1(debutEveil);
     }
+    // Ailleurs dans l'acte 1 (on saute directement à une réplique) : réveil
+    // rapide, seulement s'il est effectivement éteint.
     else if (robotEteint) await reveil(true);
   }).catch(e => console.warn('[Alfred UI] Transition de scène échouée :', e));
   return transitionSceneEnCours;
