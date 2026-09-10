@@ -911,7 +911,13 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     'documenten', 'rijksregister', 'veilig', 'vervangen', 'beveiliging'
   ],
 
-  SLEEP_APRES: 30, // 10 → 30 le 06/09 : sur scène, 10 s entre deux répliques suffisaient à l'endormir
+  // 10 → 30 le 06/09 : sur scène, 10 s entre deux répliques suffisaient à
+  // l'endormir. 30 → 90 le 10/09 : au tournage, 30 s de silence sont
+  // normales (Fariël parle, on cale une prise, on reprend) et Alfred
+  // s'endormait en plein milieu — remonté en test live. S'endormir pendant
+  // une prise coûte plus cher que de ne pas s'endormir du tout. À rebaisser
+  // si on veut retrouver la mise en veille comme gag pendant la démo live.
+  SLEEP_APRES: 90,
 };
 
 var currentLangue = 'nl';

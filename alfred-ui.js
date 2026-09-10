@@ -2550,7 +2550,16 @@ async function reveil(rapide) {
 const DUREE_EVEIL_ACTE1_MS = 20000;
 
 async function eveilActe1(debutMs) {
-  const pause  = (ms) => new Promise(r => setTimeout(r, ms));
+  // resetSleepTimer à CHAQUE temps : la mise en veille (voir SLEEP_APRES,
+  // alfred-config.js) compte le temps sans parole, et cet éveil dure
+  // maintenant 20 s pendant lesquelles Alfred ne dit rien — sans ça il
+  // pouvait s'endormir au milieu de son propre lever de rideau. Remonté en
+  // test live le 10/09 ("il s'endort trop tôt"). Effet de bord voulu : le
+  // compte à rebours de veille ne repart qu'à la FIN de l'éveil.
+  const pause = (ms) => {
+    if (typeof resetSleepTimer === 'function') resetSleepTimer();
+    return new Promise(r => setTimeout(r, ms));
+  };
   // Échap doit rendre la main tout de suite : sans ça, 11 s de plus
   // d'animation non annulable avant la première réplique.
   const annule = () => (typeof annulationDemandee !== 'undefined' && annulationDemandee);
@@ -2622,6 +2631,7 @@ async function eveilActe1(debutMs) {
   // Remis droit et regard devant juste avant la première réplique.
   eyeTargetX = 0; eyeTargetY = 0; definirPostureTete(0, 0, 0.05);
   regardDirigeJusqua = 0;
+  if (typeof resetSleepTimer === 'function') resetSleepTimer();
 }
 
 // ── Rythme du texte ──────────────────────────────────────────────────
