@@ -2796,26 +2796,37 @@ function creerScene() {
     #alfred-scene { position:fixed; inset:0; z-index:450; opacity:0; visibility:hidden; pointer-events:none;
       transition:opacity .7s ease, visibility 0s linear .7s; overflow:hidden; font-family:-apple-system,'Segoe UI',sans-serif; }
     #alfred-scene.actif { opacity:1; visibility:visible; pointer-events:all; transition:opacity .7s ease; }
+    /* Fond de marque Wellnot (10/09) — remplace le fond clair d'origine.
+       Le dégradé officiel est un "mesh" : sombre en bas/haut à gauche,
+       cyan en diagonale au centre, crème puis pêche en haut à droite. On
+       le reconstitue en deux couches (une nappe radiale chaude par-dessus
+       une diagonale froide) plutôt qu'en un seul linear-gradient, qui
+       donnait une bande rectiligne bien trop nette.
+       TOUT ce qui suit dans cette feuille a été repassé du teal foncé au
+       blanc translucide : sur l'ancien fond clair ces décors se voyaient,
+       sur celui-ci ils disparaissaient purement et simplement. */
     #alfred-scene-fond { position:absolute; inset:0;
-      background:radial-gradient(ellipse at 50% 42%, #ffffff 0%, #f3fafb 40%, #e2f2f4 100%); }
+      background:
+        radial-gradient(78% 68% at 99% 0%, #fbb877 0%, #f9c98e 20%, #f0e3c0 42%, rgba(240,227,192,0) 74%),
+        linear-gradient(118deg, #06323f 0%, #084456 24%, #0d7d92 48%, #16aebb 66%, #57c6c8 84%, #9fd9c9 100%); }
     #alfred-scene-fond::after { content:''; position:absolute; inset:0; opacity:.35;
-      background-image:linear-gradient(rgba(20,176,189,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(20,176,189,.08) 1px, transparent 1px);
+      background-image:linear-gradient(rgba(255,255,255,.10) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.10) 1px, transparent 1px);
       background-size:64px 64px; mask-image:radial-gradient(ellipse at 50% 45%, transparent 25%, #000 90%); -webkit-mask-image:radial-gradient(ellipse at 50% 45%, transparent 25%, #000 90%); }
     #alfred-scene-halo { position:absolute; left:50%; top:50%; width:78vmin; height:78vmin; transform:translate(-50%,-54%); border-radius:50%;
-      background:radial-gradient(circle, rgba(20,176,189,.20) 0%, rgba(20,176,189,.09) 40%, rgba(20,176,189,0) 68%);
+      background:radial-gradient(circle, rgba(255,255,255,.22) 0%, rgba(255,255,255,.10) 40%, rgba(255,255,255,0) 68%);
       animation:alfred-halo-pulse 6s ease-in-out infinite; }
     #alfred-scene-anneau { position:absolute; left:50%; top:50%; width:60vmin; height:60vmin; transform:translate(-50%,-54%); border-radius:50%;
-      border:1.5px solid rgba(20,176,189,.18); animation:alfred-anneau-tourne 40s linear infinite; }
-    #alfred-scene-anneau::before { content:''; position:absolute; top:-5px; left:50%; width:9px; height:9px; margin-left:-4px; border-radius:50%; background:#14b0bd; box-shadow:0 0 12px rgba(20,176,189,.8); }
-    .alfred-scene-part { position:absolute; border-radius:50%; background:#14b0bd; filter:blur(1px); animation:alfred-part-derive ease-in-out infinite; }
+      border:1.5px solid rgba(255,255,255,.28); animation:alfred-anneau-tourne 40s linear infinite; }
+    #alfred-scene-anneau::before { content:''; position:absolute; top:-5px; left:50%; width:9px; height:9px; margin-left:-4px; border-radius:50%; background:#fff; box-shadow:0 0 14px rgba(255,255,255,.9); }
+    .alfred-scene-part { position:absolute; border-radius:50%; background:#fff; filter:blur(1px); animation:alfred-part-derive ease-in-out infinite; }
     .alfred-scene-nappe { position:absolute; border-radius:50%; filter:blur(60px); opacity:.55; animation:alfred-nappe-derive ease-in-out infinite alternate; pointer-events:none; }
-    .alfred-scene-picto { position:absolute; width:54px; height:54px; opacity:0; color:#0a6b7a; animation:alfred-picto-flotte linear infinite; pointer-events:none; }
+    .alfred-scene-picto { position:absolute; width:54px; height:54px; opacity:0; color:rgba(255,255,255,.85); animation:alfred-picto-flotte linear infinite; pointer-events:none; }
     .alfred-scene-picto svg { width:100%; height:100%; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
     #alfred-scene-ondes { position:absolute; left:50%; top:50%; width:0; height:0; pointer-events:none; }
-    .alfred-scene-onde { position:absolute; left:0; top:0; width:60vmin; height:60vmin; margin:-30vmin 0 0 -30vmin; border-radius:50%; border:2px solid rgba(20,176,189,.45);
+    .alfred-scene-onde { position:absolute; left:0; top:0; width:60vmin; height:60vmin; margin:-30vmin 0 0 -30vmin; border-radius:50%; border:2px solid rgba(255,255,255,.55);
       transform:translateY(-4%) scale(.55); opacity:0; animation:alfred-onde-voix 1.6s ease-out forwards; }
     #alfred-scene-console { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) scale(.9); width:min(420px, 70vw); padding:18px 22px 16px; box-sizing:border-box;
-      background:rgba(255,255,255,.72); border:1.5px solid rgba(20,176,189,.45); border-radius:14px; box-shadow:0 20px 60px rgba(5,69,97,.18), 0 0 0 6px rgba(20,176,189,.06);
+      background:rgba(255,255,255,.90); border:1.5px solid rgba(255,255,255,.7); border-radius:14px; box-shadow:0 20px 60px rgba(5,69,97,.18), 0 0 0 6px rgba(20,176,189,.06);
       backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); opacity:0; visibility:hidden; transition:opacity .35s ease, transform .45s cubic-bezier(.2,1.2,.4,1), visibility 0s linear .35s; font-family:-apple-system,'Segoe UI',sans-serif; }
     #alfred-scene-console.actif { opacity:1; visibility:visible; transform:translate(-50%,-50%) scale(1); transition:opacity .35s ease, transform .45s cubic-bezier(.2,1.2,.4,1); }
     #alfred-scene-console-titre { display:flex; align-items:center; gap:8px; font-size:11px; font-weight:700; letter-spacing:2.5px; color:rgba(5,69,97,.6); text-transform:uppercase; margin-bottom:12px; }
@@ -2831,7 +2842,7 @@ function creerScene() {
     /* "Merci/Bedankt" un peu plus bas — demandé en retour vidéo (11m48). */
     #alfred-scene-final { position:absolute; left:50%; bottom:5vh; transform:translate(-50%, 20px); text-align:center; opacity:0; transition:opacity .9s ease, transform .9s cubic-bezier(.2,1,.4,1); pointer-events:none; font-family:-apple-system,'Segoe UI',sans-serif; }
     #alfred-scene-final.actif { opacity:1; transform:translate(-50%, 0); }
-    #alfred-scene-final-merci { font-size:clamp(28px, 4.2vw, 64px); font-weight:800; color:#054561; letter-spacing:-.5px; }
+    #alfred-scene-final-merci { font-size:clamp(28px, 4.2vw, 64px); font-weight:800; color:#fff; letter-spacing:-.5px; text-shadow:0 2px 18px rgba(4,40,52,.35); }
     #alfred-scene-final-marque { margin-top:.35em; font-size:clamp(12px, 1.1vw, 18px); font-weight:700; letter-spacing:5px; color:#14b0bd; }
     #alfred-scene-final-stand { margin-top:.9em; display:inline-block; padding:.55em 1.1em; border-radius:999px; background:rgba(255,255,255,.75); border:1.5px solid rgba(20,176,189,.5); color:#054561; font-size:clamp(13px, 1.2vw, 20px); }
     .alfred-holo { position:absolute; width:clamp(230px, 20vw, 330px); font-size:clamp(13px, 1.15vw, 19px); padding:.85em 1em; box-sizing:border-box; display:flex; align-items:center; gap:.8em;
@@ -2850,7 +2861,17 @@ function creerScene() {
     .alfred-holo.gauche::before { right:-28px; } .alfred-holo.gauche::after { right:-34px; }
     .alfred-holo.droite::before { left:-28px; }  .alfred-holo.droite::after { left:-34px; }
     @keyframes alfred-holo-flotte { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-6px);} }
-    #alfred-scene-marque { position:absolute; top:30px; left:50%; transform:translateX(-50%); font-size:11px; font-weight:700; letter-spacing:4px; color:rgba(5,69,97,.45); }
+    /* Lockup de marque en haut de scène (10/09) — remplace le texte
+       "ALFRED · WELLNOT" en teal foncé, devenu illisible sur le fond de
+       marque. Le mot est composé en texte, pas en image : le vrai fichier
+       du logo n'est pas dans le dépôt. Le "ō" (o macron) est le caractère
+       de la marque elle-même. Si le SVG officiel arrive un jour, il se
+       substitue ici sans rien changer d'autre. */
+    #alfred-scene-marque { position:absolute; top:26px; left:50%; transform:translateX(-50%); text-align:center; color:#fff;
+      text-shadow:0 2px 16px rgba(4,40,52,.28); }
+    #alfred-scene-marque-mot { font-size:clamp(26px, 2.6vw, 44px); font-weight:800; letter-spacing:-.5px; line-height:1;
+      font-family:'Avenir Next','Century Gothic','Futura',-apple-system,'Segoe UI',sans-serif; }
+    #alfred-scene-marque-base { margin-top:.5em; font-size:clamp(10px, .85vw, 14px); font-weight:400; letter-spacing:.4px; opacity:.92; }
     #alfred-scene-centre { position:absolute; left:50%; top:50%; transform:translate(-50%,-52%); }
     #alfred-scene-chargement { position:absolute; left:50%; bottom:14vh; transform:translateX(-50%); width:min(360px, 60vw); text-align:center; opacity:0; transition:opacity .35s ease; }
     #alfred-scene-chargement.actif { opacity:1; }
@@ -2880,7 +2901,10 @@ function creerScene() {
     <div id="alfred-scene-halo"></div>
     <div id="alfred-scene-ondes"></div>
     <div id="alfred-scene-anneau"></div>
-    <div id="alfred-scene-marque">ALFRED · WELLNOT</div>
+    <div id="alfred-scene-marque">
+      <div id="alfred-scene-marque-mot">wellnōt</div>
+      <div id="alfred-scene-marque-base">designed by notaries, for notaries</div>
+    </div>
     <div id="alfred-scene-holos"></div>
     <div id="alfred-scene-centre"></div>
     <div id="alfred-scene-final">
@@ -2902,7 +2926,7 @@ function creerScene() {
   // Nappes de couleur : deux grandes taches floues (teal / bleu) qui dérivent
   // très lentement — le fond "respire" au lieu d'être un dégradé fixe.
   const nappes = scene.querySelector('#alfred-scene-nappes');
-  [['18%', '20%', '46vmin', 'rgba(20,176,189,.22)', 38], ['70%', '65%', '52vmin', 'rgba(5,69,97,.13)', 46], ['60%', '12%', '30vmin', 'rgba(95,227,234,.20)', 30]].forEach(([l, t, s, c, d], i) => {
+  [['18%', '20%', '46vmin', 'rgba(255,255,255,.14)', 38], ['70%', '65%', '52vmin', 'rgba(4,40,52,.18)', 46], ['60%', '12%', '30vmin', 'rgba(249,201,142,.20)', 30]].forEach(([l, t, s, c, d], i) => {
     const n = document.createElement('div');
     n.className = 'alfred-scene-nappe';
     n.style.cssText = `left:${l}; top:${t}; width:${s}; height:${s}; background:${c}; animation-duration:${d}s; animation-delay:-${i * 11}s;`;
