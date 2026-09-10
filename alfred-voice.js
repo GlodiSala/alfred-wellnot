@@ -498,19 +498,92 @@ const ELEVENLABS_REGLAGES_VERSION = 3; // v3 : passage au modèle eleven_v3 (05/
 // utilisé seulement par les 3 boutons de test rapide du panneau NL pour
 // comparer naturel/expressif/instable sans changer le réglage enregistré.
 // Fin de réplique tronquée : v3 coupe parfois le tout dernier mot. Remonté
-// en test live sur la vidéo du 10/09, à cinq endroits ("staan", "ontworpen",
-// "meteen", "bij", "zetten" jamais terminés). Ce n'est PAS la lecture qui
-// coupe — speak() attend l'événement "ended" de l'audio, il joue donc le
-// fichier en entier ; c'est le fichier lui-même qui s'arrête trop tôt. On
-// donne au modèle un peu de texte APRÈS la dernière phrase : des points de
-// suspension, qu'il ne prononce pas mais qui l'amènent à finir le mot et à
-// poser la fin de phrase au lieu de s'arrêter net. Ajouté au texte MOTEUR
-// uniquement — les sous-titres et la synchro des surlignages travaillent sur
-// le texte nu (paramètres sousTitre/texteSurbrillance de speak()). Change la
-// clé de cache : tout l'audio NL est à re-précharger une fois.
+// en test live sur la vidéo du 10/09 ("staan", "ontworpen", "meteen", "bij",
+// "zetten" jamais terminés). Ce n'est PAS la lecture qui coupe — speak()
+// attend l'événement "ended", il joue donc le fichier en entier ; c'est le
+// fichier lui-même qui s'arrête trop tôt.
+//
+// La marge ci-dessous (des points de suspension APRÈS la dernière phrase,
+// ajoutés au texte MOTEUR seulement) aide, mais ne suffit pas : mesuré sur
+// les 353 audios du cache de l'utilisatrice, le MÊME texte avec les MÊMES
+// réglages ressort tantôt complet, tantôt coupé — c'est une variabilité du
+// modèle, pas une propriété du texte. D'où la vérification automatique
+// juste en dessous : on ne peut pas l'empêcher, on peut le détecter et
+// regénérer.
 const ELEVENLABS_PAD_FIN = ' ...';
 
-async function genererAudioElevenLabs(text, voiceId, emotion, expressiviteOverride) {
+// Au-delà de ce rapport (niveau sonore des 250 dernières ms / niveau moyen
+// du fichier), l'audio s'arrête en plein son : le dernier mot est coupé.
+// Seuil calé sur les mesures réelles du cache : les fins propres tombent
+// entre 0,00 et 0,15, les fins coupées entre 0,35 et 1,31, avec une zone
+// grise entre les deux. On se cale près du groupe propre : mieux vaut un
+// essai de trop qu'une fin coupée en salle, et de toute façon on garde la
+// meilleure tentative, donc un re-essai inutile ne dégrade jamais le
+// résultat.
+const ELEVENLABS_SEUIL_FIN = 0.25;
+const ELEVENLABS_ESSAIS_FIN = 3;
+
+// Rapport "niveau de la fin / niveau moyen" d'un MP3 en base64. Renvoie 0
+// (donc "propre") si l'audio est indécodable : on ne bloque jamais un
+// préchargement sur un doute de mesure.
+async function ratioFinAudio(base64) {
+  try {
+    const bin = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    const ctx = obtenirAudioContextPartage();
+    const buf = await ctx.decodeAudioData(bin.buffer);
+    const d = buf.getChannelData(0), sr = buf.sampleRate;
+    const rms = (a, b) => {
+      let somme = 0;
+      const deb = Math.max(0, Math.floor(a)), fin = Math.min(d.length, Math.floor(b));
+      for (let k = deb; k < fin; k++) somme += d[k] * d[k];
+      return Math.sqrt(somme / Math.max(1, fin - deb));
+    };
+    const moyen = rms(0, d.length);
+    return moyen > 0 ? rms(d.length - sr * 0.25, d.length) / moyen : 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+// Un appel API ElevenLabs, sans cache — isolé pour pouvoir le rejouer.
+async function appelerElevenLabs(texteMoteur, voiceId, expressiviteOverride) {
+  const res = await fetch(ALFRED_CONFIG.API_TTS_ELEVENLABS, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: texteMoteur, voiceId, modelId: ELEVENLABS_MODELE, ...reglagesElevenLabs(expressiviteOverride) }),
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(`ElevenLabs: ${data.error}`);
+  if (!data.audioContent) throw new Error('ElevenLabs: réponse sans audioContent ni erreur — ' + JSON.stringify(data).slice(0, 200));
+  return data.audioContent;
+}
+
+// Génère en re-essayant tant que la fin est coupée, et garde la MEILLEURE
+// des tentatives (pas la dernière : rien ne garantit qu'un 3e essai soit
+// meilleur qu'un 2e). Utilisé par le préchargement uniquement — en direct,
+// on ne peut pas se permettre plusieurs appels API pendant que la salle
+// attend, et de toute façon tout sort du cache.
+async function genererElevenLabsFinPropre(texteMoteur, voiceId, expressiviteOverride, etiquette) {
+  let meilleur = null, meilleurRatio = Infinity;
+  for (let essai = 1; essai <= ELEVENLABS_ESSAIS_FIN; essai++) {
+    const audio = await appelerElevenLabs(texteMoteur, voiceId, expressiviteOverride);
+    const ratio = await ratioFinAudio(audio);
+    if (ratio < meilleurRatio) { meilleurRatio = ratio; meilleur = audio; }
+    if (ratio <= ELEVENLABS_SEUIL_FIN) {
+      if (essai > 1) console.log(`[Alfred Voice] Fin propre au ${essai}e essai (${ratio.toFixed(2)}) — « ${etiquette} »`);
+      return meilleur;
+    }
+    console.warn(`[Alfred Voice] Fin coupée (${ratio.toFixed(2)}) à l'essai ${essai}/${ELEVENLABS_ESSAIS_FIN} — on regénère : « ${etiquette} »`);
+  }
+  console.warn(`[Alfred Voice] Fin toujours coupée après ${ELEVENLABS_ESSAIS_FIN} essais (meilleur : ${meilleurRatio.toFixed(2)}) — « ${etiquette} »`);
+  return meilleur;
+}
+
+// options.verifierFin : contrôle la fin de l'audio et regénère si elle est
+// coupée — y compris pour un audio DÉJÀ en cache, sinon les mauvais
+// enregistrements déjà stockés resteraient là pour toujours. Réservé au
+// préchargement (voir prechargerScript).
+async function genererAudioElevenLabs(text, voiceId, emotion, expressiviteOverride, options = {}) {
   // Balise de jeu v3 devant le texte (voir EMOTIONS_VOIX) — fait partie de
   // la clé de cache : la même phrase dite amusée ou neutre = deux audios.
   const balise = baliseEmotionV3(emotion);
@@ -518,25 +591,27 @@ async function genererAudioElevenLabs(text, voiceId, emotion, expressiviteOverri
   const expr = expressiviteElevenLabs(expressiviteOverride);
   const cle = cleTTS({ languageCode: 'nl-BE', name: 'elevenlabs-' + ELEVENLABS_MODELE + '-' + voiceId + '-v' + ELEVENLABS_REGLAGES_VERSION + (expr === 'naturel' ? '' : '-' + expr) }, texteMoteur);
 
+  const etiquette = text.trim().slice(-40);
+
   let audioContent = await lireCacheTTS(cle);
   if (audioContent) {
-    console.log('[Alfred Voice] Audio ElevenLabs depuis le cache local (pas d\'appel API).');
-  } else {
-    const partage = await lireCachePartage(cle);
+    if (options.verifierFin && (await ratioFinAudio(audioContent)) > ELEVENLABS_SEUIL_FIN) {
+      console.warn('[Alfred Voice] Audio en cache avec une fin coupée — on le remplace : « ' + etiquette + ' »');
+      audioContent = null;
+    } else {
+      console.log('[Alfred Voice] Audio ElevenLabs depuis le cache local (pas d\'appel API).');
+    }
+  }
+  if (!audioContent) {
+    const partage = options.verifierFin ? null : await lireCachePartage(cle);
     if (partage && partage.base64) {
       console.log('[Alfred Voice] Audio ElevenLabs depuis le cache partagé (généré ailleurs, pas d\'appel API).');
       audioContent = partage.base64;
       ecrireCacheTTS(cle, audioContent);
     } else {
-      const res = await fetch(ALFRED_CONFIG.API_TTS_ELEVENLABS, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: texteMoteur, voiceId, modelId: ELEVENLABS_MODELE, ...reglagesElevenLabs(expressiviteOverride) }),
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(`ElevenLabs: ${data.error}`);
-      if (!data.audioContent) throw new Error('ElevenLabs: réponse sans audioContent ni erreur — ' + JSON.stringify(data).slice(0, 200));
-      audioContent = data.audioContent;
+      audioContent = options.verifierFin
+        ? await genererElevenLabsFinPropre(texteMoteur, voiceId, expressiviteOverride, etiquette)
+        : await appelerElevenLabs(texteMoteur, voiceId, expressiviteOverride);
       ecrireCacheTTS(cle, audioContent);
       ecrireCachePartage(cle, { base64: audioContent, format: 'mp3' });
     }
@@ -647,7 +722,7 @@ async function prechargerScript(voixFr, voixNl, ton, onProgress) {
         // API à chaque réplique plutôt que servie depuis le cache.
         const voixElevenLabsPrechargement = ligne.langue === 'nl' ? voixElevenLabsNL() : '';
         if (voixElevenLabsPrechargement) {
-          await genererAudioElevenLabs(ligne.texte, voixElevenLabsPrechargement, ligne.emotion);
+          await genererAudioElevenLabs(ligne.texte, voixElevenLabsPrechargement, ligne.emotion, undefined, { verifierFin: true });
         } else {
           await genererAudioGemini(ligne.texte, ligne.voix, tonGeminiAvecEmotion(ton, ligne.emotion), ligne.langue);
         }
