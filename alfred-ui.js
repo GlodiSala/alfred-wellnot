@@ -2728,7 +2728,8 @@ function creerScene() {
     .alfred-scene-ligne:not(.ok) .alfred-scene-ligne-etat::after { content:'…'; }
     #alfred-scene-console .alfred-scene-barre { margin-top:12px; }
     #alfred-scene-holos { position:absolute; inset:0; pointer-events:none; }
-    #alfred-scene-final { position:absolute; left:50%; bottom:9vh; transform:translate(-50%, 20px); text-align:center; opacity:0; transition:opacity .9s ease, transform .9s cubic-bezier(.2,1,.4,1); pointer-events:none; font-family:-apple-system,'Segoe UI',sans-serif; }
+    /* "Merci/Bedankt" un peu plus bas — demandé en retour vidéo (11m48). */
+    #alfred-scene-final { position:absolute; left:50%; bottom:5vh; transform:translate(-50%, 20px); text-align:center; opacity:0; transition:opacity .9s ease, transform .9s cubic-bezier(.2,1,.4,1); pointer-events:none; font-family:-apple-system,'Segoe UI',sans-serif; }
     #alfred-scene-final.actif { opacity:1; transform:translate(-50%, 0); }
     #alfred-scene-final-merci { font-size:clamp(28px, 4.2vw, 64px); font-weight:800; color:#054561; letter-spacing:-.5px; }
     #alfred-scene-final-marque { margin-top:.35em; font-size:clamp(12px, 1.1vw, 18px); font-weight:700; letter-spacing:5px; color:#14b0bd; }
@@ -3066,7 +3067,9 @@ async function finDeSpectacle() {
     const merci = document.getElementById('alfred-scene-final-merci');
     const stand = document.getElementById('alfred-scene-final-stand');
     if (merci) merci.textContent = nl ? 'Bedankt!' : 'Merci !';
-    if (stand) stand.textContent = nl ? 'Wellnot-stand · in de zaal hiernaast' : "Stand Wellnot · dans la salle d'à côté";
+    // NL : remplacé "Wellnot-stand · in de zaal hiernaast" par le site web,
+    // demandé explicitement en retour vidéo (11m48).
+    if (stand) stand.textContent = nl ? 'www.wellnot.be' : "Stand Wellnot · dans la salle d'à côté";
     if (centre) { centre.style.transition = 'transform 1s cubic-bezier(.2,1,.4,1)'; centre.style.transform = 'translate(-50%,-52%) translateY(-7vh)'; }
     fin.classList.add('actif');
     if (typeof definirExpression === 'function') setTimeout(() => { if (curState !== 'talk') definirExpression('joie', 300, { base: true }); }, 900);

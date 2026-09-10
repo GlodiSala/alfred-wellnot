@@ -35,7 +35,10 @@ function naturaliserTexte(text) {
     .replace(/H24/gi,        'vingt-quatre heures sur vingt-quatre')
     .replace(/365j/gi,       'trois cent soixante-cinq jours')
     .replace(/23h/gi,        'vingt-trois heures')
-    .replace(/Check_r/gi,    'Check-R')
+    // "Check-R" toujours mal prononcé en test vidéo (7m22, sonnait comme
+    // "Check-aaaaaar", le tiret + R isolé fait traîner le son) — nouvel
+    // essai avec "eur" au lieu d'un R isolé, à revérifier à l'oreille.
+    .replace(/Check_r/gi,    'Checkeur')
     .replace(/RGPD/gi,       'R-G-P-D')
     .replace(/\bIA\b/gi,     'intelligence artificielle')
     .replace(/e-notariat/gi, 'é-notariat')

@@ -881,7 +881,10 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // "gecertificeerd door Privanot" corrigé (même note de prod que la
     // version FR : "certifié" à éviter tant que ce n'est pas acté).
     // Sécurité/Stand/Closing réalignées mot pour mot sur v3_8 le 31/08.
-    { acte: 3, label: 'Sécurité',      emotion: 'assure',      hologrammes: [{ mots: ['gee'], titre: 'GDPR-conform', sous: 'Gegevensbescherming', icone: 'cadenas' }, { mots: ['priiva'], titre: 'Geëvalueerd door Privanot', sous: 'Veiligheid gecontroleerd', icone: 'badge' }, { mots: ['verlaten'], titre: 'Uw gegevens blijven in Europa', sous: 'Nooit elders', icone: 'globe' }], texte: "Alle gegevens worden gehost op beveiligde servers in Europa. Ik ben Gee D P R conform, en mijn veiligheid werd geëvalueerd in het kader van Priiva not. Uw gegevens verlaten Europa nooit." },
+    // "Gee D P R" (lettre par lettre) toujours mal prononcé en test vidéo
+    // (10m49, sonnait comme juste "Gee") — nouvel essai suggéré : "Gee DPR"
+    // (DPR en un bloc, pas lettre par lettre), à revérifier à l'oreille.
+    { acte: 3, label: 'Sécurité',      emotion: 'assure',      hologrammes: [{ mots: ['gee'], titre: 'GDPR-conform', sous: 'Gegevensbescherming', icone: 'cadenas' }, { mots: ['priiva'], titre: 'Geëvalueerd door Privanot', sous: 'Veiligheid gecontroleerd', icone: 'badge' }, { mots: ['verlaten'], titre: 'Uw gegevens blijven in Europa', sous: 'Nooit elders', icone: 'globe' }], texte: "Alle gegevens worden gehost op beveiligde servers in Europa. Ik ben Gee DPR conform, en mijn veiligheid werd geëvalueerd in het kader van Priiva not. Uw gegevens verlaten Europa nooit." },
     { acte: 3, label: 'Stand', geste: { nom: 'presenter', mot: "wellnot-stand" }, emotion: 'chaleureux',         hologrammes: [{ mots: ['wellnot-stand'], titre: 'Wellnot-stand', sous: 'In de zaal hiernaast', icone: 'carte' }], texte: "Heel eenvoudig: op de Wellnot-stand, in de zaal hiernaast. Kom langs, of vraag een demo rechtstreeks in uw kantoor." },
     // Closing — même DOUTE que côté FR (voir la note FR équivalente,
     // timing du clin d'œil à revérifier). Registre "je/jou" (informel,
