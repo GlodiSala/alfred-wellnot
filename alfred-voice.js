@@ -497,11 +497,24 @@ const ELEVENLABS_REGLAGES_VERSION = 3; // v3 : passage au modèle eleven_v3 (05/
 // ci-dessus) : ne change rien à l'appel normal (préchargement/scène live),
 // utilisé seulement par les 3 boutons de test rapide du panneau NL pour
 // comparer naturel/expressif/instable sans changer le réglage enregistré.
+// Fin de réplique tronquée : v3 coupe parfois le tout dernier mot. Remonté
+// en test live sur la vidéo du 10/09, à cinq endroits ("staan", "ontworpen",
+// "meteen", "bij", "zetten" jamais terminés). Ce n'est PAS la lecture qui
+// coupe — speak() attend l'événement "ended" de l'audio, il joue donc le
+// fichier en entier ; c'est le fichier lui-même qui s'arrête trop tôt. On
+// donne au modèle un peu de texte APRÈS la dernière phrase : des points de
+// suspension, qu'il ne prononce pas mais qui l'amènent à finir le mot et à
+// poser la fin de phrase au lieu de s'arrêter net. Ajouté au texte MOTEUR
+// uniquement — les sous-titres et la synchro des surlignages travaillent sur
+// le texte nu (paramètres sousTitre/texteSurbrillance de speak()). Change la
+// clé de cache : tout l'audio NL est à re-précharger une fois.
+const ELEVENLABS_PAD_FIN = ' ...';
+
 async function genererAudioElevenLabs(text, voiceId, emotion, expressiviteOverride) {
   // Balise de jeu v3 devant le texte (voir EMOTIONS_VOIX) — fait partie de
   // la clé de cache : la même phrase dite amusée ou neutre = deux audios.
   const balise = baliseEmotionV3(emotion);
-  const texteMoteur = texteAvecBalisesV3(text, balise, expressiviteOverride);
+  const texteMoteur = texteAvecBalisesV3(text, balise, expressiviteOverride) + ELEVENLABS_PAD_FIN;
   const expr = expressiviteElevenLabs(expressiviteOverride);
   const cle = cleTTS({ languageCode: 'nl-BE', name: 'elevenlabs-' + ELEVENLABS_MODELE + '-' + voiceId + '-v' + ELEVENLABS_REGLAGES_VERSION + (expr === 'naturel' ? '' : '-' + expr) }, texteMoteur);
 

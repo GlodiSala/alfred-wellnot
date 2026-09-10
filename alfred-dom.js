@@ -263,6 +263,29 @@ async function defilerVersElement(el, dureeMs = 4500) {
   if (!annulationDemandee) await attendre(200);
 }
 
+// Défilement RELATIF (de `delta` pixels vers le bas), même courbe et même
+// annulation que defilerVersElement — qui, lui, centre toujours sa cible et
+// ne permet donc pas de "descendre juste ce qu'il faut". Utilisé par
+// seq_creationDossier_redaction_scrollPEB pour révéler la clause PEB remplie
+// sans perdre son titre de vue.
+async function defilerDe(conteneur, delta, dureeMs = 3000) {
+  if (!conteneur || !delta) return;
+  const depart = conteneur.scrollTop;
+  const cible  = depart + delta;
+  await new Promise(resolve => {
+    const debut = performance.now();
+    function etape(maintenant) {
+      if (annulationDemandee) { resolve(); return; }
+      const t = Math.min((maintenant - debut) / dureeMs, 1);
+      const t2 = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; // ease-in-out
+      conteneur.scrollTop = depart + (cible - depart) * t2;
+      if (t < 1) requestAnimationFrame(etape); else resolve();
+    }
+    requestAnimationFrame(etape);
+  });
+  if (!annulationDemandee) await attendre(200);
+}
+
 // Même principe que trouverConteneurDefilant, mais pour le défilement
 // HORIZONTAL (overflow-x) — utilisé par surlignerColonneDossiers ci-dessous.
 function trouverConteneurDefilantHorizontal(el) {
@@ -1274,6 +1297,27 @@ async function surlignerChampParLabelDialogueMaintenant(labelTexte, tentatives, 
 // codé en dur, pour rester en phase avec le FR/NL et un futur changement de
 // texte sans toucher au JS. Générique (label/actionNom en paramètres) —
 // aucune logique spécifique à un écran en particulier.
+// Sous-titre = texte de l'AUTRE langue, jamais celui qu'Alfred prononce :
+// c'est le repère bilingue pour la salle (Alfred parle NL, la salle lit le
+// FR), exactement la même règle que jouerSecoursInterne dans alfred-brain.js.
+// Les segments 'parlerDepuisAction' appellent speak() depuis CE fichier et
+// passaient jusqu'ici segment.texte comme sous-titre — donc du NL sous une
+// voix NL. Remonté en test live sur la vidéo du 10/09 : "2m39 sous-titre
+// néerlandais au lieu de français", "à partir de 3min53 jusque 4min46 les
+// sous-titres sont en Ndls", "et de 8min33 jusque 8min41" — soit exactement
+// les répliques jouées depuis une action ('Ouvrir', 'PartiesVendeur',
+// 'PartiesAcquereur', 'EmailEnvoyer', 'ReponseVendeur'). Retombe sur le
+// texte prononcé si la traduction manque, plutôt que d'afficher du vide.
+function sousTitreTraduit(label, actionNom, texteParle) {
+  if (typeof ALFRED_CONFIG === 'undefined') return texteParle;
+  const listeTrad = (typeof currentLangue !== 'undefined' && currentLangue === 'nl')
+    ? ALFRED_CONFIG.REPLIQUES_FR
+    : ALFRED_CONFIG.REPLIQUES_NL;
+  const rTrad = listeTrad?.find(r => r.label === label);
+  const segTrad = actionNom ? rTrad?.segments?.find(s => s.action === actionNom) : null;
+  return segTrad?.texte || (rTrad?.segments ? null : rTrad?.texte) || texteParle;
+}
+
 async function parlerSegmentDepuisAction(label, actionNom) {
   if (typeof speak !== 'function' || typeof ALFRED_CONFIG === 'undefined') return;
   const liste = (typeof currentLangue !== 'undefined' && currentLangue === 'nl') ? ALFRED_CONFIG.REPLIQUES_NL : ALFRED_CONFIG.REPLIQUES_FR;
@@ -1287,7 +1331,7 @@ async function parlerSegmentDepuisAction(label, actionNom) {
   // qui referme la fenêtre) — il faut laisser la parole/le surlignage se
   // terminer avant, sinon la fenêtre se refermerait pendant qu'Alfred énumère
   // encore les champs.
-  await speak(typeof naturaliserTexte === 'function' ? naturaliserTexte(segment.texte) : segment.texte, currentLangue, segment.texte, undefined, surbrillance, segment.texte, segment.emotion || replique?.emotion, segment.geste || replique?.geste, segment.hologrammes || replique?.hologrammes);
+  await speak(typeof naturaliserTexte === 'function' ? naturaliserTexte(segment.texte) : segment.texte, currentLangue, sousTitreTraduit(label, actionNom, segment.texte), undefined, surbrillance, segment.texte, segment.emotion || replique?.emotion, segment.geste || replique?.geste, segment.hologrammes || replique?.hologrammes);
 }
 
 // ── Surbrillance synchronisée sur la parole ────────────────
@@ -1697,9 +1741,20 @@ function resoudreSurbrillance(entrees) {
 const ECART_MIN_PAR_CIBLE = {
   colDossiers: 1300, colCollaborateur: 1300,
   dossierCode: 1300, langueActe: 1300, collaborateur: 1300, notaireEnCharge: 1300,
-  champPartieNom: 1800, champPartieAdresseSiege: 1800, champPartieDateNaissance: 1800,
-  champPartieNationalite: 1800, champPartieEtatCivil: 1800, champPartieRegimeMatrimonial: 1800,
-  champPartieDenomination: 1800, champPartieRepresentants: 1800, champPartieFormeJuridique: 1800,
+  // 1800 → 1100 le 10/09. Même bug de cascade que collaborateur/notaris la
+  // veille : l'écart minimum est CUMULATIF (voir programmerSurbrillanceMots,
+  // alfred-voice.js), donc sur PartiesVendeur — 4 cibles pour 10 mots — les
+  // deux dernières ("zetel", "vertegenwoordigers") étaient repoussées APRÈS
+  // la fin de l'audio et ne se déclenchaient jamais. Remonté en test live
+  // sur la vidéo du 10/09 : "4m vendeur : pas marqué la rue = straat (mot
+  // dit à l'oral : zetel) ni le nom = achternaam". Recalculé : à 1100 ms les
+  // 4 cibles rentrent dans l'audio à toutes les durées plausibles (7 à 11 s),
+  // à 1800 ms aucune des trois ne passait. Les surlignages restent sérialisés
+  // par fileSurlignageChamp, donc un écart plus court ne les superpose pas :
+  // il les met en file, il ne les perd pas.
+  champPartieNom: 1100, champPartieAdresseSiege: 1100, champPartieDateNaissance: 1100,
+  champPartieNationalite: 1100, champPartieEtatCivil: 1100, champPartieRegimeMatrimonial: 1100,
+  champPartieDenomination: 1100, champPartieRepresentants: 1100, champPartieFormeJuridique: 1100,
 };
 
 async function attendreFermetureDialogue(dialogue, tentatives = 30, delai = 500) {
@@ -2307,7 +2362,7 @@ async function montrerPropositionEmail_envoyer() {
       // coupée en plein milieu ("il est abort en plein milieu, il continue
       // direct pour la suite"). Même correctif que CreationOuvrir_Dossiers
       // et CreationReponseVendeur plus bas dans ce fichier.
-      await speak(typeof naturaliserTexte === 'function' ? naturaliserTexte(segment.texte) : segment.texte, currentLangue, segment.texte, undefined, undefined, segment.texte, segment.emotion || replique?.emotion, segment.geste || replique?.geste, segment.hologrammes || replique?.hologrammes);
+      await speak(typeof naturaliserTexte === 'function' ? naturaliserTexte(segment.texte) : segment.texte, currentLangue, sousTitreTraduit('Email', 'CreationEmail_Envoyer', segment.texte), undefined, undefined, segment.texte, segment.emotion || replique?.emotion, segment.geste || replique?.geste, segment.hologrammes || replique?.hologrammes);
     }
   }
 
@@ -2756,7 +2811,7 @@ async function seq_creationDossier_ouvrir_dossiers() {
       // filet de sécurité stopAudio ajouté depuis dans jouerSecoursInterne)
       // puis, une fois ce filet en place, en coupure nette — mais la
       // vraie cause était ici depuis le début, pas dans stopAudio.
-      await speak(typeof naturaliserTexte === 'function' ? naturaliserTexte(segment.texte) : segment.texte, currentLangue, segment.texte, undefined, surbrillance, segment.texte, segment.emotion || replique?.emotion, segment.geste || replique?.geste, segment.hologrammes || replique?.hologrammes);
+      await speak(typeof naturaliserTexte === 'function' ? naturaliserTexte(segment.texte) : segment.texte, currentLangue, sousTitreTraduit('Ouvrir', 'CreationOuvrir_Dossiers', segment.texte), undefined, surbrillance, segment.texte, segment.emotion || replique?.emotion, segment.geste || replique?.geste, segment.hologrammes || replique?.hologrammes);
     }
   }
 }
@@ -3394,13 +3449,19 @@ async function seq_creationDossier_redaction_scrollPEB() {
     return;
   }
   await defilerVersElement(titre, 3000);
-  // Continue jusqu'au titre SUIVANT — demandé explicitement le 09/09 : une
-  // fois les pièces du vendeur intégrées, la clause PEB remplie "prend de
-  // la place" (le vrai contenu s'étend nettement plus bas que le simple
-  // titre) — s'arrêter pile sur le titre ne montrait donc que le début,
-  // pas ce qui vient d'être rempli. Cherche le prochain titre (h1-h4) après
-  // celui-ci dans la même colonne, et y défile lentement pour laisser le
-  // temps de voir tout le contenu rempli entre les deux.
+  // Continue vers le bas pour montrer la clause PEB REMPLIE — demandé le
+  // 09/09 : une fois les pièces du vendeur intégrées, le contenu s'étend
+  // nettement plus bas que le titre, s'arrêter pile dessus n'en montrait
+  // que le début. MAIS la première version visait le titre SUIVANT et le
+  // centrait (defilerVersElement centre toujours sa cible) : quand la
+  // clause est haute, ça poussait le titre PEB hors de l'écran par le haut
+  // et on finissait par regarder la clause d'après. Remonté en test live
+  // sur la vidéo du 10/09 : "8m45 garde l'écran sur le titre PEB".
+  // On borne donc le défilement : on descend jusqu'à amener le bas de la
+  // clause en bas de l'écran, SANS jamais faire monter le titre PEB
+  // au-dessus d'une petite marge en haut du conteneur. Les deux demandes
+  // tiennent ensemble : on voit ce qui vient d'être rempli, et le titre
+  // PEB reste à l'image.
   const conteneur = trouverColonneDefilante('droite');
   if (conteneur && !annulationDemandee) {
     const titres = Array.from(conteneur.querySelectorAll('h1, h2, h3, h4'));
@@ -3408,7 +3469,16 @@ async function seq_creationDossier_redaction_scrollPEB() {
     const prochainTitre = (idx >= 0 && idx + 1 < titres.length) ? titres[idx + 1] : null;
     if (prochainTitre) {
       await attendre(400);
-      await defilerVersElement(prochainTitre, 3500);
+      const rectRef = conteneur.getBoundingClientRect();
+      const MARGE_HAUT = Math.round(rectRef.height * 0.12);
+      // Ce qu'il faudrait descendre pour amener le titre suivant en BAS de
+      // l'écran (donc tout le contenu de la clause visible au-dessus).
+      const voulu = prochainTitre.getBoundingClientRect().bottom - rectRef.bottom;
+      // Ce qu'on peut descendre au maximum sans faire sortir le titre PEB.
+      const maxi = titre.getBoundingClientRect().top - rectRef.top - MARGE_HAUT;
+      const delta = Math.max(0, Math.min(voulu, maxi));
+      if (delta > 8) await defilerDe(conteneur, delta, 3500);
+      else console.log('[Alfred DOM] Clause PEB déjà entièrement visible — pas de défilement supplémentaire.');
     }
   }
 }
@@ -3527,7 +3597,7 @@ async function seq_creationDossier_attenteReponseVendeur() {
       if (typeof addToHistory === 'function') addToHistory('alfred', segment.texte);
       // await ajouté le 04/09 — même correctif que CreationOuvrir_Dossiers/
       // CreationEmail_Envoyer plus haut dans ce fichier (voir leurs notes).
-      await speak(typeof naturaliserTexte === 'function' ? naturaliserTexte(segment.texte) : segment.texte, currentLangue, segment.texte, undefined, undefined, segment.texte, segment.emotion || replique?.emotion, segment.geste || replique?.geste, segment.hologrammes || replique?.hologrammes);
+      await speak(typeof naturaliserTexte === 'function' ? naturaliserTexte(segment.texte) : segment.texte, currentLangue, sousTitreTraduit('ReponseVendeur', 'CreationReponseVendeur', segment.texte), undefined, undefined, segment.texte, segment.emotion || replique?.emotion, segment.geste || replique?.geste, segment.hologrammes || replique?.hologrammes);
     }
   }
 

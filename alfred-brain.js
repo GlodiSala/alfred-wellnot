@@ -28,6 +28,7 @@ function switchLangue(l) {
 
 // ── Naturalisation TTS ────────────────────────────────────
 function naturaliserTexte(text) {
+  const nl = (typeof currentLangue !== 'undefined' && currentLangue === 'nl');
   return text
     .replace(/24h\/24/gi,    'vingt-quatre heures sur vingt-quatre')
     .replace(/7j\/7/gi,      'sept jours sur sept')
@@ -35,8 +36,24 @@ function naturaliserTexte(text) {
     .replace(/H24/gi,        'vingt-quatre heures sur vingt-quatre')
     .replace(/365j/gi,       'trois cent soixante-cinq jours')
     .replace(/23h/gi,        'vingt-trois heures')
-    .replace(/Check_r/gi,    'Check-R')
+    // "Check-R" fait dire "Check-aaaar" à la voix NL : en néerlandais la
+    // lettre R seule se prononce "aar". Remonté en test live (7m22 :
+    // "fausse prononciation de Check_r, il dit Check_aaaaaar"). En NL on
+    // écrit donc le nom tel qu'il se prononce ("Checker"), en FR "Check-R"
+    // donne bien "check-èr" et reste correct. Cette réécriture ne touche
+    // QUE le texte envoyé au moteur : les sous-titres affichent toujours
+    // le texte d'origine (voir le paramètre sousTitre de speak()).
+    .replace(/Check_r/gi,    nl ? 'Checker' : 'Check-R')
     .replace(/RGPD/gi,       'R-G-P-D')
+    // GDPR se dit avec les lettres ANGLAISES ("djie-die-pie-aar"), même en
+    // néerlandais. Écrit "Gee D P R" dans le script, la voix NL lisait
+    // "Gee" avec un G dur/à la française — remonté deux fois en test live
+    // (10m49 : "il a quand même mal prononcé GDPR, G accent français").
+    // On écrit donc les quatre lettres en orthographe NL de leur son
+    // anglais ; "dzj" est la graphie néerlandaise du son /dʒ/ (comme dans
+    // "dzjungel"). Alternative si ça sonne encore faux : dire "AVG", le
+    // vrai terme néerlandais pour le RGPD.
+    .replace(/\bGDPR\b/gi, 'Dzjie-Die-Pie-Aar')
     .replace(/\bIA\b/gi,     'intelligence artificielle')
     .replace(/e-notariat/gi, 'é-notariat')
     .replace(/\bMe\b/g,      'Maître')
@@ -456,6 +473,18 @@ async function jouerSecoursInterne() {
     if (seg.action || !seg.parlerDepuisAction) {
       console.log(`%c[Alfred Timing] ${r.label} · segment ${i + 1}/${segmentsR.length} (${seg.action || 'sans action'}) — parole: ${dureeParoleMs ?? '—'}ms · action: ${dureeActionMs ?? '—'}ms`, 'color:#e0a030;font-weight:bold');
     }
+  }
+
+  // Blanc volontaire après une réplique (champ optionnel `pauseApresMs`,
+  // alfred-config.js) — demandé après visionnage de la vidéo du 10/09 :
+  // "après la phrase qui termine par 'ontworpen', ajouter un blanc de
+  // 3 secondes". Sert en enchaînement automatique (Jouer tout) ; en
+  // avance manuelle (→) il retarde simplement le retour, sans effet
+  // visible. Placé APRÈS la boucle de segments, donc une seule fois par
+  // réplique, jamais entre deux segments d'une même réplique.
+  if (r.pauseApresMs > 0) {
+    console.log(`[Alfred] Blanc de ${r.pauseApresMs}ms après « ${r.label} »`);
+    await new Promise((res) => setTimeout(res, r.pauseApresMs));
   }
 
   updateSecoursLabel(r.label, r.acte, secoursIdx + 1, list.length);

@@ -2728,7 +2728,7 @@ function creerScene() {
     .alfred-scene-ligne:not(.ok) .alfred-scene-ligne-etat::after { content:'…'; }
     #alfred-scene-console .alfred-scene-barre { margin-top:12px; }
     #alfred-scene-holos { position:absolute; inset:0; pointer-events:none; }
-    #alfred-scene-final { position:absolute; left:50%; bottom:9vh; transform:translate(-50%, 20px); text-align:center; opacity:0; transition:opacity .9s ease, transform .9s cubic-bezier(.2,1,.4,1); pointer-events:none; font-family:-apple-system,'Segoe UI',sans-serif; }
+    #alfred-scene-final { position:absolute; left:50%; bottom:4.5vh; transform:translate(-50%, 20px); text-align:center; opacity:0; transition:opacity .9s ease, transform .9s cubic-bezier(.2,1,.4,1); pointer-events:none; font-family:-apple-system,'Segoe UI',sans-serif; }
     #alfred-scene-final.actif { opacity:1; transform:translate(-50%, 0); }
     #alfred-scene-final-merci { font-size:clamp(28px, 4.2vw, 64px); font-weight:800; color:#054561; letter-spacing:-.5px; }
     #alfred-scene-final-marque { margin-top:.35em; font-size:clamp(12px, 1.1vw, 18px); font-weight:700; letter-spacing:5px; color:#14b0bd; }
@@ -3066,7 +3066,19 @@ async function finDeSpectacle() {
     const merci = document.getElementById('alfred-scene-final-merci');
     const stand = document.getElementById('alfred-scene-final-stand');
     if (merci) merci.textContent = nl ? 'Bedankt!' : 'Merci !';
-    if (stand) stand.textContent = nl ? 'Wellnot-stand · in de zaal hiernaast' : "Stand Wellnot · dans la salle d'à côté";
+    // Remplacé le 10/09 après visionnage : le rappel du stand ("in de zaal
+    // hiernaast") ne veut rien dire hors du congrès, alors que la vidéo, elle,
+    // sera vue ailleurs et plus tard. L'adresse du site marche dans les deux
+    // langues, donc un seul texte.
+    if (stand) stand.textContent = 'www.wellnot.be';
+    // Marque retirée du plan de fin (haut ET bas) — demandé pour que le
+    // dernier plan reste propre : "Bedankt !" + l'adresse, rien d'autre.
+    // Uniquement pendant le rideau final : le bandeau du haut revient dès
+    // que le rideau est retiré (voir retirerRideauFinal).
+    const marque = document.getElementById('alfred-scene-final-marque');
+    if (marque) marque.style.display = 'none';
+    const bandeau = document.getElementById('alfred-scene-marque');
+    if (bandeau) bandeau.style.visibility = 'hidden';
     if (centre) { centre.style.transition = 'transform 1s cubic-bezier(.2,1,.4,1)'; centre.style.transform = 'translate(-50%,-52%) translateY(-7vh)'; }
     fin.classList.add('actif');
     if (typeof definirExpression === 'function') setTimeout(() => { if (curState !== 'talk') definirExpression('joie', 300, { base: true }); }, 900);
@@ -3077,6 +3089,8 @@ function retirerRideauFinal() {
   const centre = document.getElementById('alfred-scene-centre');
   if (fin && fin.classList.contains('actif')) {
     fin.classList.remove('actif');
+    const bandeau = document.getElementById('alfred-scene-marque');
+    if (bandeau) bandeau.style.visibility = '';
     if (centre) centre.style.transform = 'translate(-50%,-52%)';
   }
 }
