@@ -881,7 +881,21 @@ Jamais : "Excellente question", "Absolument", "Bien sûr", "Certainement", "en t
     // "gecertificeerd door Privanot" corrigé (même note de prod que la
     // version FR : "certifié" à éviter tant que ce n'est pas acté).
     // Sécurité/Stand/Closing réalignées mot pour mot sur v3_8 le 31/08.
-    { acte: 3, label: 'Sécurité',      emotion: 'assure',      hologrammes: [{ mots: ['gdpr'], titre: 'GDPR-conform', sous: 'Gegevensbescherming', icone: 'cadenas' }, { mots: ['priiva'], titre: 'Geëvalueerd door Privanot', sous: 'Veiligheid gecontroleerd', icone: 'badge' }, { mots: ['verlaten'], titre: 'Uw gegevens blijven in Europa', sous: 'Nooit elders', icone: 'globe' }], texte: "Alle gegevens worden gehost op beveiligde servers in Europa. Ik ben GDPR-conform, en mijn veiligheid werd geëvalueerd in het kader van Priiva not. Uw gegevens verlaten Europa nooit." },
+    // GDPR épelé en lettres NÉERLANDAISES — demandé explicitement le 10/09
+    // ("il faut pas la prononciation anglaise, il faut dire g d p r ... en
+    // néerlandais"). Noms des lettres en NL : G = "gee", D = "dee",
+    // P = "pee", R = "er". L'ancienne écriture "Gee D P R" mélangeait une
+    // syllabe orthographiée en néerlandais et trois majuscules nues, ce qui
+    // tirait la lecture vers l'anglais/le français — d'où le G à la
+    // française entendu en vidéo (10m49). Les quatre lettres sont
+    // maintenant écrites de la même façon, en néerlandais.
+    // "Priiva not" : orthographe voulue, écrite comme ça JUSTEMENT pour
+    // éviter une prononciation à l'anglaise — confirmé par l'utilisatrice
+    // le 10/09, ne pas "corriger" en "Privanot".
+    // Ces deux graphies vivent dans le texte de la réplique (et non dans
+    // naturaliserTexte) pour rester réglables à l'oreille depuis le panneau
+    // "✏️ Editer", comme les autres fixes de prononciation NL.
+    { acte: 3, label: 'Sécurité',      emotion: 'assure',      hologrammes: [{ mots: ['gee'], titre: 'GDPR-conform', sous: 'Gegevensbescherming', icone: 'cadenas' }, { mots: ['priiva'], titre: 'Geëvalueerd door Privanot', sous: 'Veiligheid gecontroleerd', icone: 'badge' }, { mots: ['verlaten'], titre: 'Uw gegevens blijven in Europa', sous: 'Nooit elders', icone: 'globe' }], texte: "Alle gegevens worden gehost op beveiligde servers in Europa. Ik ben Gee Dee Pee Er conform, en mijn veiligheid werd geëvalueerd in het kader van Priiva not. Uw gegevens verlaten Europa nooit." },
     { acte: 3, label: 'Stand', geste: { nom: 'presenter', mot: "wellnot-stand" }, emotion: 'chaleureux',         hologrammes: [{ mots: ['wellnot-stand'], titre: 'Wellnot-stand', sous: 'In de zaal hiernaast', icone: 'carte' }], texte: "Heel eenvoudig: op de Wellnot-stand, in de zaal hiernaast. Kom langs, of vraag een demo rechtstreeks in uw kantoor." },
     // Closing — même DOUTE que côté FR (voir la note FR équivalente,
     // timing du clin d'œil à revérifier). Registre "je/jou" (informel,

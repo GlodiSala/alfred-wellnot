@@ -45,15 +45,6 @@ function naturaliserTexte(text) {
     // le texte d'origine (voir le paramètre sousTitre de speak()).
     .replace(/Check_r/gi,    nl ? 'Checker' : 'Check-R')
     .replace(/RGPD/gi,       'R-G-P-D')
-    // GDPR se dit avec les lettres ANGLAISES ("djie-die-pie-aar"), même en
-    // néerlandais. Écrit "Gee D P R" dans le script, la voix NL lisait
-    // "Gee" avec un G dur/à la française — remonté deux fois en test live
-    // (10m49 : "il a quand même mal prononcé GDPR, G accent français").
-    // On écrit donc les quatre lettres en orthographe NL de leur son
-    // anglais ; "dzj" est la graphie néerlandaise du son /dʒ/ (comme dans
-    // "dzjungel"). Alternative si ça sonne encore faux : dire "AVG", le
-    // vrai terme néerlandais pour le RGPD.
-    .replace(/\bGDPR\b/gi, 'Dzjie-Die-Pie-Aar')
     .replace(/\bIA\b/gi,     'intelligence artificielle')
     .replace(/e-notariat/gi, 'é-notariat')
     .replace(/\bMe\b/g,      'Maître')
