@@ -905,7 +905,7 @@ function ouvrirPanneauVoix() {
   panel.appendChild(champLabel('Expressivité ElevenLabs v3 (NL)'));
   const selExpr = document.createElement('select');
   selExpr.style.cssText = 'width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:#0a3b52;color:#fff;font-size:12px;margin-bottom:14px;';
-  [['naturel', 'Naturel — stable, une indication de jeu par réplique'], ['expressif', 'Expressif — stable, indication de jeu répétée à chaque phrase (recommandé)'], ['creatif', 'Créatif — le plus expressif mais instable (stabilité 0)']].forEach(([val, txt]) => {
+  [['naturel', 'Naturel — stable, une indication de jeu par réplique'], ['expressif', 'Expressif — stable, indication de jeu répétée à chaque phrase (recommandé)'], ['creatif', 'Créatif — indication répétée ET montée d\'un cran, stabilité 0 (le plus fort, le moins prévisible)']].forEach(([val, txt]) => {
     const o = document.createElement('option'); o.value = val; o.textContent = txt; o.style.cssText = 'background:#0a3b52;color:#fff;'; selExpr.appendChild(o);
   });
   selExpr.value = (typeof expressiviteElevenLabs === 'function') ? expressiviteElevenLabs() : 'naturel';

@@ -449,7 +449,18 @@ function expressiviteElevenLabs(override) {
 }
 function texteAvecBalisesV3(text, balise, expressiviteOverride) {
   if (!balise) return text;
-  if (expressiviteElevenLabs(expressiviteOverride) !== 'expressif') return `${balise} ${text}`;
+  // Répétition à chaque phrase pour 'expressif' ET 'creatif'. Jusqu'ici
+  // 'creatif' ne posait la balise qu'UNE fois, en tête : il baissait la
+  // stabilité à 0 mais laissait l'émotion s'éteindre au fil d'une longue
+  // réplique — exactement le défaut que 'expressif' avait été créé pour
+  // corriger. Résultat, "instable" n'était pas franchement plus expressif
+  // qu'"expressif", juste plus imprévisible. Les trois niveaux forment
+  // maintenant une vraie échelle :
+  //   naturel   = stabilité 0,5 + une balise en tête
+  //   expressif = stabilité 0,5 + une balise par phrase
+  //   créatif   = stabilité 0   + une balise par phrase, montée d'un cran
+  const niveau = expressiviteElevenLabs(expressiviteOverride);
+  if (niveau !== 'expressif' && niveau !== 'creatif') return `${balise} ${text}`;
   const phrases = String(text).match(/[^.!?…]+[.!?…]+["»]?|[^.!?…]+$/g) || [text];
   return phrases.map(p => `${balise} ${p.trim()}`).join(' ');
 }
@@ -465,19 +476,25 @@ function reglagesElevenLabs(expressiviteOverride) {
 // prononcée) ET pour Gemini-TTS (ajoutée à la consigne de ton de cette
 // ligne). Les sous-titres et la synchro des surlignages restent sur le texte
 // nu : la balise n'est ajoutée qu'au texte envoyé au moteur.
+// v3fort : même indication, montée d'un cran. Réservée au niveau "Créatif" —
+// c'est le seul des trois qui vise le maximum d'expressivité, autant qu'il
+// pousse AUSSI la formulation, pas seulement la stabilité. Volontairement
+// un simple "very" ajouté au mot déjà connu : une balise plus bavarde
+// risquerait d'être lue à voix haute si le modèle ne la reconnaît pas.
 const EMOTIONS_VOIX = {
-  amuse:      { v3: '[amused]',        gemini: "amusé, un sourire dans la voix" },
-  assure:     { v3: '[confidently]',   gemini: "assuré, un brin bravache" },
-  enjoue:     { v3: '[cheerfully]',    gemini: "enjoué, plein d'entrain" },
-  taquin:     { v3: '[playfully]',     gemini: "taquin, il la coupe gentiment" },
-  satisfait:  { v3: '[satisfied]',     gemini: "satisfait, tranquille" },
-  chaleureux: { v3: '[warmly]',        gemini: "chaleureux, accueillant" },
-  malicieux:  { v3: '[mischievously]', gemini: "malicieux, il retourne la situation avec un clin d'œil" },
-  fier:       { v3: '[proudly]',       gemini: "fier, sûr de son effet" },
+  amuse:      { v3: '[amused]',        v3fort: '[very amused]',        gemini: "amusé, un sourire dans la voix" },
+  assure:     { v3: '[confidently]',   v3fort: '[very confidently]',   gemini: "assuré, un brin bravache" },
+  enjoue:     { v3: '[cheerfully]',    v3fort: '[very cheerfully]',    gemini: "enjoué, plein d'entrain" },
+  taquin:     { v3: '[playfully]',     v3fort: '[very playfully]',     gemini: "taquin, il la coupe gentiment" },
+  satisfait:  { v3: '[satisfied]',     v3fort: '[very satisfied]',     gemini: "satisfait, tranquille" },
+  chaleureux: { v3: '[warmly]',        v3fort: '[very warmly]',        gemini: "chaleureux, accueillant" },
+  malicieux:  { v3: '[mischievously]', v3fort: '[very mischievously]', gemini: "malicieux, il retourne la situation avec un clin d'œil" },
+  fier:       { v3: '[proudly]',       v3fort: '[very proudly]',       gemini: "fier, sûr de son effet" },
 };
-function baliseEmotionV3(emotion) {
+function baliseEmotionV3(emotion, fort) {
   const e = emotion && EMOTIONS_VOIX[emotion];
-  return e ? e.v3 : '';
+  if (!e) return '';
+  return (fort && e.v3fort) ? e.v3fort : e.v3;
 }
 function tonGeminiAvecEmotion(tonBase, emotion) {
   const e = emotion && EMOTIONS_VOIX[emotion];
@@ -586,9 +603,9 @@ async function genererElevenLabsFinPropre(texteMoteur, voiceId, expressiviteOver
 async function genererAudioElevenLabs(text, voiceId, emotion, expressiviteOverride, options = {}) {
   // Balise de jeu v3 devant le texte (voir EMOTIONS_VOIX) — fait partie de
   // la clé de cache : la même phrase dite amusée ou neutre = deux audios.
-  const balise = baliseEmotionV3(emotion);
-  const texteMoteur = texteAvecBalisesV3(text, balise, expressiviteOverride) + ELEVENLABS_PAD_FIN;
   const expr = expressiviteElevenLabs(expressiviteOverride);
+  const balise = baliseEmotionV3(emotion, expr === 'creatif');
+  const texteMoteur = texteAvecBalisesV3(text, balise, expressiviteOverride) + ELEVENLABS_PAD_FIN;
   const cle = cleTTS({ languageCode: 'nl-BE', name: 'elevenlabs-' + ELEVENLABS_MODELE + '-' + voiceId + '-v' + ELEVENLABS_REGLAGES_VERSION + (expr === 'naturel' ? '' : '-' + expr) }, texteMoteur);
 
   const etiquette = text.trim().slice(-40);
