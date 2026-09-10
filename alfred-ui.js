@@ -2534,6 +2534,72 @@ async function reveil(rapide) {
   eyeTargetX = 0; eyeTargetY = 0; await attendreMs(300);
 }
 
+// ── Éveil long de l'acte 1 ───────────────────────────────────────────
+// Demandé le 10/09 : "l'animation avant qu'Alfred ne parle peut durer
+// 15 secondes... comme ça Fariël a le temps de poser sa question et je n'ai
+// pas besoin de meubler au montage". reveil() seul dure ~4 s ; on prolonge
+// donc, mais avec des temps JOUÉS, pas du remplissage : un robot qui vient
+// de démarrer se teste, découvre la salle, puis attend.
+//
+// Volontairement PAS un "coucou" : le salut de la main (GESTES.saluer) est
+// déjà le geste de la toute fin du spectacle (voir finDeSpectacle) — le
+// réutiliser ici userait la chute. Et pas un étirement non plus : reveil()
+// en fait déjà un (bras qui s'ouvrent, torse redressé, étape 3).
+//
+// Une seule valeur à changer si la durée ne convient pas au tournage.
+const DUREE_EVEIL_ACTE1_MS = 15000;
+
+async function eveilActe1(debutMs) {
+  const pause  = (ms) => new Promise(r => setTimeout(r, ms));
+  // Échap doit rendre la main tout de suite : sans ça, 11 s de plus
+  // d'animation non annulable avant la première réplique.
+  const annule = () => (typeof annulationDemandee !== 'undefined' && annulationDemandee);
+
+  // 1. Auto-test mécanique (~4 s) — il vérifie ses bras un par un, puis sa
+  //    tête. C'est ce qui "dit" robot sans un seul mot, et ça se lit de
+  //    loin sur un écran de congrès.
+  tenirPosture('brasL', 'rotate(58deg)', 620, 0);
+  await pause(760); if (annule()) return;
+  relacherPosture('brasL', 620, 0);
+  await pause(520); if (annule()) return;
+  tenirPosture('brasR', 'rotate(-58deg)', 620, 0);
+  await pause(760); if (annule()) return;
+  relacherPosture('brasR', 620, 0);
+  await pause(520); if (annule()) return;
+  definirPostureTete(-9, 0, 0.07);
+  await pause(620); if (annule()) return;
+  definirPostureTete(9, 0, 0.07);
+  await pause(620); if (annule()) return;
+  definirPostureTete(0, 0, 0.05);
+  await pause(420); if (annule()) return;
+
+  // 2. Il découvre la salle (~4,5 s) — balayage lent puis un temps de
+  //    surprise. Ça installe sa première réplique, qui dit exactement ça :
+  //    "je ne m'attendais pas à être devant une salle pleine de notaires".
+  eyeTargetX = -10; eyeTargetY = -1; regardDirigeJusqua = performance.now() + 5200;
+  definirPostureTete(-4, 0, 0.05);
+  await pause(1250); if (annule()) return;
+  eyeTargetX = 10; definirPostureTete(4, 0, 0.05);
+  await pause(1250); if (annule()) return;
+  eyeTargetX = 0; eyeTargetY = 0; definirPostureTete(0, -3, 0.09);
+  definirExpression('grand', 260);            // il réalise
+  tenirPosture('corps', 'translateY(-4px) scale(1.03)', 420, 0);
+  await pause(700); if (annule()) return;
+  relacherPosture('corps', 700, 0);
+  definirPostureTete(0, 0, 0.05);
+  await pause(900); if (annule()) return;
+
+  // 3. Il se pose et attend (le reste) — expression neutre, regard devant :
+  //    c'est LA fenêtre où Fariël pose sa question. La durée restante est
+  //    calculée à partir de DUREE_EVEIL_ACTE1_MS pour que le total tombe
+  //    juste, quelles que soient les micro-variations au-dessus.
+  definirExpression('normal', 320, { base: true });
+  relacherToutesPostures(800);
+  const restant = DUREE_EVEIL_ACTE1_MS - (performance.now() - debutMs);
+  console.log('[Alfred UI] Éveil acte 1 : attente finale de ' + Math.round(restant) + 'ms (cible ' + DUREE_EVEIL_ACTE1_MS + 'ms).');
+  if (restant > 0) await pause(restant);
+}
+
 // ── Rythme du texte ──────────────────────────────────────────────────
 let acteurTimers = [];
 let acteurGeneration = 0;
@@ -3019,12 +3085,26 @@ async function quitterScene(options = {}) {
 // pour l'Acte 2, on ne fait qu'un repli rapide si la scène est encore là.
 function assurerModeScene(acte, label) {
   transitionSceneEnCours = transitionSceneEnCours.then(async () => {
+    // Pris AVANT l'entrée de scène : DUREE_EVEIL_ACTE1_MS compte tout ce qui
+    // se passe entre l'appui sur → et la première parole (rideau + réveil +
+    // éveil long), pas seulement le réveil — c'est ce temps-là qu'il faut
+    // laisser à Fariël pour poser sa question.
+    const debutEveil = performance.now();
     if (acte === 1 && !modeSceneActif) await entrerScene({ depuisApp: false });
     else if (acte === 2 && modeSceneActif) await quitterScene({ chargement: false });
     else if (acte === 3 && !modeSceneActif) await entrerScene({ depuisApp: true });
     // Réveil : complet sur la toute première réplique, rapide si on saute
     // directement ailleurs dans l'acte 1.
-    if (robotEteint && acte === 1) await reveil(label !== 'Ouverture');
+    // Ouverture = le tout premier lever de rideau : réveil complet PUIS
+    // l'éveil long (voir eveilActe1), pour laisser à Fariël le temps de
+    // poser sa question sans que rien ne soit à meubler au montage. Les
+    // autres labels de l'acte 1 (on saute directement à une réplique)
+    // gardent le réveil rapide.
+    if (robotEteint && acte === 1) {
+      const complet = (label === 'Ouverture');
+      await reveil(!complet);
+      if (complet && typeof eveilActe1 === 'function') await eveilActe1(debutEveil);
+    }
     else if (robotEteint) await reveil(true);
   }).catch(e => console.warn('[Alfred UI] Transition de scène échouée :', e));
   return transitionSceneEnCours;
